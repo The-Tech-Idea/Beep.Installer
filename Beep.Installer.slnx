@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path=".\Beep.Installer\Beep.Installer.csproj" />
+  <Project Path=".\Beep.Installer.Tests\Beep.Installer.Tests.csproj" />
+</Solution>

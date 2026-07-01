@@ -1,0 +1,7 @@
+Help — MyApp
+=============
+
+This is a sample help file bundled with the MyApp sample.
+
+When you install MyApp, this file is copied to <install-dir>\docs\help.txt
+and registered with the application.

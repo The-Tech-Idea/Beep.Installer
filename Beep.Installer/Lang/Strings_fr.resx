@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Wizard_Title" xml:space="preserve"><value>Installateur Beep</value></data>
+  <data name="Wizard_Welcome" xml:space="preserve"><value>Bienvenue</value></data>
+  <data name="Wizard_License" xml:space="preserve"><value>Contrat de Licence</value></data>
+  <data name="Wizard_Components" xml:space="preserve"><value>Sélectionner les Composants</value></data>
+  <data name="Wizard_Folder" xml:space="preserve"><value>Dossier de Destination</value></data>
+  <data name="Wizard_StartMenu" xml:space="preserve"><value>Dossier du Menu Démarrer</value></data>
+  <data name="Wizard_Tasks" xml:space="preserve"><value>Tâches Supplémentaires</value></data>
+  <data name="Wizard_Ready" xml:space="preserve"><value>Prêt à Installer</value></data>
+  <data name="Wizard_Installing" xml:space="preserve"><value>Installation en cours</value></data>
+  <data name="Wizard_Complete" xml:space="preserve"><value>Installation Terminée</value></data>
+  <data name="Btn_Back" xml:space="preserve"><value>&lt; Retour</value></data>
+  <data name="Btn_Next" xml:space="preserve"><value>Suivant &gt;</value></data>
+  <data name="Btn_Install" xml:space="preserve"><value>Installer</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Btn_Finish" xml:space="preserve"><value>Terminer</value></data>
+  <data name="Btn_Browse" xml:space="preserve"><value>Parcourir...</value></data>
+  <data name="License_Accept" xml:space="preserve"><value>J'accepte le contrat</value></data>
+  <data name="License_Decline" xml:space="preserve"><value>Je n'accepte pas le contrat</value></data>
+  <data name="Comp_Required" xml:space="preserve"><value>Requis</value></data>
+  <data name="Comp_Optional" xml:space="preserve"><value>Optionnel</value></data>
+  <data name="Task_DesktopIcon" xml:space="preserve"><value>Créer une icône sur le bureau</value></data>
+  <data name="Task_AutoStart" xml:space="preserve"><value>Lancer Beep au démarrage de Windows</value></data>
+  <data name="Task_FileAssoc" xml:space="preserve"><value>Associer les fichiers .beep à Beep</value></data>
+  <data name="Complete_Success" xml:space="preserve"><value>Beep a été installé avec succès.</value></data>
+  <data name="Complete_Failure" xml:space="preserve"><value>L'installation a échoué. Consultez le journal.</value></data>
+  <data name="Complete_Launch" xml:space="preserve"><value>Lancer Beep Data Manager</value></data>
+  <data name="Complete_ViewLog" xml:space="preserve"><value>Voir le journal d'installation</value></data>
+  <data name="Error_AdminRequired" xml:space="preserve"><value>Privilèges administrateur requis.</value></data>
+  <data name="Error_DiskSpace" xml:space="preserve"><value>Espace disque insuffisant.</value></data>
+  <data name="Error_DotNetMissing" xml:space="preserve"><value>.NET introuvable. Installez .NET 9.0 ou supérieur.</value></data>
+</root>

@@ -1,0 +1,18 @@
+{
+  "productName": "MyApp",
+  "welcomeTitle": "Welcome to MyApp Setup",
+  "welcomeBannerPath": "",
+  "sidebarBackgroundColor": "#1E1E28",
+  "sidebarTextColor": "#FFFFFF",
+  "accentColor": "#2962FF",
+  "windowTitle": "MyApp Setup",
+  "licenseFile": "",
+  "publisherName": "The Tech Idea",
+  "publisherUrl": "https://github.com/The-Tech-Idea",
+  "supportEmail": "",
+  "productIconPath": "",
+  "showEula": true,
+  "allowComponentSelection": true,
+  "allowPathChange": true,
+  "defaultTheme": "Modern"
+}

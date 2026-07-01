@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Wizard_Title" xml:space="preserve"><value>Beep 安装程序</value></data>
+  <data name="Wizard_Welcome" xml:space="preserve"><value>欢迎</value></data>
+  <data name="Wizard_License" xml:space="preserve"><value>许可协议</value></data>
+  <data name="Wizard_Components" xml:space="preserve"><value>选择组件</value></data>
+  <data name="Wizard_Folder" xml:space="preserve"><value>目标文件夹</value></data>
+  <data name="Wizard_StartMenu" xml:space="preserve"><value>开始菜单文件夹</value></data>
+  <data name="Wizard_Tasks" xml:space="preserve"><value>附加任务</value></data>
+  <data name="Wizard_Ready" xml:space="preserve"><value>准备安装</value></data>
+  <data name="Wizard_Installing" xml:space="preserve"><value>正在安装</value></data>
+  <data name="Wizard_Complete" xml:space="preserve"><value>安装完成</value></data>
+  <data name="Btn_Back" xml:space="preserve"><value>&lt; 上一步</value></data>
+  <data name="Btn_Next" xml:space="preserve"><value>下一步 &gt;</value></data>
+  <data name="Btn_Install" xml:space="preserve"><value>安装</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Btn_Finish" xml:space="preserve"><value>完成</value></data>
+  <data name="Btn_Browse" xml:space="preserve"><value>浏览...</value></data>
+  <data name="License_Accept" xml:space="preserve"><value>我接受协议</value></data>
+  <data name="License_Decline" xml:space="preserve"><value>我不接受协议</value></data>
+  <data name="Comp_Required" xml:space="preserve"><value>必需</value></data>
+  <data name="Comp_Optional" xml:space="preserve"><value>可选</value></data>
+  <data name="Task_DesktopIcon" xml:space="preserve"><value>创建桌面图标</value></data>
+  <data name="Task_AutoStart" xml:space="preserve"><value>Windows 启动时运行 Beep</value></data>
+  <data name="Task_FileAssoc" xml:space="preserve"><value>关联 .beep 文件到 Beep</value></data>
+  <data name="Complete_Success" xml:space="preserve"><value>Beep 安装成功。</value></data>
+  <data name="Complete_Failure" xml:space="preserve"><value>安装失败，请查看日志。</value></data>
+  <data name="Complete_Launch" xml:space="preserve"><value>启动 Beep Data Manager</value></data>
+  <data name="Complete_ViewLog" xml:space="preserve"><value>查看安装日志</value></data>
+  <data name="Error_AdminRequired" xml:space="preserve"><value>需要管理员权限。</value></data>
+  <data name="Error_DiskSpace" xml:space="preserve"><value>磁盘空间不足。</value></data>
+  <data name="Error_DotNetMissing" xml:space="preserve"><value>未找到 .NET。请安装 .NET 9.0 或更高版本。</value></data>
+</root>

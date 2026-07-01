@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Beep.Installer</AssemblyName>
+    <RootNamespace>Beep.Installer</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>The Tech Idea</Authors>
+    <Company>The Tech Idea</Company>
+    <Product>Beep Installer</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.Winform\TheTechIdea.Beep.Vis.Modules2.0\TheTechIdea.Beep.Vis.Modules.csproj" />
+    <ProjectReference Include="..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="install-config.sample.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

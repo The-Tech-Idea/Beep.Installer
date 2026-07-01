@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Wizard_Title" xml:space="preserve"><value>Beep Installer</value></data>
+  <data name="Wizard_Welcome" xml:space="preserve"><value>Willkommen</value></data>
+  <data name="Wizard_License" xml:space="preserve"><value>Lizenzvereinbarung</value></data>
+  <data name="Wizard_Components" xml:space="preserve"><value>Komponenten auswählen</value></data>
+  <data name="Wizard_Folder" xml:space="preserve"><value>Zielordner</value></data>
+  <data name="Wizard_StartMenu" xml:space="preserve"><value>Startmenü-Ordner</value></data>
+  <data name="Wizard_Tasks" xml:space="preserve"><value>Zusätzliche Aufgaben</value></data>
+  <data name="Wizard_Ready" xml:space="preserve"><value>Bereit zur Installation</value></data>
+  <data name="Wizard_Installing" xml:space="preserve"><value>Installiere</value></data>
+  <data name="Wizard_Complete" xml:space="preserve"><value>Installation abgeschlossen</value></data>
+  <data name="Btn_Back" xml:space="preserve"><value>&lt; Zurück</value></data>
+  <data name="Btn_Next" xml:space="preserve"><value>Weiter &gt;</value></data>
+  <data name="Btn_Install" xml:space="preserve"><value>Installieren</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="Btn_Finish" xml:space="preserve"><value>Fertig</value></data>
+  <data name="Btn_Browse" xml:space="preserve"><value>Durchsuchen...</value></data>
+  <data name="License_Accept" xml:space="preserve"><value>Ich akzeptiere die Vereinbarung</value></data>
+  <data name="License_Decline" xml:space="preserve"><value>Ich lehne die Vereinbarung ab</value></data>
+  <data name="Comp_Required" xml:space="preserve"><value>Erforderlich</value></data>
+  <data name="Comp_Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="Task_DesktopIcon" xml:space="preserve"><value>Desktop-Symbol erstellen</value></data>
+  <data name="Task_AutoStart" xml:space="preserve"><value>Beep beim Windows-Start ausführen</value></data>
+  <data name="Task_FileAssoc" xml:space="preserve"><value>.beep-Dateien mit Beep verknüpfen</value></data>
+  <data name="Complete_Success" xml:space="preserve"><value>Beep wurde erfolgreich installiert.</value></data>
+  <data name="Complete_Failure" xml:space="preserve"><value>Installation fehlgeschlagen. Protokoll prüfen.</value></data>
+  <data name="Complete_Launch" xml:space="preserve"><value>Beep Data Manager starten</value></data>
+  <data name="Complete_ViewLog" xml:space="preserve"><value>Installationsprotokoll anzeigen</value></data>
+  <data name="Error_AdminRequired" xml:space="preserve"><value>Administratorrechte erforderlich.</value></data>
+  <data name="Error_DiskSpace" xml:space="preserve"><value>Nicht genügend Speicherplatz.</value></data>
+  <data name="Error_DotNetMissing" xml:space="preserve"><value>.NET nicht gefunden. Installieren Sie .NET 9.0 oder höher.</value></data>
+</root>

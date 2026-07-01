@@ -1,0 +1,123 @@
+{
+  "productName": "Beep Data Manager",
+  "productVersion": "1.0.0",
+  "publisher": "The Tech Idea",
+  "defaultInstallPath": "%ProgramFiles%\\Beep",
+  "startMenuFolder": "Beep",
+  "requireAdminPrivileges": true,
+  "licenseText": "MIT License - See LICENSE.txt for details.",
+  "supportUrl": "https://github.com/The-Tech-Idea",
+  "defaultInstallType": "Typical",
+
+  "components": [
+    {
+      "id": "core",
+      "name": "Core Application",
+      "required": true,
+      "selected": true,
+      "description": "Core Beep runtime and libraries",
+      "includedIn": "Typical",
+      "files": [
+        { "sourcePath": "C:\\Build\\beep.exe", "destinationPath": "beep.exe", "description": "Main executable" },
+        { "sourcePath": "C:\\Build\\beep.dll", "destinationPath": "beep.dll", "description": "Core library" },
+        { "sourcePath": "C:\\Build\\beep.config.json", "destinationPath": "beep.config.json", "description": "Default config" }
+      ],
+      "shortcuts": [
+        { "name": "Beep Data Manager", "targetPath": "beep.exe", "location": "StartMenu", "startMenuSubfolder": "Beep" },
+        { "name": "Beep Data Manager", "targetPath": "beep.exe", "location": "Desktop" }
+      ],
+      "registry": [
+        { "keyPath": "SOFTWARE\\TheTechIdea\\Beep", "valueName": "InstallPath", "value": "%InstallPath%", "valueKind": "String" },
+        { "keyPath": "SOFTWARE\\TheTechIdea\\Beep", "valueName": "Version", "value": "1.0.0", "valueKind": "String" }
+      ]
+    },
+    {
+      "id": "docs",
+      "name": "Documentation",
+      "required": false,
+      "selected": true,
+      "description": "Help files and API documentation",
+      "includedIn": "Typical",
+      "files": [
+        { "sourcePath": "C:\\Build\\docs\\help.chm", "destinationPath": "docs\\help.chm", "description": "Help file" }
+      ]
+    },
+    {
+      "id": "samples",
+      "name": "Sample Projects",
+      "required": false,
+      "selected": false,
+      "description": "Example projects and templates",
+      "includedIn": "Complete",
+      "files": [
+        { "sourcePath": "C:\\Build\\samples\\demo.zip", "destinationPath": "samples\\demo.zip", "description": "Demo project" }
+      ]
+    }
+  ],
+
+  "prerequisites": [
+    {
+      "id": "dotnet9",
+      "name": ".NET Runtime 9.0",
+      "versionRequired": "9.0.0",
+      "detectionCommand": "dotnet --list-runtimes",
+      "detectionPattern": "Microsoft.NETCore.App 9.",
+      "downloadUrl": "https://dotnet.microsoft.com/download/dotnet/9.0",
+      "silentInstallArgs": "/quiet /norestart",
+      "isMandatory": true
+    }
+  ],
+
+  "shortcuts": [
+    { "name": "Beep Data Manager", "targetPath": "beep.exe", "location": "StartMenu", "startMenuSubfolder": "Beep" },
+    { "name": "Beep Data Manager", "targetPath": "beep.exe", "location": "Desktop" }
+  ],
+
+  "registryEntries": [
+    { "keyPath": "SOFTWARE\\TheTechIdea\\Beep", "valueName": "InstallPath", "value": "%InstallPath%", "valueKind": "String" },
+    { "keyPath": "SOFTWARE\\TheTechIdea\\Beep", "valueName": "Version", "value": "1.0.0", "valueKind": "String" }
+  ],
+
+  "fileAssociations": [
+    { "extension": ".beep", "progId": "Beep.Project", "description": "Beep Project File", "targetPath": "beep.exe", "iconPath": "beep.exe" }
+  ],
+
+  "firewallRules": [
+    { "name": "Beep Web API", "programPath": "beep.exe", "port": "8080", "protocol": "TCP" }
+  ],
+
+  "services": [
+    { "name": "BeepService", "displayName": "Beep Data Service", "binaryPath": "beep.service.exe", "startType": "Automatic", "startAfterInstall": true }
+  ],
+
+  "environmentVariables": [
+    { "name": "BEEP_HOME", "value": "%InstallPath%", "scope": "Machine" }
+  ],
+
+  "customActions": [
+    {
+      "path": "{InstallPath}\\post-install.bat",
+      "description": "Run post-install script",
+      "timing": "AfterInstall",
+      "order": 1,
+      "required": false,
+      "failOnError": false
+    }
+  ],
+
+  "scheduledTasks": [
+    { "name": "Beep Daily Maintenance", "programPath": "beep.maintenance.exe", "scheduleType": "Daily", "startTime": "03:00:00" }
+  ],
+
+  "configTemplates": [
+    {
+      "fileName": "appsettings.json",
+      "isJson": true,
+      "overwrite": false,
+      "defaultValues": {
+        "Logging:LogLevel:Default": "Information",
+        "ConnectionStrings:DefaultConnection": "Data Source={InstallPath}\\beep.db"
+      }
+    }
+  ]
+}
