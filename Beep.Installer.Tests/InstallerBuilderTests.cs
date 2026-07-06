@@ -30,28 +30,31 @@ public class InstallerBuilderTests : IDisposable
         try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); } catch { }
     }
 
-    private InstallProject MakeProject(string name, string version, Action<BuildOptions>? configure = null)
+    private InstallProject MakeProject(string name, string version, Action<InstallProject>? configure = null)
     {
-        var p = ProjectSerializer.CreateNew(name, version, "TestPub", _sourceDir);
-        p.Build.OutputDirectory = Path.Combine(_tempDir, "build");
-        p.Build.CompressPayload = false;
-        p.Build.RegisterUninstallEntry = true;
-        configure?.Invoke(p.Build);
+        var p = InstallerProjectFactory.CreateNew(name, version, "TestPub", _sourceDir);
+        p.OutputDir = Path.Combine(_tempDir, "build");
+        p.CompressPayload = false;
+        p.CreateUninstallEntry = true;
+p.UseTestDefaults();
+        configure?.Invoke(p);
         return p;
     }
 
     [Fact]
-    public void Build_ProducesSetupExeAndConfigFiles()
+    public void Build_ProducesSetupExeAndRuntimeScript()
     {
         var project = MakeProject("BuildTest", "1.0.0");
         var builder = new InstallerBuilder();
-        var result = builder.Build(project);
+        var result = builder(project);
 
         result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
         File.Exists(result.OutputFile).Should().BeTrue();
-        File.Exists(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "install-config.json")).Should().BeTrue();
-        File.Exists(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "branding.json")).Should().BeTrue();
-        File.Exists(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "project.bpkg")).Should().BeTrue();
+        var scriptPath = Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup");
+        File.Exists(scriptPath).Should().BeTrue();
+        var (runtimeProject, err) = InstallerScriptSerializer.Load(scriptPath);
+        err.Should().BeNull();
+        runtimeProject!.AppName.Should().Be("BuildTest");
         result.FileCount.Should().Be(2);
     }
 
@@ -72,7 +75,7 @@ public class InstallerBuilderTests : IDisposable
     {
         File.WriteAllText(Path.Combine(_sourceDir, "debug.pdb"), "pdb data");
         var project = MakeProject("ExcludeTest", "1.0.0");
-        project.ExcludePatterns.Add("**/*.pdb");
+        project.SourceExcludes.Add("**/*.pdb");
         var result = new InstallerBuilder().Build(project);
 
         result.Success.Should().BeTrue();
@@ -84,7 +87,7 @@ public class InstallerBuilderTests : IDisposable
     public void Build_CompressPayload_ProducesZip()
     {
         var project = MakeProject("ZipTest", "1.0.0");
-        project.Build.CompressPayload = true;
+        project.CompressPayload = true;
         var result = new InstallerBuilder().Build(project);
 
         result.Success.Should().BeTrue();
@@ -92,10 +95,45 @@ public class InstallerBuilderTests : IDisposable
     }
 
     [Fact]
+    public void Build_UsesBuildLevelBannerInRuntimeScript()
+    {
+        var bannerPath = Path.Combine(_tempDir, "build-banner.png");
+        File.WriteAllText(bannerPath, "banner");
+        var project = MakeProject("BuildBanner", "1.0.0", build => build.WizardImageFile = bannerPath);
+
+        var result = new InstallerBuilder().Build(project);
+
+        result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
+        var outputDir = Path.GetDirectoryName(result.OutputFile)!;
+        File.ReadAllText(Path.Combine(outputDir, "banner.png")).Should().Be("banner");
+        var (runtimeProject, err) = InstallerScriptSerializer.Load(Path.Combine(outputDir, "script.bsetup"));
+        err.Should().BeNull();
+        runtimeProject!.WizardImageFile.Should().Be("banner.png");
+        runtimeProject.WizardImageFile.Should().Be("banner.png");
+    }
+
+    [Fact]
+    public void Build_UsesBuildLevelEulaFileInRuntimeScript()
+    {
+        var eulaPath = Path.Combine(_tempDir, "eula.txt");
+        File.WriteAllText(eulaPath, "Build EULA text");
+        var project = MakeProject("BuildEula", "1.0.0", build => build.LicenseFile = eulaPath);
+        project.LicenseText = "Old inline text";
+
+        var result = new InstallerBuilder().Build(project);
+
+        result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
+        var scriptPath = Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup");
+        var (runtimeProject, err) = InstallerScriptSerializer.Load(scriptPath);
+        err.Should().BeNull();
+        runtimeProject!.LicenseText.Should().Be("Build EULA text");
+    }
+
+    [Fact]
     public void Build_WithoutProductName_AddsError()
     {
         var project = MakeProject("", "1.0.0");
-        project.InstallConfig.ProductName = "";
+        project.AppName = "";
         var result = new InstallerBuilder().Build(project);
 
         result.Success.Should().BeFalse();
@@ -125,7 +163,7 @@ public class InstallerBuilderTests : IDisposable
         var uiProgress = new SynchronousProgress<BuildProgress>(p => progressEvents.Add(p));
         builder.Progress = uiProgress;
 
-        var result = builder.Build(project);
+        var result = builder(project);
         result.Success.Should().BeTrue();
         progressEvents.Should().NotBeEmpty();
         progressEvents.Last().Percent.Should().Be(100);
@@ -148,3 +186,4 @@ public class InstallerBuilderTests : IDisposable
         public void Report(T value) => _handler(value);
     }
 }
+

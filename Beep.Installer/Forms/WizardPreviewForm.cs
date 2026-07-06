@@ -7,7 +7,7 @@ namespace Beep.Installer.Forms;
 
 /// <summary>
 /// Preview the install wizard exactly as the end user will see it.
-/// Offers both classic and themed styles side-by-side.
+/// Uses the modern Beep-themed installer form.
 /// </summary>
 public class WizardPreviewForm : Form
 {
@@ -17,7 +17,7 @@ public class WizardPreviewForm : Form
     public WizardPreviewForm(InstallProject project)
     {
         _project = project;
-        Text = $"Preview — {project.InstallConfig.ProductName} Setup";
+        Text = $"Preview — {project.AppName} Setup";
         Size = new Size(880, 640);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.Sizable;
@@ -31,8 +31,7 @@ public class WizardPreviewForm : Form
         };
 
         _tabs = new TabControl { Dock = DockStyle.Fill };
-        _tabs.TabPages.Add(BuildStyleTab("Themed (modern dark sidebar)", new ThemedInstallerForm(project.InstallConfig, project.Branding, previewMode: true)));
-        _tabs.TabPages.Add(BuildStyleTab("Classic (light sidebar)", new InstallerWizardForm(project.InstallConfig, project.Branding, previewMode: true)));
+        _tabs.TabPages.Add(BuildStyleTab("Modern (Beep themed)", new BeepModernInstallerForm(project, previewMode: true)));
 
         Controls.Add(_tabs);
         Controls.Add(hint);
@@ -40,7 +39,11 @@ public class WizardPreviewForm : Form
         FormClosed += (_, _) =>
         {
             foreach (TabPage tp in _tabs.TabPages)
-                if (tp.Controls[0] is Form f) { try { f.Close(); f.Dispose(); } catch { } }
+                if (tp.Controls.Count > 0 && tp.Controls[0] is Form f)
+                {
+                    try { f.Close(); f.Dispose(); }
+                    catch (Exception ex) { Engine.Diag.Debug("WizardPreviewForm", "preview form dispose failed", ex); }
+                }
         };
     }
 

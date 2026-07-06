@@ -146,7 +146,7 @@ public class LanguageManagerForm : Form
                 if (name != null && value != null) dict[name] = value;
             }
         }
-        catch { }
+        catch (Exception ex) { Engine.Diag.Debug("LanguageManagerForm", ".resx import failed", ex); }
         return dict;
     }
 
@@ -255,7 +255,8 @@ public class LanguageManagerForm : Form
         _langSelector.Items.Remove(code);
         _langSelector.SelectedItem = "en";
         var file = Path.Combine(LangDir, $"Strings_{code}.resx");
-        try { if (File.Exists(file)) File.Delete(file); } catch { }
+        try { if (File.Exists(file)) File.Delete(file); }
+        catch (Exception ex) { Engine.Diag.Debug("LanguageManagerForm", "resx delete failed", ex); }
         _statusLabel.Text = $"Removed language: {code}";
     }
 

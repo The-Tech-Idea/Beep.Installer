@@ -29,7 +29,7 @@ public class EdgeCaseTests : IDisposable
     public void Validate_DetectsEmptyComponents()
     {
         var project = MakeProject("Empty", "");
-        project.InstallConfig.Components.Clear();
+        project.Components.Clear();
         var result = new InstallerBuilder().Validate(project);
         result.Warnings.Should().Contain(w => w.Contains("No components"));
     }
@@ -51,8 +51,8 @@ public class EdgeCaseTests : IDisposable
         Directory.CreateDirectory(src);
         File.WriteAllText(Path.Combine(src, "real.dll"), "real");
         var project = MakeProject("MissingFiles", src);
-        project.InstallConfig.Components.Clear();
-        project.InstallConfig.Components.Add(new TheTechIdea.Beep.Installer.InstallComponent
+        project.Components.Clear();
+        project.Components.Add(new TheTechIdea.Beep.Installer.InstallComponent
         {
             Id = "core", Name = "Core", Required = true, Selected = true,
             Files = new()
@@ -64,22 +64,22 @@ public class EdgeCaseTests : IDisposable
         var result = new InstallerBuilder().Build(project);
         result.Success.Should().BeTrue(); // build succeeds — FileCopyStep handles missing files
         // But config validation should warn about the missing file
-        var validateResult = ConfigManager.Validate(project.InstallConfig);
+        var validateResult = ConfigManager.Validate(project);
         validateResult.Should().Contain(w => w.Contains("ghost.dll"));
     }
 
     [Fact]
-    public void Build_WithNoComponents_OnlyWritesConfigFiles()
+    public void Build_WithNoComponents_WritesRuntimeScript()
     {
         var project = MakeProject("ConfigOnly", "");
-        project.InstallConfig.Components.Clear();
-        project.Build.CompressPayload = false;
+        project.Components.Clear();
+        project.CompressPayload = false;
+project.UseTestDefaults();
 
         var result = new InstallerBuilder().Build(project);
         result.Success.Should().BeTrue();
         var outDir = Path.GetDirectoryName(result.OutputFile)!;
-        File.Exists(Path.Combine(outDir, "install-config.json")).Should().BeTrue();
-        File.Exists(Path.Combine(outDir, "branding.json")).Should().BeTrue();
+        File.Exists(Path.Combine(outDir, "script.bsetup")).Should().BeTrue();
 
         // Payload folder should still exist (but empty)
         var payloadDir = Path.Combine(outDir, "payload");
@@ -116,14 +116,14 @@ public class EdgeCaseTests : IDisposable
     {
         var src = Path.Combine(_tempRoot, "filtered");
         Directory.CreateDirectory(src);
-        File.WriteAllText(Path.Combine(src, "app.exe"), "exe");
+        File.WriteAllText(Path.Combine(src, "app.exe"), InstallerOutputFormat.Exe);
         File.WriteAllText(Path.Combine(src, "lib.dll"), "dll");
         File.WriteAllText(Path.Combine(src, "debug.pdb"), "pdb");
 
         var project = MakeProject("Filtered", src);
-        project.ExcludePatterns.Clear();
-        project.ExcludePatterns.Add("*.exe");
-        project.ExcludePatterns.Add("*.pdb");
+        project.SourceExcludes.Clear();
+        project.SourceExcludes.Add("*.exe");
+        project.SourceExcludes.Add("*.pdb");
 
         var result = new InstallerBuilder().Build(project);
         result.Success.Should().BeTrue();
@@ -141,7 +141,7 @@ public class EdgeCaseTests : IDisposable
         File.WriteAllText(Path.Combine(src, "a.dat"), "data");
 
         var project = MakeProject("Packed", src);
-        project.Build.CompressPayload = true;
+        project.CompressPayload = true;
 
         var result = new InstallerBuilder().Build(project);
         result.Success.Should().BeTrue();
@@ -155,33 +155,37 @@ public class EdgeCaseTests : IDisposable
     public void Build_RegistersUninstallEntry_AddsRegistryKeys()
     {
         var project = MakeProject("RegMe", "");
-        project.Build.RegisterUninstallEntry = true;
-        project.Build.CompressPayload = false;
+        project.CreateUninstallEntry = true;
+project.UseTestDefaults();
+        project.CompressPayload = false;
+project.UseTestDefaults();
 
         var builder = new InstallerBuilder();
         // Call the private method indirectly by building
-        var result = builder.Build(project);
+        var result = builder(project);
         result.Success.Should().BeTrue();
 
-        // The install-config.json should contain the uninstall registry entries
-        var configJson = File.ReadAllText(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "install-config.json"));
-        configJson.Should().Contain("UninstallString");
-        configJson.Should().Contain("DisplayName");
-        configJson.Should().Contain("RegMe");
+        var (runtimeProject, err) = InstallerScriptSerializer.Load(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup"));
+        err.Should().BeNull();
+        runtimeProject!.RegistryEntries.Should().Contain(r => r.ValueName == "UninstallString");
+        runtimeProject.RegistryEntries.Should().Contain(r => r.ValueName == "DisplayName" && r.Value == "RegMe");
     }
 
     [Fact]
     public void Build_WithoutRegisterUninstallEntry_SkipsRegistryKeys()
     {
         var project = MakeProject("NoReg", "");
-        project.Build.RegisterUninstallEntry = false;
-        project.Build.CompressPayload = false;
+        project.CreateUninstallEntry = false;
+project.UseTestDefaults();
+            project.CompressPayload = false;
+project.UseTestDefaults();
 
         var result = new InstallerBuilder().Build(project);
         result.Success.Should().BeTrue();
 
-        var configJson = File.ReadAllText(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "install-config.json"));
-        configJson.Should().NotContain("UninstallString");
+        var (runtimeProject, err) = InstallerScriptSerializer.Load(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup"));
+        err.Should().BeNull();
+        runtimeProject!.RegistryEntries.Should().NotContain(r => r.ValueName == "UninstallString");
     }
 
     [Fact]
@@ -192,13 +196,14 @@ public class EdgeCaseTests : IDisposable
         File.WriteAllText(Path.Combine(src, "x.dll"), "x");
 
         var project = MakeProject("Clean", src);
-        project.Build.CompressPayload = false;
+        project.CompressPayload = false;
+project.UseTestDefaults();
 
         // First build
         new InstallerBuilder().Build(project).Success.Should().BeTrue();
 
         // Create a junk file in the output dir
-        var outDir = project.Build.OutputDirectory;
+        var outDir = project.OutputDir;
         var junkPath = Path.Combine(outDir, "junk.tmp");
         File.WriteAllText(junkPath, "stale");
         File.Exists(junkPath).Should().BeTrue();
@@ -233,23 +238,25 @@ public class EdgeCaseTests : IDisposable
         File.WriteAllText(Path.Combine(src, "rt.dll"), "rt");
 
         var original = MakeProject("RoundTrip", src);
-        var bpkgPath = Path.Combine(_tempRoot, "rt.bpkg");
-        ProjectSerializer.Save(original, bpkgPath);
+        var scriptPath = Path.Combine(_tempRoot, "rt.bsetup");
+        InstallerScriptSerializer.Save(original, scriptPath);
 
-        var (loaded, _) = ProjectSerializer.Load(bpkgPath);
+        var (loaded, _) = InstallerScriptSerializer.Load(scriptPath);
         loaded.Should().NotBeNull();
         loaded!.ProjectName.Should().Be("RoundTrip");
-        loaded.InstallConfig.ProductName.Should().Be("RoundTrip");
+        loaded.AppName.Should().Be("RoundTrip");
     }
 
     // ── helpers ──
 
     private InstallProject MakeProject(string name, string sourceDir)
     {
-        var p = ProjectSerializer.CreateNew(name, "1.0.0", "TestPub", sourceDir);
-        p.Build.OutputDirectory = Path.Combine(_tempRoot, "build_" + name);
-        p.Build.OutputFileName = $"Setup-{name}.exe";
-        p.Build.CompressPayload = false;
+        var p = InstallerProjectFactory.CreateNew(name, "1.0.0", "TestPub", sourceDir);
+        p.OutputDir = Path.Combine(_tempRoot, "build_" + name);
+        p.OutputBaseFilename = $"Setup-{name}.exe";
+        p.CompressPayload = false;
+p.UseTestDefaults();
         return p;
     }
 }
+

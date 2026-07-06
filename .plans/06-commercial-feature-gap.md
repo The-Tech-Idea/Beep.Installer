@@ -1,130 +1,143 @@
-# Commercial Installer Feature Gap Analysis
+# Feature Gap Analysis — vs category leaders
 
-**This is now a generator** (not the installer itself). The gap analysis is split in two:
+**Last updated:** 2026-07-01 (revision 2)
 
-1. **Generator gap** — what the *developer tool* should be able to do
-2. **Generated installer gap** — what the *shipped Setup.exe* should be able to do
+**Goal:** Beep.Installer should match the capabilities of the leading setup/deployment tools.
+Benchmark set: **Inno Setup, ClickOnce, NSIS, WiX/MSI, Advanced Installer, InstallShield,
+Squirrel, Velopack.** The matrix below is split by our three target output tracks:
 
-The shipped Setup.exe is largely powered by the BeepDM engine (steps, helpers, etc.), so most "installer" features are already there.
+- **Track A** — `Setup.exe` wizard (Inno / NSIS / InstallShield / Advanced Installer)
+- **Track B** — ClickOnce-style publish + auto-update (ClickOnce / Squirrel / Velopack)
+- **Track C** — MSIX packaging (WiX-MSI / MSIX / Store)
 
----
-
-## 1. Generator (developer tool) — what the Package Builder should do
-
-| Feature | Status | Notes |
-|---|---|---|
-| ✅ Create / open / save `.bpkg` projects | ✅ | `ProjectSerializer`, `PackageBuilderForm` |
-| ✅ Tabbed project editor (10 tabs) | ✅ | Project / Files / Components / Prerequisites / Shortcuts / Registry / Branding / Wizard Pages / Build / Log |
-| ✅ Source directory scan with include/exclude patterns | ✅ | Approximate glob (`**/`); full glob TBD |
-| ✅ Per-component file list editor | ✅ | `ComponentFilesDialog` |
-| ✅ Live preview of wizard (both styles) | ✅ | `WizardPreviewForm` shows Themed + Classic side-by-side, consumes `InstallerBranding` |
-| ✅ Live progress during build | ✅ | `Progress<BuildProgress>` in status bar + log tab |
-| ✅ Headless build for CI (`/BUILD=`) | ✅ | |
-| ✅ Headless preview (`/PREVIEW=`) | ✅ | |
-| ✅ Language manager for translations | ✅ | `LanguageManagerForm` |
-| ✅ Theming / branding editor | ✅ | colors, banner, theme name |
-| ✅ Sample project | ✅ | `samples/MyApp.bpkg` + `samples/HelloApp/` |
-| ✅ About dialog | ✅ | `PackageBuilderForm.ShowAbout()` |
-| ✅ Unit tests | ✅ | 19 tests in `Beep.Installer.Tests` |
-| ⬜ Drag-drop file editor | ⬜ | |
-| ⬜ Component condition editor (per-component conditions) | ⬜ | TBD |
-| ⬜ Upgrade / repair / modify-mode editors | ⬜ | Engine supports these, but no UI |
-| ⬜ Project templates gallery | ⬜ | |
-| ⬜ Side-by-side build comparison | ⬜ | |
+Legend: ✅ done · 🟡 partial · ⬜ missing · 🔴 broken (P0)
 
 ---
 
-## 2. Generated installer (shipped Setup.exe) — what the end user sees
+## 1. Track A — Setup.exe wizard (Inno / NSIS / Advanced Installer / InstallShield)
 
-### 🔴 Critical (expected in any commercial installer)
+### Core packaging & install
 
-| Feature | Status | Where |
-|---|---|---|
-| **Wizard pages (welcome/license/components/folder/startmenu/tasks/ready/complete)** | ✅ | `Pages/*` |
-| **File copy with per-file progress** | ✅ | `FileCopyStep` (BeepDM) |
-| **Shortcuts (Desktop / StartMenu / Startup)** | ✅ | `ShortcutCreateStep` (BeepDM) |
-| **Registry write/cleanup** | ✅ | `RegistryWriteStep` (BeepDM) |
-| **Uninstall with manifest** | ✅ | `UninstallStep` (BeepDM) — manifest written by `VerifyInstallStep` |
-| **Prerequisite checks (OS, .NET, admin, disk)** | ✅ | `PrerequisiteCheckStep` (BeepDM) |
-| **Silent / unattended mode** | ✅ | `/S` flag in `Program.cs` |
-| **Hash verification (SHA256 per file)** | ✅ | `InstallHelpers.ComputeFileHash` |
-| **System restore point** | ✅ | `SystemRestoreStep` (BeepDM) |
-| **Restart Manager (locked files)** | ✅ | `InstallHelpers.ScheduleFileForRestart` |
-| **Custom actions (run scripts/exes)** | ✅ | `CustomActionStep` (BeepDM) |
-| **Config generation (appsettings, etc.)** | ✅ | `ConfigGenerationStep` (BeepDM) |
-| **Multi-language UI** | ✅ | 8 langs shipped; runtime switcher in `ThemedInstallerForm` |
-| **Per-user vs per-machine** | ✅ | `FolderPage.PerUser` toggle |
-| **File type associations** | ✅ | `FileAssociationStep` (BeepDM) + `InstallHelpers.RegisterFileAssociation` |
+| Feature | Inno | NSIS | Adv.Installer | InstallShield | **Beep** | Notes |
+|---|---|---|---|---|---|---|
+| Project file (script/JSON) | ✅ .iss | ✅ .nsi | ✅ .aip | ✅ .ism | ✅ .bpkg | |
+| Compile → Setup.exe | ✅ | ✅ | ✅ | ✅ | 🟡 | P0-1: payload broken off build machine |
+| Wizard pages (welcome/license/components/folder/tasks/ready/complete) | ✅ | ✅ | ✅ | ✅ | ✅ | 8 pages + ErrorPage |
+| Per-file progress | ✅ | ✅ | ✅ | ✅ | ✅ | FileCopyStep |
+| Silent install | ✅ /SILENT | ✅ /S | ✅ | ✅ /s | ✅ /S | |
+| Multi-language UI | ✅ 90+ | 🟡 | ✅ | ✅ | 🟡 8 langs | RTL ar/he/fa/ur |
+| 32/64-bit install modes | ✅ | ✅ | ✅ | ✅ | ⬜ | needs separate install dirs + reg views |
+| Per-user vs per-machine | ✅ | ✅ | ✅ | ✅ | 🟡 | UI toggle; full isolation TBD |
 
-### 🟡 High (competitive differentiators)
+### Compression
 
-| Feature | Status | Where |
-|---|---|---|
-| **Bootstrapper chaining** (install prereqs in sequence) | ✅ | `BootstrapperStep` (BeepDM) |
-| **Conditional components** (OS, arch, registry check) | ✅ | `InstallConditionEvaluator` (BeepDM) |
-| **Firewall rules** | ✅ | `FirewallStep` (BeepDM) |
-| **Windows Service install** | ✅ | `ServiceInstallStep` (BeepDM) |
-| **Scheduled tasks** | ✅ | `AdvancedSteps` (BeepDM) |
-| **Environment variables** | ✅ | `AdvancedSteps` (BeepDM) |
-| **Network install** (source from UNC/URL) | 🟡 | Engine supports it but no UI in generator |
-| **Pause/Resume** | ✅ | `PauseResumeManager` (BeepDM) + `SetupCheckpointStore` |
-| **Code signing of the Setup.exe** | 🟡 | Generator stub; runs signtool externally |
-| **Recording/playback** (record an install, replay) | ⬜ | TBD |
+| Feature | Inno | NSIS | Adv.Installer | InstallShield | **Beep** | Notes |
+|---|---|---|---|---|---|---|
+| LZMA2 / solid compression | ✅ | ✅ (LZMA/zlib/bzip2) | ✅ | ✅ | ⬜ | only System.IO.Compression zip |
+| Selectable compression levels | ✅ | ✅ | ✅ | ✅ | 🟡 | 0-9 mapped to 4 enum levels |
+| Single-file self-extractor | ✅ | ✅ | ✅ | ✅ | ⬜ | payload is sidecar folder/zip |
+| Disk-spanning | ✅ | 🟡 | ✅ | ✅ | ⬜ | |
 
-### 🟢 Nice-to-have (premium products)
+### Scripting / customization
 
-| Feature | Status | Notes |
-|---|---|---|
-| **Theming / skinnable UI** | ✅ | `InstallerBranding` model + `Engine.ThemeLoader` runtime; 3 themes (Modern/Classic/Compact) |
-| **Branding (logo, colors, banner)** | 🟡 | Generator side complete; runtime banner image still TBD |
-| **Online payload (download during install)** | ⬜ | TBD |
-| **MSIX packaging** | ⬜ | TBD |
-| **Delta updates** (binary diff upgrades) | ⬜ | `UpgradeEngine` exists in BeepDM but is not yet wired into the generator |
-| **MSI wrapper** | ⬜ | TBD |
-| **Merge modules** (`.msm`) | ⬜ | TBD |
-| **Advertising shortcuts** (install-on-first-use) | ⬜ | TBD |
-| **COM registration** | ⬜ | TBD |
-| **Environment broadcast** (WM_SETTINGCHANGE) | ✅ | `InstallHelpers.BroadcastEnvironmentChange` |
-| **Font installation** | ✅ | `FontAndCertSteps` (BeepDM) |
-| **Certificate installation** | ✅ | `FontAndCertSteps` (BeepDM) |
-| **Installer password** | ⬜ | TBD |
-| **Installation analytics** | ⬜ | TBD |
-| **Self-test mode** | ✅ | `/SELFTEST` flag |
-| **Upgrade detection + backup/restore** | ✅ | `UpgradeEngine` (BeepDM) |
-| **Code signing of the Setup.exe** | ✅ | `InstallerBuilder.CodeSign` invokes `signtool.exe` (SHA256 + RFC 3161 timestamp) |
+| Feature | Inno | NSIS | Adv.Installer | InstallShield | **Beep** | Notes |
+|---|---|---|---|---|---|---|
+| Custom scripting language | ✅ Pascal Script | ✅ NSIS script | ✅ | ✅ InstallScript | ⬜ | **biggest parity gap** |
+| Pre/post install event hooks | ✅ CurStepChanged etc. | ✅ | ✅ | ✅ | 🟡 | CustomActionStep exists; not exposed in UI |
+| Custom wizard pages | ✅ | ✅ (nsDialogs) | ✅ | ✅ | ⬜ | only 8 fixed pages |
+| Conditional components (OS/arch/reg) | ✅ | ✅ | ✅ | ✅ | 🟡 | InstallConditionEvaluator in BeepDM, not wired to UI |
+| Install types (Typical/Custom/Complete) | ✅ | ✅ | ✅ | ✅ | 🟡 | enum exists; UI not enforced |
+
+### System integration
+
+| Feature | Inno | NSIS | Adv.Installer | InstallShield | **Beep** | Notes |
+|---|---|---|---|---|---|---|
+| Registry write/cleanup | ✅ | ✅ | ✅ | ✅ | ✅ | RegistryWriteStep |
+| Shortcuts (Desktop/StartMenu/Startup/QuickLaunch) | ✅ | ✅ | ✅ | ✅ | ✅ | ShortcutCreateStep |
+| Environment variables + WM_SETTINGCHANGE | ✅ | ✅ | ✅ | ✅ | ✅ | AdvancedSteps |
+| File type associations | ✅ | ✅ | ✅ | ✅ | ✅ | FileAssociationStep |
+| Windows Firewall rules | 🟡 | 🟡 | ✅ | ✅ | ✅ | FirewallStep |
+| Windows Services | 🟡 | 🟡 | ✅ | ✅ | ✅ | ServiceInstallStep |
+| Scheduled tasks | 🟡 | 🟡 | ✅ | ✅ | ✅ | AdvancedSteps |
+| Fonts | ✅ | ✅ | ✅ | ✅ | ✅ | FontAndCertSteps |
+| Certificates | 🟡 | 🟡 | ✅ | ✅ | ✅ | FontAndCertSteps |
+| COM / DCOM registration | ✅ | 🟡 | ✅ | ✅ | ⬜ | |
+| GAC assembly install | ✅ | 🟡 | ✅ | ✅ | ⬜ | |
+| Shared file ref-counting | ✅ | ✅ | ✅ | ✅ | ⬜ | |
+| Driver / device install | 🟡 | 🟡 | ✅ | ✅ | 🟡 | DriverProvisionStep exists (BeepDM) |
+| Bootstrapper / prereq chaining | ✅ | ✅ | ✅ | ✅ | ✅ | BootstrapperStep |
+
+### Robustness
+
+| Feature | Inno | NSIS | Adv.Installer | InstallShield | **Beep** | Notes |
+|---|---|---|---|---|---|---|
+| SHA-256 file verification | ✅ | 🟡 | ✅ | ✅ | ✅ | InstallHelpers.ComputeFileHash |
+| Restart Manager (locked files) | ✅ | 🟡 | ✅ | ✅ | ✅ | ScheduleFileForRestart |
+| System restore point | ✅ | 🟡 | ✅ | ✅ | ✅ | SystemRestoreStep |
+| Transactional rollback | ✅ | 🟡 | ✅ | ✅ | 🟡 | RollbackManager exists; not wired |
+| Resume / checkpoint after reboot | ✅ | 🟡 | ✅ | ✅ | 🟡 | SetupCheckpointStore exists |
+| Full uninstall with manifest | ✅ | ✅ | ✅ | ✅ | ✅ | UninstallStep |
+| Code signing (signtool) | ✅ | ✅ | ✅ | ✅ | ✅ | SHA256 + RFC3161 |
 
 ---
 
-## 3. Implementation Plan (sessions 1 and 2)
+## 2. Track B — ClickOnce-style publish + auto-update (ClickOnce / Squirrel / Velopack)
 
-### Session 1 — Generator foundation
+| Feature | ClickOnce | Squirrel | Velopack | **Beep** | Notes |
+|---|---|---|---|---|---|
+| Publish to web/UNC/folder | ✅ | ✅ (GitHub/Release) | ✅ | ⬜ | /PUBLISH= planned |
+| `.application` + `.manifest` | ✅ | n/a (Release) | n/a | ⬜ | |
+| `.deploy` file renaming | ✅ | n/a | n/a | ⬜ | |
+| Per-user install (no admin) | ✅ | ✅ | ✅ | 🟡 | UI toggle; isolation TBD |
+| Auto-update on launch | ✅ | ✅ | ✅ | ⬜ | UpgradeEngine exists, not wired |
+| Background delta/patch updates | 🟡 | 🟡 | ✅ (binary diff) | ⬜ | Velopack-style delta |
+| Rollback to previous version | ✅ | 🟡 | ✅ | 🟡 | UpgradeEngine.Backup/Restore exists |
+| Update subscription (required vs optional) | ✅ | n/a | ✅ | ⬜ | |
+| Trust prompt / signature | ✅ | ✅ | ✅ | ✅ | signtool; manifest signing TBD |
+| First-run experience / shortcuts | ✅ | ✅ | ✅ | 🟡 | ShortcutCreateStep |
+| Uninstall via Add/Remove Programs | ✅ | ✅ | ✅ | ✅ | |
 
-- ✅ Clarified generator vs runtime architecture
-- ✅ Built a complete, tabbed Package Builder
-- ✅ Built a full `InstallerBuilder` engine
-- ✅ Built two complete production-quality wizard UIs (Themed + Classic)
-- ✅ Fixed all major language-loading bugs
-- ✅ Fixed page-level language fallbacks
-- ✅ CLI for headless build / preview / self-test
-- ✅ Headless dispatch (WinForms init deferred for CLI)
+---
 
-### Session 3 — Banner, drag-drop, validation, recent, icon, integration tests
+## 3. Track C — MSIX / Store (MSIX / WiX-MSI / Store)
 
-- ✅ **Banner image in runtime** — `Engine.BannerLoader` + branded banner display in both wizards
-- ✅ **Drag-drop in ComponentFilesDialog** — Explorer file/folder drops auto-add to component
-- ✅ **/VALIDATE command** — `Beep.Installer.exe /VALIDATE=project.bpkg` + Validate button in UI
-- ✅ **Recent Projects** — persistent MRU list + toolbar dropdown
-- ✅ **PE icon embedding** — Win32 `UpdateResource` replaces icon in generated .exe
-- ✅ **Integration tests** — full build/install/uninstall cycle; 25 total tests
-- ✅ **Runtime config copy** — deps.json + runtimeconfig.json copied alongside generated exe
-- ✅ **/S + /CONFIG= and /UNINSTALL + /CONFIG=** — explicit config path support
+| Feature | MSIX | WiX (MSI) | Store | **Beep** | Notes |
+|---|---|---|---|---|---|
+| `.msix` / `.msixbundle` output | ✅ | n/a (.msi) | ✅ | ⬜ | MakeAppx; BuildOptions.OutputFormat |
+| `.msi` output (WiX) | n/a | ✅ | n/a | ⬜ | lower priority |
+| AppxManifest.xml generation | ✅ | n/a (WiX XML) | ✅ | ⬜ | identity/capabilities/visuals |
+| Visual assets (tiles/splash) | ✅ | n/a | ✅ | ⬜ | from icon/banner |
+| Capabilities declaration | ✅ | n/a | ✅ | ⬜ | |
+| MSIX signing (trusted cert) | ✅ | n/a | ✅ (Store) | ⬜ | |
+| App Installer (.appinstaller) auto-update | ✅ | n/a | ✅ | ⬜ | overlaps Track B |
+| Store packaging/validation | n/a | n/a | ✅ | ⬜ | |
+| Containerized clean uninstall | ✅ | 🟡 | ✅ | ⬜ | MSIX gives this free |
 
-## 4. Next Session
+---
 
-1. **Online payload** — `BuildOptions` already has structure; add `DownloadStep`
-2. **MSIX packaging** as alternative output format
-3. **Integration tests** — generate a real `Setup.exe`, run it in a clean VM
-4. **Drag-drop** in `ComponentFilesDialog`
-5. **High-DPI / accessibility audit**
-6. **PE icon embedding** (currently sidecar; needs PE resource patcher)
-7. **Localization polish** — RTL handling, locale-specific formatting
+## 4. Generator (developer tool) — cross-track
+
+| Feature | Adv.Installer | InstallShield | **Beep** | Notes |
+|---|---|---|---|---|
+| GUI project editor | ✅ | ✅ | ✅ | 10 tabs |
+| Project templates gallery | ✅ | ✅ | ⬜ | |
+| Side-by-side build comparison | 🟡 | 🟡 | ⬜ | |
+| Upgrade/repair/modify-mode editors | ✅ | ✅ | ⬜ | engine supports, no UI |
+| Component condition editor | ✅ | ✅ | ⬜ | |
+| Repackaging (exe→msi/msix) | ✅ | ✅ | ⬜ | |
+| CI/headless build | ✅ | ✅ | ✅ | /BUILD |
+| Live wizard preview | ✅ | ✅ | ✅ | Themed+Classic |
+| Language translation editor | ✅ | ✅ | ✅ | LanguageManagerForm |
+
+---
+
+## 5. Priority summary (what to build, in order)
+
+1. **P0 fixes** (§0 of master todo) — without these nothing ships correctly.
+2. **Track A scripting + compression parity** — the single biggest perceived gap vs Inno/NSIS.
+3. **Track A system integration** (64-bit, COM, GAC, shared counts, conditions) — enterprise parity.
+4. **Track B publish + auto-update** — unlocks the ClickOnce/Squirrel/Velopack use-case.
+5. **Track C MSIX** — Store + enterprise modern packaging.
+6. **Cross-cutting** (rollback wiring, templates, accessibility, diagnostics).
+
+Full per-phase breakdown: `07-deployment-models-roadmap.md`.

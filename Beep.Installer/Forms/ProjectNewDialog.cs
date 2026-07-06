@@ -2,13 +2,15 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using Beep.Installer.Engine;
 
 namespace Beep.Installer.Forms;
 
-/// <summary>Modal dialog for creating a new install project.</summary>
+/// <summary>Modal dialog for creating a new installer script.</summary>
 public class ProjectNewDialog : Form
 {
     private readonly TextBox _nameBox = null!;
+    private readonly ComboBox _templateBox = null!;
     private readonly TextBox _versionBox = null!;
     private readonly TextBox _publisherBox = null!;
     private readonly TextBox _sourceBox = null!;
@@ -20,11 +22,14 @@ public class ProjectNewDialog : Form
     public string Version => _versionBox.Text.Trim();
     public string Publisher => _publisherBox.Text.Trim();
     public string SourceDirectory => _sourceBox.Text.Trim();
+    /// <summary>The selected template id (defaults to Empty).</summary>
+    public string TemplateId =>
+        _templateBox.SelectedItem is ProjectTemplate t ? t.Id : ProjectTemplates.EmptyId;
 
     public ProjectNewDialog()
     {
-        Text = "New Beep Installer Project";
-        Size = new Size(520, 280);
+        Text = "New Installer Script";
+        Size = new Size(520, 320);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -36,6 +41,14 @@ public class ProjectNewDialog : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40));
 
         int r = 0;
+        layout.Controls.Add(MakeLabel("Template:"), 0, r);
+        _templateBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+        foreach (var t in ProjectTemplates.Builtins) _templateBox.Items.Add(t);
+        _templateBox.SelectedIndex = 0;
+        layout.SetColumnSpan(_templateBox, 2);
+        layout.Controls.Add(_templateBox, 1, r);
+        r++;
+
         layout.Controls.Add(MakeLabel("Product name:"), 0, r);
         _nameBox = new TextBox { Dock = DockStyle.Fill, Text = "MyApplication" };
         layout.SetColumnSpan(_nameBox, 2);

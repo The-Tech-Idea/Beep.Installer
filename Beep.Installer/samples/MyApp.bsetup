@@ -1,0 +1,45 @@
+; Beep Installer sample script
+; Build with:
+;   Beep.Installer.exe /BUILD=samples\MyApp.bsetup /OUT=samples\build
+
+[Setup]
+AppName=MyApp
+AppVersion=1.0.0
+Publisher=The Tech Idea
+SourceDir=samples\HelloApp
+DefaultDirName={pf}\MyApp
+DefaultGroupName=Beep Samples\MyApp
+OutputBaseFilename=Setup-MyApp-1.0.0
+Compression=zip
+CompressionLevel=6
+SolidCompression=yes
+SingleFile=yes
+SelfContained=no
+PrivilegesRequired=admin
+CreateUninstallEntry=yes
+Theme=Modern
+WelcomeTitle=Welcome to MyApp Setup
+WindowTitle=MyApp Setup
+SupportUrl=https://github.com/The-Tech-Idea
+LicenseText=MIT License\r\n\r\nSee LICENSE.txt for details.
+
+[Components]
+Name: "core"; Description: "Main MyApp files"; Required: yes; Selected: yes; Types: typical
+Name: "docs"; Description: "Help files"; Required: no; Selected: yes; Types: typical
+
+[Files]
+Source: "samples\HelloApp\MyApp.bat"; DestDir: "{app}"; DestName: "MyApp.bat"; Component: core
+Source: "samples\HelloApp\readme.txt"; DestDir: "{app}"; DestName: "readme.txt"; Component: core
+Source: "samples\HelloApp\docs\help.txt"; DestDir: "{app}\docs"; DestName: "help.txt"; Component: docs; Flags: optional
+
+[Icons]
+Name: "{group}\MyApp"; Filename: "{app}\MyApp.bat"
+Name: "{commondesktop}\MyApp"; Filename: "{app}\MyApp.bat"
+
+[Registry]
+Root: HKLM; Subkey: "SOFTWARE\TheTechIdea\MyApp"; ValueName: "InstallPath"; ValueType: string; ValueData: "{app}"
+Root: HKLM; Subkey: "SOFTWARE\TheTechIdea\MyApp"; ValueName: "Version"; ValueType: string; ValueData: "1.0.0"
+
+[Exclude]
+**/*.pdb
+**/*.log

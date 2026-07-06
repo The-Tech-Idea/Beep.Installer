@@ -1,0 +1,117 @@
+; Beep Installer script
+; One editable .bsetup file for the complete installer definition.
+
+[Setup]
+SchemaVersion=1.0
+ScriptName=MyApplication
+AppName=MyApplication
+AppVersion=1.0.0
+AppPublisher=f_ald
+AppUpdateMode=optional
+SourceDir=C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows
+DefaultDirName={pf}\MyApplication
+DefaultGroupName=MyApplication
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=no
+DefaultInstallType=typical
+Prefer64Bit=yes
+AllowScopeSelection=yes
+DefaultScope=machine
+AllowNoIcons=no
+AlwaysShowDirOnReadyPage=yes
+ShowEula=yes
+WindowTitle=MyApplication Setup
+WelcomeTitle=Welcome to MyApplication Setup
+DefaultTheme=Modern
+SidebarBackgroundColor=#1E1E28
+SidebarTextColor=#FFFFFF
+AccentColor=#2962FF
+AllowComponentSelection=yes
+AllowPathChange=yes
+OutputBaseFilename=Setup-MyApplication-1.0
+OutputDir=C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\output
+OutputFormat=exe
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MainExecutable=Beep.Installer.exe
+PayloadFolderName=payload
+PayloadSource=url
+CompressPayload=yes
+Compression=zip
+SolidCompression=yes
+CompressionLevel=6
+SingleFile=yes
+SelfContained=yes
+CreateUninstallEntry=yes
+CreateRestorePoint=yes
+CodeSignTimestampUrl=http://timestamp.digicert.com
+
+[Components]
+Name: "core"; Description: "Main application files scanned from the source directory."; Required: "yes"; Selected: "yes"; Types: "typical"
+
+[Files]
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Beep.Installer.deps.json"; DestDir: "{app}"; DestName: "Beep.Installer.deps.json"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Beep.Installer.dll"; DestDir: "{app}"; DestName: "Beep.Installer.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Beep.Installer.exe"; DestDir: "{app}"; DestName: "Beep.Installer.exe"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Beep.Installer.runtimeconfig.json"; DestDir: "{app}"; DestName: "Beep.Installer.runtimeconfig.json"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\DataManagementEngine.dll"; DestDir: "{app}"; DestName: "DataManagementEngine.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\DataManagementModels.dll"; DestDir: "{app}"; DestName: "DataManagementModels.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ExCSS.dll"; DestDir: "{app}"; DestName: "ExCSS.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Grpc.Core.Api.dll"; DestDir: "{app}"; DestName: "Grpc.Core.Api.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Grpc.Net.Client.dll"; DestDir: "{app}"; DestName: "Grpc.Net.Client.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Grpc.Net.Common.dll"; DestDir: "{app}"; DestName: "Grpc.Net.Common.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\install-config.sample.json"; DestDir: "{app}"; DestName: "install-config.sample.json"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Microsoft.CodeAnalysis.CSharp.dll"; DestDir: "{app}"; DestName: "Microsoft.CodeAnalysis.CSharp.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Microsoft.CodeAnalysis.dll"; DestDir: "{app}"; DestName: "Microsoft.CodeAnalysis.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Microsoft.Extensions.DependencyModel.dll"; DestDir: "{app}"; DestName: "Microsoft.Extensions.DependencyModel.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Newtonsoft.Json.dll"; DestDir: "{app}"; DestName: "Newtonsoft.Json.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.Common.dll"; DestDir: "{app}"; DestName: "NuGet.Common.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.Configuration.dll"; DestDir: "{app}"; DestName: "NuGet.Configuration.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.DependencyResolver.Core.dll"; DestDir: "{app}"; DestName: "NuGet.DependencyResolver.Core.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.Frameworks.dll"; DestDir: "{app}"; DestName: "NuGet.Frameworks.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.LibraryModel.dll"; DestDir: "{app}"; DestName: "NuGet.LibraryModel.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.Packaging.dll"; DestDir: "{app}"; DestName: "NuGet.Packaging.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.Protocol.dll"; DestDir: "{app}"; DestName: "NuGet.Protocol.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\NuGet.Versioning.dll"; DestDir: "{app}"; DestName: "NuGet.Versioning.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\Svg.dll"; DestDir: "{app}"; DestName: "Svg.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\TheTechIdea.Beep.Vis.Modules.dll"; DestDir: "{app}"; DestName: "TheTechIdea.Beep.Vis.Modules.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\TheTechIdea.Beep.Winform.Controls.dll"; DestDir: "{app}"; DestName: "TheTechIdea.Beep.Winform.Controls.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\TheTechIdea.Beep.Winform.Controls.dll.config"; DestDir: "{app}"; DestName: "TheTechIdea.Beep.Winform.Controls.dll.config"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\TheTechIdea.Beep.Winform.Controls.xml"; DestDir: "{app}"; DestName: "TheTechIdea.Beep.Winform.Controls.xml"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\cs\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\cs"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\cs\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\cs"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\de\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\de"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\de\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\de"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\es\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\es"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\es\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\es"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\fr\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\fr"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\fr\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\fr"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\it\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\it"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\it\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\it"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ja\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\ja"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ja\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\ja"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ko\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\ko"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ko\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\ko"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\pl\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\pl"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\pl\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\pl"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\pt-BR"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\pt-BR\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\pt-BR"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ru\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\ru"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\ru\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\ru"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\tr\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\tr"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\tr\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\tr"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\zh-Hans"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\zh-Hans\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\zh-Hans"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll"; DestDir: "{app}\zh-Hant"; DestName: "Microsoft.CodeAnalysis.CSharp.resources.dll"; Component: "core"
+Source: "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.Installer\Beep.Installer\bin\Debug\net10.0-windows\zh-Hant\Microsoft.CodeAnalysis.resources.dll"; DestDir: "{app}\zh-Hant"; DestName: "Microsoft.CodeAnalysis.resources.dll"; Component: "core"
+
+[Prerequisites]
+Id: ".NET Runtime"; Name: ".NET Runtime 10.0.0"; Version: "10.0.0"; Detect: "dotnet --list-runtimes"; Pattern: "Microsoft.NETCore.App 10.0.0"; Url: "https://dotnet.microsoft.com/download/dotnet/10.0.0"; Mandatory: "yes"; HelpUrl: "https://dotnet.microsoft.com/download"
+
+[Exclude]
+**/*.pdb
+**/*.log
+**/appsettings.Development.json
+
+[Include]
+**/*

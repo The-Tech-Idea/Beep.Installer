@@ -3,21 +3,18 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using TheTechIdea.Beep.Winform.Controls;
 
 namespace Beep.Installer.Pages;
 
-/// <summary>
-/// Dedicated error page shown when installation fails.
-/// Shows the error message, a "View Log" button, and a "Retry" option.
-/// </summary>
 public class ErrorPage : UserControl, IInstallerPage
 {
-    private Label _icon = null!;
-    private Label _title = null!;
+    private PictureBox _icon = null!;
+    private BeepLabel _title = null!;
     private TextBox _details = null!;
-    private Button _viewLogBtn = null!;
-    private Button _retryBtn = null!;
-    private Label _hint = null!;
+    private BeepButton _viewLogBtn = null!;
+    private BeepButton _retryBtn = null!;
+    private BeepLabel _hint = null!;
 
     private string? _logPath;
     private bool _retryRequested;
@@ -31,15 +28,13 @@ public class ErrorPage : UserControl, IInstallerPage
 
     public ErrorPage()
     {
-        _icon = new Label
+        _icon = new PictureBox
         {
             Location = new Point(0, 0),
             Size = new Size(48, 48),
-            Font = new Font("Segoe UI", 36),
-            ForeColor = Color.Red,
-            Text = "\u2717"
+            SizeMode = PictureBoxSizeMode.Zoom
         };
-        _title = new Label
+        _title = new BeepLabel
         {
             Location = new Point(60, 8),
             Size = new Size(440, 30),
@@ -57,7 +52,7 @@ public class ErrorPage : UserControl, IInstallerPage
             ScrollBars = ScrollBars.Vertical,
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
-        _viewLogBtn = new Button
+        _viewLogBtn = new BeepButton
         {
             Text = "View Installation Log",
             Location = new Point(0, 260),
@@ -73,7 +68,7 @@ public class ErrorPage : UserControl, IInstallerPage
                 MessageBox.Show(this, "No log file was generated.", "View Log",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
-        _retryBtn = new Button
+        _retryBtn = new BeepButton
         {
             Text = "Retry Installation",
             Location = new Point(340, 260),
@@ -85,7 +80,7 @@ public class ErrorPage : UserControl, IInstallerPage
             _retryRequested = true;
             ValidityChanged?.Invoke(this, true);
         };
-        _hint = new Label
+        _hint = new BeepLabel
         {
             Location = new Point(0, 296),
             Size = new Size(500, 30),
@@ -95,6 +90,25 @@ public class ErrorPage : UserControl, IInstallerPage
         };
 
         Controls.AddRange(new Control[] { _icon, _title, _details, _viewLogBtn, _retryBtn, _hint });
+
+        LoadErrorIcon();
+    }
+
+    private void LoadErrorIcon()
+    {
+        try
+        {
+            var asm = GetType().Assembly;
+            using var stream = asm.GetManifestResourceStream("Beep.Installer.Resources.Icons.alert-triangle.svg");
+            if (stream != null)
+            {
+                var svg = Svg.SvgDocument.Open<Svg.SvgDocument>(stream);
+                var bmp = new Bitmap(48, 48);
+                svg.Draw(bmp);
+                _icon.Image = bmp;
+            }
+        }
+        catch { }
     }
 
     public void OnEnter(InstallContext ctx) { }

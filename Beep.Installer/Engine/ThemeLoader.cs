@@ -1,38 +1,12 @@
-using System;
 using System.Drawing;
-using System.IO;
-using TheTechIdea.Beep.Installer;
 
 namespace Beep.Installer.Engine;
 
 /// <summary>
-/// Loads <see cref="InstallerBranding"/> from a sibling <c>branding.json</c> file
-/// (next to the running .exe) and provides helpers to convert hex color strings
-/// to <see cref="Color"/>.
+/// Color parsing helpers for the wizard theme.
 /// </summary>
 public static class ThemeLoader
 {
-    public static InstallerBranding LoadBranding()
-    {
-        try
-        {
-            var path = Path.Combine(AppContext.BaseDirectory, "branding.json");
-            if (!File.Exists(path)) return new InstallerBranding();
-            var json = File.ReadAllText(path);
-            var b = System.Text.Json.JsonSerializer.Deserialize<InstallerBranding>(json,
-                new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true
-                });
-            return b ?? new InstallerBranding();
-        }
-        catch
-        {
-            return new InstallerBranding();
-        }
-    }
-
     /// <summary>Parses "#RRGGBB" or "RRGGBB" into a <see cref="Color"/>; returns fallback on failure.</summary>
     public static Color ParseColor(string hex, Color fallback)
     {

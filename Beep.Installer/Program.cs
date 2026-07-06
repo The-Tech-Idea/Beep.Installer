@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Beep.Installer.Models;
 using Beep.Installer.Engine;
 using Beep.Installer.Forms;
 using TheTechIdea.Beep.Installer;
 using TheTechIdea.Beep.Installer.Steps;
 using TheTechIdea.Beep.SetUp;
+using TheTechIdea.Beep.Winform.Controls.ThemeManagement;
 
 namespace Beep.Installer;
 
@@ -17,15 +19,15 @@ namespace Beep.Installer;
 /// This executable has TWO modes:
 ///
 ///  1. GENERATOR mode (default UI)
-///        The Package Builder UI lets you author a .bpkg project and build
+///        The Package Builder UI lets you author a .bsetup script and build
 ///        a self-contained Setup.exe for distribution.
 ///
 ///  2. RUNTIME mode (when shipped as the generated installer)
-///        The Setup.exe carries an install-config.json + payload alongside it
-///        and shows the install wizard to the end user.
+///        The Setup.exe carries embedded installer metadata and payload,
+///        then shows the install wizard to the end user.
 ///
 /// The mode is determined at startup by inspecting command-line arguments
-/// and whether an install-config.json exists beside the executable.
+/// and whether installer metadata exists beside or inside the executable.
 /// </summary>
 internal static class Program
 {
@@ -40,6 +42,8 @@ internal static class Program
             try
             {
                 ApplicationConfiguration.Initialize();
+                BeepThemesManager.InitializeThemes();
+                BeepThemesManager.SetCurrentTheme("ModernTheme");
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             }
@@ -61,9 +65,26 @@ internal static class Program
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Fatal error: {ex}");
+            var crashLog = Path.Combine(Path.GetTempPath(), $"Beep_Crash_{DateTime.UtcNow:yyyyMMdd_HHmmss}.log");
+            try
+            {
+                File.WriteAllText(crashLog,
+                    $"Beep Installer — Fatal Error{Environment.NewLine}" +
+                    $"Time   : {DateTime.UtcNow:u}{Environment.NewLine}" +
+                    $"Machine: {Environment.MachineName}{Environment.NewLine}" +
+                    $"Error  : {ex}{Environment.NewLine}");
+            }
+            catch { }
             if (!headless)
             {
-                try { MessageBox.Show($"Fatal error: {ex.Message}", "Beep Installer", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
+                try
+                {
+                    MessageBox.Show($"Fatal error: {ex.Message}{Environment.NewLine}{Environment.NewLine}" +
+                                    $"A crash log was written to:{Environment.NewLine}{crashLog}",
+                                    "Beep Installer — Fatal Error",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (Exception mbx) { Engine.Diag.Debug("Program", "fatal-error MessageBox failed", mbx); }
             }
             return 99;
         }
@@ -75,6 +96,7 @@ internal static class Program
             || IndexOf(args, "/BUILD=") >= 0
             || IndexOf(args, "/VALIDATE=") >= 0
             || IndexOf(args, "/PREVIEW=") >= 0
+            || IndexOf(args, "/PUBLISH=") >= 0
             || Has(args, "/S", "/SILENT")
             || Has(args, "/UNINSTALL")
             || Has(args, "/SELFTEST");
@@ -100,30 +122,16 @@ internal static class Program
         // Silent install — used by the SHIPPED installer
         if (Has(args, "/S", "/SILENT"))
         {
-            var config = LoadRuntimeConfig();
-            var cfgIdxSl = IndexOf(args, "/CONFIG=");
-            if (config == null && cfgIdxSl >= 0)
-            {
-                var (loaded, err) = ConfigManager.Load(args[cfgIdxSl][8..]);
-                config = loaded;
-                if (err != null) Console.Error.WriteLine(err);
-            }
-            if (config == null) { Console.Error.WriteLine("No install-config.json found beside the executable and no /CONFIG= was provided."); return 2; }
-            return RunSilentInstall(config, args);
+            var project = LoadRuntimeProject(args);
+            if (project == null) { Console.Error.WriteLine("No installer script was found in the executable."); return 2; }
+            return RunSilentInstall(project, args);
         }
 
         // Uninstall — used by Add/Remove Programs
         if (Has(args, "/UNINSTALL"))
         {
-            var config = LoadRuntimeConfig();
-            var cfgUIdx = IndexOf(args, "/CONFIG=");
-            if (config == null && cfgUIdx >= 0)
-            {
-                var (loaded, err) = ConfigManager.Load(args[cfgUIdx][8..]);
-                config = loaded;
-                if (err != null) Console.Error.WriteLine(err);
-            }
-            return config == null ? 2 : RunUninstall(config, args);
+            var project = LoadRuntimeProject(args);
+            return project == null ? 2 : RunUninstall(project, args);
         }
 
         // Self-test
@@ -140,7 +148,7 @@ internal static class Program
             return RunHeadlessBuild(projectPath, args);
         }
 
-        // CLI validate — check a .bpkg for errors
+        // CLI validate — check a .bsetup script for errors
         var validateIdx = IndexOf(args, "/VALIDATE=");
         if (validateIdx >= 0)
         {
@@ -156,16 +164,12 @@ internal static class Program
             return RunPreview(projectPath);
         }
 
-        // Direct install-config (legacy /CONFIG=)
-        var cfgIdx = IndexOf(args, "/CONFIG=");
-        if (cfgIdx >= 0)
+        // ClickOnce publish — CI-friendly
+        var publishIdx = IndexOf(args, "/PUBLISH=");
+        if (publishIdx >= 0)
         {
-            // Explicit config means "run as runtime installer now"
-            var (cfg, err) = ConfigManager.Load(args[cfgIdx][8..]);
-            if (cfg == null) { Console.Error.WriteLine(err); return 2; }
-            var branding = Engine.ThemeLoader.LoadBranding();
-            Application.Run(new ThemedInstallerForm(cfg, branding));
-            return 0;
+            var projectPath = args[publishIdx]["PUBLISH=".Length..];
+            return RunPublish(projectPath, args);
         }
 
         // Standalone language manager tool
@@ -178,47 +182,64 @@ internal static class Program
         // Default: detect runtime mode or open the generator
         if (IsRuntimeMode())
         {
-            var config = LoadRuntimeConfig();
-            if (config == null) { Console.Error.WriteLine("install-config.json found but could not be parsed."); return 2; }
-            var branding = Engine.ThemeLoader.LoadBranding();
-            Application.Run(new ThemedInstallerForm(config, branding));
+            var project = LoadRuntimeProject(args);
+            if (project == null) { ShowFatalMessage("Installer script could not be parsed — the installer is corrupted."); return 2; }
+            Application.Run(new BeepModernInstallerForm(project));
             return 0;
         }
 
         // Generator UI
-        Application.Run(new PackageBuilderForm());
+        var controller = new InstallerController();
+        Application.Run(new PackageBuilderForm(controller));
         return 0;
     }
 
     // ── Mode detection ──────────────────────────────────────────────────
 
     /// <summary>
-    /// True if this executable is acting as a SHIPPED installer (i.e. an
-    /// install-config.json is sitting next to it).
+    /// True if this executable is acting as a shipped installer.
     /// </summary>
     private static bool IsRuntimeMode()
     {
         var exeDir = AppContext.BaseDirectory;
-        return File.Exists(Path.Combine(exeDir, "install-config.json"));
+        return File.Exists(Path.Combine(exeDir, "script.bsetup"))
+            || Engine.EmbeddedInstallerResources.Has("script.bsetup");
     }
 
-    private static InstallConfig? LoadRuntimeConfig()
+    private static InstallProject? LoadRuntimeProject(string[]? args = null)
     {
         var exeDir = AppContext.BaseDirectory;
-        var path = Path.Combine(exeDir, "install-config.json");
-        if (!File.Exists(path)) return null;
-        var (cfg, err) = ConfigManager.Load(path);
-        if (err != null) Console.Error.WriteLine($"Config warning: {err}");
-        return cfg;
+        var scriptIdx = args == null ? -1 : IndexOf(args, "/SCRIPT=");
+        var explicitScript = scriptIdx >= 0 ? args![scriptIdx]["/SCRIPT=".Length..] : null;
+        var path = !string.IsNullOrWhiteSpace(explicitScript)
+            ? explicitScript
+            : File.Exists(Path.Combine(exeDir, "script.bsetup"))
+            ? Path.Combine(exeDir, "script.bsetup")
+            : Engine.EmbeddedInstallerResources.PathFor("script.bsetup");
+        if (path == null) return null;
+
+        var (project, err) = InstallerScriptSerializer.Load(path);
+        if (err != null)
+        {
+            Console.Error.WriteLine($"Script warning: {err}");
+            return null;
+        }
+
+        project!.SourceDirectory = Path.GetDirectoryName(Path.GetFullPath(path)) ?? "";
+        RuntimeProjectContext.Current = project;
+        return project;
     }
 
     // ── Silent install ──────────────────────────────────────────────────
 
-    private static int RunSilentInstall(InstallConfig config, string[] args)
+    private static int RunSilentInstall(InstallProject project, string[] args)
     {
-        Console.WriteLine($"Installing {config.ProductName} {config.ProductVersion}…");
+        RuntimeProjectContext.Current = project;
+        var config = project;
+        Console.WriteLine($"Installing {config.AppName} {config.AppVersion}…");
 
-        var installPath = config.DefaultInstallPath;
+        var perUser = !(config.PrivilegesRequired == PrivilegeLevel.Admin || config.PrivilegesRequired == PrivilegeLevel.Lowest);
+        var installPath = Engine.InstallScopeResolver.ResolveDefaultPath(config, perUser);
         var dArg = args.FirstOrDefault(a => a.StartsWith("/D=", StringComparison.OrdinalIgnoreCase));
         if (dArg != null) installPath = dArg[3..];
 
@@ -233,42 +254,69 @@ internal static class Program
         Console.WriteLine($"  Path: {installPath}");
 
         var context = new SetupContext();
-        context.Properties["InstallConfig"] = config;
+        context.Properties["InstallProject"] = project;
         context.Properties["InstallPath"] = installPath;
+        context.Properties["PerUser"] = perUser;
+context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActions;
+
+
+        // Transactional rollback: FileCopyStep registers each copied file; on failure we undo.
+        var rollback = new RollbackManager();
+        context.Properties["RollbackManager"] = rollback;
 
         var wizard = new SetupWizardBuilder()
             .WithId("beep-install-silent")
             .WithOptions(new SetupOptions { Environment = "Production" })
             .AddStep(new PrerequisiteCheckStep())
             .AddStep(new DirectoryCreateStep("installer.prerequisites.check"))
-            .AddStep(new Steps.PayloadDownloadStep("installer.directory.create"))
-            .AddStep(new FileCopyStep("installer.payload.download"))
+            .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, "installer.directory.create"))
+            .AddStep(new Steps.PayloadDownloadStep("installer.custom.beforeinstall"))
+            .AddStep(new Steps.PayloadPrepareStep("installer.payload.download"))
+            .AddStep(new FileCopyStep("installer.payload.prepare"))
+            .AddStep(new SharedFileCountStep("installer.files.copy"))
+            .AddStep(new ComServerRegistrationStep("installer.files.copy"))
+            .AddStep(new GacInstallStep("installer.files.copy"))
             .AddStep(new ShortcutCreateStep("installer.files.copy"))
             .AddStep(new RegistryWriteStep("installer.shortcuts.create"))
-            .AddStep(new VerifyInstallStep("installer.registry.write"))
+            .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, "installer.registry.write"))
+            .AddStep(new VerifyInstallStep("installer.custom.afterinstall"))
             .Build();
 
         var result = wizard.Run(context);
         var ok = result.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
+        if (ok) rollback.Commit();
+        else
+        {
+            Console.WriteLine("Installation failed — rolling back changes…");
+            rollback.Rollback();
+        }
         Console.WriteLine(ok ? "Installation completed successfully." : $"Installation failed: {result.Message}");
         return ok ? 0 : 1;
     }
 
     // ── Uninstall ───────────────────────────────────────────────────────
 
-    private static int RunUninstall(InstallConfig config, string[] args)
+    private static int RunUninstall(InstallProject project, string[] args)
     {
+        RuntimeProjectContext.Current = project;
+        var config = project;
+        var perUser = !(config.PrivilegesRequired == PrivilegeLevel.Admin || config.PrivilegesRequired == PrivilegeLevel.Lowest);
         var installPath = args.FirstOrDefault(a => a.StartsWith("/D=", StringComparison.OrdinalIgnoreCase))?[3..]
-                          ?? config.DefaultInstallPath;
-        Console.WriteLine($"Uninstalling {config.ProductName} from {installPath}…");
+                          ?? Engine.InstallScopeResolver.ResolveDefaultPath(config, perUser);
+        Console.WriteLine($"Uninstalling {config.AppName} from {installPath}…");
 
         var context = new SetupContext();
         context.Properties["InstallPath"] = installPath;
-        context.Properties["InstallConfig"] = config;
+        context.Properties["InstallProject"] = project;
+        context.Properties["PerUser"] = perUser;
+context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActions;
+
 
         var wizard = new SetupWizardBuilder()
             .WithId("beep-uninstall")
+            .AddStep(new CustomActionStep(CustomActionTiming.BeforeUninstall))
             .AddStep(new UninstallStep())
+            .AddStep(new CustomActionStep(CustomActionTiming.AfterUninstall, "installer.uninstall"))
             .Build();
 
         var result = wizard.Run(context);
@@ -287,87 +335,89 @@ internal static class Program
 
         try
         {
-            // Build a tiny self-contained config that requires no real source files
-            var (cfg, sourceDir) = MakeSelfTestConfig(testDir);
+            var (project, sourceDir) = MakeSelfTestConfig(testDir);
             try
             {
-            var context = new SetupContext();
-            context.Properties["InstallConfig"] = cfg;
-            context.Properties["InstallPath"] = testDir;
+                RuntimeProjectContext.Current = project;
+                var context = new SetupContext();
+                context.Properties["InstallProject"] = project;
+                context.Properties["InstallPath"] = testDir;
 
-            var wizard = new SetupWizardBuilder()
-                .WithId("beep-selftest")
-                .WithOptions(new SetupOptions { Environment = "Test" })
-                .AddStep(new DirectoryCreateStep())
-                .AddStep(new FileCopyStep("installer.directory.create"))
-                .AddStep(new VerifyInstallStep("installer.files.copy"))
-                .Build();
+                var wizard = new SetupWizardBuilder()
+                    .WithId("beep-selftest")
+                    .WithOptions(new SetupOptions { Environment = "Test" })
+                    .AddStep(new DirectoryCreateStep())
+                    .AddStep(new FileCopyStep("installer.directory.create"))
+                    .AddStep(new VerifyInstallStep("installer.files.copy"))
+                    .Build();
 
-            var installResult = wizard.Run(context);
-            var installOk = installResult.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
-            Console.WriteLine($"Install: {(installOk ? "PASS" : "FAIL")}");
+                var installResult = wizard.Run(context);
+                var installOk = installResult.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
+                Console.WriteLine($"Install: {(installOk ? "PASS" : "FAIL")}");
 
-            var manifestOk = File.Exists(Path.Combine(testDir, "install-manifest.json"));
-            Console.WriteLine($"Manifest: {(manifestOk ? "PASS" : "FAIL")}");
+                var manifestOk = File.Exists(Path.Combine(testDir, "install-manifest.json"));
+                Console.WriteLine($"Manifest: {(manifestOk ? "PASS" : "FAIL")}");
 
-            var uninstallContext = new SetupContext();
-            uninstallContext.Properties["InstallPath"] = testDir;
-            uninstallContext.Properties["InstallConfig"] = cfg;
-            var uninstallWizard = new SetupWizardBuilder()
-                .WithId("beep-selftest-uninstall")
-                .AddStep(new UninstallStep())
-                .Build();
-            var uninstallOk = uninstallWizard.Run(uninstallContext).Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
-            Console.WriteLine($"Uninstall: {(uninstallOk ? "PASS" : "FAIL")}");
+                var uninstallContext = new SetupContext();
+                uninstallContext.Properties["InstallPath"] = testDir;
+                uninstallContext.Properties["InstallProject"] = project;
+                var uninstallWizard = new SetupWizardBuilder()
+                    .WithId("beep-selftest-uninstall")
+                    .AddStep(new UninstallStep())
+                    .Build();
+                var uninstallOk = uninstallWizard.Run(uninstallContext).Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
+                Console.WriteLine($"Uninstall: {(uninstallOk ? "PASS" : "FAIL")}");
 
-            var dirGone = !Directory.Exists(testDir);
-            Console.WriteLine($"Cleanup: {(dirGone ? "PASS" : "FAIL")}");
+                var dirGone = !Directory.Exists(testDir);
+                Console.WriteLine($"Cleanup: {(dirGone ? "PASS" : "FAIL")}");
 
-            var allOk = installOk && manifestOk && uninstallOk && dirGone;
-            Console.WriteLine($"=== Self-Test {(allOk ? "PASSED" : "FAILED")} ===");
-            return allOk ? 0 : 1;
+                var allOk = installOk && manifestOk && uninstallOk && dirGone;
+                Console.WriteLine($"=== Self-Test {(allOk ? "PASSED" : "FAILED")} ===");
+                return allOk ? 0 : 1;
             }
             finally
             {
-                try { if (Directory.Exists(sourceDir)) Directory.Delete(sourceDir, recursive: true); } catch { }
+                try { if (Directory.Exists(sourceDir)) Directory.Delete(sourceDir, recursive: true); }
+                catch (Exception dx) { Engine.Diag.Debug("SelfTest", "source cleanup failed", dx); }
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"SELF-TEST FAILED: {ex}");
-            try { if (Directory.Exists(testDir)) Directory.Delete(testDir, recursive: true); } catch { }
+            try { if (Directory.Exists(testDir)) Directory.Delete(testDir, recursive: true); }
+            catch (Exception dx) { Engine.Diag.Debug("SelfTest", "test-dir cleanup failed", dx); }
             return 1;
         }
     }
 
-    private static (InstallConfig config, string sourceDir) MakeSelfTestConfig(string testDir)
+    private static (InstallProject project, string sourceDir) MakeSelfTestConfig(string testDir)
     {
-        // Create a tiny source file in a sibling temp dir, so the file copy has something real to copy
         var sourceDir = Path.Combine(Path.GetTempPath(), $"BeepSelfTestSrc_{Guid.NewGuid():N}");
         Directory.CreateDirectory(sourceDir);
         var sourceFile = Path.Combine(sourceDir, "hello.txt");
         File.WriteAllText(sourceFile, $"Beep Installer self-test payload @ {DateTime.UtcNow:O}");
 
-        var config = new InstallConfig
+        var project = InstallerProjectFactory.CreateNew("BeepSelfTest", "0.0.0", "Beep Installer", sourceDir);
+        project.DefaultDirName = testDir;
+        project.PrivilegesRequired = PrivilegeLevel.User;
+        project.OutputBaseFilename = "BeepSelfTest";
+        project.CreateUninstallEntry = true;
+
+        project.Components.Clear();
+        project.Components.Add(new TheTechIdea.Beep.Installer.InstallComponent
         {
-            ProductName = "BeepSelfTest",
-            ProductVersion = "0.0.0",
-            Publisher = "Beep Installer",
-            DefaultInstallPath = testDir,
-            Components = new List<InstallComponent>
+            Id = "core",
+            Name = "Core",
+            Required = true,
+            Selected = true,
+            SizeBytes = new FileInfo(sourceFile).Length,
+            Files = new List<FileCopyOperation>
             {
-                new()
-                {
-                    Id = "core", Name = "Core", Required = true, Selected = true,
-                    SizeBytes = new FileInfo(sourceFile).Length,
-                    Files = new List<FileCopyOperation>
-                    {
-                        new() { SourcePath = sourceFile, DestinationPath = "hello.txt", Description = "hello.txt" }
-                    }
-                }
+                new() { SourcePath = sourceFile, DestinationPath = "hello.txt", Description = "hello.txt" }
             }
-        };
-        return (config, sourceDir);
+        });
+
+        return (project, sourceDir);
     }
 
     // ── Headless build ──────────────────────────────────────────────────
@@ -375,20 +425,25 @@ internal static class Program
     private static int RunHeadlessBuild(string projectPath, string[] args)
     {
         Console.WriteLine($"Beep Installer — headless build");
-        Console.WriteLine($"Project: {projectPath}");
+        Console.WriteLine($"Script: {projectPath}");
 
-        var (project, err) = ProjectSerializer.Load(projectPath);
+        var (project, err) = InstallerScriptSerializer.Load(projectPath);
         if (project == null) { Console.Error.WriteLine($"Error: {err}"); return 2; }
 
         // Allow overriding output via /OUT=
         var outIdx = IndexOf(args, "/OUT=");
-        if (outIdx >= 0) project.Build.OutputDirectory = args[outIdx][5..];
+        if (outIdx >= 0) project.OutputDir = args[outIdx][5..];
 
-        var progress = new Progress<BuildProgress>(p =>
+        // Allow overriding output format via /FORMAT=msix|msixbundle|exe (Track C).
+        var fmtIdx = IndexOf(args, "/FORMAT=");
+        if (fmtIdx >= 0 && Enum.TryParse<InstallerOutputFormat>(args[fmtIdx]["FORMAT=".Length..], ignoreCase: true, out var fmt))
+            project.OutputFormat = fmt;
+
+        var progress = new Progress<BuildPipeline.BuildProgress>(p =>
             Console.WriteLine($"  [{p.Percent,3}%] {p.Message}"));
 
-        var builder = new InstallerBuilder { Progress = progress };
-        var result = builder.Build(project);
+        var pipeline = new BuildPipeline { Progress = progress };
+        var result = pipeline.Run(project);
 
         Console.WriteLine();
         Console.WriteLine(result.Summary);
@@ -402,14 +457,14 @@ internal static class Program
 
     private static int RunValidate(string projectPath)
     {
-        var (project, err) = ProjectSerializer.Load(projectPath);
+        var (project, err) = InstallerScriptSerializer.Load(projectPath);
         if (project == null) { Console.Error.WriteLine($"ERROR: {err}"); return 2; }
 
-        var result = new InstallerBuilder().Validate(project);
-        Console.WriteLine($"Project : {project.ProjectName} ({projectPath})");
-        Console.WriteLine($"Product : {project.InstallConfig.ProductName} {project.InstallConfig.ProductVersion}");
+        var result = new BuildPipeline().Validate(project);
+        Console.WriteLine($"Script  : {project.ProjectName} ({projectPath})");
+        Console.WriteLine($"Product : {project.AppName} {project.AppVersion}");
         Console.WriteLine($"Source  : {project.SourceDirectory}");
-        Console.WriteLine($"Components: {project.InstallConfig.Components.Count}");
+        Console.WriteLine($"Components: {project.Components.Count}");
 
         if (result.Errors.Count > 0)
         {
@@ -432,17 +487,50 @@ internal static class Program
 
     private static int RunPreview(string projectPath)
     {
-        var (project, err) = ProjectSerializer.Load(projectPath);
+        var (project, err) = InstallerScriptSerializer.Load(projectPath);
         if (project == null) { Console.Error.WriteLine(err); return 2; }
 
-        Console.WriteLine($"Project: {project.ProjectName}");
-        Console.WriteLine($"  Product   : {project.InstallConfig.ProductName} {project.InstallConfig.ProductVersion}");
-        Console.WriteLine($"  Publisher : {project.InstallConfig.Publisher}");
+        Console.WriteLine($"Script: {project.ProjectName}");
+        Console.WriteLine($"  Product   : {project.AppName} {project.AppVersion}");
+        Console.WriteLine($"  Publisher : {project.AppPublisher}");
         Console.WriteLine($"  Source    : {project.SourceDirectory}");
-        Console.WriteLine($"  Default   : {project.InstallConfig.DefaultInstallPath}");
-        Console.WriteLine($"  Components: {project.InstallConfig.Components.Count}");
-        Console.WriteLine($"  Output    : {Path.Combine(project.Build.OutputDirectory, project.Build.OutputFileName)}");
+        Console.WriteLine($"  Default   : {project.DefaultDirName}");
+        Console.WriteLine($"  Components: {project.Components.Count}");
+        Console.WriteLine($"  Output    : {Path.Combine(project.OutputDir, project.OutputBaseFilename)}");
         return 0;
+    }
+
+    // ── ClickOnce publish ──────────────────────────────────────────────
+
+    private static int RunPublish(string projectPath, string[] args)
+    {
+        Console.WriteLine("Beep Installer — ClickOnce publish");
+        Console.WriteLine($"Script: {projectPath}");
+
+        var (project, err) = InstallerScriptSerializer.Load(projectPath);
+        if (project == null) { Console.Error.WriteLine($"Error: {err}"); return 2; }
+
+        var outIdx = IndexOf(args, "/OUT=");
+        var publishDir = outIdx >= 0
+            ? args[outIdx]["OUT=".Length..]
+            : Path.Combine(Path.GetDirectoryName(Path.GetFullPath(projectPath)) ?? "", "publish");
+
+        var urlIdx = IndexOf(args, "/UPDATEURL=");
+        var updateUrl = urlIdx >= 0 ? args[urlIdx]["UPDATEURL=".Length..] : project.AppUpdatesURL;
+
+        var noSign = Has(args, "/NOSIGN");
+
+        var progress = new Progress<(int percent, string message)>(p =>
+            Console.WriteLine($"  [{p.percent,3}%] {p.message}"));
+
+        var publisher = new Engine.Publisher { Progress = progress };
+        var result = publisher.Publish(project, publishDir, updateUrl, sign: !noSign);
+
+        Console.WriteLine();
+        Console.WriteLine(result.Summary);
+        foreach (var w in result.Warnings) Console.WriteLine($"  WARN: {w}");
+        foreach (var e in result.Errors) Console.Error.WriteLine($"  ERR : {e}");
+        return result.Success ? 0 : 1;
     }
 
     // ── Arg helpers ─────────────────────────────────────────────────────
@@ -462,8 +550,21 @@ internal static class Program
         var ex = e.ExceptionObject as Exception;
         Console.Error.WriteLine($"Unhandled: {ex}");
         try { MessageBox.Show($"Unexpected error: {ex?.Message}", "Beep Installer",
-            MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
+            MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        catch (Exception mbx) { Engine.Diag.Debug("Program", "unhandled-exception MessageBox failed", mbx); }
     }
+
+    private static void ShowFatalMessage(string message)
+{
+    Console.Error.WriteLine(message);
+    // Write a crash log so the user can inspect even after the dialog disappears.
+    var crashLog = Path.Combine(Path.GetTempPath(), $"Beep_Crash_{DateTime.UtcNow:yyyyMMdd_HHmmss}.log");
+    try { File.WriteAllText(crashLog, $"Beep Installer — Runtime Error{Environment.NewLine}Time: {DateTime.UtcNow:u}{Environment.NewLine}{message}{Environment.NewLine}"); }
+    catch { }
+    // Try to show a dialog (may fail if WinForms init already blew up).
+    try { MessageBox.Show(message + $"{Environment.NewLine}{Environment.NewLine}Log written to:{Environment.NewLine}{crashLog}", "Beep Installer — Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+    catch (Exception mbx) { Engine.Diag.Debug("Program", "ShowFatalMessage dialog failed", mbx); }
+}
 
     private static void PrintUsage()
     {
@@ -471,15 +572,17 @@ internal static class Program
         Console.WriteLine();
         Console.WriteLine("Usage:");
         Console.WriteLine("  Beep.Installer.exe                         Open the Package Builder (generator UI)");
-        Console.WriteLine("  Beep.Installer.exe /BUILD=<project.bpkg>   Build the installer (headless)");
-        Console.WriteLine("  Beep.Installer.exe /VALIDATE=<project.bpkg> Validate a project without building");
+        Console.WriteLine("  Beep.Installer.exe /BUILD=<script.bsetup>   Build the installer (headless)");
+        Console.WriteLine("  Beep.Installer.exe /VALIDATE=<script.bsetup> Validate a script without building");
         Console.WriteLine("  Beep.Installer.exe /OUT=<dir>              Override output directory (with /BUILD)");
-        Console.WriteLine("  Beep.Installer.exe /PREVIEW=<.bpkg>        Show project summary");
-        Console.WriteLine("  Beep.Installer.exe /CONFIG=<config.json> Run as installer with given config");
+        Console.WriteLine("  Beep.Installer.exe /PREVIEW=<.bsetup>      Show project summary");
+        Console.WriteLine("  Beep.Installer.exe /SCRIPT=<.bsetup> /S    Run installer from a script");
         Console.WriteLine("  Beep.Installer.exe /S [/D=<path>]        Silent install (runtime mode)");
         Console.WriteLine("  Beep.Installer.exe /UNINSTALL [/D=<path>] Silent uninstall (runtime mode)");
         Console.WriteLine("  Beep.Installer.exe /SELFTEST             Install + verify + uninstall in %TEMP%");
         Console.WriteLine("  Beep.Installer.exe /LANGMGR              Open Language Manager");
+        Console.WriteLine("  Beep.Installer.exe /PUBLISH=<.bsetup> [/OUT=<dir>] Publish as ClickOnce");
+        Console.WriteLine("  Beep.Installer.exe /BUILD=<.bsetup> /FORMAT=msix|msixbundle|exe Package as MSIX");
         Console.WriteLine("  Beep.Installer.exe /?                    Show this help");
     }
 }
@@ -489,3 +592,4 @@ internal static class AppInfo
     public const string ProductName = "Beep Installer";
     public const string Version = "1.0.0";
 }
+

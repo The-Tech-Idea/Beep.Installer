@@ -29,7 +29,6 @@ public class PayloadDownloadStep : ISetupStep
 
     public bool CanSkip(SetupContext context)
     {
-        // Skip if no payload.json exists or source is not "Url"
         var url = ResolvePayloadUrl(context);
         return string.IsNullOrWhiteSpace(url);
     }
@@ -50,9 +49,8 @@ public class PayloadDownloadStep : ISetupStep
         if (string.IsNullOrWhiteSpace(url))
             return StepErrorHelpers.Ok("Skipped — no remote payload.");
 
-        var installPath = context.TryGetProperty<string>("InstallPath")
-            ?? throw new InvalidOperationException("InstallPath not set in context.");
-
+        // PayloadDownloadStep must run before any files are copied; InstallPath is
+        // only needed if we fall back to extracting directly into it.
         progress?.Report(new PassedArgs { Messege = $"Downloading payload from {url}…", ParameterInt1 = 0 });
 
         var tempZip = Path.Combine(Path.GetTempPath(), $"BeepPayload_{Guid.NewGuid():N}.zip");
@@ -62,8 +60,13 @@ public class PayloadDownloadStep : ISetupStep
 
             progress?.Report(new PassedArgs { Messege = "Extracting payload…", ParameterInt1 = 90 });
 
-            ZipFile.ExtractToDirectory(tempZip, installPath, overwriteFiles: true);
+            // Extract into a staging directory (NOT the install path) and expose it as
+            // the payload root so FileCopyStep can resolve the rebased relative paths.
+            var folder = ResolvePayloadFolderName(context);
+            var extractRoot = Path.Combine(Path.GetTempPath(), $"BeepPayload_{Guid.NewGuid():N}");
+            var payloadRoot = Engine.PayloadPackager.ExtractZip(tempZip, extractRoot, folder);
 
+            context.Properties["PayloadRoot"] = payloadRoot;
             context.Properties["PayloadExtracted"] = true;
             progress?.Report(new PassedArgs { Messege = "Payload downloaded and extracted.", ParameterInt1 = 100 });
 
@@ -75,7 +78,8 @@ public class PayloadDownloadStep : ISetupStep
         }
         finally
         {
-            try { if (File.Exists(tempZip)) File.Delete(tempZip); } catch { }
+            try { if (File.Exists(tempZip)) File.Delete(tempZip); }
+            catch (Exception ex) { Engine.Diag.Debug("PayloadDownloadStep", "temp zip cleanup failed", ex); }
         }
     }
 
@@ -88,26 +92,15 @@ public class PayloadDownloadStep : ISetupStep
 
     private static string? ResolvePayloadUrl(SetupContext context)
     {
-        // 1) Try to find payload.json next to the exe (written by the builder)
-        var exeDir = AppContext.BaseDirectory;
-        var payloadJsonPath = Path.Combine(exeDir, "payload.json");
-        if (File.Exists(payloadJsonPath))
-        {
-            try
-            {
-                var json = File.ReadAllText(payloadJsonPath);
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
-                var source = doc.RootElement.GetProperty("source").GetString();
-                if (string.Equals(source, "Url", StringComparison.OrdinalIgnoreCase))
-                {
-                    return doc.RootElement.GetProperty("url").GetString();
-                }
-            }
-            catch { /* ignore — fall through to context */ }
-        }
-
-        // 2) Fallback: context property
+        var project = Engine.RuntimeProjectContext.Current;
+        if (project != null && project.PayloadSource == Beep.Installer.Models.PayloadSourceType.Url)
+            return project.PayloadUrl;
         return context.TryGetProperty<string>("PayloadUrl");
+    }
+
+    private static string ResolvePayloadFolderName(SetupContext context)
+    {
+        return Engine.RuntimeProjectContext.Current?.PayloadFolderName ?? "payload";
     }
 
     private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromMinutes(30) };

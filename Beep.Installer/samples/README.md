@@ -8,7 +8,7 @@ This sample demonstrates building a real installer for a tiny "Hello World" app.
   - `MyApp.bat` — sample launcher
   - `readme.txt` — sample readme
   - `docs\help.txt` — sample documentation
-- `MyApp.bpkg` — the Beep Installer project file
+- `MyApp.bsetup` — the editable installer script
 
 ## How to use
 
@@ -16,7 +16,7 @@ This sample demonstrates building a real installer for a tiny "Hello World" app.
 
 ```bash
 Beep.Installer.exe
-# File → Open → samples\MyApp.bpkg
+# File -> Open -> samples\MyApp.bsetup
 # Tweak as desired
 # Click "Build"
 ```
@@ -24,19 +24,17 @@ Beep.Installer.exe
 ### Option B: Headless build
 
 ```bash
-Beep.Installer.exe /BUILD=samples\MyApp.bpkg /OUT=build
+Beep.Installer.exe /BUILD=samples\MyApp.bsetup /OUT=build
 ```
 
-The output folder will contain:
+With the default single-file build, the output folder contains:
 
 ```
 build\
-├── Setup-MyApp-1.0.0.exe      ← ship this
-├── install-config.json
-├── branding.json
-├── project.bpkg
-└── payload.zip
+└── Setup-MyApp-1.0.0.exe      <- self-extracting installer with embedded script + payload
 ```
+
+If payload embedding is disabled, the builder also leaves `script.bsetup` and the payload archive next to the executable.
 
 ### Running the generated installer
 

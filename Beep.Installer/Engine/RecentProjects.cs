@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace Beep.Installer.Engine;
 
 /// <summary>
-/// Persists recently-opened project paths to <c>%APPDATA%\BeepInstaller\recent.json</c>.
+/// Persists recently-opened installer script paths to <c>%APPDATA%\BeepInstaller\recent.json</c>.
 /// </summary>
 public static class RecentProjects
 {
@@ -26,7 +26,7 @@ public static class RecentProjects
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }) ?? new();
         }
-        catch { return new(); }
+        catch (Exception ex) { Diag.Warn("RecentProjects", "failed to load recent list", ex); return new(); }
     }
 
     public static void Save(List<RecentProjectEntry> entries)
@@ -42,7 +42,7 @@ public static class RecentProjects
             });
             File.WriteAllText(_path, json);
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Diag.Warn("RecentProjects", "failed to save recent list", ex); }
     }
 
     public static void Record(string path)
@@ -64,7 +64,7 @@ public static class RecentProjects
         {
             if (File.Exists(_path)) File.Delete(_path);
         }
-        catch { }
+        catch (Exception ex) { Diag.Debug("RecentProjects", "clear failed", ex); }
     }
 }
 

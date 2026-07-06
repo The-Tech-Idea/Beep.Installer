@@ -1,3 +1,4 @@
+using Beep.Installer.Models;
 using System.Drawing;
 using Beep.Installer.Engine;
 using FluentAssertions;

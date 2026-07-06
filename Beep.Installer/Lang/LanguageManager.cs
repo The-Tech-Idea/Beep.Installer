@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Resources;
 using System.Xml.Linq;
+using Beep.Installer.Engine;
 
 namespace Beep.Installer.Lang;
 
@@ -133,7 +134,7 @@ public static class LanguageManager
                     if (e.Key is string k && e.Value is string s) dict[k] = s;
                 if (dict.Count > 0) break;
             }
-            catch { /* try next */ }
+            catch (Exception ex) { Diag.Debug("LanguageManager", $"resource '{name}' skipped", ex); }
         }
 
         // 2) Loose .resx file
@@ -152,7 +153,7 @@ public static class LanguageManager
                         if (!string.IsNullOrEmpty(name) && value != null) dict[name] = value;
                     }
                 }
-                catch { /* ignore */ }
+                catch (Exception ex) { Diag.Debug("LanguageManager", $"loose .resx parse failed for {path}", ex); }
             }
         }
 

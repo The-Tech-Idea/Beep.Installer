@@ -2,14 +2,15 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Beep.Installer.Lang;
+using TheTechIdea.Beep.Winform.Controls;
 
 namespace Beep.Installer.Pages;
 
 public class CompletePage : UserControl, IInstallerPage
 {
-    private Label _icon = null!;
-    private Label _title = null!;
-    private Label _message = null!;
+    private PictureBox _icon = null!;
+    private BeepLabel _title = null!;
+    private BeepLabel _message = null!;
     private CheckBox _launchCheck = null!;
     private CheckBox _openLogCheck = null!;
     private bool _success;
@@ -20,7 +21,7 @@ public class CompletePage : UserControl, IInstallerPage
     public string Subtitle => _success
         ? LanguageManager.GetOrDefault("Complete_Success", "The application has been installed successfully.")
         : LanguageManager.GetOrDefault("Complete_Failure", "There was a problem during installation.");
-    public bool CanGoNext => false; // Last page
+    public bool CanGoNext => false;
     public event EventHandler<bool>? ValidityChanged
     {
         add { }
@@ -33,20 +34,19 @@ public class CompletePage : UserControl, IInstallerPage
 
     public CompletePage()
     {
-        _icon = new Label
+        _icon = new PictureBox
         {
             Location = new Point(0, 0),
             Size = new Size(48, 48),
-            Font = new Font("Segoe UI", 36),
-            Text = "\u2713"
+            SizeMode = PictureBoxSizeMode.Zoom
         };
-        _title = new Label
+        _title = new BeepLabel
         {
             Location = new Point(60, 5),
             Size = new Size(440, 30),
             Font = new Font("Segoe UI", 14, FontStyle.Bold)
         };
-        _message = new Label
+        _message = new BeepLabel
         {
             Location = new Point(0, 65),
             Size = new Size(500, 100),
@@ -76,14 +76,30 @@ public class CompletePage : UserControl, IInstallerPage
     {
         _success = success;
         LogPath = logPath;
-        _icon.Text = success ? "\u2713" : "\u2717";
-        _icon.ForeColor = success ? Color.Green : Color.Red;
         _title.Text = success ? "Installation Complete" : "Installation Failed";
         _message.Text = message;
+
+        _icon.Image = LoadStatusIcon(success);
 
         _launchCheck.Visible = success;
         _openLogCheck.Visible = !string.IsNullOrEmpty(logPath);
         if (_openLogCheck.Visible) _openLogCheck.Tag = logPath;
+    }
+
+    private static Image? LoadStatusIcon(bool success)
+    {
+        try
+        {
+            var asm = typeof(CompletePage).Assembly;
+            var name = success ? "circle-check" : "circle-x";
+            using var stream = asm.GetManifestResourceStream($"Beep.Installer.Resources.Icons.{name}.svg");
+            if (stream == null) return null;
+            var svg = Svg.SvgDocument.Open<Svg.SvgDocument>(stream);
+            var bmp = new Bitmap(48, 48);
+            svg.Draw(bmp);
+            return bmp;
+        }
+        catch { return null; }
     }
 
     public new bool Validate() => true;

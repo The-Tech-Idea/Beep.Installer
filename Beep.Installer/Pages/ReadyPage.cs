@@ -52,16 +52,16 @@ public class ReadyPage : UserControl, IInstallerPage
     public void OnEnter(InstallContext ctx)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Product       : {ctx.Config.ProductName} {ctx.Config.ProductVersion}");
-        sb.AppendLine($"Publisher     : {ctx.Config.Publisher}");
+        sb.AppendLine($"Product       : {ctx.Project.AppName} {ctx.Project.AppVersion}");
+        sb.AppendLine($"Publisher     : {ctx.Project.AppPublisher}");
         sb.AppendLine($"Install type  : {ctx.InstallType}");
         sb.AppendLine($"Install path  : {ctx.InstallPath}");
-        sb.AppendLine($"Start menu    : {ctx.Config.StartMenuFolder}");
+        sb.AppendLine($"Start menu    : {ctx.Project.DefaultGroupName}");
 
         if (ctx.PerUser)
             sb.AppendLine("Scope         : Current user only");
 
-        var components = ctx.Config.Components.Where(c => c.Selected || c.Required).ToList();
+        var components = ctx.Project.Components.Where(c => c.Selected || c.Required).ToList();
         sb.AppendLine();
         sb.AppendLine($"Components ({components.Count}):");
         foreach (var c in components)

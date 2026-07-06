@@ -33,10 +33,7 @@ public static class BannerLoader
             }
             return dst;
         }
-        catch
-        {
-            return null;
-        }
+        catch (Exception ex) { Diag.Warn("BannerLoader", "image load/resize failed", ex); return null; }
     }
 
     /// <summary>Try to load a banner next to the running exe, then fall back to the absolute path.</summary>
