@@ -1,5 +1,0 @@
-MyApp
-Version 1.0.0
-The Tech Idea
-Built 2026-07-01 12:10:29 UTC
-Beep Installer v1.0.0
