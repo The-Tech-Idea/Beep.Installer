@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Beep.Installer sample build output
 Beep.Installer/samples/build/
+
+# Beep.Installer build output (large binaries)
+Beep.Installer/output/
