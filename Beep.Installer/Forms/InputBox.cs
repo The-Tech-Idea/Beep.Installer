@@ -14,6 +14,9 @@ public static class InputBox
             Text = title,
             Size = new Size(440, 160),
             StartPosition = FormStartPosition.CenterParent,
+            // Absolute pixel sizes require DPI auto-scaling, or the dialog clips at 125%+.
+            AutoScaleMode = AutoScaleMode.Dpi,
+            AutoScaleDimensions = new SizeF(96F, 96F),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             MinimizeBox = false,
             MaximizeBox = false

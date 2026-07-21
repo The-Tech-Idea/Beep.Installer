@@ -77,18 +77,8 @@ namespace Beep.Installer.Models
         Compact
     }
 
-    public enum InstallationTypeEx
-    {
-        Typical,
-        Custom,
-        Complete
-    }
-
-    public enum UpdateModeEx
-    {
-        Optional,
-        Required
-    }
+    // InstallationType and UpdateMode come from TheTechIdea.Beep.Installer — this file used
+    // to shadow them with local ...Ex duplicates that existed only to be mapped back.
 
     // ── InstallProject ──
 
@@ -195,8 +185,8 @@ namespace Beep.Installer.Models
             set => SetProperty(ref _appUpdatesURL, value);
         }
 
-        private UpdateModeEx _appUpdateMode = UpdateModeEx.Optional;
-        public UpdateModeEx AppUpdateMode
+        private UpdateMode _appUpdateMode = UpdateMode.Optional;
+        public UpdateMode AppUpdateMode
         {
             get => _appUpdateMode;
             set => SetProperty(ref _appUpdateMode, value);
@@ -239,8 +229,8 @@ namespace Beep.Installer.Models
             set => SetProperty(ref _privilegesRequiredOverridesAllowed, value);
         }
 
-        private InstallationTypeEx _defaultInstallType = InstallationTypeEx.Typical;
-        public InstallationTypeEx DefaultInstallType
+        private InstallationType _defaultInstallType = InstallationType.Typical;
+        public InstallationType DefaultInstallType
         {
             get => _defaultInstallType;
             set => SetProperty(ref _defaultInstallType, value);
@@ -642,33 +632,20 @@ namespace Beep.Installer.Models
             return issues;
         }
 
+        // Field-level behaviour lives in Engine.CustomPageManager; these page-level wrappers
+        // delegate so there is exactly one implementation.
+
         public static (bool ok, string? error) ValidateCustomFields(CustomWizardPage page, Dictionary<string, string> values)
-        {
-            foreach (var f in page.Fields)
-            {
-                if (!f.Required) continue;
-                values.TryGetValue(f.Id, out var v);
-                if (string.IsNullOrWhiteSpace(v) || string.Equals(v, "false", StringComparison.OrdinalIgnoreCase))
-                    return (false, $"'{f.Label}' is required.");
-            }
-            return (true, null);
-        }
+            => Engine.CustomPageManager.Validate(page.Fields, values);
+
+        public static (bool ok, string? error) ValidateCustomFields(IEnumerable<CustomField> fields, Dictionary<string, string> values)
+            => Engine.CustomPageManager.Validate(fields, values);
 
         public static Dictionary<string, string> CollectCustomFields(CustomWizardPage page, Dictionary<string, string> values)
-        {
-            var result = new Dictionary<string, string>();
-            foreach (var f in page.Fields)
-                result[f.Id] = values.TryGetValue(f.Id, out var v) ? (v ?? "") : (f.DefaultValue ?? "");
-            return result;
-        }
+            => Engine.CustomPageManager.Collect(page.Fields, values);
 
         public static string ExpandCustomMacros(string text, Dictionary<string, string>? values)
-        {
-            if (string.IsNullOrEmpty(text) || values == null || values.Count == 0) return text ?? "";
-            foreach (var kv in values)
-                text = text.Replace("{Custom:" + kv.Key + "}", kv.Value ?? "");
-            return text;
-        }
+            => Engine.CustomPageManager.ExpandMacros(text, values);
     }
 
     public class CustomActionIssue

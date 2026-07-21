@@ -1,37 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
-  <data name="Wizard_Title" xml:space="preserve"><value>Beep 安装程序</value></data>
-  <data name="Wizard_Welcome" xml:space="preserve"><value>欢迎</value></data>
-  <data name="Wizard_License" xml:space="preserve"><value>许可协议</value></data>
-  <data name="Wizard_Components" xml:space="preserve"><value>选择组件</value></data>
-  <data name="Wizard_Folder" xml:space="preserve"><value>目标文件夹</value></data>
-  <data name="Wizard_StartMenu" xml:space="preserve"><value>开始菜单文件夹</value></data>
-  <data name="Wizard_Tasks" xml:space="preserve"><value>附加任务</value></data>
-  <data name="Wizard_Ready" xml:space="preserve"><value>准备安装</value></data>
-  <data name="Wizard_Installing" xml:space="preserve"><value>正在安装</value></data>
-  <data name="Wizard_Complete" xml:space="preserve"><value>安装完成</value></data>
-  <data name="Btn_Back" xml:space="preserve"><value>&lt; 上一步</value></data>
-  <data name="Btn_Next" xml:space="preserve"><value>下一步 &gt;</value></data>
-  <data name="Btn_Install" xml:space="preserve"><value>安装</value></data>
-  <data name="Btn_Cancel" xml:space="preserve"><value>取消</value></data>
-  <data name="Btn_Finish" xml:space="preserve"><value>完成</value></data>
-  <data name="Btn_Browse" xml:space="preserve"><value>浏览...</value></data>
-  <data name="License_Accept" xml:space="preserve"><value>我接受协议</value></data>
-  <data name="License_Decline" xml:space="preserve"><value>我不接受协议</value></data>
-  <data name="Comp_Required" xml:space="preserve"><value>必需</value></data>
-  <data name="Comp_Optional" xml:space="preserve"><value>可选</value></data>
-  <data name="Task_DesktopIcon" xml:space="preserve"><value>创建桌面图标</value></data>
-  <data name="Task_AutoStart" xml:space="preserve"><value>Windows 启动时运行 Beep</value></data>
-  <data name="Task_FileAssoc" xml:space="preserve"><value>关联 .beep 文件到 Beep</value></data>
-  <data name="Complete_Success" xml:space="preserve"><value>Beep 安装成功。</value></data>
-  <data name="Complete_Failure" xml:space="preserve"><value>安装失败，请查看日志。</value></data>
-  <data name="Complete_Launch" xml:space="preserve"><value>启动 Beep Data Manager</value></data>
-  <data name="Complete_ViewLog" xml:space="preserve"><value>查看安装日志</value></data>
-  <data name="Error_AdminRequired" xml:space="preserve"><value>需要管理员权限。</value></data>
-  <data name="Error_DiskSpace" xml:space="preserve"><value>磁盘空间不足。</value></data>
-  <data name="Error_DotNetMissing" xml:space="preserve"><value>未找到 .NET。请安装 .NET 9.0 或更高版本。</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Wizard_Title" xml:space="preserve">
+    <value>Beep 安装程序</value>
+  </data>
+  <data name="Wizard_Welcome" xml:space="preserve">
+    <value>欢迎</value>
+  </data>
+  <data name="Wizard_License" xml:space="preserve">
+    <value>许可协议</value>
+  </data>
+  <data name="Wizard_Components" xml:space="preserve">
+    <value>选择组件</value>
+  </data>
+  <data name="Wizard_Folder" xml:space="preserve">
+    <value>目标文件夹</value>
+  </data>
+  <data name="Wizard_StartMenu" xml:space="preserve">
+    <value>开始菜单文件夹</value>
+  </data>
+  <data name="Wizard_Tasks" xml:space="preserve">
+    <value>附加任务</value>
+  </data>
+  <data name="Wizard_Ready" xml:space="preserve">
+    <value>准备安装</value>
+  </data>
+  <data name="Wizard_Installing" xml:space="preserve">
+    <value>正在安装</value>
+  </data>
+  <data name="Wizard_Complete" xml:space="preserve">
+    <value>安装完成</value>
+  </data>
+  <data name="Btn_Back" xml:space="preserve">
+    <value>&lt; 上一步</value>
+  </data>
+  <data name="Btn_Next" xml:space="preserve">
+    <value>下一步 &gt;</value>
+  </data>
+  <data name="Btn_Install" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Btn_Finish" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Btn_Browse" xml:space="preserve">
+    <value>浏览...</value>
+  </data>
+  <data name="License_Accept" xml:space="preserve">
+    <value>我接受协议</value>
+  </data>
+  <data name="License_Decline" xml:space="preserve">
+    <value>我不接受协议</value>
+  </data>
+  <data name="Comp_Required" xml:space="preserve">
+    <value>必需</value>
+  </data>
+  <data name="Comp_Optional" xml:space="preserve">
+    <value>可选</value>
+  </data>
+  <data name="Task_DesktopIcon" xml:space="preserve">
+    <value>创建桌面图标</value>
+  </data>
+  <data name="Task_AutoStart" xml:space="preserve">
+    <value>Windows 启动时运行 Beep</value>
+  </data>
+  <data name="Task_FileAssoc" xml:space="preserve">
+    <value>关联 .beep 文件到 Beep</value>
+  </data>
+  <data name="Complete_Success" xml:space="preserve">
+    <value>Beep 安装成功。</value>
+  </data>
+  <data name="Complete_Failure" xml:space="preserve">
+    <value>安装失败，请查看日志。</value>
+  </data>
+  <data name="Complete_Launch" xml:space="preserve">
+    <value>启动 Beep Data Manager</value>
+  </data>
+  <data name="Complete_ViewLog" xml:space="preserve">
+    <value>查看安装日志</value>
+  </data>
+  <data name="Error_AdminRequired" xml:space="preserve">
+    <value>需要管理员权限。</value>
+  </data>
+  <data name="Error_DiskSpace" xml:space="preserve">
+    <value>磁盘空间不足。</value>
+  </data>
+  <data name="Error_DotNetMissing" xml:space="preserve">
+    <value>未找到 .NET。请安装 .NET 9.0 或更高版本。</value>
+  </data>
+  <data name="Welcome_Description" xml:space="preserve">
+    <value>本向导将引导您完成安装。单击“下一步”继续。</value>
+  </data>
+  <data name="Welcome_Subtitle" xml:space="preserve">
+    <value>安装程序将在您的计算机上安装 {0}。</value>
+  </data>
+  <data name="License_Prompt" xml:space="preserve">
+    <value>您是否接受此许可协议的条款？</value>
+  </data>
+  <data name="Comp_TotalSize" xml:space="preserve">
+    <value>已选总计：{0} MB</value>
+  </data>
+  <data name="Folder_Prompt" xml:space="preserve">
+    <value>请选择应用程序的安装文件夹：</value>
+  </data>
+  <data name="Folder_AvailableSpace" xml:space="preserve">
+    <value>可用空间：{0} GB</value>
+  </data>
+  <data name="Folder_SpaceUnknown" xml:space="preserve">
+    <value>无法检查磁盘空间。</value>
+  </data>
+  <data name="StartMenu_Prompt" xml:space="preserve">
+    <value>请选择用于创建快捷方式的“开始”菜单文件夹：</value>
+  </data>
+  <data name="StartMenu_Skip" xml:space="preserve">
+    <value>不创建“开始”菜单文件夹</value>
+  </data>
+  <data name="Install_Starting" xml:space="preserve">
+    <value>正在开始安装...</value>
+  </data>
+  <data name="Install_CopyFiles" xml:space="preserve">
+    <value>正在复制文件...</value>
+  </data>
+  <data name="Install_Shortcuts" xml:space="preserve">
+    <value>正在创建快捷方式...</value>
+  </data>
+  <data name="Install_Registry" xml:space="preserve">
+    <value>正在写入注册表项...</value>
+  </data>
+  <data name="Install_Verifying" xml:space="preserve">
+    <value>正在验证安装...</value>
+  </data>
+  <data name="Install_Preparing" xml:space="preserve">
+    <value>正在准备安装…</value>
+  </data>
+  <data name="Install_Progress" xml:space="preserve">
+    <value>正在安装 {0}…（{1}%）</value>
+  </data>
+  <data name="Install_CancelDisabled" xml:space="preserve">
+    <value>安装开始后无法中断。</value>
+  </data>
+  <data name="Nav_Project" xml:space="preserve">
+    <value>项目</value>
+  </data>
+  <data name="Nav_Source" xml:space="preserve">
+    <value>源</value>
+  </data>
+  <data name="Nav_Features" xml:space="preserve">
+    <value>功能</value>
+  </data>
+  <data name="Nav_Customize" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="Nav_Build" xml:space="preserve">
+    <value>生成</value>
+  </data>
+  <data name="Btn_Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="Btn_Remove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="Btn_Rescan" xml:space="preserve">
+    <value>重新扫描</value>
+  </data>
+  <data name="Btn_Apply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="Builder_SourceDir" xml:space="preserve">
+    <value>源目录：</value>
+  </data>
+  <data name="Builder_NoScan" xml:space="preserve">
+    <value>尚未扫描。</value>
+  </data>
+  <data name="Builder_Modified" xml:space="preserve">
+    <value>已修改</value>
+  </data>
+  <data name="Builder_Recent" xml:space="preserve">
+    <value>最近使用</value>
+  </data>
 </root>

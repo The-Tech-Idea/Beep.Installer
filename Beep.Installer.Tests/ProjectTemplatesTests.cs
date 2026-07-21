@@ -76,7 +76,7 @@ public class ProjectTemplatesTests
             p.CompressPayload = false;
             p.CreateUninstallEntry = false;
             p.UseTestDefaults();
-            var result = new InstallerBuilder().Build(p);
+            var result = TestHelpers.TestPipeline().Run(p);
 
             result.Success.Should().BeTrue(result.Errors.Count > 0 ? result.Errors[0] : "build should succeed");
             File.Exists(Path.Combine(p.OutputDir, "script.bsetup")).Should().BeTrue();
@@ -97,3 +97,4 @@ public class ProjectTemplatesTests
         finally { try { Directory.Delete(src, recursive: true); } catch { } }
     }
 }
+

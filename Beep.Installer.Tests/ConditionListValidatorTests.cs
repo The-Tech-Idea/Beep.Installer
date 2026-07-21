@@ -24,7 +24,7 @@ public class ConditionListValidatorTests
 
     [Fact]
     public void Architecture_WithoutValue_IsError()
-        => ConditionListValidator.Validate(new List<InstallCondition> { Cond(ConditionType.ArchitecturesAllowed) })
+        => ConditionListValidator.Validate(new List<InstallCondition> { Cond(ConditionType.Architecture) })
             .Should().Contain(i => i.Severity == ConditionListValidator.IssueSeverity.Error);
 
     [Fact]
@@ -70,3 +70,4 @@ public class ConditionListValidatorTests
         => ConditionListValidator.Validate(new List<InstallCondition> { Cond(ConditionType.OsVersion, "10.0.0", null, "%%") })
             .Should().Contain(i => i.Message.Contains("Operator"));
 }
+

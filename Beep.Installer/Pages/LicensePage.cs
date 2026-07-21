@@ -28,7 +28,7 @@ public class LicensePage : UserControl, IInstallerPage
 
         _title = new BeepLabel
         {
-            Text = "License Agreement",
+            Text = LanguageManager.GetOrDefault("Wizard_License", "License Agreement"),
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             Location = new Point(32, 24),
             AutoSize = true
@@ -47,7 +47,7 @@ public class LicensePage : UserControl, IInstallerPage
 
         _prompt = new BeepLabel
         {
-            Text = "Do you accept the terms of this license agreement?",
+            Text = LanguageManager.GetOrDefault("License_Prompt", "Do you accept the terms of this license agreement?"),
             Location = new Point(32, 358),
             Size = new Size(620, 20),
             AutoSize = true,

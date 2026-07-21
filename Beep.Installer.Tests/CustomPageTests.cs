@@ -95,7 +95,7 @@ public class CustomPageTests
 project.UseTestDefaults();
             project.CreateUninstallEntry = false;
 project.UseTestDefaults();
-            new InstallerBuilder().Build(project).Success.Should().BeTrue();
+            TestHelpers.TestPipeline().Run(project).Success.Should().BeTrue();
 
             var scriptPath = Path.Combine(project.OutputDir, "script.bsetup");
             var (runtimeProject, err) = InstallerScriptSerializer.Load(scriptPath);
@@ -108,4 +108,5 @@ project.UseTestDefaults();
         finally { try { Directory.Delete(tmp, recursive: true); } catch { } }
     }
 }
+
 

@@ -1,5 +1,7 @@
+using Beep.Installer.Engine;
 using Beep.Installer.Models;
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32;
@@ -11,7 +13,7 @@ using Xunit;
 
 namespace Beep.Installer.Tests;
 
-/// <summary>Phase 1 (Track A3.3) â€” COM server registration (install â†’ unregister).</summary>
+/// <summary>Phase 1 (Track A3.3) — COM server registration (install → unregister).</summary>
 public class ComRegistrationTests : IDisposable
 {
     private readonly string _tempRoot;
@@ -46,19 +48,15 @@ public class ComRegistrationTests : IDisposable
         var config = new InstallProject
         {
             AppName = "ComTest", AppVersion = "1.0.0",
-            PrivilegesRequired = PrivilegeLevel.Admin, // per-user â†’ HKCU\Software\Classes (no admin)
-            Components = new List<InstallComponent>
+            PrivilegesRequired = PrivilegeLevel.Admin, // per-user → HKCU\Software\Classes (no admin)
+            Components = new ObservableCollection<InstallComponent>
             {
                 new() { Id = "c", Name = "C", Required = true, Selected = true,
                         ComRegistrations = new() { com } }
             }
         };
 
-        var context = new SetupContext();
-        context.Properties["InstallProject"] = config;
-        context.Properties["InstallPath"] = installDir;
-        context.Properties["PerUser"] = true;
-        return context;
+        return InstallContextBuilder.ForInstall(config, installDir, perUser: true);
     }
 
     [Fact]
@@ -91,12 +89,11 @@ public class ComRegistrationTests : IDisposable
         // Simulate the manifest + uninstall reversing it
         var written = ctx.TryGetProperty<List<ComRegistration>>("ComRegistrationsWritten")!;
         written.Should().HaveCount(1);
-        ctx.Properties["InstallProject"] = ctx.TryGetProperty<InstallProject>("InstallProject");
 
         var uninstallDir = ctx.TryGetProperty<string>("InstallPath")!;
         var manifest = new UninstallManifest
         {
-            AppName = "ComTest", InstallPath = uninstallDir,
+            ProductName = "ComTest", InstallPath = uninstallDir,
             ComRegistrations = written
         };
         var manifestPath = Path.Combine(uninstallDir, "install-manifest.json");
@@ -116,7 +113,9 @@ public class ComRegistrationTests : IDisposable
     public void ComRegistration_CanSkip_WhenNone()
     {
         var ctx = MakeContext(new ComRegistration { Clsid = "", ProgId = "", DllPath = "" });
-        ctx.TryGetProperty<InstallProject>("InstallProject")!.Components[0].ComRegistrations.Clear();
+        ctx.TryGetProperty<InstallConfig>("InstallConfig")!.Components[0].ComRegistrations.Clear();
         new ComServerRegistrationStep().CanSkip(ctx).Should().BeTrue();
     }
 }
+
+

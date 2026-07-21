@@ -17,7 +17,7 @@ public class EmbeddedPayloadTests
         Directory.CreateDirectory(tmp);
         try
         {
-            // Create a minimal InstallerOutputFormat.Exe (any bytes) and a payload zip.
+            // Create a minimal "exe" (any bytes) and a payload zip.
             var exe = Path.Combine(tmp, "Setup.exe");
             File.WriteAllBytes(exe, new byte[] { 0x4D, 0x5A, 0x90, 0x00 }); // fake MZ header
             var zip = Path.Combine(tmp, "payload.zip");
@@ -65,3 +65,4 @@ public class EmbeddedPayloadTests
         finally { try { Directory.Delete(tmp, recursive: true); } catch { } }
     }
 }
+

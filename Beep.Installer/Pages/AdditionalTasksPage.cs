@@ -32,7 +32,7 @@ public class AdditionalTasksPage : UserControl, IInstallerPage
 
         _title = new BeepLabel
         {
-            Text = "Additional Tasks",
+            Text = LanguageManager.GetOrDefault("Wizard_Tasks", "Additional Tasks"),
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             Location = new Point(32, 24),
             AutoSize = true

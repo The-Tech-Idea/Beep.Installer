@@ -25,6 +25,9 @@ public class BuildProgressForm : Form
         Text = title;
         Size = new Size(440, 140);
         StartPosition = FormStartPosition.CenterParent;
+        // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;

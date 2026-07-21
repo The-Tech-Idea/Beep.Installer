@@ -36,9 +36,10 @@ public class InstallerScriptSerializerTests : IDisposable
         p.AppVersion.Should().Be("2.5.1");
         p.AppPublisher.Should().Be("ACME Inc");
         p.SourceDirectory.Should().Be(@"C:\src");
-        p.OutputBaseFilename.Should().Be("Setup-MyApp-2.5.1.exe");
+        // Base name only — BuildPipeline appends the extension via EnsureExeFileName.
+        p.OutputBaseFilename.Should().Be("Setup-MyApp-2.5.1");
         p.CompressPayload.Should().BeTrue();
-        p.ArchitecturesAllowed.Should().Be(Architecture.X64);
+        p.ArchitecturesAllowed.Should().Be(Architecture.X64Compatible); // model default
     }
 
     [Fact]
@@ -48,7 +49,7 @@ public class InstallerScriptSerializerTests : IDisposable
 
         p.AppName.Should().Be("MyApplication");
         p.AppVersion.Should().Be("1.0.0");
-        p.AppPublisher.Should().Be("AppPublisher");
+        p.AppPublisher.Should().Be("Publisher");
     }
 
     [Fact]
@@ -108,7 +109,7 @@ public class InstallerScriptSerializerTests : IDisposable
 
         InstallerScriptSerializer.ReadScalar(path, "product").Should().Be("Scalar");
         InstallerScriptSerializer.ReadScalar(path, "version").Should().Be("1.0");
-        InstallerScriptSerializer.ReadScalar(path, "AppPublisher").Should().Be("P");
+        InstallerScriptSerializer.ReadScalar(path, "publisher").Should().Be("P");
         InstallerScriptSerializer.ReadScalar(path, "unknown-prop").Should().BeNull();
     }
 
@@ -162,6 +163,8 @@ public class InstallerScriptSerializerTests : IDisposable
         project!.ProjectName.Should().Be("InstallerScript");
         project.AppName.Should().Be("ScriptApp");
         project.AppVersion.Should().Be("4.2.0");
+        // The .bsetup loader normalizes this to an .exe filename (the factory does not —
+        // an inconsistency worth reconciling, tracked in the plan).
         project.OutputBaseFilename.Should().Be("Setup-ScriptApp.exe");
         project.SingleFile.Should().BeTrue();
         project.Components.Should().ContainSingle(c => c.Id == "core");
@@ -179,7 +182,8 @@ public class InstallerScriptSerializerTests : IDisposable
         original.SourceIncludes.Add("bin/**");
         original.SourceExcludes.Clear();
         original.SourceExcludes.Add("**/*.tmp");
-        original.EnabledWizardPages.AddRange(new[] { "Welcome", "Destination Folder", "Complete (launch / log)" });
+        foreach (var page in new[] { "Welcome", "Destination Folder", "Complete (launch / log)" })
+            original.EnabledWizardPages.Add(page);
 
         original.AppSupportURL = "https://example.test/support";
         original.DefaultDirName = @"%ProgramFiles%\FullTabs";
@@ -197,7 +201,7 @@ public class InstallerScriptSerializerTests : IDisposable
             IncludedIn = InstallationType.Typical,
             Conditions = new()
             {
-                new() { Type = ConditionType.ArchitecturesAllowed, Value = Architecture.X64, Operator = "==" }
+                new() { Type = ConditionType.Architecture, Value = "x64", Operator = "==" }
             },
             Files = new()
             {
@@ -244,7 +248,7 @@ public class InstallerScriptSerializerTests : IDisposable
         original.AppName = "FullTabs";
         original.WindowTitle = "FullTabs Setup";
         original.WelcomeTitle = "Welcome to FullTabs";
-        original.var pub = "ACME";
+        original.AppPublisher = "ACME";
         original.AppPublisherURL = "https://example.test";
         original.AppSupportEmail = "support@example.test";
         original.WizardImageFile = @"assets\banner.png";
@@ -268,10 +272,10 @@ public class InstallerScriptSerializerTests : IDisposable
         original.PayloadUrl = "https://example.test/payload.zip";
         original.AllowScopeSelection = false;
         original.DefaultScope = InstallationScope.User;
-        original.ArchitecturesAllowed = "arm64";
+        original.ArchitecturesAllowed = Architecture.Arm64;
         original.Compression = CompressionFormat.Zip;
         original.CompressPayload = true;
-        original.CompressionLevel = 9;
+        original.CompressionLevel = CompressionStrength.Maximum;
         original.SolidCompression = true;
         original.SingleFile = true;
         original.SelfContained = false;

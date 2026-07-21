@@ -125,6 +125,46 @@ public static class InstallerScriptSerializer
         }
     }
 
+    /// <summary>
+    /// Resolves paths written relative to the script against the script's own folder,
+    /// **in memory only**.
+    ///
+    /// A <c>.bsetup</c> is a portable document, so <c>SourceDir=samples\HelloApp</c> means
+    /// "relative to this script". Resolving it against the process working directory instead
+    /// meant the very same script built correctly from one folder and produced an installer
+    /// with an empty payload from another, reported only as a warning.
+    ///
+    /// This is deliberately NOT called from <see cref="Load"/>: baking absolute machine paths
+    /// into a loaded project would write them back on the next save and destroy the script's
+    /// portability. Callers that are about to *consume* the paths — a build, or opening a
+    /// project in the builder — invoke it explicitly.
+    /// </summary>
+    public static void ResolveRelativePaths(InstallProject project, string scriptPath)
+    {
+        var scriptDir = Path.GetDirectoryName(Path.GetFullPath(scriptPath));
+        if (string.IsNullOrEmpty(scriptDir)) return;
+
+        project.SourceDirectory = Rebase(project.SourceDirectory, scriptDir);
+        project.LicenseFile = Rebase(project.LicenseFile, scriptDir);
+        project.SetupIconFile = Rebase(project.SetupIconFile, scriptDir);
+        project.WizardImageFile = Rebase(project.WizardImageFile, scriptDir);
+
+        // Per-file Source paths in [Files] are script-relative too. Without this a hand-written
+        // script staged nothing, because every declared file resolved against the wrong root.
+        foreach (var component in project.Components)
+            foreach (var file in component.Files ?? new List<FileCopyOperation>())
+                file.SourcePath = Rebase(file.SourcePath, scriptDir);
+
+        static string Rebase(string value, string baseDir)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return value;
+            if (Path.IsPathRooted(value)) return value;
+            // Leave macro-bearing values (e.g. %ProgramFiles%\App) for the runtime to expand.
+            if (value.Contains('%')) return value;
+            return Path.GetFullPath(Path.Combine(baseDir, value));
+        }
+    }
+
     public static (bool ok, string? error) Save(InstallProject project, string path)
     {
         try
@@ -165,7 +205,12 @@ public static class InstallerScriptSerializer
         public string? LicenseTextOverride { get; set; }
         public bool? Prefer64BitOverride { get; set; }
         public List<RegistryOperation>? ExtraRegistryEntries { get; set; }
-        public Func<string, string>? FilePathRebaser { get; set; }
+        /// <summary>
+        /// Rewrites the <c>Source:</c> path written for each file. Receives the whole
+        /// operation because a correct rebase depends on <see cref="FileCopyOperation.DestinationPath"/>
+        /// (where the build actually stages the file), not just its original source path.
+        /// </summary>
+        public Func<FileCopyOperation, string>? FilePathRebaser { get; set; }
     }
 
     public static string Write(InstallProject project, ScriptOutputOptions? options = null)
@@ -282,7 +327,7 @@ public static class InstallerScriptSerializer
                 AppendDirective(sb, "Description", c.Description);
                 AppendDirective(sb, "Required", YesNo(c.Required));
                 AppendDirective(sb, "Selected", YesNo(c.Selected));
-                AppendDirective(sb, "Types", MapDefaultInstallTypeToString(MapToInstallationTypeEx(c.IncludedIn)));
+                AppendDirective(sb, "Types", MapDefaultInstallTypeToString(c.IncludedIn));
                 sb.AppendLine();
             }
         }
@@ -997,37 +1042,30 @@ public static class InstallerScriptSerializer
         _ => "x64compatible"
     };
 
-    private static string MapDefaultInstallTypeToString(InstallationTypeEx value) => value switch
+    private static string MapDefaultInstallTypeToString(InstallationType value) => value switch
     {
-        InstallationTypeEx.Typical => "typical",
-        InstallationTypeEx.Custom => "custom",
+        InstallationType.Typical => "typical",
+        InstallationType.Custom => "custom",
         _ => "complete"
     };
 
-    private static InstallationTypeEx MapStringToDefaultInstallType(string value) => value.ToLowerInvariant() switch
+    private static InstallationType MapStringToDefaultInstallType(string value) => value.ToLowerInvariant() switch
     {
-        "typical" => InstallationTypeEx.Typical,
-        "custom" => InstallationTypeEx.Custom,
-        _ => InstallationTypeEx.Complete
+        "typical" => InstallationType.Typical,
+        "custom" => InstallationType.Custom,
+        _ => InstallationType.Complete
     };
 
-    private static InstallationTypeEx MapToInstallationTypeEx(InstallationType value) => value switch
+    private static string MapUpdateModeToString(UpdateMode value) => value switch
     {
-        InstallationType.Typical => InstallationTypeEx.Typical,
-        InstallationType.Custom => InstallationTypeEx.Custom,
-        _ => InstallationTypeEx.Complete
-    };
-
-    private static string MapUpdateModeToString(UpdateModeEx value) => value switch
-    {
-        UpdateModeEx.Optional => "optional",
+        UpdateMode.Optional => "optional",
         _ => "required"
     };
 
-    private static UpdateModeEx MapStringToUpdateMode(string value) => value.ToLowerInvariant() switch
+    private static UpdateMode MapStringToUpdateMode(string value) => value.ToLowerInvariant() switch
     {
-        "required" => UpdateModeEx.Required,
-        _ => UpdateModeEx.Optional
+        "required" => UpdateMode.Required,
+        _ => UpdateMode.Optional
     };
 
     private static CompressionFormat ParseCompression(string value) => value.ToLowerInvariant() switch
@@ -1138,9 +1176,9 @@ public static class InstallerScriptSerializer
         sb.Append("; ").Append(key).Append(": ").Append(Quote(value));
     }
 
-    private static void WriteFileDirective(StringBuilder sb, FileCopyOperation file, string componentId, Func<string, string>? rebaser = null)
+    private static void WriteFileDirective(StringBuilder sb, FileCopyOperation file, string componentId, Func<FileCopyOperation, string>? rebaser = null)
     {
-        var sourcePath = rebaser != null ? rebaser(file.SourcePath) : file.SourcePath;
+        var sourcePath = rebaser != null ? rebaser(file) : file.SourcePath;
         sb.Append("Source: ").Append(Quote(sourcePath));
         var destDir = Path.GetDirectoryName(file.DestinationPath)?.Replace("%InstallPath%", "", StringComparison.OrdinalIgnoreCase).Replace('/', '\\') ?? "";
         AppendDirective(sb, "DestDir", string.IsNullOrWhiteSpace(destDir) ? "{app}" : "{app}\\" + destDir.Trim('\\'));

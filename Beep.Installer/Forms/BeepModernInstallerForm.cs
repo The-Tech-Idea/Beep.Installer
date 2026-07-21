@@ -49,16 +49,69 @@ public class BeepModernInstallerForm : BeepiFormPro
     private const string IconNs = "Beep.Installer.Resources.Icons";
     private const int SidebarWidth = 260;
 
-    private static readonly (string Name, string Icon)[] Steps =
+    /// <summary>Accent colour from the project's branding; used for the primary action.</summary>
+    private Color _accentColor = Color.FromArgb(41, 98, 255);
+
+    /// <summary>
+    /// Applies the authored setup icon to the window. Best effort — a missing or malformed
+    /// icon must not stop an install.
+    /// </summary>
+    private void ApplyWindowIcon()
     {
-        ("Welcome", "home.svg"),
-        ("License", "license.svg"),
-        ("Prerequisites", "shield-check.svg"),
-        ("Components", "puzzle.svg"),
-        ("Folder", "folder-open.svg"),
-        ("Start Menu", "menu.svg"),
-        ("Ready", "rocket.svg"),
+        var iconPath = _project.SetupIconFile;
+        if (string.IsNullOrWhiteSpace(iconPath)) return;
+
+        // The build copies the authored icon next to the runtime script as setup.ico.
+        var candidates = new[]
+        {
+            iconPath,
+            Path.Combine(AppContext.BaseDirectory, "setup.ico"),
+            Path.Combine(_project.SourceDirectory ?? "", "setup.ico"),
+        };
+
+        foreach (var candidate in candidates)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(candidate) || !File.Exists(candidate)) continue;
+                Icon = new Icon(candidate);
+                return;
+            }
+            catch (Exception ex) { Engine.Diag.Debug("Wizard", $"setup icon '{candidate}' rejected", ex); }
+        }
+    }
+
+    /// <summary>Mixes <paramref name="from"/> toward <paramref name="to"/> by <paramref name="amount"/> (0..1).</summary>
+    private static Color Blend(Color from, Color to, double amount)
+        => Color.FromArgb(
+            (int)(from.R + (to.R - from.R) * amount),
+            (int)(from.G + (to.G - from.G) * amount),
+            (int)(from.B + (to.B - from.B) * amount));
+
+    /// <summary>
+    /// Sidebar icon per page type. The sidebar itself is generated from the real page list
+    /// (see <see cref="SyncStepperToPages"/>) rather than a parallel hardcoded array — the two
+    /// had drifted apart, so every step from "Additional Tasks" onward showed the wrong label.
+    /// </summary>
+    private static string IconFor(IInstallerPage page) => page switch
+    {
+        WelcomePage => "home.svg",
+        LicensePage => "license.svg",
+        PrerequisitePage => "shield-check.svg",
+        ComponentSelectionPage => "puzzle.svg",
+        FolderPage => "folder-open.svg",
+        StartMenuPage => "menu.svg",
+        AdditionalTasksPage => "checklist.svg",
+        ReadyPage => "rocket.svg",
+        _ => "package.svg",
     };
+
+    /// <summary>
+    /// Pages that appear in the sidebar: everything except the terminal Complete and Error
+    /// pages, which are outcomes rather than steps the user navigates to.
+    /// </summary>
+    private int NavigablePageCount
+        => _pages.Count(p => p is not CompletePage && p is not ErrorPage);
 
     public BeepModernInstallerForm(InstallProject project, bool previewMode = false)
     {
@@ -82,15 +135,39 @@ public class BeepModernInstallerForm : BeepiFormPro
 
         InitializeUi();
         BuildPages();
+        SyncStepperToPages();   // must follow BuildPages: the sidebar mirrors the real pages
+
+        // Arabic/Hebrew/Persian/Urdu translations shipped, but RtlHelper had no callers, so
+        // those users got a left-to-right layout. Applied after the control tree exists so the
+        // recursive pass reaches every child.
+        ApplyLayoutDirection();
+
         Engine.Accessibility.EnsureAccessibility(this);
         NavigateTo(0);
     }
 
     private void InitializeUi()
     {
-        var theme = BeepThemesManager.CurrentTheme;
-        var bg = theme?.BackColor ?? Color.White;
-        var sidebarBg = Color.FromArgb(245, 246, 250);
+        // Content surface comes from the shared token layer; the sidebar can still be
+        // overridden per-project by the author's branding below.
+        var bg = Ui.InstallerTheme.Panel;
+
+        // Wizard pages position children in absolute pixels, so without DPI auto-scaling
+        // they clip at 125% and above.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
+
+        // Branding the author configured in the builder — sidebar colours, accent, banner and
+        // window icon — used to be collected, written into the .bsetup, and then ignored here:
+        // the wizard hardcoded its palette and never called ThemeLoader or BannerLoader at all.
+        var sidebarBg = Engine.ThemeLoader.ParseColor(
+            _project.SidebarBackgroundColor, Color.FromArgb(245, 246, 250));
+        var sidebarFg = Engine.ThemeLoader.ParseColor(
+            _project.SidebarTextColor, Color.FromArgb(30, 30, 40));
+        _accentColor = Engine.ThemeLoader.ParseColor(
+            _project.AccentColor, Color.FromArgb(41, 98, 255));
+
+        ApplyWindowIcon();
 
         // ── Sidebar host ─────────────────────────────────────────────
         var sidebar = new Panel
@@ -116,7 +193,7 @@ public class BeepModernInstallerForm : BeepiFormPro
         _sidebarProduct = new BeepLabel
         {
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
-            ForeColor = Color.FromArgb(30, 30, 40),
+            ForeColor = sidebarFg,
             Dock = DockStyle.Top,
             Height = 32,
             AutoSize = false,
@@ -127,7 +204,7 @@ public class BeepModernInstallerForm : BeepiFormPro
         _sidebarVersion = new BeepLabel
         {
             Font = new Font("Segoe UI", 9),
-            ForeColor = Color.FromArgb(120, 120, 135),
+            ForeColor = Blend(sidebarFg, sidebarBg, 0.45),
             Dock = DockStyle.Top,
             Height = 20,
             AutoSize = false,
@@ -143,15 +220,8 @@ public class BeepModernInstallerForm : BeepiFormPro
         // Build the strongly-typed step models. StepModel.ImagePath flows
         // through to the painter; ListItems is left empty to avoid the
         // stepper's ListChanged handler rebuilding from the wrong source.
+        // Populated from the real page list once BuildPages() has run — see SyncStepperToPages.
         var models = new BindingList<StepModel>();
-        for (int i = 0; i < Steps.Length; i++)
-        {
-            models.Add(new StepModel
-            {
-                Text = Steps[i].Name,
-                ImagePath = $"{IconNs}.{Steps[i].Icon}",
-            });
-        }
 
         _stepper = new BeepStepperBar
         {
@@ -228,6 +298,9 @@ public class BeepModernInstallerForm : BeepiFormPro
             ImagePath = $"{IconNs}.arrow-right.svg",
             Size = new Size(140, 42),
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
+            // The authored accent colour marks the primary action.
+            BackColor = _accentColor,
+            ForeColor = Blend(_accentColor, Color.White, 0.85),
         };
         _nextBtn.Click += OnNextClicked;
 
@@ -289,7 +362,7 @@ public class BeepModernInstallerForm : BeepiFormPro
         _stepper.StepChanged += (_, e) =>
         {
             if (e.NewStepIndex == _currentPage) return;
-            NavigateTo(e.NewStepIndex);
+            NavigateFromStepper(e.NewStepIndex);
         };
 
         PerformLayout();
@@ -334,6 +407,74 @@ public class BeepModernInstallerForm : BeepiFormPro
             lic.ValidityChanged += (_, ok) => _nextBtn.Enabled = ok;
     }
 
+    /// <summary>
+    /// Mirrors the wizard for right-to-left cultures. No-op for left-to-right languages.
+    /// </summary>
+    private void ApplyLayoutDirection()
+    {
+        try
+        {
+            if (Engine.RtlHelper.IsRtl(LanguageManager.CurrentCulture.TwoLetterISOLanguageName))
+                Engine.RtlHelper.ApplyRtl(this);
+        }
+        catch (Exception ex)
+        {
+            // A layout-direction failure must never stop an install.
+            Engine.Diag.Warn("Wizard", "RTL layout could not be applied", ex);
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the sidebar from the real page list. Keeping a separate hardcoded array meant
+    /// the two could disagree — and they did: the array stopped at "Ready" and omitted
+    /// Additional Tasks, so from that point on every step showed the wrong name, and custom
+    /// wizard pages never appeared at all.
+    /// </summary>
+    private void SyncStepperToPages()
+    {
+        var models = new BindingList<StepModel>();
+        foreach (var page in _pages)
+        {
+            if (page is CompletePage or ErrorPage) continue;
+            models.Add(new StepModel
+            {
+                Text = page.PageTitle,
+                ImagePath = $"{IconNs}.{IconFor(page)}",
+            });
+        }
+        _stepper.StepModels = models;
+    }
+
+    /// <summary>
+    /// Handles a click on the sidebar. Jumping backwards is free; jumping forwards must clear
+    /// every page in between, because the sidebar previously navigated straight to the target
+    /// and skipped their validation entirely — letting the user step over the licence,
+    /// prerequisite and component pages.
+    /// </summary>
+    private void NavigateFromStepper(int target)
+    {
+        if (target < 0 || target >= _pages.Count) return;
+
+        if (_installComplete || target <= _currentPage)
+        {
+            NavigateTo(target);
+            return;
+        }
+
+        for (int i = _currentPage; i < target; i++)
+        {
+            if (_pages[i].CanGoNext && _pages[i].Validate()) { CapturePageState(); continue; }
+
+            // Land the user on the page that still needs attention rather than silently
+            // refusing the click.
+            NavigateTo(i);
+            return;
+        }
+
+        CapturePageState();
+        NavigateTo(target);
+    }
+
     private void NavigateTo(int index)
     {
         if (index < 0 || index >= _pages.Count) return;
@@ -350,6 +491,10 @@ public class BeepModernInstallerForm : BeepiFormPro
         _nextBtn.Enabled = page.CanGoNext;
         ApplyButtonText();
 
+        // _content.Controls.Clear() above destroys the focused control, leaving focus nowhere:
+        // keyboard and screen-reader users lost their place on every page change.
+        FocusFirstControl(ctrl);
+
         // Mark the stepper state via SetStepState only -- never assign
         // CurrentStep (its setter starts the 60 FPS animation timer; we
         // disabled animations anyway, but staying on SetStepState avoids
@@ -360,6 +505,29 @@ public class BeepModernInstallerForm : BeepiFormPro
             _stepper.SetStepState(index, StepState.Active);
         for (int i = index + 1; i < _stepper.StepCount; i++)
             _stepper.SetStepState(i, StepState.Pending);
+    }
+
+    /// <summary>
+    /// Moves focus to the first control the user can interact with on the newly shown page,
+    /// falling back to Next so focus is never left on nothing.
+    /// </summary>
+    private void FocusFirstControl(Control pageControl)
+    {
+        var target = FindFocusable(pageControl);
+        if (target != null) target.Focus();
+        else if (_nextBtn.Enabled) _nextBtn.Focus();
+
+        static Control? FindFocusable(Control parent)
+        {
+            foreach (Control child in parent.Controls)
+            {
+                if (child.CanSelect && child.TabStop && child.Enabled && child.Visible)
+                    return child;
+                var nested = FindFocusable(child);
+                if (nested != null) return nested;
+            }
+            return null;
+        }
     }
 
     private void ApplyButtonText()
@@ -413,6 +581,65 @@ public class BeepModernInstallerForm : BeepiFormPro
         }
     }
 
+    /// <summary>
+    /// Builds the install progress surface: a headline, a determinate bar and a detail line.
+    /// </summary>
+    private (Panel host, Label headline, ProgressBar bar, Label detail) BuildProgressPanel()
+    {
+        var host = new Panel { Dock = DockStyle.Fill };
+
+        var stack = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            Padding = new Padding(48, 0, 48, 0),
+        };
+        // Spacer / headline / bar / detail — the spacer centres the group vertically.
+        stack.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        stack.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        var headline = new Label
+        {
+            Text = LanguageManager.GetOrDefault("Install_Preparing", "Preparing installation…"),
+            Dock = DockStyle.Fill,
+            AutoSize = false,
+            Height = 32,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 12),
+        };
+
+        var bar = new ProgressBar
+        {
+            Dock = DockStyle.Fill,
+            Height = 22,
+            Minimum = 0,
+            Maximum = 100,
+            Style = ProgressBarStyle.Continuous,
+        };
+
+        var detail = new Label
+        {
+            Text = "",
+            Dock = DockStyle.Fill,
+            AutoSize = false,
+            Height = 26,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Color.FromArgb(98, 107, 119),
+            Font = new Font("Segoe UI", 9),
+        };
+
+        stack.Controls.Add(new Panel { Dock = DockStyle.Fill }, 0, 0);
+        stack.Controls.Add(headline, 0, 1);
+        stack.Controls.Add(bar, 0, 2);
+        stack.Controls.Add(detail, 0, 3);
+        host.Controls.Add(stack);
+
+        return (host, headline, bar, detail);
+    }
+
     private async Task RunInstallAsync()
     {
         CapturePageState();
@@ -424,7 +651,17 @@ public class BeepModernInstallerForm : BeepiFormPro
         }
 
         _content.Controls.Clear();
-        _backBtn.Enabled = false; _nextBtn.Enabled = false; _cancelBtn.Enabled = !_previewMode;
+        _backBtn.Enabled = false;
+        _nextBtn.Enabled = false;
+
+        // Cancel is disabled for the duration of a real install. It previously stayed enabled
+        // but only closed the form, which left the background install running with no UI and
+        // no rollback — a half-installed machine. BeepDM's SetupWizard.Run is synchronous and
+        // takes no cancellation token, so a step genuinely cannot be interrupted today;
+        // offering a button that cannot do what it says is worse than not offering it.
+        _cancelBtn.Enabled = false;
+        _cancelBtn.ToolTipText = LanguageManager.GetOrDefault(
+            "Install_CancelDisabled", "Installation cannot be interrupted once it has started.");
 
         if (_previewMode)
         {
@@ -434,54 +671,40 @@ public class BeepModernInstallerForm : BeepiFormPro
             return;
         }
 
-        var label = new Label
-        {
-            Text = "Preparing installation...",
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Font = new Font("Segoe UI", 12),
-        };
-        _content.Controls.Add(label);
+        // The install used to show one centred line of text and nothing else — no bar, no
+        // percentage, no indication of which step was running.
+        var (progressHost, headline, bar, detail) = BuildProgressPanel();
+        _content.Controls.Add(progressHost);
 
         try
         {
-            var context = new SetupContext();
-            context.Properties["InstallProject"] = _ctx.Project;
-            context.Properties["InstallPath"] = _ctx.InstallPath;
-            context.Properties["CreateDesktopIcon"] = _ctx.CreateDesktopIcon;
-            context.Properties["CreateStartMenu"] = _ctx.CreateStartMenu;
-            context.Properties["AutoStart"] = _ctx.AutoStart;
-            context.Properties["PerUser"] = _ctx.PerUser;
-            context.Properties["IsSelfContained"] = true;
-            context.Properties["InstallProject"] = _project;
-            context.Properties["CustomActions"] = _project.CustomActions.Any() ? _project.CustomActions.ToList() : new List<CustomAction>();
-
             var customValues = new Dictionary<string, string>();
             foreach (var kv in _ctx.Bag)
                 if (kv.Key.StartsWith("Custom:"))
                     customValues[kv.Key["Custom:".Length..]] = kv.Value?.ToString() ?? "";
-            context.Properties["CustomValues"] = customValues;
 
             var rollback = new RollbackManager();
-            context.Properties["RollbackManager"] = rollback;
 
-            var wizard = new SetupWizardBuilder()
-                .WithId($"beep-install-{Environment.TickCount}")
-                .WithOptions(new SetupOptions { Environment = "Production" })
-                .AddStep(new PrerequisiteCheckStep())
-                .AddStep(new DirectoryCreateStep("installer.prerequisites.check"))
-                .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, "installer.directory.create"))
-                .AddStep(new Steps.PayloadDownloadStep("installer.custom.beforeinstall"))
-                .AddStep(new Steps.PayloadPrepareStep("installer.payload.download"))
-                .AddStep(new FileCopyStep("installer.payload.prepare"))
-                .AddStep(new SharedFileCountStep("installer.files.copy"))
-                .AddStep(new ComServerRegistrationStep("installer.files.copy"))
-                .AddStep(new GacInstallStep("installer.files.copy"))
-                .AddStep(new ShortcutCreateStep("installer.files.copy"))
-                .AddStep(new RegistryWriteStep("installer.shortcuts.create"))
-                .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, "installer.registry.write"))
-                .AddStep(new VerifyInstallStep("installer.custom.afterinstall"))
-                .Build();
+            // Same builder the silent/CLI paths use, so both produce an identical context
+            // (notably the InstallConfig the BeepDM steps require).
+            var context = Engine.InstallContextBuilder.ForInstall(
+                _project, _ctx.InstallPath, _ctx.PerUser, rollback, payloadRoot: null, customValues);
+
+            // Wizard-page answers the built-in steps don't model.
+            context.Properties["CreateDesktopIcon"] = _ctx.CreateDesktopIcon;
+            context.Properties["CreateStartMenu"] = _ctx.CreateStartMenu;
+            context.Properties["AutoStart"] = _ctx.AutoStart;
+
+            // Identical graph to the silent CLI install — see Hosting/InstallWizardGraph.
+            // Keeping these in step matters: a difference between them means the wizard and
+            // /S produce different installations from the same script.
+            var wizard = Hosting.InstallWizardGraph.BuildInstall(
+                $"beep-install-{Environment.TickCount}",
+                new SetupOptions { Environment = "Production" });
+
+            // Steps already reported a percentage in ParameterInt1; it was simply discarded.
+            var stepCount = Math.Max(1, wizard.Steps?.Count ?? 1);
+            var stepsDone = 0;
 
             var progress = new Progress<PassedArgs>(args =>
             {
@@ -490,7 +713,19 @@ public class BeepModernInstallerForm : BeepiFormPro
                 {
                     Invoke(() =>
                     {
-                        if (!string.IsNullOrEmpty(args.Messege)) label.Text = args.Messege;
+                        if (!string.IsNullOrEmpty(args.Messege)) detail.Text = args.Messege;
+
+                        // Each step reports 0-100 for itself; scale that into its slice of the
+                        // whole run so the bar advances monotonically across the install.
+                        var within = Math.Clamp(args.ParameterInt1, 0, 100);
+                        var overall = (int)((stepsDone + within / 100.0) / stepCount * 100);
+                        bar.Value = Math.Clamp(overall, bar.Value, 100);
+
+                        if (within >= 100 && stepsDone < stepCount - 1) stepsDone++;
+
+                        headline.Text = string.Format(
+                            LanguageManager.GetOrDefault("Install_Progress", "Installing {0}… ({1}%)"),
+                            _project.AppName, bar.Value);
                     });
                 }
                 catch (ObjectDisposedException) { }
@@ -498,6 +733,8 @@ public class BeepModernInstallerForm : BeepiFormPro
             });
 
             await Task.Run(() => wizard.Run(context, progress));
+
+            if (!IsDisposed) { bar.Value = 100; detail.Text = ""; }
             var report = wizard.GetReport();
             if (report.Succeeded) rollback.Commit(); else rollback.Rollback();
             var manifestPath = Path.Combine(_ctx.InstallPath, "install-manifest.json");
@@ -528,6 +765,11 @@ public class BeepModernInstallerForm : BeepiFormPro
         _nextBtn.Enabled = false;
         _backBtn.Enabled = true;
         _installComplete = false;
+
+        // Re-enable Cancel (disabled for the duration of the install) so a failed install is
+        // not a dead end with no way to close the wizard.
+        _cancelBtn.Enabled = true;
+        _cancelBtn.ToolTipText = "";
     }
 
     private void ShowCompletePage(bool success = true, string? message = null, string? logPath = null)
@@ -539,6 +781,8 @@ public class BeepModernInstallerForm : BeepiFormPro
             _completePage.Dock = DockStyle.Fill;
             _content.Controls.Add(_completePage);
         }
+
+        _cancelBtn.ToolTipText = "";
         _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Finish", "Finish");
         _nextBtn.Enabled = true;
         _installComplete = true;

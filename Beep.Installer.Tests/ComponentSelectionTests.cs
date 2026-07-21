@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Beep.Installer.Models;
 using System.Collections.Generic;
 using Beep.Installer.Engine;
@@ -17,7 +18,7 @@ public class ComponentSelectionTests
         // core (required, Typical), docs (Typical), extras (Complete-only), sdk (Complete-only)
         return new InstallProject
         {
-            Components = new List<InstallComponent>
+            Components = new ObservableCollection<InstallComponent>
             {
                 new() { Id = "core",   Name = "Core",   Required = true,  IncludedIn = InstallationType.Typical, SizeBytes = 100 },
                 new() { Id = "docs",   Name = "Docs",   Required = false, IncludedIn = InstallationType.Typical, SizeBytes = 20 },
@@ -89,3 +90,4 @@ public class ComponentSelectionTests
         config.Components[2].Selected.Should().BeTrue();
     }
 }
+

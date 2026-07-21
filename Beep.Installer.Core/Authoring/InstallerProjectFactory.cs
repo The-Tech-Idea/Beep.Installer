@@ -22,7 +22,7 @@ public static class InstallerProjectFactory
             AppName = product,
             AppVersion = ver,
             AppPublisher = pub,
-            AppUpdateMode = UpdateModeEx.Optional,
+            AppUpdateMode = UpdateMode.Optional,
             WindowTitle = $"{product} Setup",
             WelcomeTitle = $"Welcome to {product} Setup",
             ShowEula = true,
@@ -33,7 +33,7 @@ public static class InstallerProjectFactory
             // Layout
             DefaultDirName = $"%ProgramFiles%\\{product}",
             DefaultGroupName = product,
-            DefaultInstallType = InstallationTypeEx.Typical,
+            DefaultInstallType = InstallationType.Typical,
             PrivilegesRequired = PrivilegeLevel.Admin,
             DefaultScope = InstallationScope.Machine,
             AllowScopeSelection = true,

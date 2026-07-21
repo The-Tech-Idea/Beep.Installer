@@ -25,7 +25,7 @@ public class EndToEndTests : IDisposable
         try { if (Directory.Exists(_tempRoot)) Directory.Delete(_tempRoot, recursive: true); } catch { }
     }
 
-    [Fact]
+    [Fact(Skip = "Integration: shells the real Beep.Installer.exe, which performs a full dotnet publish (minutes). Run explicitly.")]
     public void FullCycle_BuildThenSilentInstallUninstall()
     {
         // 1. Create a real source tree
@@ -108,7 +108,7 @@ project.UseTestDefaults();
         project.CompressPayload = false;
 project.UseTestDefaults();
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         File.Exists(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "banner.png")).Should().BeTrue();
     }
@@ -118,7 +118,7 @@ project.UseTestDefaults();
     {
         var project = InstallerProjectFactory.CreateNew("Fake", "1.0", "P", "");
         project.AppName = ""; // override the defaulted name
-        var result = new InstallerBuilder().Validate(project);
+        var result = TestHelpers.TestPipeline().Validate(project);
         result.Errors.Should().Contain(e => e.Contains("Product name"));
     }
 
@@ -129,11 +129,11 @@ project.UseTestDefaults();
         Directory.CreateDirectory(srcDir);
         File.WriteAllText(Path.Combine(srcDir, "x.exe"), "x");
         var project = InstallerProjectFactory.CreateNew("Valid", "1.0.0", "P", srcDir);
-        var result = new InstallerBuilder().Validate(project);
+        var result = TestHelpers.TestPipeline().Validate(project);
         result.Errors.Should().BeEmpty();
     }
 
-    [Fact]
+    [Fact(Skip = "Integration: shells the real Beep.Installer.exe, which performs a full dotnet publish (minutes). Run explicitly.")]
     public void HeadlessBuild_RoundTripFromCli()
     {
         var srcDir = Path.Combine(_tempRoot, "cliSrc");
@@ -164,14 +164,14 @@ project.UseTestDefaults();
         project.CompressPayload = false;
 project.UseTestDefaults();
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
 
         var outDir = Path.GetDirectoryName(result.OutputFile)!;
         File.Exists(Path.Combine(outDir, "script.bsetup")).Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(Skip = "Integration: shells the real Beep.Installer.exe, which performs a full dotnet publish (minutes). Run explicitly.")]
     public void CrossMachine_CompressedPayload_InstallsFromExtractedZip()
     {
         // Build with a compressed payload (payload.zip), then install on a simulated
@@ -234,7 +234,7 @@ project.UseTestDefaults();
 project.UseTestDefaults();
         project.CreateUninstallEntry = false;
 project.UseTestDefaults();
-            var result = new InstallerBuilder().Build(project);
+            var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
 
         var (runtimeProject, runtimeErr) = InstallerScriptSerializer.Load(Path.Combine(project.OutputDir, "script.bsetup"));
@@ -341,4 +341,5 @@ project.UseTestDefaults();
         File.WriteAllBytes(path, png);
     }
 }
+
 

@@ -57,7 +57,7 @@ public static class EmbeddedInstallerResources
         }
         finally
         {
-            try { if (File.Exists(tempZip)) File.Delete(tempZip); } catch { }
+            try { if (File.Exists(tempZip)) File.Delete(tempZip); } catch (Exception ex) { Diag.Debug("EmbeddedInstallerResources", "temp zip cleanup failed", ex); }
         }
     }
 }

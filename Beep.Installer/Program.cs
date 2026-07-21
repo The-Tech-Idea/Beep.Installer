@@ -226,7 +226,6 @@ internal static class Program
         }
 
         project!.SourceDirectory = Path.GetDirectoryName(Path.GetFullPath(path)) ?? "";
-        RuntimeProjectContext.Current = project;
         return project;
     }
 
@@ -234,11 +233,10 @@ internal static class Program
 
     private static int RunSilentInstall(InstallProject project, string[] args)
     {
-        RuntimeProjectContext.Current = project;
         var config = project;
         Console.WriteLine($"Installing {config.AppName} {config.AppVersion}…");
 
-        var perUser = !(config.PrivilegesRequired == PrivilegeLevel.Admin || config.PrivilegesRequired == PrivilegeLevel.Lowest);
+        var perUser = Engine.InstallScopeResolver.IsPerUser(config);
         var installPath = Engine.InstallScopeResolver.ResolveDefaultPath(config, perUser);
         var dArg = args.FirstOrDefault(a => a.StartsWith("/D=", StringComparison.OrdinalIgnoreCase));
         if (dArg != null) installPath = dArg[3..];
@@ -253,34 +251,16 @@ internal static class Program
 
         Console.WriteLine($"  Path: {installPath}");
 
-        var context = new SetupContext();
-        context.Properties["InstallProject"] = project;
-        context.Properties["InstallPath"] = installPath;
-        context.Properties["PerUser"] = perUser;
-context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActions;
-
-
         // Transactional rollback: FileCopyStep registers each copied file; on failure we undo.
         var rollback = new RollbackManager();
-        context.Properties["RollbackManager"] = rollback;
 
-        var wizard = new SetupWizardBuilder()
-            .WithId("beep-install-silent")
-            .WithOptions(new SetupOptions { Environment = "Production" })
-            .AddStep(new PrerequisiteCheckStep())
-            .AddStep(new DirectoryCreateStep("installer.prerequisites.check"))
-            .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, "installer.directory.create"))
-            .AddStep(new Steps.PayloadDownloadStep("installer.custom.beforeinstall"))
-            .AddStep(new Steps.PayloadPrepareStep("installer.payload.download"))
-            .AddStep(new FileCopyStep("installer.payload.prepare"))
-            .AddStep(new SharedFileCountStep("installer.files.copy"))
-            .AddStep(new ComServerRegistrationStep("installer.files.copy"))
-            .AddStep(new GacInstallStep("installer.files.copy"))
-            .AddStep(new ShortcutCreateStep("installer.files.copy"))
-            .AddStep(new RegistryWriteStep("installer.shortcuts.create"))
-            .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, "installer.registry.write"))
-            .AddStep(new VerifyInstallStep("installer.custom.afterinstall"))
-            .Build();
+        // The steps consume BeepDM's InstallConfig, not our authoring model — the builder
+        // performs that projection and supplies every key the step graph reads.
+        var context = Engine.InstallContextBuilder.ForInstall(project, installPath, perUser, rollback);
+
+        // Same graph the wizard UI runs — see Hosting/InstallWizardGraph.
+        var wizard = Hosting.InstallWizardGraph.BuildInstall(
+            "beep-install-silent", new SetupOptions { Environment = "Production" });
 
         var result = wizard.Run(context);
         var ok = result.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
@@ -298,26 +278,15 @@ context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActio
 
     private static int RunUninstall(InstallProject project, string[] args)
     {
-        RuntimeProjectContext.Current = project;
         var config = project;
-        var perUser = !(config.PrivilegesRequired == PrivilegeLevel.Admin || config.PrivilegesRequired == PrivilegeLevel.Lowest);
+        var perUser = Engine.InstallScopeResolver.IsPerUser(config);
         var installPath = args.FirstOrDefault(a => a.StartsWith("/D=", StringComparison.OrdinalIgnoreCase))?[3..]
                           ?? Engine.InstallScopeResolver.ResolveDefaultPath(config, perUser);
         Console.WriteLine($"Uninstalling {config.AppName} from {installPath}…");
 
-        var context = new SetupContext();
-        context.Properties["InstallPath"] = installPath;
-        context.Properties["InstallProject"] = project;
-        context.Properties["PerUser"] = perUser;
-context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActions;
+        var context = Engine.InstallContextBuilder.ForUninstall(project, installPath, perUser);
 
-
-        var wizard = new SetupWizardBuilder()
-            .WithId("beep-uninstall")
-            .AddStep(new CustomActionStep(CustomActionTiming.BeforeUninstall))
-            .AddStep(new UninstallStep())
-            .AddStep(new CustomActionStep(CustomActionTiming.AfterUninstall, "installer.uninstall"))
-            .Build();
+        var wizard = Hosting.InstallWizardGraph.BuildUninstall();
 
         var result = wizard.Run(context);
         var ok = result.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
@@ -338,18 +307,9 @@ context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActio
             var (project, sourceDir) = MakeSelfTestConfig(testDir);
             try
             {
-                RuntimeProjectContext.Current = project;
-                var context = new SetupContext();
-                context.Properties["InstallProject"] = project;
-                context.Properties["InstallPath"] = testDir;
+                var context = Engine.InstallContextBuilder.ForInstall(project, testDir, perUser: true);
 
-                var wizard = new SetupWizardBuilder()
-                    .WithId("beep-selftest")
-                    .WithOptions(new SetupOptions { Environment = "Test" })
-                    .AddStep(new DirectoryCreateStep())
-                    .AddStep(new FileCopyStep("installer.directory.create"))
-                    .AddStep(new VerifyInstallStep("installer.files.copy"))
-                    .Build();
+                var wizard = Hosting.InstallWizardGraph.BuildSelfTestInstall();
 
                 var installResult = wizard.Run(context);
                 var installOk = installResult.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
@@ -358,13 +318,8 @@ context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActio
                 var manifestOk = File.Exists(Path.Combine(testDir, "install-manifest.json"));
                 Console.WriteLine($"Manifest: {(manifestOk ? "PASS" : "FAIL")}");
 
-                var uninstallContext = new SetupContext();
-                uninstallContext.Properties["InstallPath"] = testDir;
-                uninstallContext.Properties["InstallProject"] = project;
-                var uninstallWizard = new SetupWizardBuilder()
-                    .WithId("beep-selftest-uninstall")
-                    .AddStep(new UninstallStep())
-                    .Build();
+                var uninstallContext = Engine.InstallContextBuilder.ForUninstall(project, testDir, perUser: true);
+                var uninstallWizard = Hosting.InstallWizardGraph.BuildSelfTestUninstall();
                 var uninstallOk = uninstallWizard.Run(uninstallContext).Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
                 Console.WriteLine($"Uninstall: {(uninstallOk ? "PASS" : "FAIL")}");
 
@@ -429,6 +384,10 @@ context.Properties["CustomActions"] = RuntimeProjectContext.Current?.CustomActio
 
         var (project, err) = InstallerScriptSerializer.Load(projectPath);
         if (project == null) { Console.Error.WriteLine($"Error: {err}"); return 2; }
+
+        // Paths in a .bsetup are relative to the script, not to wherever the build was
+        // launched from. Resolved in memory only, so the script stays portable.
+        InstallerScriptSerializer.ResolveRelativePaths(project, projectPath);
 
         // Allow overriding output via /OUT=
         var outIdx = IndexOf(args, "/OUT=");

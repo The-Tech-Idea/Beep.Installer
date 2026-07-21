@@ -71,7 +71,7 @@ public class GlobMatcherTests
             project.CompressPayload = false;
             project.CreateUninstallEntry = false;
             project.UseTestDefaults();
-            var result = new InstallerBuilder().Build(project);
+            var result = TestHelpers.TestPipeline().Run(project);
             result.Success.Should().BeTrue();
 
             var payload = Path.Combine(project.OutputDir, "payload");
@@ -85,4 +85,5 @@ public class GlobMatcherTests
         finally { try { Directory.Delete(tmp, recursive: true); } catch { } }
     }
 }
+
 

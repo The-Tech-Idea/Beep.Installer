@@ -18,6 +18,9 @@ public class BuildResultForm : Form
         Text = result.Success ? "Build Complete" : "Build Failed";
         Size = new Size(720, 460);
         StartPosition = FormStartPosition.CenterParent;
+        // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -97,7 +100,13 @@ public class BuildResultForm : Form
                 Clipboard.SetText(result.OutputFile);
                 copyBtn.Text = "Copied!";
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // The clipboard can be locked by another process. Saying "Copied!" regardless
+                // told the user their paste would work when it would not.
+                copyBtn.Text = "Copy failed";
+                Beep.Installer.Engine.Diag.Warn("BuildResultForm", "clipboard copy failed", ex);
+            }
         };
         if (!string.IsNullOrEmpty(result.OutputFile) && File.Exists(result.OutputFile))
         {

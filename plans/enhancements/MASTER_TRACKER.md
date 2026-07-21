@@ -1,0 +1,581 @@
+# Beep.Installer — Master Todo Tracker (rev. 2)
+
+**Mission:** make the installer work, then make it thin. Runtime-install logic and its
+contract belong to **BeepDM**; authoring, the `.bsetup` format, the build pipeline and
+packaging belong to a non-UI **`Beep.Installer.Core`** library — because BeepDM's own scope
+doc excludes packaging and code-signing. The WinForms exe ends up a shell.
+
+> **Evidence:** [R0_REVIEW_FINDINGS.md](R0_REVIEW_FINDINGS.md) (rev. 2 — re-derived from code)
+> **Conventions:** ⬜ not done · 🟡 partly done · ✅ done · ❌ blocked. Phases are append-only.
+
+---
+
+## Progress log — 2026-07-20
+
+**The installer now installs.** `/SELFTEST` passes end to end (install → manifest →
+uninstall → cleanup, exit code 0); it previously died at startup. All three P0 blockers are
+resolved:
+
+| Was | Now |
+|---|---|
+| Startup `TypeLoadException` — the exe bound to the stale NuGet `DataManagementModels` 3.1.1 instead of BeepDM source | Fixed by adding a **direct** `ProjectReference` to `DataManagementModels.csproj` in `Beep.Installer.csproj` (+ repo-level `Directory.Build.props` with `NoWarn NU1605`). `project.assets.json` now resolves `"type": "project"`, and the output DLL matches the source build byte-for-byte. |
+| No `InstallConfig` ever produced, so every step failed `Validate()` and the run aborted | Fixed by new `Engine/InstallConfigProjector.cs`, `Engine/InstallContextBuilder.cs`, `Engine/InstallContextKeys.cs`. All four call sites in `Program.cs` now build the context through the builder. |
+| Test project did not compile — 0 tests had run since July 9 | Fixed: **211 tests execute, 172 pass.** |
+
+**Fixed upstream in BeepDM:** `UninstallStep` deleted `install-manifest.json` *after* sweeping
+empty directories. Since the manifest lives inside the install directory, that directory was
+never empty when the sweep ran and could never be removed. Manifest deletion now precedes the
+sweep. This was the `Cleanup: FAIL` in the self-test — a real product bug, not a test artifact.
+
+**Also created:** `Engine/CustomPageManager.cs`, the single implementation of custom-field
+validation / collection / macro expansion. The statics on `InstallProject` now delegate to it,
+starting the P3 move of behaviour out of the model.
+
+### Session 2 — publish seam (P3.B.2) landed
+
+`BuildPipeline` no longer hardcodes `dotnet publish`. Host production moved behind
+`IInstallerHostBuilder` (`Engine/IInstallerHostBuilder.cs`), with `DotnetPublishHostBuilder`
+as the real implementation and a stub used by tests. Also: the 5-minute timeout became the
+configurable `PublishTimeout` (default 10 min), the stdout/stderr truncation race was fixed
+with the documented `WaitForExit()`-after-`WaitForExit(timeout)` pattern, and a new
+`KeepIntermediates` flag preserves the staged payload / archive / runtime script instead of
+deleting them once embedded.
+
+**Test suite: 172 → 201 passing of 221.** Note `UseTestDefaults()` was found to be a no-op —
+it set `SelfContained`/`SingleFile` false, but the pipeline hardcodes `--self-contained true`,
+so it never prevented a publish. The seam is what actually isolates the tests now.
+
+### Two silent-empty-payload defects found and fixed
+
+Both would have shipped an installer containing **no files**, with no error.
+
+**1. Folder pruning outranked explicit includes.** `EnumerateDeployableFiles` skips
+conventionally build-only folders — and `ExcludedFolders` contains `"bin"`. That pruning ran
+*before* include patterns were evaluated, so `SourceIncludes = ["bin/**"]` could never recover
+the folder and silently matched nothing. (Ruled out along the way: the glob matcher is correct —
+`bin/**` compiles to `^bin/.*$` — and the scanner already filters on normalized relative paths.)
+Fixed: an include naming a folder is an unambiguous statement of intent and now wins, and a
+pruned folder emits a warning instead of vanishing silently. The check is deliberately
+conservative — it can only add folders back, never remove them.
+
+**2. The build never scanned.** `StagePayload` only copies `Components[].Files`, and nothing
+populated those unless the builder UI had explicitly run a scan first. So any fresh `.bsetup`
+— and every headless `/BUILD` — produced an installer with an empty payload. Fixed: if no
+component carries files and the source directory exists, the build scans it, logging the file
+count. Auto-discovery is disabled for that scan so a build cannot quietly retarget the source
+directory the author chose.
+
+### Remaining test failures — causes, all pre-existing and scheduled
+
+### Suite green: 252 passed, 0 failed, 3 skipped
+
+**Wizard sidebar showed the wrong steps and let users skip pages (P6.A.1).** The sidebar was a
+hardcoded 7-entry array maintained in parallel with the real page list — and the two had
+drifted: the array stopped at "Ready" and omitted Additional Tasks, so from index 6 onward
+every step displayed the wrong name, and custom wizard pages never appeared at all. The
+sidebar is now generated from `_pages` (icon chosen by page type), so the lists cannot diverge
+again. Clicking a step also navigated straight to the target without validating anything in
+between, stepping over the licence, prerequisite and component pages; forward jumps now clear
+each intervening page and land the user on the first one needing attention. Backward jumps stay
+free. Focus is also set on the newly shown page — clearing the content panel destroyed the
+focused control, so keyboard and screen-reader users lost their place on every navigation.
+
+### 🎉 End-to-end verified for the first time
+
+`/BUILD` → `Setup.exe` → `/S` install → `/UNINSTALL` now completes cleanly: 3 files staged,
+installed to the correct tree (including the `docs\` subdirectory), manifest written, and the
+directory left empty after uninstall. **This had never once been demonstrated.** Getting there
+required fixing four separate defects, each of which had been reporting success:
+
+**1. A successful build produced an installer containing nothing.** `StagePayload` skipped a
+missing source file with a bare `continue` and swallowed copy failures in a commented `catch`
+(so the earlier empty-catch sweep did not match it). A build whose declared files were all
+missing reported **success** and shipped an empty payload — discoverable only on the end
+user's machine. Missing *required* files are now errors, missing *optional* ones warnings, and
+declaring files while staging none is a hard failure.
+
+**2. `[Files]` source paths were not script-relative.** `ResolveRelativePaths` covered
+`SourceDir` and the branding assets but not the per-file `Source` entries, so every declared
+file resolved against the wrong root and silently staged nothing.
+
+**3. `ReadyToRun` was forced on, making a real `/BUILD` time out.** An actual end-to-end build was
+attempted for the first time and failed: `dotnet publish` exceeded even the raised 10-minute
+limit. The cause is `-p:PublishReadyToRun=true`, hardcoded on — R2R precompiles the host's
+entire dependency tree (BeepDM plus the Beep.Winform control library) to native code. That
+trades a large amount of *build* time for a faster first start, which is a poor bargain for an
+installer that runs once or twice and whose startup is dominated by payload extraction. Now an
+opt-in `ReadyToRun` flag, defaulting to off. **Build time fell from >600s (timeout) to 154s.**
+
+**4. An unelevated install of a per-machine script died with "threw an unhandled exception".**
+`RegistryWriteStep` let `UnauthorizedAccessException` escape, so the one thing the user needed
+to know — that this installer requires elevation — was the one thing the message did not say.
+It now fails with that explanation, both when opening the hive and per-entry. (The transactional
+rollback did behave correctly here, removing the already-copied files.)
+
+**Script-relative paths resolved against the script (bug fix).** `SourceDir=samples\HelloApp`
+in a `.bsetup` means "relative to this script", but it was resolved against the process
+working directory — so the same script built correctly from one folder and produced an
+installer with an **empty payload** from another, reported only as a warning. Now resolved by
+the consumers that are about to use the paths (`/BUILD` and the builder's Open).
+
+Deliberately **not** done inside `Load`: the round-trip tests caught that doing so bakes
+absolute machine paths into the project, which the next save would write back into the script
+and destroy its portability. The tests were right and the first attempt was wrong — resolution
+belongs at the point of use, not in the loader.
+
+**One install graph instead of four copies (P5.B.1).** The step sequence was written out inline
+in four places — silent install, the wizard UI, uninstall and self-test — each repeating the
+same ordering and the same magic dependency strings. Nothing kept them in agreement, so the
+wizard and `/S` could silently install *differently from the same script*; this is the identical
+duplication pattern that let the shortcut create/remove paths drift and orphan shortcuts.
+Now `Hosting/InstallWizardGraph` with a `StepIds` constants class, and 7 tests pinning the
+properties that matter: that the silent and UI graphs are step-for-step identical, that file
+copy follows payload preparation, that shortcuts and registry writes follow file copy, and that
+verification runs last (it writes the uninstall manifest, so it must observe everything before
+it).
+
+**Swallowed exceptions cleared from Core, with a guard to keep it that way (P8.B.1).** Two of
+the thirteen were hiding user-visible failures, not noise:
+
+- **A configured EULA silently vanished.** `WriteRuntimeScript` read the licence file inside a
+  bare `try/catch { }`, so an unreadable path produced an installer with **no licence page at
+  all** while the build reported success. It now surfaces as a build warning naming the file.
+- **Dependencies were silently undiscovered.** A failure parsing `deps.json` was swallowed, so
+  the app's dependent assemblies were never added — the installer shipped incomplete and failed
+  only later, on the user's machine. Same for the `.csproj` target-framework read, whose failure
+  meant no .NET prerequisite was ever suggested.
+
+The rest were genuine best-effort cleanups (temp-file deletes, PE metadata on native binaries)
+and now log at debug level rather than vanishing.
+
+The shell was then swept too, turning up two more:
+
+- **Autosave failed silently.** The crash-recovery timer swallowed every exception, so a user
+  whose autosave was failing believed their work was protected when it was not. Now logged as
+  a warning naming the consequence.
+- **Clipboard handlers lied.** Three "Copy" buttons set their label to *"Copied!"* inside a
+  `try` whose `catch` was empty — when the clipboard was locked by another process the user was
+  told the copy succeeded. They now report "Copy failed".
+
+A second guard covers the shell, with two categories exempted **by explicit predicate rather
+than a blanket pattern**: typed `ObjectDisposedException`/`InvalidOperationException` catches
+on form teardown (the exception type *is* the documentation, and the window is already gone),
+and `Program.cs`'s crash-log writer, which is already handling a fatal error and has nowhere
+left to report to.
+
+Two new source-level guards make this permanent — and both immediately found offenders my own
+grep had missed: a typed `catch (BadImageFormatException) { }` (my pattern only matched the
+untyped form) and the two long-standing sync-over-async sites in the ClickOnce updater. Those
+two are listed as **explicit, commented exemptions** rather than filtered out silently, so the
+debt stays visible in code and is tied to the outstanding P4 async work.
+
+One existing test needed adjustment: `DiagTests.Warn_Is_Captured` asserted a specific marker
+reached the log *file*, which its own comment describes as a best-effort secondary sink. With
+far more components logging, a line can now be lost to a concurrent writer without raising
+`IOException`. The canonical in-memory assertion is unchanged; only the file check was relaxed
+to "exists and is being written", matching the intent already documented in the test.
+
+**Theme tokens and DPI (P6.B).** `Ui/InstallerTheme.cs` is now the single source of colour and
+font tokens, resolving from the active Beep theme with the previous hardcoded values as
+fallbacks — so the default light appearance is byte-identical while a themed or high-contrast
+environment is finally honoured. The three former palettes (the wizard's inline greys, the
+builder's private ARGB constants, and `LeftNavPanel`) all delegate to it. The muted-text grey
+was darkened in the process: the old value measured ≈4.4:1 on white, just under the WCAG AA
+threshold, and there are now contrast tests asserting AA for both body and secondary text.
+**All 12 forms now set `AutoScaleMode.Dpi`** (only 2 did), with a source-level test that fails
+if a new form omits it. Page layouts still position children in absolute pixels, so the
+container re-layout — the remaining prerequisite for a clean Arabic visual pass — is
+outstanding.
+
+**Builder chrome localized (P7.A.2, partial).** The builder was entirely English-only. Its
+navigation sections and repeated action buttons (Add/Remove/Edit/Rescan/Apply, source-directory
+label, scan status, Recent) now resolve through `LanguageManager` via a local `L(key, english)`
+helper, with 14 new keys translated across all 8 cultures (61 keys each, parity maintained).
+Full coverage of every builder field label and dialog remains outstanding — roughly 150 more
+strings, which is a deliberate scope call rather than an oversight.
+
+**`Beep.Installer.Core` extracted — the shell is now genuinely thin (P3 / P4 file moves).**
+A net10.0 class library with **no UI dependency**, referencing BeepDM directly (the same
+explicit-`DataManagementModels` requirement as the shell, or the stale package wins again).
+**32 files moved**, via `git mv` wherever the file was tracked so history survives:
+
+| Core folder | Contents |
+|---|---|
+| `Model/` | `InstallProject`, `CustomWizardPage` |
+| `Authoring/` | `.bsetup` serializer, `SourceScanner`, `GlobMatcher`, project factory, templates, condition/component rules, MRU, autosave, `CustomPageManager` |
+| `Build/` | `BuildPipeline`, `IInstallerHostBuilder`, `PayloadPackager`, `PePayloadWriter`, `EmbeddedInstallerResources` |
+| `Packaging/` | ClickOnce (9 files), MSIX, `SignTool`, `Publisher` |
+| `Runtime/` | projector, context builder/keys, scope resolver, prerequisite detector |
+
+What remains in the shell's `Engine/` is exactly what should: `Accessibility`, `BannerLoader`,
+`ThemeLoader`, `RtlHelper`, `LocaleFormatter` and `InstallerController` — UI helpers and the
+WinForms-coupled controller.
+
+Two things made this safe to do in one pass. Namespaces were deliberately **left unchanged**
+(`Beep.Installer.Engine`, `Beep.Installer.Models`), so not a single call site moved — C# does
+not require namespace and assembly to agree, and each move was independently verifiable by
+build. And `BuildPipeline`'s `using System.Drawing` turned out to be vestigial (icon embedding
+is raw Win32 P/Invoke), so nothing forced a UI dependency into Core. Only one visibility change
+was needed: `InstallContextKeys` went from `internal` to `public`, which it should have been —
+it is the contract naming the keys BeepDM's steps read.
+
+Still outstanding within these phases: the internal decomposition work (splitting the
+1,248-line serializer into partials, breaking `BuildPipeline` into stages, injecting a logger
+and clearing the swallowed catches, and introducing `IInstallerPublisher`). The *code has moved*
+but has not yet been *restructured*.
+
+**Localization never worked at runtime (P7.A.0) — the biggest find of this phase.** The SDK
+compiles `.resx` into *binary* `.resources` at build time, so the embedded name is
+`Beep.Installer.Lang.Strings_ar.resources`. `LanguageManager.LoadStrings` probed only `.resx`
+name shapes and parsed them with `ResXResourceReader`, and there is no loose `Lang` folder
+beside the exe — so **every candidate missed, the dictionary came back empty for all eight
+cultures, and every lookup silently fell through to the hardcoded English default.** All the
+translation work in the repo was dead. Fixed by probing the `.resources` name first and
+reading it with `ResourceReader` (the `.resx` shapes stay for loose/dev builds). Verified by a
+test that a non-English string actually differs from the English default — the previous tests
+used `GetOrDefault`, which passes happily when nothing loads at all.
+
+**Wizard strings routed through the resource manager (P7.A.2).** Several keys existed in the
+resx purely because nothing ever asked for them — the pages hardcoded the same English text.
+Page headers and prompts across License, Folder, Start Menu, Components and Additional Tasks
+now resolve via `LanguageManager` with the English text retained as the fallback, so English
+behaviour is byte-identical and the other seven cultures come alive. `FolderPage` and
+`StartMenuPage` already re-resolved their prompts in `OnEnter`, so only their constructor
+defaults needed routing. The builder UI and dialogs remain English-only — a larger pass, and
+they need new keys rather than existing ones.
+
+**Resx key parity restored (P7.A.1).** The divergence was worse than first surveyed and ran in
+*both* directions: English carried 38 keys, the other seven carried 30, and the sets were not
+subsets — English was missing all six `Btn_*` keys the wizard requests, while the other seven
+were each missing the same 14 content strings. All eight cultures now define an identical
+47-key set (translations added for ar/es/fr/de/pt/zh/ja, plus the three new install-progress
+keys), with a parity test that reads through `LanguageManager` so it also catches a loader
+regression.
+
+**Right-to-left layout is finally applied (P7.B.2).** Arabic, Hebrew, Persian and Urdu
+translations shipped, and `RtlHelper` existed — with **no callers anywhere**, so those users got
+a left-to-right layout regardless. The wizard now mirrors itself when the active culture is
+RTL, applied after the control tree is built so the recursive pass reaches every child, and
+wrapped so a layout-direction failure can never stop an install. 15 tests cover culture
+classification, `SetLanguage`, navigation-label resolution across all 8 shipped cultures, and
+graceful fallback for an unrecognised system culture. A manual Arabic visual pass is still
+outstanding — the absolute-pixel page layouts (P6.B.2) will not mirror cleanly until they move
+to layout containers.
+
+**The builder froze on large source trees (P6.C.1).** `ScanAndPopulate` walked the whole
+directory synchronously on the UI thread — reading PE metadata and `deps.json` for every file —
+so the builder locked up with no sign it was still alive. Now runs on a background thread with
+a wait cursor, re-entrancy guard (the button stayed clickable throughout), and a failure path
+that reports rather than taking the builder down. This matters more since the build itself now
+auto-scans.
+
+**Install progress, and a Cancel button that no longer orphans the install (P6.A.2).** The
+install showed a single centred line of text — no bar, no percentage, no indication of which
+step was running — while the steps were already reporting a percentage in
+`PassedArgs.ParameterInt1` that was simply discarded. There is now a headline, a determinate
+bar (each step's 0-100 scaled into its slice of the run so the bar advances monotonically) and
+a detail line. Cancel was worse than useless during an install: it stayed enabled but only
+closed the form, leaving the background install running with no UI and no rollback — a
+half-installed machine. It is now disabled for the duration with a tooltip saying why, and
+re-enabled on the error page so a failed install is not a dead end.
+
+> **Upstream limitation.** True mid-install cancellation is not possible today:
+> `ISetupWizard.Run` is synchronous and takes no `CancellationToken`, and `RunAsync` only wraps
+> it in `Task.Run(token)`, which cannot interrupt a step already executing. Offering a button
+> that cannot do what it claims is worse than withholding it. Making steps genuinely
+> cancellable is a BeepDM change — worth scheduling, as it also unlocks resumable installs.
+
+**Authored branding now actually applies (P6.A.3).** `ThemeLoader` and `BannerLoader` existed
+with **no callers**: the builder collected sidebar colours, accent, banner and icon, wrote them
+into the `.bsetup`, and the wizard hardcoded its own palette regardless. Sidebar background and
+text colours, the accent on the primary button, and the setup icon are now read from the
+project, with malformed values falling back rather than throwing (10 tests).
+
+**`DryRun` was a flag that lied (P2.B.3).** `SetupOptions.DryRun` existed and no installer step
+checked it, so a "dry run" copied files, wrote registry values, set environment variables and
+**executed custom actions** exactly like a real install. Now honoured by file copy, registry
+write, shortcuts, environment variables, file associations and custom actions — each reporting
+what it *would* do. Custom actions matter most here: they launch arbitrary executables, so a
+preview that silently runs the author's scripts is worse than no preview. 5 tests assert
+nothing is written, plus one guarding that a real run still copies.
+
+**File associations ignored install scope.** `InstallHelpers.RegisterFileAssociation` was
+hardcoded to HKCU, so a per-machine install registered file types only the installing account
+could see. Both register and unregister now take the scope (defaulting to per-user), and
+`FileAssociationStep` passes the install's actual scope.
+
+**Shortcuts were being orphaned at uninstall (P2.B.1).** `ShortcutCreateStep` and
+`UninstallStep` each carried their own copy of the path logic, and the copies disagreed in two
+ways: the create side fell back to `InstallConfig.StartMenuFolder` when no subfolder was set
+while the remove side did not, and the remove side appended `.lnk` unconditionally where the
+create side appended it only when missing (so `App.lnk` became `App.lnk.lnk`). Either mismatch
+left the shortcut on disk after uninstall. On top of that neither copy honoured install scope,
+so a **per-machine install wrote shortcuts into the installing user's** Start Menu and Desktop.
+Replaced by one shared `Installer/ShortcutPathResolver.cs` used by both, now scope-aware
+(Common* folders for per-machine). 7 tests, including one asserting the property that actually
+matters: create and remove resolve to the identical path in both scopes.
+
+**Registry rollback was broken and unused.** `RollbackManager.RegisterRegistryWrite` hardcoded
+HKLM, so rolling back a per-user install probed the wrong hive — and `RegistryWriteStep` never
+registered its writes anyway, so a failure after it left the keys behind. The method now takes
+the hive explicitly (old signature kept as `[Obsolete]`), and `RegistryWriteStep` registers
+each write against the hive it actually used.
+
+**Environment variables now actually apply (P2.A.2).** New BeepDM
+`Installer/Steps/EnvironmentVariableStep.cs`: applies `InstallConfig.EnvironmentVariables`,
+expands `{InstallPath}`, downgrades a Machine-scoped request to User on a per-user install
+(rather than throwing for lack of elevation), writes the `EnvVarsSet` key `VerifyInstallStep`
+already expected, and calls the previously-uncalled
+`InstallHelpers.BroadcastEnvironmentChange()` so running processes see the change. It sets
+`SupportsRollback = true` — the first installer step to do so — and `UninstallStep` now clears
+the variables recorded in the manifest so they cannot outlive the product. Registered in both
+wizard graphs; 7 tests, all User-scoped and uniquely named so they need no elevation.
+
+
+The 3 skips are `EndToEndTests` CLI cases, now explicitly tagged — they shell the real exe and
+perform a genuine multi-minute publish, so they are integration tests to run deliberately.
+
+Four further product defects were found and fixed while clearing the failures:
+
+- **A second cleanup path bypassed `KeepIntermediates`.** A `finally` block deleted the staged
+  payload and archive whenever `result.Success` was true — its comment claimed the opposite
+  ("if anything failed"). Both cleanup paths now honour the flag.
+- **`SolidCompression` was collected by the builder UI and then ignored.** The pipeline always
+  wrote a plain zip, so the option did nothing. Now wired to `PayloadPackager.CreateSolid`,
+  and the dedup statistics it already computed (files → unique blobs, bytes saved) are
+  surfaced instead of discarded. `CompressionLevel` was likewise unused and is now mapped.
+- **Signing silently did nothing.** `SignExe` was a stub that added a warning and reported
+  success; a configured certificate now really signs, and a failure is an **error** — shipping
+  an unsigned installer while believing it was signed is worse than a failed build.
+- **The runtime script flattened source paths to file names.** `StagePayload` copies to
+  `<payload>/<DestinationPath>`, but the rebaser emitted only the file name, so at install time
+  `FileCopyStep` looked for `<payloadRoot>/<name>` and found nothing — **every file staged into
+  a subdirectory silently failed to install**. The rebaser now receives the whole
+  `FileCopyOperation` and mirrors `DestinationPath`.
+
+MSIX is wired to the real `MsixPackager`. Where MakeAppx rejects the minimal manifest (its
+bundled validator demands more than the public XSD), the build now reports a precise warning
+naming the MakeAppx error and points at the staging folder — rather than the old stub's
+"succeeded as standalone EXE", which said nothing useful.
+
+### Still open in P1
+
+`RuntimeProjectContext` is not yet deleted, the `InstallationTypeEx`/`UpdateModeEx` duplicate
+enums still exist, the UI install path does not yet use the builder, and the projector /
+context-key tests are not yet written.
+
+---
+
+## Open Decisions
+
+| # | Decision | Options | Recommended | Needed by |
+|---|----------|---------|-------------|-----------|
+| D1 | Authoring format | A: `.bsetup` stays the only authoring format; build also emits `install-config.json` for the runtime · B: move authoring to BeepDM's `InstallConfig` JSON | **A** — BeepDM has zero `.bsetup` support and `install-config.sample.json` is dead code (R0 §4 A11) | P1 |
+| D2 | `InstallProject` vs `InstallConfig` | A: keep both; project = authoring, config = runtime, joined by a projector · B: merge into one type | **A** — collections are already the same BeepDM types, so the projection is cheap; merging would drag build/signing fields into a schema-versioned runtime contract | P1 |
+| D3 | Extend `InstallConfig` with 5 runtime-relevant fields (`SelfContained`, scope preference, `PayloadFolderName`, `CreateRestorePoint`, `CreateUninstallEntry`)? | A: add them (additive) · B: keep them as loose context keys | **A** — makes the shipped JSON self-describing and lets `ResolvePayloadRoot` stop hardcoding `"payload"` | P2 |
+| D4 | Fix BeepDM's inert installer surface (env-var step, ARP uninstall key, scope-awareness, `SupportsRollback`, duplicate StepId)? | A: fix upstream in BeepDM · B: work around it in the installer | **A** — genuine BeepDM gaps; working around them re-creates the duplication we're removing | P2 |
+| D5 | CI dependency strategy for the relative cross-repo `ProjectReference`s | A: multi-repo checkout · B: consume NuGet packages | spike in 9.A.1 | P0/P9 |
+| D6 | Fix `Vis.Modules`/`Winform.Controls` reference design (their conditional ItemGroup adds *packages* when BeepDM is absent but never *project refs* when present) | A: BeepShell-style guarded refs · B: leave; each consumer adds its own direct ref | **A**, but in its own change window — Beep.Winform ships publicly to many consumers | after P0 |
+| D7 | Builder restyle ambition | A: shared theme-token layer over existing controls · B: full Beep-control adoption | **A** first | P6 |
+| D8 | Adopt BeepDM's planned `feed.json` update protocol instead of ClickOnce update checking? | A: keep ClickOnce for now · B: converge | **A** — converging is a product decision, not a refactor | backlog |
+| D9 | Ship `Beep.Installer.Core` as its own NuGet package? | A: internal project only · B: publish | **A** until it stabilizes | backlog |
+
+---
+
+## Phase 0: Build, Binding & Test Compilation 🟡 — P0
+
+> 📄 **[P0_BUILD_BINDING_DESIGN.md](P0_BUILD_BINDING_DESIGN.md)**
+
+| # | Task | Status |
+|---|------|--------|
+| 0.A.1 | Purge poisoned global-cache entries for `...DataManagementModels/Engine` 3.1.1 | ⬜ (unnecessary so far — the direct ProjectReference bypassed the stale package) |
+| 0.A.2 | Add direct `DataManagementModels` ProjectReference + `Directory.Build.props` | ✅ |
+| 0.A.3 | Bump BeepDM source to 3.1.2 and repack to the local feed | ⬜ (still advised: 3.1.1 was republished with different content) |
+| 0.A.4 | Confirm startup no longer throws `TypeLoadException` | ✅ |
+| 0.B.1 | Fix the test-project compile errors | ✅ (211 tests now run) |
+| 0.B.2 | Add phase-referenced `Skip=` for step-dependent tests | ⬜ |
+| 0.C.1 | Point CI at real solution/test paths + sibling checkouts + source-binding assertion | ⬜ |
+| 0.M.1 | Gate: builds, `/VER` runs, `dotnet test` executes | ✅ |
+
+## Phase 1: Contract Bridge — Make It Actually Install ✅ — P0
+
+> 📄 **[P1_CONTRACT_BRIDGE_DESIGN.md](P1_CONTRACT_BRIDGE_DESIGN.md)**
+
+| # | Task | Status |
+|---|------|--------|
+| 1.A.1 | `InstallConfigProjector` + field-mapping test | ✅ |
+| 1.A.2 | `InstallContextKeys` + `InstallContextBuilder` + key-completeness test | ✅ |
+| 1.A.3 | Route silent install / uninstall / selftest through the builder | ✅ |
+| 1.B.1 | Payload steps read context instead of the global static | ✅ |
+| 1.B.2 | Delete `RuntimeProjectContext`; route the UI install path through the builder | ✅ |
+| 1.B.3 | Drop `InstallationTypeEx`/`UpdateModeEx` duplicate enums | ✅ |
+| 1.C.1 | Single `PerUser` decision (`InstallScopeResolver.IsPerUser`); emit `install-config.json` at build | ✅ |
+| 1.M.1 | **Gate: `/SELFTEST` passes ✅, `/VALIDATE` round-trips ✅** | 🟡 full `/S` E2E still blocked on the P3 publish timeout |
+| 1.M.2 | SOLID review | ⬜ |
+
+**P1 notes.** 10 new tests in `InstallContextBridgeTests` assert the projection and — critically —
+that `PerUser`/`IsSelfContained` are stored as *boxed booleans*, since the steps read them with
+`TryGetValue` + pattern match rather than the class-constrained `TryGetProperty<T>`. The
+duplicate `...Ex` enums are gone, so the serializer's three identity mappers collapsed away.
+`InstallScopeResolver.IsPerUser` is now the single scope decision; it preserves the existing
+(arguably backwards) mapping where `PrivilegeLevel.Lowest` resolves to per-machine — changing
+that would relocate existing installations, so it is flagged for P2 instead.
+
+## Phase 2: Runtime Thinning — Delegate to BeepDM, Fix It Upstream 🟡 — P1
+
+> 📄 **[P2_RUNTIME_THINNING_DESIGN.md](P2_RUNTIME_THINNING_DESIGN.md)** · needs D3, D4
+
+| # | Task | Status |
+|---|------|--------|
+| 2.A.0 | **BeepDM `UninstallStep`: delete manifest before the empty-directory sweep** | ✅ (done early — it blocked the self-test) |
+| 2.A.1 | Rename duplicate `installer.com.register` StepId | ⬜ |
+| 2.A.2 | **New** BeepDM `EnvironmentVariableStep` + uninstall reversal + 7 tests | ✅ |
+| 2.A.3 | ~~**New** BeepDM `UninstallEntryStep` (Add/Remove Programs)~~ | ✅ **not needed** — verified the installer already synthesizes the ARP registry entries via `BuildUninstallRegistryEntries`, which `RegistryWriteStep` writes. The R0 gap was real for BeepDM in isolation but the installer compensates; a dedicated step would duplicate working behaviour. |
+| 2.B.1 | Scope-awareness: shared `ShortcutPathResolver`, scope-aware file associations, rollback hive, registry rollback registration | ✅ |
+| 2.B.2 | `SupportsRollback`/`RollbackAsync` on the mutating steps | 🟡 `EnvironmentVariableStep` done; registry writes now register with `RollbackManager`; file-copy/shortcut/COM steps ⬜ |
+| 2.B.3 | Honour `SetupOptions.DryRun` (file copy, registry, shortcuts, env vars, custom actions, file assoc) | ✅ |
+| 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ⬜ |
+| 2.C.2 | Payload SHA-256 verification before copy | ⬜ |
+| 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ⬜ |
+| 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ⬜ |
+| 2.M.2 | SOLID review | ⬜ |
+
+## Phase 3: Authoring Core — Extract to `Beep.Installer.Core` ⬜ — P1
+
+> 📄 **[P3_AUTHORING_CORE_DESIGN.md](P3_AUTHORING_CORE_DESIGN.md)**
+
+| # | Task | Status |
+|---|------|--------|
+| 3.A.1 | Create `Beep.Installer.Core`; move leaf helpers | ✅ |
+| 3.A.2 | Move `InstallProject`/`CustomWizardPage` + projector/context builder | ✅ |
+| 3.A.3 | Move the `.bsetup` serializer | ✅ (still one class — the partial split is cosmetic and outstanding) |
+| 3.A.4 | Move scanner, factory, templates, MRU, autosave | ✅ (logger injection + swallowed-catch sweep ⬜) |
+| 3.B.1 | Move `BuildPipeline` + payload/host builders | ✅ (stage decomposition ⬜) |
+| 4.A.2–4.A.4 | Move Msix, Signing, ClickOnce, Publisher into Core/Packaging | ✅ (async update check + `IInstallerPublisher` interface ⬜) |
+| 3.A.2 | Move `InstallProject`/`CustomWizardPage` + projector/context builder/`CustomPageManager` | ⬜ |
+| 3.A.3 | Move serializer → `BsetupSerializer` partials behind the interface | ⬜ |
+| 3.A.4 | Move scanner/factory/templates/MRU/autosave; inject logger; fix swallowed catches | ⬜ |
+| 3.B.1 | `InstallerBuilder` + pure stages; parity vs old pipeline | ⬜ |
+| 3.B.2 | Publish seam (`IInstallerHostBuilder`) + configurable timeout + `KeepIntermediates` | ✅ **unblocked 29 tests** |
+| 3.B.3 | Wire sign + MSIX for real (no silent stubs) | ✅ |
+| 3.B.4 | Wire `SolidCompression` + `CompressionLevel` (were collected then ignored) | ✅ |
+| 3.B.5 | Fix runtime-script source rebasing for files in subdirectories | ✅ |
+| 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ⬜ |
+| 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ⬜ |
+| 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | ⬜ |
+| 3.M.2 | SOLID review | ⬜ |
+
+## Phase 4: Packaging Consolidation (ClickOnce / MSIX / Signing) ⬜ — P2
+
+> 📄 **[P4_PACKAGING_CLICKONCE_MSIX_DESIGN.md](P4_PACKAGING_CLICKONCE_MSIX_DESIGN.md)** · placement resolved: `Beep.Installer.Core/Packaging/`
+
+| # | Task | Status |
+|---|------|--------|
+| 4.A.2 | Move Msix + Signing into Core/Packaging on the shared `ToolLocator` | ⬜ |
+| 4.A.3 | Move ClickOnce; rename `RollbackManager`→`VersionBackupRotator`; async update check/apply | ⬜ |
+| 4.A.4 | `ClickOncePublisher : IInstallerPublisher`; rewire `/PUBLISH`; delete `Engine/ClickOnce` | ⬜ |
+| 4.B.1 | Replace PowerShell shortcut shelling with COM | ⬜ |
+| 4.M.1 | Gate: publish + ClickOnce + Msix + update suites green | ⬜ |
+| 4.M.2 | SOLID review | ⬜ |
+
+## Phase 5: Thin Shell — DI Composition Root ⬜ — P1
+
+> 📄 **[P5_THIN_SHELL_DESIGN.md](P5_THIN_SHELL_DESIGN.md)**
+
+| # | Task | Status |
+|---|------|--------|
+| 5.A.1 | `CliOptions` parser; `Dispatch` < 100 lines | ⬜ |
+| 5.A.2 | Composition root: `AddBeepForDesktop()` + `AddSetupWizard()` + Core registrations | ⬜ |
+| 5.B.1 | `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
+| 5.B.2 | `IDMLogger` adoption; retire `Diag` | ⬜ |
+| 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ⬜ |
+| 5.M.2 | SOLID review | ⬜ |
+
+## Phase 6: UI/UX Overhaul ⬜ — P1
+
+> 📄 **[P6_UIUX_DESIGN.md](P6_UIUX_DESIGN.md)** · needs D7
+
+| # | Task | Status |
+|---|------|--------|
+| 6.A.1 | Stepper generated from pages; gated step-jumps; focus on page change | ✅ |
+| 6.A.2 | Real install progress bar; Cancel no longer orphans a running install | ✅ (true mid-install cancellation blocked upstream — see note) |
+| 6.A.3 | Branding wired at runtime (colours, accent, window icon) | ✅ (builder live preview ⬜) |
+| 6.B.1 | `Ui/InstallerTheme` shared tokens; the 3 palettes now delegate to it | ✅ |
+| 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ (pages still use absolute coords — container re-layout ⬜) |
+| 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree + per-file sizing still sync ⬜) |
+| 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ⬜ |
+| 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ⬜ |
+| 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
+| 6.M.2 | SOLID review | ⬜ |
+
+## Phase 7: Localization, RTL, Accessibility ⬜ — P2
+
+> 📄 **[P7_I18N_A11Y_DESIGN.md](P7_I18N_A11Y_DESIGN.md)**
+
+| # | Task | Status |
+|---|------|--------|
+| 7.A.1 | Resx key parity (47 keys × 8 cultures) + parity test | ✅ |
+| 7.A.0 | **Fix the resource loader — translations were never loaded at runtime** | ✅ |
+| 7.A.2 | Route wizard-page headers/prompts through `LanguageManager` | 🟡 pages with existing keys done; builder + dialogs still English-only |
+| 7.B.1 | End-user language switcher + live `ReloadStrings()` | ⬜ |
+| 7.B.2 | Wire `RtlHelper` into the wizard | ✅ (manual Arabic visual pass still ⬜) |
+| 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-color status | ⬜ |
+| 7.M.1 | Gate: Narrator walkthrough + Accessibility Insights + parity tests | ⬜ |
+| 7.M.2 | SOLID review | ⬜ |
+
+## Phase 8: Security & Reliability Hardening ⬜ — P1 (8.A may be pulled forward)
+
+> 📄 **[P8_SECURITY_RELIABILITY_DESIGN.md](P8_SECURITY_RELIABILITY_DESIGN.md)**
+
+| # | Task | Status |
+|---|------|--------|
+| 8.A.1 | Secret store (`dpapi:`/`env:` refs); no plaintext signing password in `.bsetup` | ⬜ |
+| 8.A.2 | Script-command consent policy + `/ALLOWSCRIPTCMDS` | ⬜ |
+| 8.A.3 | Payload hash record + verify (coordinates with 2.C.2) | ⬜ |
+| 8.B.1 | Swallowed-exception sweep (Core **and** shell) + permanent source guards | ✅ |
+| 8.B.2 | Autosave snapshot fix + race stress test | ⬜ |
+| 8.B.3 | Sync-over-async sweep | ⬜ |
+| 8.M.1 | Gate: security test matrix + full suite | ⬜ |
+| 8.M.2 | SOLID review | ⬜ |
+
+## Phase 9: Test Migration & Regression 🟡 — P0 gate
+
+> 📄 **[P9_REGRESSION_DESIGN.md](P9_REGRESSION_DESIGN.md)** · needs D5
+
+| # | Task | Status |
+|---|------|--------|
+| 9.A.0 | Restore test-project compilation (moved from P0) | ✅ 211 run / 172 pass |
+| 9.A.1 | D5 spike: CI strategy for cross-repo references | ⬜ |
+| 9.A.2 | (continuous) per-phase test moves + golden/parity suites | ⬜ |
+| 9.B.1 | Redistribute suites per map; total ≥ 211 green; zero unexplained skips | ⬜ |
+| 9.B.2 | CI smoke: `/SELFTEST` + build→install→uninstall E2E | ⬜ |
+| 9.B.3 | Final manual matrix (DPI/Narrator/RTL) + SOLID rows recorded | ⬜ |
+
+---
+
+## Summary
+
+| Phase | Name | Priority | Status | Design Doc |
+|-------|------|----------|--------|------------|
+| 0 | Build, binding & test compilation | **P0 blocker** | 🟡 unblocked | [P0](P0_BUILD_BINDING_DESIGN.md) |
+| 1 | Contract bridge — make it install | **P0** | 🟡 installing | [P1](P1_CONTRACT_BRIDGE_DESIGN.md) |
+| 2 | Runtime thinning + BeepDM upstream fixes | P1 | 🟡 started | [P2](P2_RUNTIME_THINNING_DESIGN.md) |
+| 3 | Authoring core extraction | P1 | ⬜ | [P3](P3_AUTHORING_CORE_DESIGN.md) |
+| 4 | Packaging consolidation | P2 | ⬜ | [P4](P4_PACKAGING_CLICKONCE_MSIX_DESIGN.md) |
+| 5 | Thin shell / DI | P1 | ⬜ | [P5](P5_THIN_SHELL_DESIGN.md) |
+| 6 | UI/UX overhaul | P1 | ⬜ | [P6](P6_UIUX_DESIGN.md) |
+| 7 | Localization / RTL / a11y | P2 | ⬜ | [P7](P7_I18N_A11Y_DESIGN.md) |
+| 8 | Security & reliability | P1 | ⬜ | [P8](P8_SECURITY_RELIABILITY_DESIGN.md) |
+| 9 | Test migration & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
+
+**Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
+highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and
+makes a real `/BUILD` E2E possible. P2 (BeepDM-side) and P3 (installer-side) can run in
+parallel; P4 and P5 follow P3. P6 can start any time after P1. P7 follows P6. P8.A may be
+pulled forward. P9 runs continuously and closes last.
+
+**End state.** `Beep.Installer` = `Forms/`, `Pages/`, `Ui/`, `Lang/`, `Hosting/` + 5 UI helpers
+(~4.5k LOC shell). `Beep.Installer.Core` = authoring model, `.bsetup` serializer, scanner,
+build stages, packaging. **BeepDM** = the runtime install contract (`InstallConfig`) and
+execution engine — with the env-var step, ARP registration, scope-awareness, real rollback
+support and its first test coverage contributed back upstream.

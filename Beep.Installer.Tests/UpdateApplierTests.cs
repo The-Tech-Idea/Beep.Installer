@@ -47,7 +47,7 @@ public class UpdateApplierTests
         var (deploy, app) = BuildManifests("1.2.0.0", "App.exe", "lib.dll", "Assets/icon.txt");
         var files = new Dictionary<string, byte[]>
         {
-            ["App.exe.deploy"] = Encoding.UTF8.GetBytes(InstallerOutputFormat.Exe),
+            ["App.exe.deploy"] = Encoding.UTF8.GetBytes("exe"),
             ["lib.dll.deploy"] = Encoding.UTF8.GetBytes("dll"),
             ["Assets/icon.txt.deploy"] = Encoding.UTF8.GetBytes("ico"),
         };
@@ -71,7 +71,7 @@ public class UpdateApplierTests
             r.RemoteVersion.Should().Be("1.2.0.0");
             r.DownloadedFiles.Should().BeEquivalentTo(new[] { "App.exe", "lib.dll", "Assets/icon.txt" });
 
-            File.ReadAllBytes(Path.Combine(stageRoot, "App.exe")).Should().Equal(Encoding.UTF8.GetBytes(InstallerOutputFormat.Exe));
+            File.ReadAllBytes(Path.Combine(stageRoot, "App.exe")).Should().Equal(Encoding.UTF8.GetBytes("exe"));
             File.ReadAllBytes(Path.Combine(stageRoot, "lib.dll")).Should().Equal(Encoding.UTF8.GetBytes("dll"));
             File.ReadAllBytes(Path.Combine(stageRoot, "Assets", "icon.txt")).Should().Equal(Encoding.UTF8.GetBytes("ico"));
         }

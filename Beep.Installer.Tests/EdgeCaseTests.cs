@@ -30,7 +30,7 @@ public class EdgeCaseTests : IDisposable
     {
         var project = MakeProject("Empty", "");
         project.Components.Clear();
-        var result = new InstallerBuilder().Validate(project);
+        var result = TestHelpers.TestPipeline().Validate(project);
         result.Warnings.Should().Contain(w => w.Contains("No components"));
     }
 
@@ -40,13 +40,16 @@ public class EdgeCaseTests : IDisposable
         var src = Path.Combine(_tempRoot, "missing");
         // Don't create it — simulate a missing source dir
         var project = MakeProject("Missing", src);
-        var result = new InstallerBuilder().Validate(project);
+        var result = TestHelpers.TestPipeline().Validate(project);
         result.Warnings.Should().Contain(w => w.Contains("Source directory does not exist"));
     }
 
     [Fact]
-    public void Build_WithMissingSourceFiles_WarnsButSucceeds()
+    public void Build_WithMissingRequiredSourceFile_Fails()
     {
+        // This used to succeed with only a warning, which guaranteed a broken install: the
+        // file is never staged into the payload, and FileCopyStep FAILS at install time on a
+        // missing required file. Better to fail on the author's machine than the user's.
         var src = Path.Combine(_tempRoot, "existingsrc");
         Directory.CreateDirectory(src);
         File.WriteAllText(Path.Combine(src, "real.dll"), "real");
@@ -61,11 +64,64 @@ public class EdgeCaseTests : IDisposable
                 new() { SourcePath = Path.Combine(src, "ghost.dll"), DestinationPath = "ghost.dll" } // missing
             }
         });
-        var result = new InstallerBuilder().Build(project);
-        result.Success.Should().BeTrue(); // build succeeds — FileCopyStep handles missing files
-        // But config validation should warn about the missing file
-        var validateResult = ConfigManager.Validate(project);
-        validateResult.Should().Contain(w => w.Contains("ghost.dll"));
+
+        var result = TestHelpers.TestPipeline().Run(project);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("ghost.dll"));
+
+        // ConfigManager validates BeepDM's runtime contract, so project the authoring model first.
+        ConfigManager.Validate(InstallConfigProjector.ToInstallConfig(project))
+            .Should().Contain(w => w.Contains("ghost.dll"));
+    }
+
+    [Fact]
+    public void Build_WithMissingOptionalSourceFile_WarnsButSucceeds()
+    {
+        // An optional file is allowed to be absent — it warns and the build continues.
+        var src = Path.Combine(_tempRoot, "optionalsrc");
+        Directory.CreateDirectory(src);
+        File.WriteAllText(Path.Combine(src, "real.dll"), "real");
+        var project = MakeProject("OptionalMissing", src);
+        project.Components.Clear();
+        project.Components.Add(new TheTechIdea.Beep.Installer.InstallComponent
+        {
+            Id = "core", Name = "Core", Required = true, Selected = true,
+            Files = new()
+            {
+                new() { SourcePath = Path.Combine(src, "real.dll"), DestinationPath = "real.dll" },
+                new() { SourcePath = Path.Combine(src, "ghost.dll"), DestinationPath = "ghost.dll", IsRequired = false }
+            }
+        });
+
+        var result = TestHelpers.TestPipeline().Run(project);
+
+        result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
+        result.Warnings.Should().Contain(w => w.Contains("ghost.dll"));
+        result.FileCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void Build_WhereNoDeclaredFileExists_Fails()
+    {
+        // The exact shape that shipped an empty installer while reporting success.
+        var src = Path.Combine(_tempRoot, "allmissing");
+        Directory.CreateDirectory(src);
+        var project = MakeProject("AllMissing", src);
+        project.Components.Clear();
+        project.Components.Add(new TheTechIdea.Beep.Installer.InstallComponent
+        {
+            Id = "core", Name = "Core", Required = true, Selected = true,
+            Files = new()
+            {
+                new() { SourcePath = Path.Combine(src, "nope.dll"), DestinationPath = "nope.dll", IsRequired = false }
+            }
+        });
+
+        var result = TestHelpers.TestPipeline().Run(project);
+
+        result.Success.Should().BeFalse("an installer that declares files but stages none has no payload");
+        result.Errors.Should().Contain(e => e.Contains("no payload"));
     }
 
     [Fact]
@@ -76,7 +132,7 @@ public class EdgeCaseTests : IDisposable
         project.CompressPayload = false;
 project.UseTestDefaults();
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         var outDir = Path.GetDirectoryName(result.OutputFile)!;
         File.Exists(Path.Combine(outDir, "script.bsetup")).Should().BeTrue();
@@ -95,7 +151,7 @@ project.UseTestDefaults();
             File.WriteAllText(Path.Combine(src, $"file_{i:D4}.dat"), new string('x', 500));
 
         var project = MakeProject("ManyFiles", src);
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         result.FileCount.Should().Be(100);
     }
@@ -106,7 +162,7 @@ project.UseTestDefaults();
         var src = Path.Combine(_tempRoot, "empty");
         Directory.CreateDirectory(src);
         var project = MakeProject("EmptySrc", src);
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         result.FileCount.Should().Be(0);
     }
@@ -116,7 +172,7 @@ project.UseTestDefaults();
     {
         var src = Path.Combine(_tempRoot, "filtered");
         Directory.CreateDirectory(src);
-        File.WriteAllText(Path.Combine(src, "app.exe"), InstallerOutputFormat.Exe);
+        File.WriteAllText(Path.Combine(src, "app.exe"), "exe");
         File.WriteAllText(Path.Combine(src, "lib.dll"), "dll");
         File.WriteAllText(Path.Combine(src, "debug.pdb"), "pdb");
 
@@ -125,7 +181,7 @@ project.UseTestDefaults();
         project.SourceExcludes.Add("*.exe");
         project.SourceExcludes.Add("*.pdb");
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         var payloadDir = Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "payload");
         File.Exists(Path.Combine(payloadDir, "lib.dll")).Should().BeTrue();
@@ -143,12 +199,33 @@ project.UseTestDefaults();
         var project = MakeProject("Packed", src);
         project.CompressPayload = true;
 
-        var result = new InstallerBuilder().Build(project);
+        // Keeping intermediates lets us see the archive the build produced.
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         var outDir = Path.GetDirectoryName(result.OutputFile)!;
         File.Exists(Path.Combine(outDir, "payload.zip")).Should().BeTrue();
-        // After compression, the folder should be removed
+        result.PayloadPath.Should().EndWith("payload.zip");
+    }
+
+    [Fact]
+    public void Build_CleansIntermediates_OnceEmbedded()
+    {
+        var src = Path.Combine(_tempRoot, "topack2");
+        Directory.CreateDirectory(src);
+        File.WriteAllText(Path.Combine(src, "a.dat"), "data");
+
+        var project = MakeProject("PackedClean", src);
+        project.CompressPayload = true;
+
+        // Default shipping behaviour: a successful build leaves a single self-contained EXE,
+        // so both the staged folder and the archive are removed once embedded.
+        var result = TestHelpers.TestPipeline(keepIntermediates: false).Run(project);
+        result.Success.Should().BeTrue();
+
+        var outDir = Path.GetDirectoryName(result.OutputFile)!;
         Directory.Exists(Path.Combine(outDir, "payload")).Should().BeFalse();
+        File.Exists(Path.Combine(outDir, "payload.zip")).Should().BeFalse();
+        File.Exists(result.OutputFile).Should().BeTrue();
     }
 
     [Fact]
@@ -160,9 +237,9 @@ project.UseTestDefaults();
         project.CompressPayload = false;
 project.UseTestDefaults();
 
-        var builder = new InstallerBuilder();
+        var builder = TestHelpers.TestPipeline();
         // Call the private method indirectly by building
-        var result = builder(project);
+        var result = builder.Run(project);
         result.Success.Should().BeTrue();
 
         var (runtimeProject, err) = InstallerScriptSerializer.Load(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup"));
@@ -180,7 +257,7 @@ project.UseTestDefaults();
             project.CompressPayload = false;
 project.UseTestDefaults();
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
 
         var (runtimeProject, err) = InstallerScriptSerializer.Load(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup"));
@@ -200,7 +277,7 @@ project.UseTestDefaults();
 project.UseTestDefaults();
 
         // First build
-        new InstallerBuilder().Build(project).Success.Should().BeTrue();
+        TestHelpers.TestPipeline().Run(project).Success.Should().BeTrue();
 
         // Create a junk file in the output dir
         var outDir = project.OutputDir;
@@ -209,7 +286,7 @@ project.UseTestDefaults();
         File.Exists(junkPath).Should().BeTrue();
 
         // Second build with clean=true
-        new InstallerBuilder().Build(project, cleanOutput: true).Success.Should().BeTrue();
+        TestHelpers.TestPipeline().Run(project, cleanOutput: true).Success.Should().BeTrue();
 
         // Junk should be gone
         File.Exists(junkPath).Should().BeFalse();
@@ -223,7 +300,7 @@ project.UseTestDefaults();
         File.WriteAllText(Path.Combine(src, "p.dll"), "p");
 
         var project = MakeProject("Paths", src);
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.OutputFile.Should().NotBeNullOrEmpty();
         Directory.Exists(Path.GetDirectoryName(result.OutputFile)).Should().BeTrue();
@@ -259,4 +336,6 @@ p.UseTestDefaults();
         return p;
     }
 }
+
+
 

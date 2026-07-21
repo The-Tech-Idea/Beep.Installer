@@ -32,6 +32,9 @@ public class LanguageManagerForm : Form
         Text = "Language Manager — Beep Installer";
         Size = new Size(1000, 680);
         StartPosition = FormStartPosition.CenterScreen;
+        // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         InitializeUI();
         LoadAllLanguages();
         ShowLanguage("en");

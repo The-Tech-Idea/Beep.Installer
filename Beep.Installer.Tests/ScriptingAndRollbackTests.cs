@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -58,7 +59,7 @@ public class ScriptingAndRollbackTests : IDisposable
 project.UseTestDefaults();
         project.CreateUninstallEntry = false;
 project.UseTestDefaults();
-            new InstallerBuilder().Build(project).Success.Should().BeTrue();
+            TestHelpers.TestPipeline().Run(project).Success.Should().BeTrue();
 
         var (runtimeProject, err) = InstallerScriptSerializer.Load(Path.Combine(project.OutputDir, "script.bsetup"));
         err.Should().BeNull();
@@ -84,18 +85,17 @@ project.UseTestDefaults();
         var config = new InstallProject
         {
             AppName = "MacroTest", AppVersion = "2.0.0", AppPublisher = "P",
-            Components = new List<InstallComponent>()
+            Components = new ObservableCollection<InstallComponent>()
         };
 
-        var context = new SetupContext();
-        context.Properties["InstallProject"] = config;
-        context.Properties["InstallPath"] = installDir;
+        var context = InstallContextBuilder.ForInstall(config, installDir, perUser: true);
         context.Properties["CustomActions"] = new List<CustomAction>
         {
             new()
             {
                 Path = runnerCopy,
-                Arguments = "/c echo {AppName} {Version} > \"{InstallPath}\\marker.txt\"",
+                // BeepDM's CustomActionStep owns the macro vocabulary: {ProductName}, not {AppName}.
+                Arguments = "/c echo {ProductName} {Version} > \"{InstallPath}\\marker.txt\"",
                 Timing = CustomActionTiming.AfterInstall,
                 FailOnError = true
             }
@@ -124,7 +124,7 @@ project.UseTestDefaults();
         {
             AppName = "Rollback", AppVersion = "1.0.0",
             DefaultDirName = installDir,
-            Components = new List<InstallComponent>
+            Components = new ObservableCollection<InstallComponent>
             {
                 new()
                 {
@@ -134,12 +134,8 @@ project.UseTestDefaults();
             }
         };
 
-        var context = new SetupContext();
-        context.Properties["InstallProject"] = config;
-        context.Properties["InstallPath"] = installDir;
-
         var rollback = new RollbackManager();
-        context.Properties["RollbackManager"] = rollback;
+        var context = InstallContextBuilder.ForInstall(config, installDir, perUser: true, rollback);
 
         // FileCopyStep copies the file AND registers it with the rollback manager.
         var copyResult = new FileCopyStep().Execute(context);
@@ -153,4 +149,6 @@ project.UseTestDefaults();
         File.Exists(installedFile).Should().BeFalse("rollback must delete the copied file");
     }
 }
+
+
 

@@ -42,7 +42,7 @@ public class StoreReadinessTests
     [Fact]
     public void AllChecks_Info_OnAValidPackage()
     {
-        var staging = MakeStaging("MyCo.MyApp", "1.2.3.4", Architecture.X64, signed: true, withLogo: true);
+        var staging = MakeStaging("MyCo.MyApp", "1.2.3.4", "x64", signed: true, withLogo: true);
         try
         {
             var r = StoreReadinessChecker.Check(staging);
@@ -87,7 +87,7 @@ public class StoreReadinessTests
     }
 
     [Theory]
-    [InlineData(Architecture.X64, true)]
+    [InlineData("x64", true)]
     [InlineData("x86", true)]
     [InlineData("arm64", true)]
     [InlineData("neutral", true)]

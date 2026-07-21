@@ -6,7 +6,7 @@
 AppName=MyApp
 AppVersion=1.0.0
 Publisher=The Tech Idea
-SourceDir=samples\HelloApp
+SourceDir=HelloApp
 DefaultDirName={pf}\MyApp
 DefaultGroupName=Beep Samples\MyApp
 OutputBaseFilename=Setup-MyApp-1.0.0
@@ -28,9 +28,9 @@ Name: "core"; Description: "Main MyApp files"; Required: yes; Selected: yes; Typ
 Name: "docs"; Description: "Help files"; Required: no; Selected: yes; Types: typical
 
 [Files]
-Source: "samples\HelloApp\MyApp.bat"; DestDir: "{app}"; DestName: "MyApp.bat"; Component: core
-Source: "samples\HelloApp\readme.txt"; DestDir: "{app}"; DestName: "readme.txt"; Component: core
-Source: "samples\HelloApp\docs\help.txt"; DestDir: "{app}\docs"; DestName: "help.txt"; Component: docs; Flags: optional
+Source: "HelloApp\MyApp.bat"; DestDir: "{app}"; DestName: "MyApp.bat"; Component: core
+Source: "HelloApp\readme.txt"; DestDir: "{app}"; DestName: "readme.txt"; Component: core
+Source: "HelloApp\docs\help.txt"; DestDir: "{app}\docs"; DestName: "help.txt"; Component: docs; Flags: optional
 
 [Icons]
 Name: "{group}\MyApp"; Filename: "{app}\MyApp.bat"

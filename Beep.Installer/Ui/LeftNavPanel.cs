@@ -18,7 +18,7 @@ public sealed class LeftNavPanel : Panel
 
     public LeftNavPanel()
     {
-        BackColor = Color.FromArgb(241, 244, 248);
+        BackColor = InstallerTheme.Sidebar;
         Padding = new Padding(8, 10, 8, 10);
         _list = new ListView
         {
@@ -31,8 +31,8 @@ public sealed class LeftNavPanel : Panel
             MultiSelect = false,
             Font = new Font("Segoe UI", 9F),
             BorderStyle = BorderStyle.None,
-            BackColor = Color.FromArgb(241, 244, 248),
-            ForeColor = Color.FromArgb(32, 38, 46),
+            BackColor = InstallerTheme.Sidebar,
+            ForeColor = InstallerTheme.Text,
         };
         _list.Columns.Add("", 200);
         _list.SelectedIndexChanged += (_, _) =>

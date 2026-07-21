@@ -36,7 +36,7 @@ public class FolderPage : UserControl, IInstallerPage
 
         _title = new BeepLabel
         {
-            Text = "Destination Folder",
+            Text = LanguageManager.GetOrDefault("Wizard_Folder", "Destination Folder"),
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             Location = new Point(32, 24),
             AutoSize = true
@@ -44,7 +44,7 @@ public class FolderPage : UserControl, IInstallerPage
 
         _prompt = new BeepLabel
         {
-            Text = "Select the folder where the application will be installed:",
+            Text = LanguageManager.GetOrDefault("Folder_Prompt", "Select the folder where the application will be installed:"),
             Location = new Point(32, 64),
             Size = new Size(620, 40),
             Font = new Font("Segoe UI", 10)
@@ -59,7 +59,7 @@ public class FolderPage : UserControl, IInstallerPage
         };
         _browseBtn = new BeepButton
         {
-            Text = "Browse...",
+            Text = LanguageManager.GetOrDefault("Btn_Browse", "Browse..."),
             ImagePath = "Beep.Installer.Resources.Icons.folder-open.svg",
             Location = new Point(540, 114),
             Size = new Size(112, 34),

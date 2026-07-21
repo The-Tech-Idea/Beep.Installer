@@ -80,6 +80,10 @@ public class InstallerController : INotifyPropertyChanged
         if (project == null)
             return (false, error);
 
+        // Script-relative paths resolve against the script, not the builder's working
+        // directory. In memory only — saving must not bake absolute paths into the script.
+        InstallerScriptSerializer.ResolveRelativePaths(project, path);
+
         if (AutoSave.IsRecoveryAvailable(path))
         {
             var recovered = AutoSave.AutoSavePath(path);
@@ -227,7 +231,13 @@ public class InstallerController : INotifyPropertyChanged
                 if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
                 InstallerScriptSerializer.Save(_project, path);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Autosave exists so a crash does not lose the user's work. Failing silently
+                // means they believe they are covered when they are not — record it so the
+                // failure is at least discoverable.
+                Diag.Warn("AutoSave", "periodic autosave failed — crash recovery is unavailable", ex);
+            }
         }, null, (int)AutoSave.Interval.TotalMilliseconds, (int)AutoSave.Interval.TotalMilliseconds);
     }
 

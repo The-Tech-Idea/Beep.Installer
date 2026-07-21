@@ -105,6 +105,13 @@ public static class LanguageManager
     public static string GetOrDefault(string key, string defaultValue)
         => TryGetString(key, out var v) ? v : defaultValue;
 
+    /// <summary>
+    /// Every key defined for a culture, loaded through the same path the wizard uses.
+    /// Returning empty means that culture's resources are not reachable at runtime.
+    /// </summary>
+    public static IReadOnlyCollection<string> GetKeys(string twoLetterCode)
+        => LoadStrings(twoLetterCode).Keys.ToArray();
+
     public static string T(string key) => GetString(key);
     public static string Tf(string key, params object[] args) => GetString(key, args);
 
@@ -115,9 +122,17 @@ public static class LanguageManager
         var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var asm = typeof(LanguageManager).Assembly;
 
-        // 1) Embedded .resx (raw XML) — try common logical-name shapes
+        // 1) Embedded resources.
+        //
+        //    The SDK compiles .resx files into BINARY .resources at build time, so the
+        //    embedded name is "Beep.Installer.Lang.Strings_xx.resources" — not ".resx".
+        //    This list previously probed only .resx shapes and read them with
+        //    ResXResourceReader, so nothing ever matched, every lookup fell through to the
+        //    key/default, and all eight translations were dead at runtime. The .resources
+        //    entry must therefore come first; the .resx shapes are kept for loose/dev builds.
         var candidates = new[]
         {
+            ResourcePrefix + twoLetterCode + ".resources",
             ResourcePrefix + twoLetterCode + ".resx",
             ResourcePrefix + twoLetterCode,
             "Lang.Strings_" + twoLetterCode + ".resx",
@@ -129,9 +144,21 @@ public static class LanguageManager
             {
                 using var stream = asm.GetManifestResourceStream(name);
                 if (stream == null) continue;
-                using var reader = new ResXResourceReader(stream);
-                foreach (System.Collections.DictionaryEntry e in reader)
-                    if (e.Key is string k && e.Value is string s) dict[k] = s;
+
+                // Binary .resources needs ResourceReader; raw .resx needs ResXResourceReader.
+                if (name.EndsWith(".resources", StringComparison.OrdinalIgnoreCase))
+                {
+                    using var binary = new ResourceReader(stream);
+                    foreach (System.Collections.DictionaryEntry e in binary)
+                        if (e.Key is string bk && e.Value is string bs) dict[bk] = bs;
+                }
+                else
+                {
+                    using var reader = new ResXResourceReader(stream);
+                    foreach (System.Collections.DictionaryEntry e in reader)
+                        if (e.Key is string k && e.Value is string s) dict[k] = s;
+                }
+
                 if (dict.Count > 0) break;
             }
             catch (Exception ex) { Diag.Debug("LanguageManager", $"resource '{name}' skipped", ex); }

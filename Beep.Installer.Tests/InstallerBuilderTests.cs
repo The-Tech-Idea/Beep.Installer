@@ -45,8 +45,8 @@ p.UseTestDefaults();
     public void Build_ProducesSetupExeAndRuntimeScript()
     {
         var project = MakeProject("BuildTest", "1.0.0");
-        var builder = new InstallerBuilder();
-        var result = builder(project);
+        var builder = TestHelpers.TestPipeline();
+        var result = builder.Run(project);
 
         result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
         File.Exists(result.OutputFile).Should().BeTrue();
@@ -62,7 +62,7 @@ p.UseTestDefaults();
     public void Build_StagedFiles_MatchSourceTree()
     {
         var project = MakeProject("StageTest", "1.0.0");
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Success.Should().BeTrue();
         var payload = Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "payload");
@@ -76,7 +76,7 @@ p.UseTestDefaults();
         File.WriteAllText(Path.Combine(_sourceDir, "debug.pdb"), "pdb data");
         var project = MakeProject("ExcludeTest", "1.0.0");
         project.SourceExcludes.Add("**/*.pdb");
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Success.Should().BeTrue();
         var payload = Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "payload");
@@ -88,7 +88,7 @@ p.UseTestDefaults();
     {
         var project = MakeProject("ZipTest", "1.0.0");
         project.CompressPayload = true;
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Success.Should().BeTrue();
         File.Exists(Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "payload.zip")).Should().BeTrue();
@@ -101,7 +101,7 @@ p.UseTestDefaults();
         File.WriteAllText(bannerPath, "banner");
         var project = MakeProject("BuildBanner", "1.0.0", build => build.WizardImageFile = bannerPath);
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
         var outputDir = Path.GetDirectoryName(result.OutputFile)!;
@@ -120,7 +120,7 @@ p.UseTestDefaults();
         var project = MakeProject("BuildEula", "1.0.0", build => build.LicenseFile = eulaPath);
         project.LicenseText = "Old inline text";
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Success.Should().BeTrue(result.Errors.FirstOrDefault());
         var scriptPath = Path.Combine(Path.GetDirectoryName(result.OutputFile)!, "script.bsetup");
@@ -134,7 +134,7 @@ p.UseTestDefaults();
     {
         var project = MakeProject("", "1.0.0");
         project.AppName = "";
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("Product name"));
@@ -145,7 +145,7 @@ p.UseTestDefaults();
     {
         var project = MakeProject("MissingSrc", "1.0.0");
         project.SourceDirectory = Path.Combine(_tempDir, "does_not_exist");
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         result.Warnings.Should().Contain(w => w.Contains("Source directory does not exist"));
     }
@@ -154,16 +154,16 @@ p.UseTestDefaults();
     public void Build_ReportsProgress()
     {
         var project = MakeProject("ProgressTest", "1.0.0");
-        var progressEvents = new List<BuildProgress>();
-        var progress = new Progress<BuildProgress>(p => progressEvents.Add(p));
-        var builder = new InstallerBuilder { Progress = progress };
+        var progressEvents = new List<BuildPipeline.BuildProgress>();
+        var progress = new Progress<BuildPipeline.BuildProgress>(p => progressEvents.Add(p));
+        var builder = TestHelpers.TestPipeline();
 
         // Need to wait for progress callbacks since Progress<T> posts to SynchronizationContext
         using var done = new ManualResetEventSlim(false);
-        var uiProgress = new SynchronousProgress<BuildProgress>(p => progressEvents.Add(p));
+        var uiProgress = new SynchronousProgress<BuildPipeline.BuildProgress>(p => progressEvents.Add(p));
         builder.Progress = uiProgress;
 
-        var result = builder(project);
+        var result = builder.Run(project);
         result.Success.Should().BeTrue();
         progressEvents.Should().NotBeEmpty();
         progressEvents.Last().Percent.Should().Be(100);
@@ -173,7 +173,7 @@ p.UseTestDefaults();
     public void Build_Summary_IsHumanReadable()
     {
         var project = MakeProject("SummaryTest", "1.0.0");
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue();
         result.Summary.Should().Contain("Output");
         result.Summary.Should().Contain("Files");
@@ -186,4 +186,5 @@ p.UseTestDefaults();
         public void Report(T value) => _handler(value);
     }
 }
+
 

@@ -108,7 +108,11 @@ public class ErrorPage : UserControl, IInstallerPage
                 _icon.Image = bmp;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Decorative status icon — absence must not block the error page.
+            Engine.Diag.Debug("ErrorPage", "status icon could not be rendered", ex);
+        }
     }
 
     public void OnEnter(InstallContext ctx) { }

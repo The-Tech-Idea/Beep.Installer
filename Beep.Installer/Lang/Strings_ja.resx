@@ -1,37 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
-  <data name="Wizard_Title" xml:space="preserve"><value>Beep インストーラー</value></data>
-  <data name="Wizard_Welcome" xml:space="preserve"><value>ようこそ</value></data>
-  <data name="Wizard_License" xml:space="preserve"><value>ライセンス契約</value></data>
-  <data name="Wizard_Components" xml:space="preserve"><value>コンポーネントの選択</value></data>
-  <data name="Wizard_Folder" xml:space="preserve"><value>インストール先</value></data>
-  <data name="Wizard_StartMenu" xml:space="preserve"><value>スタートメニューフォルダ</value></data>
-  <data name="Wizard_Tasks" xml:space="preserve"><value>追加タスク</value></data>
-  <data name="Wizard_Ready" xml:space="preserve"><value>インストール準備完了</value></data>
-  <data name="Wizard_Installing" xml:space="preserve"><value>インストール中</value></data>
-  <data name="Wizard_Complete" xml:space="preserve"><value>インストール完了</value></data>
-  <data name="Btn_Back" xml:space="preserve"><value>&lt; 戻る</value></data>
-  <data name="Btn_Next" xml:space="preserve"><value>次へ &gt;</value></data>
-  <data name="Btn_Install" xml:space="preserve"><value>インストール</value></data>
-  <data name="Btn_Cancel" xml:space="preserve"><value>キャンセル</value></data>
-  <data name="Btn_Finish" xml:space="preserve"><value>完了</value></data>
-  <data name="Btn_Browse" xml:space="preserve"><value>参照...</value></data>
-  <data name="License_Accept" xml:space="preserve"><value>契約に同意します</value></data>
-  <data name="License_Decline" xml:space="preserve"><value>契約に同意しません</value></data>
-  <data name="Comp_Required" xml:space="preserve"><value>必須</value></data>
-  <data name="Comp_Optional" xml:space="preserve"><value>オプション</value></data>
-  <data name="Task_DesktopIcon" xml:space="preserve"><value>デスクトップにアイコンを作成</value></data>
-  <data name="Task_AutoStart" xml:space="preserve"><value>Windows起動時にBeepを実行</value></data>
-  <data name="Task_FileAssoc" xml:space="preserve"><value>.beepファイルをBeepに関連付け</value></data>
-  <data name="Complete_Success" xml:space="preserve"><value>Beepが正常にインストールされました。</value></data>
-  <data name="Complete_Failure" xml:space="preserve"><value>インストールに失敗しました。ログを確認してください。</value></data>
-  <data name="Complete_Launch" xml:space="preserve"><value>Beep Data Managerを起動</value></data>
-  <data name="Complete_ViewLog" xml:space="preserve"><value>インストールログを表示</value></data>
-  <data name="Error_AdminRequired" xml:space="preserve"><value>管理者権限が必要です。</value></data>
-  <data name="Error_DiskSpace" xml:space="preserve"><value>ディスク容量が不足しています。</value></data>
-  <data name="Error_DotNetMissing" xml:space="preserve"><value>.NETが見つかりません。.NET 9.0以降をインストールしてください。</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Wizard_Title" xml:space="preserve">
+    <value>Beep インストーラー</value>
+  </data>
+  <data name="Wizard_Welcome" xml:space="preserve">
+    <value>ようこそ</value>
+  </data>
+  <data name="Wizard_License" xml:space="preserve">
+    <value>ライセンス契約</value>
+  </data>
+  <data name="Wizard_Components" xml:space="preserve">
+    <value>コンポーネントの選択</value>
+  </data>
+  <data name="Wizard_Folder" xml:space="preserve">
+    <value>インストール先</value>
+  </data>
+  <data name="Wizard_StartMenu" xml:space="preserve">
+    <value>スタートメニューフォルダ</value>
+  </data>
+  <data name="Wizard_Tasks" xml:space="preserve">
+    <value>追加タスク</value>
+  </data>
+  <data name="Wizard_Ready" xml:space="preserve">
+    <value>インストール準備完了</value>
+  </data>
+  <data name="Wizard_Installing" xml:space="preserve">
+    <value>インストール中</value>
+  </data>
+  <data name="Wizard_Complete" xml:space="preserve">
+    <value>インストール完了</value>
+  </data>
+  <data name="Btn_Back" xml:space="preserve">
+    <value>&lt; 戻る</value>
+  </data>
+  <data name="Btn_Next" xml:space="preserve">
+    <value>次へ &gt;</value>
+  </data>
+  <data name="Btn_Install" xml:space="preserve">
+    <value>インストール</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="Btn_Finish" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Btn_Browse" xml:space="preserve">
+    <value>参照...</value>
+  </data>
+  <data name="License_Accept" xml:space="preserve">
+    <value>契約に同意します</value>
+  </data>
+  <data name="License_Decline" xml:space="preserve">
+    <value>契約に同意しません</value>
+  </data>
+  <data name="Comp_Required" xml:space="preserve">
+    <value>必須</value>
+  </data>
+  <data name="Comp_Optional" xml:space="preserve">
+    <value>オプション</value>
+  </data>
+  <data name="Task_DesktopIcon" xml:space="preserve">
+    <value>デスクトップにアイコンを作成</value>
+  </data>
+  <data name="Task_AutoStart" xml:space="preserve">
+    <value>Windows起動時にBeepを実行</value>
+  </data>
+  <data name="Task_FileAssoc" xml:space="preserve">
+    <value>.beepファイルをBeepに関連付け</value>
+  </data>
+  <data name="Complete_Success" xml:space="preserve">
+    <value>Beepが正常にインストールされました。</value>
+  </data>
+  <data name="Complete_Failure" xml:space="preserve">
+    <value>インストールに失敗しました。ログを確認してください。</value>
+  </data>
+  <data name="Complete_Launch" xml:space="preserve">
+    <value>Beep Data Managerを起動</value>
+  </data>
+  <data name="Complete_ViewLog" xml:space="preserve">
+    <value>インストールログを表示</value>
+  </data>
+  <data name="Error_AdminRequired" xml:space="preserve">
+    <value>管理者権限が必要です。</value>
+  </data>
+  <data name="Error_DiskSpace" xml:space="preserve">
+    <value>ディスク容量が不足しています。</value>
+  </data>
+  <data name="Error_DotNetMissing" xml:space="preserve">
+    <value>.NETが見つかりません。.NET 9.0以降をインストールしてください。</value>
+  </data>
+  <data name="Welcome_Description" xml:space="preserve">
+    <value>このウィザードがインストールを案内します。[次へ] をクリックして続行してください。</value>
+  </data>
+  <data name="Welcome_Subtitle" xml:space="preserve">
+    <value>セットアップはコンピューターに {0} をインストールします。</value>
+  </data>
+  <data name="License_Prompt" xml:space="preserve">
+    <value>この使用許諾契約の条項に同意しますか？</value>
+  </data>
+  <data name="Comp_TotalSize" xml:space="preserve">
+    <value>選択の合計: {0} MB</value>
+  </data>
+  <data name="Folder_Prompt" xml:space="preserve">
+    <value>アプリケーションをインストールするフォルダーを選択してください:</value>
+  </data>
+  <data name="Folder_AvailableSpace" xml:space="preserve">
+    <value>空き容量: {0} GB</value>
+  </data>
+  <data name="Folder_SpaceUnknown" xml:space="preserve">
+    <value>ディスクの空き容量を確認できませんでした。</value>
+  </data>
+  <data name="StartMenu_Prompt" xml:space="preserve">
+    <value>ショートカットを作成するスタート メニュー フォルダーを選択してください:</value>
+  </data>
+  <data name="StartMenu_Skip" xml:space="preserve">
+    <value>スタート メニュー フォルダーを作成しない</value>
+  </data>
+  <data name="Install_Starting" xml:space="preserve">
+    <value>インストールを開始しています...</value>
+  </data>
+  <data name="Install_CopyFiles" xml:space="preserve">
+    <value>ファイルをコピーしています...</value>
+  </data>
+  <data name="Install_Shortcuts" xml:space="preserve">
+    <value>ショートカットを作成しています...</value>
+  </data>
+  <data name="Install_Registry" xml:space="preserve">
+    <value>レジストリ エントリを書き込んでいます...</value>
+  </data>
+  <data name="Install_Verifying" xml:space="preserve">
+    <value>インストールを検証しています...</value>
+  </data>
+  <data name="Install_Preparing" xml:space="preserve">
+    <value>インストールを準備しています…</value>
+  </data>
+  <data name="Install_Progress" xml:space="preserve">
+    <value>{0} をインストールしています…（{1}%）</value>
+  </data>
+  <data name="Install_CancelDisabled" xml:space="preserve">
+    <value>インストールの開始後は中断できません。</value>
+  </data>
+  <data name="Nav_Project" xml:space="preserve">
+    <value>プロジェクト</value>
+  </data>
+  <data name="Nav_Source" xml:space="preserve">
+    <value>ソース</value>
+  </data>
+  <data name="Nav_Features" xml:space="preserve">
+    <value>機能</value>
+  </data>
+  <data name="Nav_Customize" xml:space="preserve">
+    <value>カスタマイズ</value>
+  </data>
+  <data name="Nav_Build" xml:space="preserve">
+    <value>ビルド</value>
+  </data>
+  <data name="Btn_Add" xml:space="preserve">
+    <value>追加</value>
+  </data>
+  <data name="Btn_Remove" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>編集</value>
+  </data>
+  <data name="Btn_Rescan" xml:space="preserve">
+    <value>再スキャン</value>
+  </data>
+  <data name="Btn_Apply" xml:space="preserve">
+    <value>適用</value>
+  </data>
+  <data name="Builder_SourceDir" xml:space="preserve">
+    <value>ソース フォルダー:</value>
+  </data>
+  <data name="Builder_NoScan" xml:space="preserve">
+    <value>未スキャンです。</value>
+  </data>
+  <data name="Builder_Modified" xml:space="preserve">
+    <value>変更済み</value>
+  </data>
+  <data name="Builder_Recent" xml:space="preserve">
+    <value>最近使った項目</value>
+  </data>
 </root>

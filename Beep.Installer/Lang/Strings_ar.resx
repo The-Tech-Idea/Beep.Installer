@@ -1,37 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
-  <data name="Wizard_Title" xml:space="preserve"><value>مثبت Beep</value></data>
-  <data name="Wizard_Welcome" xml:space="preserve"><value>مرحباً</value></data>
-  <data name="Wizard_License" xml:space="preserve"><value>اتفاقية الترخيص</value></data>
-  <data name="Wizard_Components" xml:space="preserve"><value>اختيار المكونات</value></data>
-  <data name="Wizard_Folder" xml:space="preserve"><value>مجلد الوجهة</value></data>
-  <data name="Wizard_StartMenu" xml:space="preserve"><value>مجلد قائمة ابدأ</value></data>
-  <data name="Wizard_Tasks" xml:space="preserve"><value>مهام إضافية</value></data>
-  <data name="Wizard_Ready" xml:space="preserve"><value>جاهز للتثبيت</value></data>
-  <data name="Wizard_Installing" xml:space="preserve"><value>جارٍ التثبيت</value></data>
-  <data name="Wizard_Complete" xml:space="preserve"><value>اكتمل التثبيت</value></data>
-  <data name="Btn_Back" xml:space="preserve"><value>&lt; رجوع</value></data>
-  <data name="Btn_Next" xml:space="preserve"><value>التالي &gt;</value></data>
-  <data name="Btn_Install" xml:space="preserve"><value>تثبيت</value></data>
-  <data name="Btn_Cancel" xml:space="preserve"><value>إلغاء</value></data>
-  <data name="Btn_Finish" xml:space="preserve"><value>إنهاء</value></data>
-  <data name="Btn_Browse" xml:space="preserve"><value>تصفح...</value></data>
-  <data name="License_Accept" xml:space="preserve"><value>أوافق على الاتفاقية</value></data>
-  <data name="License_Decline" xml:space="preserve"><value>لا أوافق على الاتفاقية</value></data>
-  <data name="Comp_Required" xml:space="preserve"><value>مطلوب</value></data>
-  <data name="Comp_Optional" xml:space="preserve"><value>اختياري</value></data>
-  <data name="Task_DesktopIcon" xml:space="preserve"><value>إنشاء أيقونة على سطح المكتب</value></data>
-  <data name="Task_AutoStart" xml:space="preserve"><value>تشغيل Beep عند بدء تشغيل Windows</value></data>
-  <data name="Task_FileAssoc" xml:space="preserve"><value>ربط ملفات .beep مع Beep</value></data>
-  <data name="Complete_Success" xml:space="preserve"><value>تم تثبيت Beep بنجاح.</value></data>
-  <data name="Complete_Failure" xml:space="preserve"><value>فشل التثبيت. يرجى مراجعة السجل.</value></data>
-  <data name="Complete_Launch" xml:space="preserve"><value>تشغيل Beep Data Manager</value></data>
-  <data name="Complete_ViewLog" xml:space="preserve"><value>عرض سجل التثبيت</value></data>
-  <data name="Error_AdminRequired" xml:space="preserve"><value>صلاحيات المسؤول مطلوبة.</value></data>
-  <data name="Error_DiskSpace" xml:space="preserve"><value>مساحة القرص غير كافية.</value></data>
-  <data name="Error_DotNetMissing" xml:space="preserve"><value>لم يتم العثور على .NET. يرجى تثبيت .NET 9.0 أو أحدث.</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Wizard_Title" xml:space="preserve">
+    <value>مثبت Beep</value>
+  </data>
+  <data name="Wizard_Welcome" xml:space="preserve">
+    <value>مرحباً</value>
+  </data>
+  <data name="Wizard_License" xml:space="preserve">
+    <value>اتفاقية الترخيص</value>
+  </data>
+  <data name="Wizard_Components" xml:space="preserve">
+    <value>اختيار المكونات</value>
+  </data>
+  <data name="Wizard_Folder" xml:space="preserve">
+    <value>مجلد الوجهة</value>
+  </data>
+  <data name="Wizard_StartMenu" xml:space="preserve">
+    <value>مجلد قائمة ابدأ</value>
+  </data>
+  <data name="Wizard_Tasks" xml:space="preserve">
+    <value>مهام إضافية</value>
+  </data>
+  <data name="Wizard_Ready" xml:space="preserve">
+    <value>جاهز للتثبيت</value>
+  </data>
+  <data name="Wizard_Installing" xml:space="preserve">
+    <value>جارٍ التثبيت</value>
+  </data>
+  <data name="Wizard_Complete" xml:space="preserve">
+    <value>اكتمل التثبيت</value>
+  </data>
+  <data name="Btn_Back" xml:space="preserve">
+    <value>&lt; رجوع</value>
+  </data>
+  <data name="Btn_Next" xml:space="preserve">
+    <value>التالي &gt;</value>
+  </data>
+  <data name="Btn_Install" xml:space="preserve">
+    <value>تثبيت</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Btn_Finish" xml:space="preserve">
+    <value>إنهاء</value>
+  </data>
+  <data name="Btn_Browse" xml:space="preserve">
+    <value>تصفح...</value>
+  </data>
+  <data name="License_Accept" xml:space="preserve">
+    <value>أوافق على الاتفاقية</value>
+  </data>
+  <data name="License_Decline" xml:space="preserve">
+    <value>لا أوافق على الاتفاقية</value>
+  </data>
+  <data name="Comp_Required" xml:space="preserve">
+    <value>مطلوب</value>
+  </data>
+  <data name="Comp_Optional" xml:space="preserve">
+    <value>اختياري</value>
+  </data>
+  <data name="Task_DesktopIcon" xml:space="preserve">
+    <value>إنشاء أيقونة على سطح المكتب</value>
+  </data>
+  <data name="Task_AutoStart" xml:space="preserve">
+    <value>تشغيل Beep عند بدء تشغيل Windows</value>
+  </data>
+  <data name="Task_FileAssoc" xml:space="preserve">
+    <value>ربط ملفات .beep مع Beep</value>
+  </data>
+  <data name="Complete_Success" xml:space="preserve">
+    <value>تم تثبيت Beep بنجاح.</value>
+  </data>
+  <data name="Complete_Failure" xml:space="preserve">
+    <value>فشل التثبيت. يرجى مراجعة السجل.</value>
+  </data>
+  <data name="Complete_Launch" xml:space="preserve">
+    <value>تشغيل Beep Data Manager</value>
+  </data>
+  <data name="Complete_ViewLog" xml:space="preserve">
+    <value>عرض سجل التثبيت</value>
+  </data>
+  <data name="Error_AdminRequired" xml:space="preserve">
+    <value>صلاحيات المسؤول مطلوبة.</value>
+  </data>
+  <data name="Error_DiskSpace" xml:space="preserve">
+    <value>مساحة القرص غير كافية.</value>
+  </data>
+  <data name="Error_DotNetMissing" xml:space="preserve">
+    <value>لم يتم العثور على .NET. يرجى تثبيت .NET 9.0 أو أحدث.</value>
+  </data>
+  <data name="Welcome_Description" xml:space="preserve">
+    <value>سيرشدك هذا المعالج خلال عملية التثبيت. اضغط "التالي" للمتابعة.</value>
+  </data>
+  <data name="Welcome_Subtitle" xml:space="preserve">
+    <value>سيقوم الإعداد بتثبيت {0} على جهازك.</value>
+  </data>
+  <data name="License_Prompt" xml:space="preserve">
+    <value>هل توافق على شروط اتفاقية الترخيص هذه؟</value>
+  </data>
+  <data name="Comp_TotalSize" xml:space="preserve">
+    <value>إجمالي المحدد: {0} ميجابايت</value>
+  </data>
+  <data name="Folder_Prompt" xml:space="preserve">
+    <value>اختر المجلد الذي سيتم تثبيت التطبيق فيه:</value>
+  </data>
+  <data name="Folder_AvailableSpace" xml:space="preserve">
+    <value>المساحة المتاحة: {0} جيجابايت</value>
+  </data>
+  <data name="Folder_SpaceUnknown" xml:space="preserve">
+    <value>تعذر التحقق من مساحة القرص.</value>
+  </data>
+  <data name="StartMenu_Prompt" xml:space="preserve">
+    <value>اختر مجلد قائمة ابدأ الذي سيتم إنشاء الاختصارات فيه:</value>
+  </data>
+  <data name="StartMenu_Skip" xml:space="preserve">
+    <value>عدم إنشاء مجلد في قائمة ابدأ</value>
+  </data>
+  <data name="Install_Starting" xml:space="preserve">
+    <value>جارٍ بدء التثبيت...</value>
+  </data>
+  <data name="Install_CopyFiles" xml:space="preserve">
+    <value>جارٍ نسخ الملفات...</value>
+  </data>
+  <data name="Install_Shortcuts" xml:space="preserve">
+    <value>جارٍ إنشاء الاختصارات...</value>
+  </data>
+  <data name="Install_Registry" xml:space="preserve">
+    <value>جارٍ كتابة إدخالات السجل...</value>
+  </data>
+  <data name="Install_Verifying" xml:space="preserve">
+    <value>جارٍ التحقق من التثبيت...</value>
+  </data>
+  <data name="Install_Preparing" xml:space="preserve">
+    <value>جارٍ التحضير للتثبيت…</value>
+  </data>
+  <data name="Install_Progress" xml:space="preserve">
+    <value>جارٍ تثبيت {0}… ({1}٪)</value>
+  </data>
+  <data name="Install_CancelDisabled" xml:space="preserve">
+    <value>لا يمكن إيقاف التثبيت بعد بدئه.</value>
+  </data>
+  <data name="Nav_Project" xml:space="preserve">
+    <value>المشروع</value>
+  </data>
+  <data name="Nav_Source" xml:space="preserve">
+    <value>المصدر</value>
+  </data>
+  <data name="Nav_Features" xml:space="preserve">
+    <value>الميزات</value>
+  </data>
+  <data name="Nav_Customize" xml:space="preserve">
+    <value>التخصيص</value>
+  </data>
+  <data name="Nav_Build" xml:space="preserve">
+    <value>الإنشاء</value>
+  </data>
+  <data name="Btn_Add" xml:space="preserve">
+    <value>إضافة</value>
+  </data>
+  <data name="Btn_Remove" xml:space="preserve">
+    <value>إزالة</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>تحرير</value>
+  </data>
+  <data name="Btn_Rescan" xml:space="preserve">
+    <value>إعادة الفحص</value>
+  </data>
+  <data name="Btn_Apply" xml:space="preserve">
+    <value>تطبيق</value>
+  </data>
+  <data name="Builder_SourceDir" xml:space="preserve">
+    <value>مجلد المصدر:</value>
+  </data>
+  <data name="Builder_NoScan" xml:space="preserve">
+    <value>لم يتم الفحص بعد.</value>
+  </data>
+  <data name="Builder_Modified" xml:space="preserve">
+    <value>معدّل</value>
+  </data>
+  <data name="Builder_Recent" xml:space="preserve">
+    <value>الأخيرة</value>
+  </data>
 </root>

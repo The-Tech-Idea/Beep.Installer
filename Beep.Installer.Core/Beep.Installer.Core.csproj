@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Beep.Installer.Core</AssemblyName>
+    <RootNamespace>Beep.Installer.Core</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>The Tech Idea</Authors>
+    <Company>The Tech Idea</Company>
+    <Product>Beep Installer Core</Product>
+    <Description>
+      Authoring, build and packaging logic for Beep Installer. Deliberately free of any UI
+      dependency so the WinForms shell stays a thin front end — and separate from BeepDM,
+      whose installer-service scope explicitly excludes packaging and code signing.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Same direct-reference requirement as the shell: DataManagementModels must be referenced
+      explicitly, not just transitively, or NuGet resolves a same-versioned package instead of
+      the source project.
+    -->
+    <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" />
+    <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
+  </ItemGroup>
+
+</Project>

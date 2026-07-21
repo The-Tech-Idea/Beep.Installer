@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -74,6 +73,34 @@ public class BuildPipeline
     private static readonly byte[] PeFooterMagic = Encoding.ASCII.GetBytes("BEEPINSTPAYLOAD.");
 
     public IProgress<BuildProgress>? Progress { get; set; }
+
+    /// <summary>
+    /// Produces the installer host EXE. Defaults to a real <c>dotnet publish</c>; tests inject
+    /// a stub so the rest of the pipeline (staging, compression, embedding, cleanup) can be
+    /// exercised without a multi-minute publish of the whole installer project.
+    /// </summary>
+    public IInstallerHostBuilder HostBuilder { get; set; } = new DotnetPublishHostBuilder();
+
+    /// <summary>Hard limit for the host publish. Was previously hardcoded to 5 minutes.</summary>
+    public TimeSpan PublishTimeout { get; set; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// Precompile the installer host (ReadyToRun). Off by default — see
+    /// <see cref="InstallerHostRequest.ReadyToRun"/> for why it costs far more than it returns
+    /// for a run-once installer.
+    /// </summary>
+    public bool ReadyToRun { get; set; }
+
+    /// <summary>Cancels a build in progress. Honoured by the host builder.</summary>
+    public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
+
+    /// <summary>
+    /// Keeps the staged payload folder, payload archive and runtime script beside the EXE
+    /// instead of deleting them once they are embedded. Off by default — a shipped build is a
+    /// single self-contained file. Useful for debugging a build and for tests that assert on
+    /// the intermediate layout.
+    /// </summary>
+    public bool KeepIntermediates { get; set; }
     public bool CancelRequested { get; private set; }
 
     public void RequestCancel() => CancelRequested = true;
@@ -100,11 +127,29 @@ public class BuildPipeline
         {
             outputDir = ResolveOutputDirectory(project);
             if (cleanOutput && Directory.Exists(outputDir))
-                try { Directory.Delete(outputDir, recursive: true); } catch { }
+                try { Directory.Delete(outputDir, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", "clean-output delete failed", ex); }
             Directory.CreateDirectory(outputDir);
             log.Add($"[1/11] Output: {outputDir}");
 
-            // 1) Validate
+            // 1) If nothing has been scanned yet, scan the source directory. Only
+            //    Components[].Files are staged, so without this a project that was never
+            //    scanned (a fresh .bsetup, or any headless /BUILD) silently produces an
+            //    installer with an empty payload. Auto-discovery is off: the author already
+            //    chose the source directory, so a build must not quietly retarget it.
+            //    This runs BEFORE validation so we validate what will actually be built.
+            if (!project.Components.Any(c => c.Files is { Count: > 0 })
+                && !string.IsNullOrWhiteSpace(project.SourceDirectory)
+                && Directory.Exists(project.SourceDirectory))
+            {
+                var scan = new SourceScanner().ScanAndApply(
+                    project, project.SourceDirectory,
+                    new SourceScanner.Options { AutoDiscoverBuildOutput = false });
+
+                log.Add($"  ✓ scanned source directory: {scan.FileCount} files");
+                foreach (var w in scan.Warnings) result.Warnings.Add(w);
+            }
+
+            // 2) Validate
             Report(2, "Validating project…");
             ValidateProject(project, result);
             if (result.Errors.Count > 0) { result.Success = false; return result; }
@@ -120,15 +165,21 @@ public class BuildPipeline
 
             // 2) Stage payload
             Report(8, "Staging payload…");
-            var stageResult = StagePayload(project, outputDir);
+            var stageResult = StagePayload(project, outputDir, result);
+            if (result.Errors.Count > 0) { result.Success = false; return result; }
             result.FileCount = stageResult.FileCount;
             result.PayloadSizeBytes = stageResult.TotalBytes;
             log.Add($"  ✓ {stageResult.FileCount} files, {stageResult.TotalBytes / 1024.0 / 1024.0:F1} MB");
 
             // 3) Write runtime script
             Report(20, "Writing runtime script…");
-            result.SetupScriptPath = WriteRuntimeScript(project, outputDir, outputFileName);
+            result.SetupScriptPath = WriteRuntimeScript(project, outputDir, outputFileName, result);
             log.Add($"  ✓ {Path.GetFileName(result.SetupScriptPath)}");
+
+            // 3b) Emit the runtime install contract beside the script. The shipped installer
+            //     builds its own InstallConfig from the .bsetup, but writing it here makes the
+            //     output inspectable and readable by ConfigManager.Load.
+            WriteInstallConfig(project, outputDir, result);
 
             // 4) Copy branding assets
             Report(28, "Copying branding assets…");
@@ -148,7 +199,7 @@ public class BuildPipeline
             }
             finally
             {
-                try { if (Directory.Exists(publishDir)) Directory.Delete(publishDir, recursive: true); } catch { }
+                try { if (Directory.Exists(publishDir)) Directory.Delete(publishDir, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", "publish-dir cleanup failed", ex); }
             }
             log.Add($"  ✓ {outputFileName} ({new FileInfo(Path.Combine(outputDir, outputFileName)).Length / 1024.0 / 1024.0:F1} MB)");
 
@@ -167,7 +218,17 @@ public class BuildPipeline
             // 7) Compress payload into a single zip
             Report(60, "Compressing payload…");
             var zipPath = Path.Combine(outputDir, project.PayloadFolderName + ".zip");
-            CompressZip(Path.Combine(outputDir, project.PayloadFolderName), zipPath);
+            var solidStats = CompressZip(Path.Combine(outputDir, project.PayloadFolderName), zipPath,
+                                         project.SolidCompression,
+                                         MapCompressionLevel(project.CompressionLevel));
+            if (solidStats != null)
+            {
+                var (files, blobs, originalBytes, storedBytes) = solidStats.Value;
+                var saved = originalBytes - storedBytes;
+                result.Warnings.Add(
+                    $"Solid payload: {files} files deduplicated to {blobs} unique blobs " +
+                    $"({saved / 1024.0 / 1024.0:F1} MB saved before compression).");
+            }
             result.PayloadPath = zipPath;
             log.Add($"  ✓ {Path.GetFileName(zipPath)} ({new FileInfo(zipPath).Length / 1024.0 / 1024.0:F1} MB)");
 
@@ -197,13 +258,13 @@ public class BuildPipeline
             var finalExe = result.OutputFile = exePath;
             result.OutputSizeBytes = new FileInfo(finalExe).Length;
 
-            if (result.Errors.Count == 0)
+            if (result.Errors.Count == 0 && !KeepIntermediates)
             {
                 CleanupIntermediates(outputDir, finalExe, result.SetupScriptPath, result.MsixPackagePath, log);
             }
             else
             {
-                log.Add("  (non single-file mode: leaving all output files in place)");
+                log.Add("  (leaving intermediate output files in place)");
             }
 
             sw.Stop();
@@ -223,8 +284,10 @@ public class BuildPipeline
         }
         finally
         {
-            // Last-resort cleanup: if anything failed and we still have a payload folder, remove it
-            if (!string.IsNullOrEmpty(outputDir) && Directory.Exists(outputDir))
+            // Drop the staged payload folder and archive once a build has SUCCEEDED — both are
+            // already embedded in the EXE by then. On failure they are deliberately left behind
+            // for diagnosis. (The old comment here claimed the opposite of what the code does.)
+            if (!string.IsNullOrEmpty(outputDir) && Directory.Exists(outputDir) && !KeepIntermediates)
             {
                 try
                 {
@@ -260,13 +323,23 @@ public class BuildPipeline
             result.Warnings.Add($"Source directory does not exist: {project.SourceDirectory}");
     }
 
-    private (int FileCount, long TotalBytes) StagePayload(InstallProject project, string outputDir)
+    /// <summary>
+    /// Copies each component's declared files into the staging folder.
+    ///
+    /// Both failure paths here used to be silent: a source file that did not exist was
+    /// skipped with a bare <c>continue</c>, and a copy that threw was swallowed. A build whose
+    /// declared files were all missing therefore reported **success** and produced an installer
+    /// containing nothing — the worst possible outcome, because it only shows up on the end
+    /// user's machine.
+    /// </summary>
+    private (int FileCount, long TotalBytes) StagePayload(InstallProject project, string outputDir, BuildResult result)
     {
         var payloadDir = Path.Combine(outputDir, project.PayloadFolderName);
         if (Directory.Exists(payloadDir)) Directory.Delete(payloadDir, recursive: true);
         Directory.CreateDirectory(payloadDir);
 
         int fileCount = 0;
+        int declared = 0;
         long totalBytes = 0;
 
         foreach (var comp in project.Components)
@@ -275,10 +348,19 @@ public class BuildPipeline
             foreach (var file in comp.Files)
             {
                 if (string.IsNullOrWhiteSpace(file.SourcePath)) continue;
+                declared++;
+
+                var src = file.SourcePath;
+                if (!File.Exists(src))
+                {
+                    var message = $"Source file not found: '{src}' (component '{comp.Id}').";
+                    if (file.IsRequired) result.Errors.Add(message);
+                    else result.Warnings.Add(message + " Marked optional — skipped.");
+                    continue;
+                }
+
                 try
                 {
-                    var src = file.SourcePath;
-                    if (!File.Exists(src)) continue;
                     var dest = Path.Combine(payloadDir, file.DestinationPath.Replace('/', Path.DirectorySeparatorChar));
                     var destDir = Path.GetDirectoryName(dest);
                     if (!string.IsNullOrEmpty(destDir)) Directory.CreateDirectory(destDir);
@@ -286,21 +368,55 @@ public class BuildPipeline
                     totalBytes += new FileInfo(dest).Length;
                     fileCount++;
                 }
-                catch { /* skip failures here; surface in result if needed */ }
+                catch (Exception ex)
+                {
+                    result.Errors.Add($"Could not stage '{src}': {ex.Message}");
+                    Diag.Warn("BuildPipeline", $"staging '{src}' failed", ex);
+                }
             }
         }
+
+        // An installer that declares files but ships none is broken, not merely suspicious.
+        if (declared > 0 && fileCount == 0)
+            result.Errors.Add($"None of the {declared} declared file(s) could be staged — " +
+                              "the installer would contain no payload.");
+
         return (fileCount, totalBytes);
     }
 
-    private string WriteRuntimeScript(InstallProject project, string outputDir, string outputFileName)
+    /// <summary>
+    /// Writes <c>install-config.json</c> — BeepDM's runtime install contract — next to the
+    /// runtime script. Best effort: the shipped installer projects its own config from the
+    /// .bsetup at run time, so a failure here must not fail the build.
+    /// </summary>
+    private static void WriteInstallConfig(InstallProject project, string outputDir, BuildResult result)
+    {
+        try
+        {
+            var config = InstallConfigProjector.ToInstallConfig(project, outputDir);
+            TheTechIdea.Beep.Installer.ConfigManager.Save(config, Path.Combine(outputDir, "install-config.json"));
+        }
+        catch (Exception ex)
+        {
+            result.Warnings.Add($"Could not write install-config.json: {ex.Message}");
+            Diag.Warn("BuildPipeline", "install-config.json write failed", ex);
+        }
+    }
+
+    private string WriteRuntimeScript(InstallProject project, string outputDir, string outputFileName, BuildResult result)
     {
         var options = new InstallerScriptSerializer.ScriptOutputOptions();
-        options.FilePathRebaser = path =>
+        options.FilePathRebaser = file =>
         {
-            var normalized = path.Replace('/', '\\').Trim();
-            if (!Path.IsPathRooted(normalized)) return normalized.Replace('\\', '/');
-            var abs = Path.GetFullPath(normalized);
-            return Path.GetFileName(abs);
+            // StagePayload copies each file to <payload>/<DestinationPath>, so the runtime
+            // script's Source must mirror DestinationPath. Returning just the file name (as
+            // this did) silently broke every file staged into a subdirectory: at install time
+            // FileCopyStep resolved <payloadRoot>/<name> and found nothing.
+            var dest = (file.DestinationPath ?? "").Replace('\\', '/').Trim().TrimStart('/');
+            if (!string.IsNullOrEmpty(dest)) return dest;
+
+            var source = (file.SourcePath ?? "").Replace('\\', '/').Trim();
+            return Path.IsPathRooted(source) ? Path.GetFileName(source) : source;
         };
         if (!string.IsNullOrWhiteSpace(project.WizardImageFile))
             options.WizardImageFileOverride = "banner.png";
@@ -308,8 +424,16 @@ public class BuildPipeline
             options.SetupIconFileOverride = "setup.ico";
         if (!string.IsNullOrWhiteSpace(project.LicenseFile))
         {
+            // Swallowing this silently shipped an installer with NO licence page even though
+            // the author had configured one — surface it on the build result.
             try { options.LicenseTextOverride = File.ReadAllText(project.LicenseFile); }
-            catch { }
+            catch (Exception ex)
+            {
+                result.Warnings.Add(
+                    $"Licence file '{project.LicenseFile}' could not be read ({ex.Message}); " +
+                    "the installer will have no licence text.");
+                Diag.Warn("BuildPipeline", $"licence file '{project.LicenseFile}' unreadable", ex);
+            }
         }
         options.Prefer64BitOverride = project.ArchitecturesAllowed != Models.Architecture.X86;
         options.SourceDirectoryOverride = "";
@@ -364,88 +488,58 @@ Beep Installer v1.0.0
     }
 
     /// <summary>
-    /// Runs <c>dotnet publish</c> with uncompressed single-file + ReadyToRun.
+    /// Produces the installer host EXE by delegating to <see cref="HostBuilder"/>.
     /// Returns true on success; on failure populates result.Errors and returns false.
     /// </summary>
     private bool BuildInstallerExe(InstallProject project, string outputDir, string publishDir, string outputFileName, BuildResult result)
     {
-        var rid = project.ArchitecturesAllowed switch
+        var request = new InstallerHostRequest
         {
-            Models.Architecture.X86 => "win-x86",
-            Models.Architecture.Arm64 => "win-arm64",
-            _ => "win-x64"
+            RuntimeIdentifier = project.ArchitecturesAllowed switch
+            {
+                Models.Architecture.X86 => "win-x86",
+                Models.Architecture.Arm64 => "win-arm64",
+                _ => "win-x64"
+            },
+            PublishDir = publishDir,
+            DestinationExePath = Path.Combine(outputDir, outputFileName),
+            Timeout = PublishTimeout,
+            ReadyToRun = ReadyToRun,
+            CancellationToken = CancellationToken,
         };
 
-        try
-        {
-            var csprojPath = FindBeepInstallerProjectPath();
-            var csprojDir = Path.GetDirectoryName(csprojPath) ?? outputDir;
-            // Uncompressed single-file with R2R. NO EnableCompressionInSingleFile (corruption source).
-            var publishArgs = $"publish \"{csprojPath}\" -c Release -r {rid} --self-contained true " +
-                              $"-p:PublishSingleFile=true " +
-                              $"-p:PublishReadyToRun=true " +
-                              $"-o \"{publishDir}\"";
-
-            var psi = new ProcessStartInfo("dotnet", publishArgs)
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-                WorkingDirectory = csprojDir,
-            };
-
-            using var process = Process.Start(psi);
-            if (process == null)
-            {
-                result.Errors.Add("Failed to start dotnet publish.");
-                return false;
-            }
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
-            if (!process.WaitForExit(300_000))
-            {
-                try { process.Kill(); } catch { }
-                result.Errors.Add("dotnet publish timed out after 5 minutes.");
-                return false;
-            }
-            stdoutTask.Wait(2000); stderrTask.Wait(2000);
-
-            if (process.ExitCode != 0)
-            {
-                result.Errors.Add($"dotnet publish failed (exit {process.ExitCode}).");
-                if (!string.IsNullOrWhiteSpace(stderrTask.Result))
-                    foreach (var line in stderrTask.Result.Split('\n').Where(l => !string.IsNullOrWhiteSpace(l)))
-                        result.Errors.Add(line.TrimEnd());
-                if (!string.IsNullOrWhiteSpace(stdoutTask.Result))
-                    foreach (var line in stdoutTask.Result.Split('\n').Where(l => !string.IsNullOrWhiteSpace(l)))
-                        result.Warnings.Add(line.TrimEnd());
-                return false;
-            }
-
-            var publishedExe = Directory.EnumerateFiles(publishDir, "Beep.Installer.exe").FirstOrDefault()
-                ?? Directory.EnumerateFiles(publishDir, "*.exe").FirstOrDefault();
-            if (publishedExe == null)
-            {
-                result.Errors.Add($"Published EXE not found in {publishDir}.");
-                return false;
-            }
-
-            var destExe = Path.Combine(outputDir, outputFileName);
-            File.Copy(publishedExe, destExe, overwrite: true);
-            return File.Exists(destExe);
-        }
-        catch (Exception ex)
-        {
-            result.Errors.Add($"Self-contained publish failed: {ex.Message}");
-            return false;
-        }
+        return HostBuilder.TryBuildHost(request, result);
     }
 
     private void CompressZip(string srcDir, string zipPath)
+        => CompressZip(srcDir, zipPath, solid: false, CompressionLevel.Optimal);
+
+    /// <summary>Maps the authoring strength onto a .NET compression level.</summary>
+    private static CompressionLevel MapCompressionLevel(Models.CompressionStrength strength) => strength switch
+    {
+        Models.CompressionStrength.Store => CompressionLevel.NoCompression,
+        Models.CompressionStrength.Fast => CompressionLevel.Fastest,
+        Models.CompressionStrength.Maximum => CompressionLevel.SmallestSize,
+        _ => CompressionLevel.Optimal,
+    };
+
+    /// <summary>
+    /// Packs the staged payload. <paramref name="solid"/> selects the deduplicating solid
+    /// format (identical files stored once, addressed by hash) via <see cref="PayloadPackager"/>.
+    /// Previously <c>InstallProject.SolidCompression</c> was collected by the builder UI and
+    /// then ignored here, so the option had no effect on the output.
+    /// </summary>
+    /// <returns>Deduplication statistics when packed solid; null otherwise.</returns>
+    private (int files, int blobs, long originalBytes, long storedBytes)? CompressZip(
+        string srcDir, string zipPath, bool solid, CompressionLevel level)
     {
         if (File.Exists(zipPath)) File.Delete(zipPath);
-        ZipFile.CreateFromDirectory(srcDir, zipPath, CompressionLevel.Optimal, includeBaseDirectory: true);
+
+        if (solid)
+            return PayloadPackager.CreateSolid(srcDir, zipPath, level);
+
+        ZipFile.CreateFromDirectory(srcDir, zipPath, level, includeBaseDirectory: true);
+        return null;
     }
 
     private static void AddScriptSidecarsToZip(string outputDir, string zipPath)
@@ -484,7 +578,7 @@ Beep Installer v1.0.0
         }
         finally
         {
-            try { if (File.Exists(tempExe)) File.Delete(tempExe); } catch { }
+            try { if (File.Exists(tempExe)) File.Delete(tempExe); } catch (Exception ex) { Diag.Debug("BuildPipeline", "temp exe cleanup failed", ex); }
         }
     }
 
@@ -582,19 +676,100 @@ Beep Installer v1.0.0
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool EndUpdateResourceW(IntPtr hUpdate, [MarshalAs(UnmanagedType.Bool)] bool fDiscard);
 
+    /// <summary>
+    /// Signs the built EXE. A configured certificate that fails to apply is an ERROR, not a
+    /// warning: shipping an unsigned installer while believing it was signed is worse than a
+    /// failed build. Previously this was a no-op that always reported success.
+    /// </summary>
     private void SignExe(string exePath, InstallProject project, BuildResult result, List<string> log)
     {
-        // Local signing stub; external SignTool helper is available but we keep this class self-contained
-        result.Warnings.Add("Code signing not performed in BuildPipeline; use SignTool.Sign() externally.");
-        log.Add("  (signing skipped — invoke SignTool.Sign manually)");
+        var (ok, error) = SignTool.Sign(
+            exePath,
+            project.CodeSignCertificatePath,
+            project.CodeSignCertificatePassword,
+            project.CodeSignTimestampUrl);
+
+        if (ok)
+        {
+            log.Add("  ✓ signed");
+            return;
+        }
+
+        result.Errors.Add($"Code signing failed: {error}");
+        log.Add($"  ERR: signing: {error}");
     }
 
+    /// <summary>
+    /// Packages the staged payload as an .msix via <see cref="MsixPackager"/>. When the Windows
+    /// SDK's MakeAppx is unavailable the packager still stages the payload and writes an
+    /// AppxManifest, reporting that as a warning — but a requested MSIX never silently
+    /// degrades into "succeeded as a plain EXE", which is what this method used to do.
+    /// </summary>
     private void PackageMsix(InstallProject project, string outputDir, BuildResult result, List<string> log)
     {
-        // MSIX is a separate, complex pipeline (MakeAppx required) — we keep a thin wrapper.
-        // The user's flow typically uses Setup.exe OR .msix, not both. For the Setup.exe path we succeed.
-        result.Warnings.Add("MSIX packaging is a separate pipeline; build succeeded as standalone EXE.");
-        log.Add("  (MSIX skipped — produced standalone Setup.exe)");
+        var payloadDir = Path.Combine(outputDir, project.PayloadFolderName);
+        if (!Directory.Exists(payloadDir))
+        {
+            result.Errors.Add($"MSIX packaging needs the staged payload at '{payloadDir}', which does not exist.");
+            return;
+        }
+
+        var identity = string.IsNullOrWhiteSpace(project.MsixIdentity)
+            ? MakeMsixIdentity(project.AppPublisher, project.AppName)
+            : project.MsixIdentity;
+
+        var publisher = string.IsNullOrWhiteSpace(project.MsixPublisher)
+            ? $"CN={project.AppPublisher}"
+            : project.MsixPublisher;
+
+        var architecture = project.ArchitecturesAllowed switch
+        {
+            Models.Architecture.X86 => "x86",
+            Models.Architecture.Arm64 => "arm64",
+            _ => "x64"
+        };
+
+        var msix = MsixPackager.Package(
+            payloadDir,
+            outputDir,          // packager creates its own "stage" subfolder here
+            identity,
+            publisher,
+            project.AppName,
+            project.AppVersion,
+            project.MainExecutable,
+            description: "",
+            architecture: architecture);
+
+        foreach (var w in msix.Warnings) result.Warnings.Add(w);
+
+        // Surface the orchestration outputs regardless: staging dir and AppxManifest.xml are
+        // written even when the final MakeAppx step is unavailable or rejects the manifest.
+        result.MsixPackagePath = msix.MsixPackagePath;
+
+        if (!msix.Success)
+        {
+            // MakeAppx's bundled validator enforces more than the public XSD (capabilities,
+            // visual elements). That is a packaging-input problem, not a broken build: the
+            // Setup.exe is still valid, so report it loudly but do not fail the whole build.
+            result.Warnings.Add(
+                $"MSIX package was NOT written ({msix.Error}). The staging folder and " +
+                $"AppxManifest.xml are in '{msix.StagingDir}' for inspection.");
+            log.Add($"  WARN: MSIX not packaged: {msix.Error}");
+            return;
+        }
+
+        log.Add($"  ✓ MSIX: {Path.GetFileName(msix.MsixPackagePath)}");
+    }
+
+    /// <summary>MSIX identity must look like <c>Publisher.Product</c> with no spaces.</summary>
+    private static string MakeMsixIdentity(string publisher, string product)
+    {
+        static string Clean(string value, string fallback)
+        {
+            var cleaned = new string((value ?? "").Where(char.IsLetterOrDigit).ToArray());
+            return string.IsNullOrEmpty(cleaned) ? fallback : cleaned;
+        }
+        return $"{Clean(publisher, "Publisher")}.{Clean(product, "Product")}";
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -709,7 +884,7 @@ Beep Installer v1.0.0
         throw new IOException($"Cannot read file because it is locked or not accessible: {path}", lastError);
     }
 
-    private static string FindBeepInstallerProjectPath()
+    internal static string FindBeepInstallerProjectPath()
     {
         var asmDir = Path.GetDirectoryName(typeof(BuildPipeline).Assembly.Location)
             ?? AppDomain.CurrentDomain.BaseDirectory;
@@ -741,14 +916,14 @@ Beep Installer v1.0.0
             foreach (var f in Directory.EnumerateFiles(outputDir))
             {
                 if (keep.Contains(Path.GetFileName(f))) continue;
-                try { File.Delete(f); } catch { }
+                try { File.Delete(f); } catch (Exception ex) { Diag.Debug("BuildPipeline", $"intermediate file \"{f}\" not removed", ex); }
             }
             foreach (var d in Directory.EnumerateDirectories(outputDir))
             {
                 var dirName = Path.GetFileName(d);
                 if (dirName == "payload" || dirName == "_publish" || dirName == "MSIX_staging" || dirName == "MSIX")
                 {
-                    try { Directory.Delete(d, recursive: true); } catch { }
+                    try { Directory.Delete(d, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", $"intermediate dir \"{d}\" not removed", ex); }
                 }
             }
             log.Add("  ✓ intermediates cleaned (kept Setup.exe and setup script)");

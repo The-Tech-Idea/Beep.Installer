@@ -18,6 +18,9 @@ public class BuildErrorForm : Form
         Text = title;
         Size = new Size(820, 600);
         StartPosition = FormStartPosition.CenterParent;
+        // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         FormBorderStyle = FormBorderStyle.Sizable;
         MinimumSize = new Size(600, 400);
         BackColor = Color.White;
@@ -171,7 +174,8 @@ public class BuildErrorForm : Form
             // Auto-copy on first open so the user can paste immediately
             if (!copyClicked)
             {
-                try { Clipboard.SetText(detailBox.Text); } catch { }
+                try { Clipboard.SetText(detailBox.Text); }
+                catch (Exception ex) { Beep.Installer.Engine.Diag.Warn("BuildErrorForm", "clipboard copy failed", ex); }
             }
             detailBox.Focus();
             detailBox.SelectAll();

@@ -17,15 +17,18 @@ namespace Beep.Installer.Forms;
 
 public class PackageBuilderForm : Form
 {
-    private static readonly Color ShellBackColor = Color.FromArgb(246, 248, 251);
-    private static readonly Color PanelBackColor = Color.White;
-    private static readonly Color BorderColor = Color.FromArgb(220, 225, 232);
-    private static readonly Color TextColor = Color.FromArgb(32, 38, 46);
-    private static readonly Color MutedTextColor = Color.FromArgb(98, 107, 119);
-    private static readonly Color AccentColor = Color.FromArgb(37, 99, 235);
-    private static readonly Font UiFont = new("Segoe UI", 9F);
-    private static readonly Font UiFontBold = new("Segoe UI", 9F, FontStyle.Bold);
-    private static readonly Font SectionTitleFont = new("Segoe UI", 13F, FontStyle.Bold);
+    // Delegated to Ui.InstallerTheme — these were one of three uncoordinated palettes and
+    // ignored the active Beep theme entirely. Kept as named members so the ~200 call sites
+    // below stay readable.
+    private static Color ShellBackColor => Ui.InstallerTheme.Shell;
+    private static Color PanelBackColor => Ui.InstallerTheme.Panel;
+    private static Color BorderColor => Ui.InstallerTheme.Border;
+    private static Color TextColor => Ui.InstallerTheme.Text;
+    private static Color MutedTextColor => Ui.InstallerTheme.MutedText;
+    private static Color AccentColor => Ui.InstallerTheme.Accent;
+    private static Font UiFont => Ui.InstallerTheme.Body;
+    private static Font UiFontBold => Ui.InstallerTheme.BodyBold;
+    private static Font SectionTitleFont => Ui.InstallerTheme.SectionTitle;
 
     private readonly InstallerController _controller;
     private InstallProject _project;
@@ -164,7 +167,7 @@ public class PackageBuilderForm : Form
         Font = UiFont;
         BackColor = ShellBackColor;
 
-        _recentsBtn = new ToolStripDropDownButton("Recent") { ToolTipText = "Recently opened installer scripts" };
+        _recentsBtn = new ToolStripDropDownButton(L("Builder_Recent", "Recent")) { ToolTipText = "Recently opened installer scripts" };
         _toolbar = new ToolStrip
         {
             ImageScalingSize = new Size(16, 16),
@@ -224,28 +227,38 @@ public class PackageBuilderForm : Form
         _scriptDebounce.Tick += (_, _) => { _scriptDebounce.Stop(); RefreshScriptPreview(); };
     }
 
+    /// <summary>
+    /// Shorthand for a localized string with the English text as the fallback. The builder was
+    /// entirely English-only; this covers its high-traffic chrome (navigation sections and the
+    /// repeated action buttons). Full coverage of every field label remains outstanding.
+    /// </summary>
+    private static string L(string key, string english)
+        => Lang.LanguageManager.GetOrDefault(key, english);
+
     private void PopulateLeftNav()
     {
-        var g = _nav.AddSection("project", "Project");
+        // Section headers go through the resource manager; the English text stays as the
+        // fallback so behaviour is unchanged for en.
+        var g = _nav.AddSection("project", L("Nav_Project", "Project"));
         _nav.AddItem(g, "identity", "Identity");
         _nav.AddItem(g, "layout", "Layout");
         _nav.AddItem(g, "eula", "EULA");
 
-        g = _nav.AddSection("source", "Source");
+        g = _nav.AddSection("source", L("Nav_Source", "Source"));
         _nav.AddItem(g, "source", "Files");
         _nav.AddItem(g, "includes", "Includes");
 
-        g = _nav.AddSection("features", "Features");
+        g = _nav.AddSection("features", L("Nav_Features", "Features"));
         _nav.AddItem(g, "components", "Components");
         _nav.AddItem(g, "prerequisites", "Prerequisites");
         _nav.AddItem(g, "shortcuts", "Shortcuts");
         _nav.AddItem(g, "registry", "Registry");
 
-        g = _nav.AddSection("customize", "Customize");
+        g = _nav.AddSection("customize", L("Nav_Customize", "Customize"));
         _nav.AddItem(g, "branding", "Branding");
         _nav.AddItem(g, "wizardpages", "Wizard Pages");
 
-        g = _nav.AddSection("build", "Build");
+        g = _nav.AddSection("build", L("Nav_Build", "Build"));
         _nav.AddItem(g, "script", "Script");
         _nav.AddItem(g, "build", "Build Workflow");
     }
@@ -320,7 +333,7 @@ public class PackageBuilderForm : Form
         AddBoundRow(layout, "Support URL:",        proj, nameof(InstallProject.AppSupportURL));
         AddBoundRow(layout, "Support email:",      proj, nameof(InstallProject.AppSupportEmail));
         AddBoundRow(layout, "Update URL:",         proj, nameof(InstallProject.AppUpdatesURL));
-        AddEnumRow<UpdateModeEx>(layout, "Update mode:",  proj, nameof(InstallProject.AppUpdateMode));
+        AddEnumRow<UpdateMode>(layout, "Update mode:",  proj, nameof(InstallProject.AppUpdateMode));
         AddFileRow(layout, "Setup icon (.ico):",  proj, nameof(InstallProject.SetupIconFile), "*.ico");
         AddFileRow(layout, "Banner image:",       proj, nameof(InstallProject.WizardImageFile), "*.png;*.jpg;*.bmp");
         p.Controls.Add(layout);
@@ -334,7 +347,7 @@ public class PackageBuilderForm : Form
         var proj = _project;
         AddFolderRow(layout, "Default install path:", proj, nameof(InstallProject.DefaultDirName));
         AddBoundRow(layout, "Start menu folder:",    proj, nameof(InstallProject.DefaultGroupName));
-        AddEnumRow<InstallationTypeEx>(layout, "Install type:", proj, nameof(InstallProject.DefaultInstallType));
+        AddEnumRow<InstallationType>(layout, "Install type:", proj, nameof(InstallProject.DefaultInstallType));
         AddEnumRow<PrivilegeLevel>(layout, "Privileges:", proj, nameof(InstallProject.PrivilegesRequired));
         AddEnumRow<InstallationScope>(layout, "Scope:", proj, nameof(InstallProject.DefaultScope));
         AddCheckRow(layout, "Allow scope selection",  proj, nameof(InstallProject.AllowScopeSelection));
@@ -526,8 +539,8 @@ public class PackageBuilderForm : Form
         box = new TextBox { Width = 180 };
         var listRef = list;
         var boxRef = box;
-        var addBtn = new Button { Text = "Add", Width = 60 };
-        var removeBtn = new Button { Text = "Remove", Width = 70 };
+        var addBtn = new Button { Text = L("Btn_Add", "Add"), Width = 60 };
+        var removeBtn = new Button { Text = L("Btn_Remove", "Remove"), Width = 70 };
         addBtn.Click += (_, _) =>
         {
             if (!string.IsNullOrWhiteSpace(boxRef.Text))
@@ -554,17 +567,17 @@ public class PackageBuilderForm : Form
     {
         var p = new Panel { Dock = DockStyle.Fill };
         var topBar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 36, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(8, 4, 8, 0) };
-        topBar.Controls.Add(new Label { Text = "Source directory:", AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(0, 4, 4, 0) });
+        topBar.Controls.Add(new Label { Text = L("Builder_SourceDir", "Source directory:"), AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(0, 4, 4, 0) });
         _sourceDirBox = new TextBox { Width = 400 };
         _sourceDirBox.DataBindings.Add("Text", _project, nameof(InstallProject.SourceDirectory), false, DataSourceUpdateMode.OnPropertyChanged);
         var browseBtn = new Button { Text = "…", Width = 30 };
         browseBtn.Click += (_, _) => { using var dlg = new FolderBrowserDialog(); if (dlg.ShowDialog(this) == DialogResult.OK) _sourceDirBox.Text = dlg.SelectedPath; };
-        var rescanBtn = new Button { Text = "Rescan", Width = 70 };
+        var rescanBtn = new Button { Text = L("Btn_Rescan", "Rescan"), Width = 70 };
         rescanBtn.Click += (_, _) => RescanSource();
         topBar.Controls.Add(_sourceDirBox);
         topBar.Controls.Add(browseBtn);
         topBar.Controls.Add(rescanBtn);
-        _fileStatsLabel = new Label { Text = "No scan yet.", AutoSize = true, ForeColor = SystemColors.GrayText, Padding = new Padding(4, 6, 0, 0) };
+        _fileStatsLabel = new Label { Text = L("Builder_NoScan", "No scan yet."), AutoSize = true, ForeColor = SystemColors.GrayText, Padding = new Padding(4, 6, 0, 0) };
         topBar.Controls.Add(_fileStatsLabel);
 
         _fileTree = new TreeView { Dock = DockStyle.Fill, CheckBoxes = true };
@@ -608,9 +621,9 @@ public class PackageBuilderForm : Form
         _componentProps.DataBindings.Add("SelectedObject", _componentsBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32, FlowDirection = FlowDirection.LeftToRight };
-        var addBtn = new Button { Text = "Add", Width = 50 };
+        var addBtn = new Button { Text = L("Btn_Add", "Add"), Width = 50 };
         var editBtn = new Button { Text = "Edit Files", Width = 70 };
-        var removeBtn = new Button { Text = "Remove", Width = 65 };
+        var removeBtn = new Button { Text = L("Btn_Remove", "Remove"), Width = 65 };
         var scanBtn = new Button { Text = "Scan Source", Width = 90 };
         var upBtn = new Button { Text = "\u25B2", Width = 30 };
         var downBtn = new Button { Text = "\u25BC", Width = 30 };
@@ -657,7 +670,7 @@ public class PackageBuilderForm : Form
         _prereqProps.DataBindings.Add("SelectedObject", _prereqsBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        var addBtn = new Button { Text = "Add" }; var remBtn = new Button { Text = "Remove" };
+        var addBtn = new Button { Text = L("Btn_Add", "Add") }; var remBtn = new Button { Text = L("Btn_Remove", "Remove") };
         addBtn.Click += (_, _) => _project.Prerequisites.Add(new Prerequisite { Id = $"prereq{_project.Prerequisites.Count + 1}", Name = "New prerequisite" });
         remBtn.Click += (_, _) => { if (_prereqGrid.SelectedRows.Count > 0 && _prereqGrid.SelectedRows[0].DataBoundItem is Prerequisite pr) _project.Prerequisites.Remove(pr); };
         btnPanel.Controls.AddRange(new Control[] { addBtn, remBtn });
@@ -690,7 +703,7 @@ public class PackageBuilderForm : Form
         _shortcutProps.DataBindings.Add("SelectedObject", _shortcutsBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        var addBtn = new Button { Text = "Add" }; var remBtn = new Button { Text = "Remove" };
+        var addBtn = new Button { Text = L("Btn_Add", "Add") }; var remBtn = new Button { Text = L("Btn_Remove", "Remove") };
         addBtn.Click += (_, _) => _project.Shortcuts.Add(new ShortcutDefinition { Name = _project.AppName });
         remBtn.Click += (_, _) => { if (_shortcutsGrid.SelectedRows.Count > 0 && _shortcutsGrid.SelectedRows[0].DataBoundItem is ShortcutDefinition s) _project.Shortcuts.Remove(s); };
         btnPanel.Controls.AddRange(new Control[] { addBtn, remBtn });
@@ -723,7 +736,7 @@ public class PackageBuilderForm : Form
         _registryProps.DataBindings.Add("SelectedObject", _registryBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        var addBtn = new Button { Text = "Add" }; var remBtn = new Button { Text = "Remove" };
+        var addBtn = new Button { Text = L("Btn_Add", "Add") }; var remBtn = new Button { Text = L("Btn_Remove", "Remove") };
         addBtn.Click += (_, _) => _project.RegistryEntries.Add(new RegistryOperation { KeyPath = $@"SOFTWARE\{_project.AppPublisher}\{_project.AppName}", ValueName = "Version", Value = _project.AppVersion });
         remBtn.Click += (_, _) => { if (_registryGrid.SelectedRows.Count > 0 && _registryGrid.SelectedRows[0].DataBoundItem is RegistryOperation r) _project.RegistryEntries.Remove(r); };
         btnPanel.Controls.AddRange(new Control[] { addBtn, remBtn });
@@ -809,7 +822,7 @@ public class PackageBuilderForm : Form
             if (_updatingScriptEditor) return;
             _scriptEditorDirty = true;
             if (FindNamed<Label>(p, "ScriptEditorStatus") is { } label)
-                label.Text = "Modified";
+                label.Text = L("Builder_Modified", "Modified");
         };
         p.Controls.Add(_scriptPreviewBox);
         p.Controls.Add(top);
@@ -1126,7 +1139,13 @@ public class PackageBuilderForm : Form
         {
             if (!string.IsNullOrEmpty(pathBox.Text))
             {
-                try { Clipboard.SetText(pathBox.Text); copyBtn.Text = "Copied!"; } catch { }
+                try { Clipboard.SetText(pathBox.Text); copyBtn.Text = "Copied!"; }
+                catch (Exception ex)
+                {
+                    // Do not claim success when the clipboard was locked by another process.
+                    copyBtn.Text = "Copy failed";
+                    Engine.Diag.Warn("PackageBuilderForm", "clipboard copy failed", ex);
+                }
             }
         };
         pathRow.Controls.Add(pathLbl, 0, 0);
@@ -1628,14 +1647,47 @@ public class PackageBuilderForm : Form
 
     private void RescanSource() { ScanAndPopulate(_sourceDirBox.Text.Trim()); }
 
-    private void ScanAndPopulate(string dir)
+    /// <summary>
+    /// Scans the source tree off the UI thread.
+    ///
+    /// This used to walk the whole directory synchronously — reading PE metadata and
+    /// deps.json for every file — so the builder froze solid on a large source tree with no
+    /// indication it was still alive.
+    /// </summary>
+    private async void ScanAndPopulate(string dir)
     {
         if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+        if (_scanInProgress) return;    // re-entrancy: the button stays clickable while we run
+
+        _scanInProgress = true;
         _project.SourceDirectory = dir;
         SetStatus($"Scanning {dir}…");
-        var result = _controller.Scan(dir);
-        SetStatus($"Scan complete: {result.FileCount} files ({result.TotalSizeBytes / 1024.0 / 1024.0:F1} MB), {result.ManagedCount} managed.");
+        UseWaitCursor = true;
+
+        try
+        {
+            var result = await Task.Run(() => _controller.Scan(dir));
+            SetStatus($"Scan complete: {result.FileCount} files ({result.TotalSizeBytes / 1024.0 / 1024.0:F1} MB), {result.ManagedCount} managed.");
+
+            foreach (var warning in result.Warnings)
+                Engine.Diag.Info("Builder", $"scan: {warning}");
+        }
+        catch (Exception ex)
+        {
+            // A scan failure must not take the builder down with it.
+            SetStatus($"Scan failed: {ex.Message}");
+            Engine.Diag.Warn("Builder", $"scan of '{dir}' failed", ex);
+            MessageBox.Show(this, $"Could not scan '{dir}':{Environment.NewLine}{ex.Message}",
+                "Scan failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            UseWaitCursor = false;
+            _scanInProgress = false;
+        }
     }
+
+    private bool _scanInProgress;
 
     private void AddComponent()
     {
@@ -1807,7 +1859,7 @@ public class PackageBuilderForm : Form
         }
         finally
         {
-            try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+            try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch (Exception ex) { Engine.Diag.Debug("PackageBuilderForm", "temp script cleanup failed", ex); }
         }
     }
 

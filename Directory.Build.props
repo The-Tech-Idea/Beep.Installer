@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      NU1605 (package downgrade): Beep.Winform.Controls / Vis.Modules carry a
+      PackageReference to TheTechIdea.Beep.DataManagementModels while this repo
+      project-references the BeepDM source. The direct ProjectReference in
+      Beep.Installer.csproj is what makes source win; the downgrade warning is the
+      expected side effect. Same suppression is used by Beep.OilandGas and
+      Beep.Desktop.IDE.Extensions.
+    -->
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
+  </PropertyGroup>
+</Project>

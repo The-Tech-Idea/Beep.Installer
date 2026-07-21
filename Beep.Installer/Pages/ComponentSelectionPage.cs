@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
+using Beep.Installer.Lang;
 using TheTechIdea.Beep.Installer;
 using TheTechIdea.Beep.Winform.Controls;
 
@@ -38,7 +39,7 @@ public class ComponentSelectionPage : UserControl, IInstallerPage
 
         _title = new BeepLabel
         {
-            Text = "Select Components",
+            Text = LanguageManager.GetOrDefault("Wizard_Components", "Select Components"),
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             Location = new Point(32, 24),
             AutoSize = true

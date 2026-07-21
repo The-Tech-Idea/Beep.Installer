@@ -103,7 +103,7 @@ public class CompressionTests
             project.CreateUninstallEntry = false;
             project.UseTestDefaults();
 
-            var result = new InstallerBuilder().Build(project);
+            var result = TestHelpers.TestPipeline().Run(project);
             result.Success.Should().BeTrue();
 
             var zip = Path.Combine(project.OutputDir, "payload.zip");
@@ -114,4 +114,5 @@ public class CompressionTests
         finally { Cleanup(); }
     }
 }
+
 

@@ -29,7 +29,7 @@ public class StartMenuPage : UserControl, IInstallerPage
 
         _title = new BeepLabel
         {
-            Text = "Start Menu Folder",
+            Text = LanguageManager.GetOrDefault("Wizard_StartMenu", "Start Menu Folder"),
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             Location = new Point(32, 24),
             AutoSize = true
@@ -37,7 +37,7 @@ public class StartMenuPage : UserControl, IInstallerPage
 
         _prompt = new BeepLabel
         {
-            Text = "Select the Start Menu folder where shortcuts will be created:",
+            Text = LanguageManager.GetOrDefault("StartMenu_Prompt", "Select the Start Menu folder where shortcuts will be created:"),
             Location = new Point(32, 64),
             Size = new Size(620, 40),
             Font = new Font("Segoe UI", 10)

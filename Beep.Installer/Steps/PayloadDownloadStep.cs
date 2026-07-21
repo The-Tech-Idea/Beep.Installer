@@ -91,17 +91,10 @@ public class PayloadDownloadStep : ISetupStep
     // ── helpers ──
 
     private static string? ResolvePayloadUrl(SetupContext context)
-    {
-        var project = Engine.RuntimeProjectContext.Current;
-        if (project != null && project.PayloadSource == Beep.Installer.Models.PayloadSourceType.Url)
-            return project.PayloadUrl;
-        return context.TryGetProperty<string>("PayloadUrl");
-    }
+        => context.TryGetProperty<string>(Engine.InstallContextKeys.PayloadUrl);
 
     private static string ResolvePayloadFolderName(SetupContext context)
-    {
-        return Engine.RuntimeProjectContext.Current?.PayloadFolderName ?? "payload";
-    }
+        => context.TryGetProperty<string>(Engine.InstallContextKeys.PayloadFolderName) ?? "payload";
 
     private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromMinutes(30) };
 

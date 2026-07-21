@@ -1,5 +1,7 @@
+using Beep.Installer.Engine;
 using Beep.Installer.Models;
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32;
@@ -71,14 +73,13 @@ public class SharedFileCountTests : IDisposable
     {
         var config = new InstallProject
         {
-            Components = new List<InstallComponent>
+            Components = new ObservableCollection<InstallComponent>
             {
                 new() { Id = "c", Name = "C", Required = true, Selected = true,
                         Files = new() { new() { SourcePath = "a", DestinationPath = "a", SharedCount = false } } }
             }
         };
-        var context = new SetupContext();
-        context.Properties["InstallProject"] = config;
+        var context = InstallContextBuilder.ForInstall(config, _tempRoot, perUser: true);
 
         new SharedFileCountStep().CanSkip(context).Should().BeTrue();
 
@@ -99,17 +100,14 @@ public class SharedFileCountTests : IDisposable
         {
             AppName = "ProdA", AppVersion = "1.0.0",
             PrivilegesRequired = PrivilegeLevel.Lowest, // per-user → HKCU, no admin needed
-            Components = new List<InstallComponent>
+            Components = new ObservableCollection<InstallComponent>
             {
                 new() { Id = "c", Name = "C", Required = true, Selected = true,
                         Files = new() { new() { SourcePath = srcDll, DestinationPath = "shared.dll", SharedCount = true } } }
             }
         };
 
-        var context = new SetupContext();
-        context.Properties["InstallProject"] = config;
-        context.Properties["InstallPath"] = installDir;
-        context.Properties["PerUser"] = true;
+        var context = InstallContextBuilder.ForInstall(config, installDir, perUser: true);
 
         // Install: copy, refcount (→1), write manifest.
         new FileCopyStep().Execute(context).Flag.Should().Be(TheTechIdea.Beep.ConfigUtil.Errors.Ok);
@@ -128,3 +126,5 @@ public class SharedFileCountTests : IDisposable
         SharedDllRefCount.Get(Hive, installedDll, _testKeyPath).Should().Be(1);
     }
 }
+
+

@@ -40,6 +40,9 @@ public class CustomActionsDialog : Form
         Text = "Custom Actions (A1.1)";
         Size = new Size(900, 560);
         StartPosition = FormStartPosition.CenterParent;
+        // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         FormBorderStyle = FormBorderStyle.Sizable;
         MinimizeBox = false;
         MaximizeBox = false;

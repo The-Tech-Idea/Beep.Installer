@@ -43,9 +43,9 @@ public class MsixPackagerTests
             doc.Root!.Attribute("IgnorableNamespaces")?.Value.Should().Be("uap");
             var identity = doc.Root!.Element(ns + "Identity");
             identity!.Attribute("Name")!.Value.Should().Be("MyCo.MsixApp");
-            identity.Attribute("AppPublisher")!.Value.Should().Be("CN=MyCo");
+            identity.Attribute("Publisher")!.Value.Should().Be("CN=MyCo");
             identity.Attribute("Version")!.Value.Should().Be("1.2.3.0");
-            identity.Attribute("ProcessorArchitecture")!.Value.Should().Be(Architecture.X64);
+            identity.Attribute("ProcessorArchitecture")!.Value.Should().Be("x64");
 
             var app = doc.Root!.Element(ns + "Applications")!.Element(ns + "Application")!;
             app.Attribute("Executable")!.Value.Should().Be("MsixApp.exe");
@@ -125,7 +125,7 @@ public class MsixPackagerTests
         {
             var src = Path.Combine(tmp, "src");
             Directory.CreateDirectory(src);
-            File.WriteAllText(Path.Combine(src, "MsixApp.exe"), InstallerOutputFormat.Exe);
+            File.WriteAllText(Path.Combine(src, "MsixApp.exe"), "exe");
 
             var project = InstallerProjectFactory.CreateNew("MsixTest", "1.0.0", "P", src);
             project.OutputDir = Path.Combine(tmp, "out");
@@ -133,11 +133,11 @@ public class MsixPackagerTests
 project.UseTestDefaults();
             project.CreateUninstallEntry = false;
 project.UseTestDefaults();
-            project.OutputFormat = "msix";
+            project.OutputFormat = InstallerOutputFormat.Msix;
             project.MsixIdentity = "Co.MsixTest";
             project.MainExecutable = "MsixApp.exe";
 
-            var result = new InstallerBuilder().Build(project);
+            var result = TestHelpers.TestPipeline().Run(project);
 
             // Orchestration outputs (always present).
             result.MsixPackagePath.Should().NotBeNullOrEmpty("MSIX branch should populate the path");
@@ -149,4 +149,6 @@ project.UseTestDefaults();
         finally { try { Directory.Delete(tmp, recursive: true); } catch { } }
     }
 }
+
+
 

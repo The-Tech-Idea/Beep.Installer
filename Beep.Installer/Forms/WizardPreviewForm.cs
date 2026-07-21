@@ -20,6 +20,9 @@ public class WizardPreviewForm : Form
         Text = $"Preview — {project.AppName} Setup";
         Size = new Size(880, 640);
         StartPosition = FormStartPosition.CenterParent;
+        // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         FormBorderStyle = FormBorderStyle.Sizable;
         MinimumSize = new Size(760, 540);
 

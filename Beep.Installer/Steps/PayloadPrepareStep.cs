@@ -50,16 +50,16 @@ public class PayloadPrepareStep : ISetupStep
             var tempZip = Path.Combine(Path.GetTempPath(), $"BeepEmbedded_{Guid.NewGuid():N}.zip");
             Engine.PePayloadWriter.Extract(myExe!, tempZip);
             var extractRoot = Path.Combine(Path.GetTempPath(), $"BeepPayload_{Guid.NewGuid():N}");
-            var embeddedFolder = ResolvePayloadFolderName();
+            var embeddedFolder = ResolvePayloadFolderName(context);
             var root = Engine.PayloadPackager.ExtractZip(tempZip, extractRoot, embeddedFolder);
             context.Properties["PayloadRoot"] = root;
-            try { File.Delete(tempZip); } catch { }
+            try { File.Delete(tempZip); } catch (Exception ex) { Engine.Diag.Debug("PayloadPrepareStep", "temp zip cleanup failed", ex); }
             progress?.Report(new PassedArgs { Messege = "Payload extracted from embedded resource.", ParameterInt1 = 100 });
             return StepErrorHelpers.Ok($"Payload ready (embedded): {root}");
         }
 
-        var folder = ResolvePayloadFolderName();
-        var searchBases = ResolveSearchBases();
+        var folder = ResolvePayloadFolderName(context);
+        var searchBases = ResolveSearchBases(context);
 
         foreach (var basePath in searchBases)
         {
@@ -72,7 +72,7 @@ public class PayloadPrepareStep : ISetupStep
             }
         }
 
-        var method = ResolveCompressionMethod();
+        var method = ResolveCompressionMethod(context);
 
         // LZMA2 (.7z) archive — best-effort via 7z.
         if (string.Equals(method, "lzma2", StringComparison.OrdinalIgnoreCase))
@@ -128,13 +128,13 @@ public class PayloadPrepareStep : ISetupStep
 
     // ── helpers ──
 
-    private static string ResolvePayloadFolderName()
-        => Engine.RuntimeProjectContext.Current?.PayloadFolderName ?? "payload";
+    private static string ResolvePayloadFolderName(SetupContext context)
+        => context.TryGetProperty<string>(Engine.InstallContextKeys.PayloadFolderName) ?? "payload";
 
-    private static List<string> ResolveSearchBases()
+    private static List<string> ResolveSearchBases(SetupContext context)
     {
         var bases = new List<string>(2);
-        var dir = Engine.RuntimeProjectContext.Current?.SourceDirectory;
+        var dir = context.TryGetProperty<string>(Engine.InstallContextKeys.PayloadSearchBase);
         if (!string.IsNullOrWhiteSpace(dir))
             bases.Add(dir!);
         bases.Add(AppContext.BaseDirectory);
@@ -147,12 +147,6 @@ public class PayloadPrepareStep : ISetupStep
         catch (Exception ex) { Engine.Diag.Debug("PayloadPrepareStep", "HasAnyFile check failed", ex); return false; }
     }
 
-    private static string ResolveCompressionMethod()
-    {
-        return Engine.RuntimeProjectContext.Current?.Compression switch
-        {
-            Beep.Installer.Models.CompressionFormat.Lzma2 => "lzma2",
-            _ => "zip"
-        };
-    }
+    private static string ResolveCompressionMethod(SetupContext context)
+        => context.TryGetProperty<string>(Engine.InstallContextKeys.PayloadCompression) ?? "zip";
 }

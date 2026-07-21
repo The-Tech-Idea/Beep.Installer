@@ -85,19 +85,19 @@ public class InstallScopeTests
             InstallProject RuntimeConfigFor(string arch)
             {
                 var p = InstallerProjectFactory.CreateNew("P", "1.0.0", "Pub", src);
-                p.ArchitecturesAllowed = arch;
+                p.ArchitecturesAllowed = Enum.Parse<Architecture>(arch, ignoreCase: true);
                 p.OutputDir = PathCombine(tmp, "out_" + arch);
                 p.CompressPayload = false;
                 p.CreateUninstallEntry = false;
                 p.UseTestDefaults();
-                new InstallerBuilder().Build(p).Success.Should().BeTrue();
+                TestHelpers.TestPipeline().Run(p).Success.Should().BeTrue();
 
                 var (runtimeProject, err) = InstallerScriptSerializer.Load(PathCombine(p.OutputDir, "script.bsetup"));
                 err.Should().BeNull();
                 return runtimeProject!;
             }
 
-            RuntimeConfigFor(Architecture.X64).Prefer64Bit.Should().BeTrue();
+            RuntimeConfigFor("x64").Prefer64Bit.Should().BeTrue();
             RuntimeConfigFor("arm64").Prefer64Bit.Should().BeTrue();
             RuntimeConfigFor("x86").Prefer64Bit.Should().BeFalse();
         }
@@ -118,4 +118,6 @@ public class InstallScopeTests
 
     private static string PathCombine(params string[] parts) => System.IO.Path.Combine(parts);
 }
+
+
 

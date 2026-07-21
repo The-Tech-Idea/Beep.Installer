@@ -1,65 +1,208 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
-
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
   <!-- Wizard -->
-  <data name="Wizard_Title" xml:space="preserve"><value>Beep Installer</value></data>
-  <data name="Wizard_Welcome" xml:space="preserve"><value>Welcome</value></data>
-  <data name="Wizard_License" xml:space="preserve"><value>License Agreement</value></data>
-  <data name="Wizard_Components" xml:space="preserve"><value>Select Components</value></data>
-  <data name="Wizard_Folder" xml:space="preserve"><value>Destination Folder</value></data>
-  <data name="Wizard_StartMenu" xml:space="preserve"><value>Start Menu Folder</value></data>
-  <data name="Wizard_Tasks" xml:space="preserve"><value>Additional Tasks</value></data>
-  <data name="Wizard_Ready" xml:space="preserve"><value>Ready to Install</value></data>
-  <data name="Wizard_Installing" xml:space="preserve"><value>Installing</value></data>
-  <data name="Wizard_Complete" xml:space="preserve"><value>Installation Complete</value></data>
-
+  <data name="Wizard_Title" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Welcome" xml:space="preserve">
+    <value>Welcome</value>
+  </data>
+  <data name="Wizard_License" xml:space="preserve">
+    <value>License Agreement</value>
+  </data>
+  <data name="Wizard_Components" xml:space="preserve">
+    <value>Select Components</value>
+  </data>
+  <data name="Wizard_Folder" xml:space="preserve">
+    <value>Destination Folder</value>
+  </data>
+  <data name="Wizard_StartMenu" xml:space="preserve">
+    <value>Start Menu Folder</value>
+  </data>
+  <data name="Wizard_Tasks" xml:space="preserve">
+    <value>Additional Tasks</value>
+  </data>
+  <data name="Wizard_Ready" xml:space="preserve">
+    <value>Ready to Install</value>
+  </data>
+  <data name="Wizard_Installing" xml:space="preserve">
+    <value>Installing</value>
+  </data>
+  <data name="Wizard_Complete" xml:space="preserve">
+    <value>Installation Complete</value>
+  </data>
   <!-- Welcome / description -->
-  <data name="Welcome_Description" xml:space="preserve"><value>This wizard will guide you through the installation. Click Next to continue.</value></data>
-  <data name="Welcome_Subtitle" xml:space="preserve"><value>Setup will install {0} on your computer.</value></data>
-
+  <data name="Welcome_Description" xml:space="preserve">
+    <value>This wizard will guide you through the installation. Click Next to continue.</value>
+  </data>
+  <data name="Welcome_Subtitle" xml:space="preserve">
+    <value>Setup will install {0} on your computer.</value>
+  </data>
   <!-- License -->
-  <data name="License_Prompt" xml:space="preserve"><value>Do you accept the terms of this license agreement?</value></data>
-  <data name="License_Accept" xml:space="preserve"><value>I accept the agreement</value></data>
-  <data name="License_Decline" xml:space="preserve"><value>I do not accept the agreement</value></data>
-
+  <data name="License_Prompt" xml:space="preserve">
+    <value>Do you accept the terms of this license agreement?</value>
+  </data>
+  <data name="License_Accept" xml:space="preserve">
+    <value>I accept the agreement</value>
+  </data>
+  <data name="License_Decline" xml:space="preserve">
+    <value>I do not accept the agreement</value>
+  </data>
   <!-- Components -->
-  <data name="Comp_Required" xml:space="preserve"><value>Required</value></data>
-  <data name="Comp_Optional" xml:space="preserve"><value>Optional</value></data>
-  <data name="Comp_TotalSize" xml:space="preserve"><value>Total selected: {0} MB</value></data>
-
+  <data name="Comp_Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="Comp_Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Comp_TotalSize" xml:space="preserve">
+    <value>Total selected: {0} MB</value>
+  </data>
   <!-- Folder -->
-  <data name="Folder_Prompt" xml:space="preserve"><value>Select the folder where the application will be installed:</value></data>
-  <data name="Folder_AvailableSpace" xml:space="preserve"><value>Available space: {0} GB</value></data>
-  <data name="Folder_SpaceUnknown" xml:space="preserve"><value>Unable to check disk space.</value></data>
-
+  <data name="Folder_Prompt" xml:space="preserve">
+    <value>Select the folder where the application will be installed:</value>
+  </data>
+  <data name="Folder_AvailableSpace" xml:space="preserve">
+    <value>Available space: {0} GB</value>
+  </data>
+  <data name="Folder_SpaceUnknown" xml:space="preserve">
+    <value>Unable to check disk space.</value>
+  </data>
   <!-- Start Menu -->
-  <data name="StartMenu_Prompt" xml:space="preserve"><value>Select the Start Menu folder where shortcuts will be created:</value></data>
-  <data name="StartMenu_Skip" xml:space="preserve"><value>Don't create a Start Menu folder</value></data>
-
+  <data name="StartMenu_Prompt" xml:space="preserve">
+    <value>Select the Start Menu folder where shortcuts will be created:</value>
+  </data>
+  <data name="StartMenu_Skip" xml:space="preserve">
+    <value>Don't create a Start Menu folder</value>
+  </data>
   <!-- Tasks -->
-  <data name="Task_DesktopIcon" xml:space="preserve"><value>Create a desktop icon</value></data>
-  <data name="Task_AutoStart" xml:space="preserve"><value>Start the application when Windows starts</value></data>
-  <data name="Task_FileAssoc" xml:space="preserve"><value>Associate project files with the application</value></data>
-
+  <data name="Task_DesktopIcon" xml:space="preserve">
+    <value>Create a desktop icon</value>
+  </data>
+  <data name="Task_AutoStart" xml:space="preserve">
+    <value>Start the application when Windows starts</value>
+  </data>
+  <data name="Task_FileAssoc" xml:space="preserve">
+    <value>Associate project files with the application</value>
+  </data>
   <!-- Install -->
-  <data name="Install_Starting" xml:space="preserve"><value>Starting installation...</value></data>
-  <data name="Install_CopyFiles" xml:space="preserve"><value>Copying files...</value></data>
-  <data name="Install_Shortcuts" xml:space="preserve"><value>Creating shortcuts...</value></data>
-  <data name="Install_Registry" xml:space="preserve"><value>Writing registry entries...</value></data>
-  <data name="Install_Verifying" xml:space="preserve"><value>Verifying installation...</value></data>
-
+  <data name="Install_Starting" xml:space="preserve">
+    <value>Starting installation...</value>
+  </data>
+  <data name="Install_CopyFiles" xml:space="preserve">
+    <value>Copying files...</value>
+  </data>
+  <data name="Install_Shortcuts" xml:space="preserve">
+    <value>Creating shortcuts...</value>
+  </data>
+  <data name="Install_Registry" xml:space="preserve">
+    <value>Writing registry entries...</value>
+  </data>
+  <data name="Install_Verifying" xml:space="preserve">
+    <value>Verifying installation...</value>
+  </data>
   <!-- Complete -->
-  <data name="Complete_Success" xml:space="preserve"><value>Installation completed successfully.</value></data>
-  <data name="Complete_Failure" xml:space="preserve"><value>Installation failed. Please check the log for details.</value></data>
-  <data name="Complete_Launch" xml:space="preserve"><value>Launch the application</value></data>
-  <data name="Complete_ViewLog" xml:space="preserve"><value>View installation log</value></data>
-
+  <data name="Complete_Success" xml:space="preserve">
+    <value>Installation completed successfully.</value>
+  </data>
+  <data name="Complete_Failure" xml:space="preserve">
+    <value>Installation failed. Please check the log for details.</value>
+  </data>
+  <data name="Complete_Launch" xml:space="preserve">
+    <value>Launch the application</value>
+  </data>
+  <data name="Complete_ViewLog" xml:space="preserve">
+    <value>View installation log</value>
+  </data>
   <!-- Errors -->
-  <data name="Error_AdminRequired" xml:space="preserve"><value>Administrator privileges required.</value></data>
-  <data name="Error_DiskSpace" xml:space="preserve"><value>Insufficient disk space.</value></data>
-  <data name="Error_DotNetMissing" xml:space="preserve"><value>.NET runtime not found. Please install .NET 9.0 or later.</value></data>
+  <data name="Error_AdminRequired" xml:space="preserve">
+    <value>Administrator privileges required.</value>
+  </data>
+  <data name="Error_DiskSpace" xml:space="preserve">
+    <value>Insufficient disk space.</value>
+  </data>
+  <data name="Error_DotNetMissing" xml:space="preserve">
+    <value>.NET runtime not found. Please install .NET 9.0 or later.</value>
+  </data>
+  <data name="Btn_Back" xml:space="preserve">
+    <value>&lt; Back</value>
+  </data>
+  <data name="Btn_Next" xml:space="preserve">
+    <value>Next &gt;</value>
+  </data>
+  <data name="Btn_Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Btn_Finish" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="Btn_Browse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="Install_Preparing" xml:space="preserve">
+    <value>Preparing installation…</value>
+  </data>
+  <data name="Install_Progress" xml:space="preserve">
+    <value>Installing {0}… ({1}%)</value>
+  </data>
+  <data name="Install_CancelDisabled" xml:space="preserve">
+    <value>Installation cannot be interrupted once it has started.</value>
+  </data>
+  <data name="Nav_Project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Nav_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Nav_Features" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="Nav_Customize" xml:space="preserve">
+    <value>Customize</value>
+  </data>
+  <data name="Nav_Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Btn_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Btn_Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Btn_Rescan" xml:space="preserve">
+    <value>Rescan</value>
+  </data>
+  <data name="Btn_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Builder_SourceDir" xml:space="preserve">
+    <value>Source directory:</value>
+  </data>
+  <data name="Builder_NoScan" xml:space="preserve">
+    <value>No scan yet.</value>
+  </data>
+  <data name="Builder_Modified" xml:space="preserve">
+    <value>Modified</value>
+  </data>
+  <data name="Builder_Recent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
 </root>

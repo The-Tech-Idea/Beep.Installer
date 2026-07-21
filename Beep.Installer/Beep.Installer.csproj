@@ -15,7 +15,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Authoring/build/packaging logic, deliberately free of any UI dependency. -->
+    <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
     <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Vis.Modules2.0\TheTechIdea.Beep.Vis.Modules.csproj" />
+    <!--
+      DataManagementModels must be referenced DIRECTLY, not just transitively via
+      DataManagementEngine. Beep.Winform.Controls and Vis.Modules PackageReference
+      TheTechIdea.Beep.DataManagementModels at the same assembly identity (3.1.1.0) as the
+      source build, and NuGet resolves nearest-to-root: without this line the stale package
+      wins and the app fails at runtime with TypeLoadException on newer BeepDM types.
+      Same fix used by Beep.Desktop.Common, Beep.Winform.Data.Integrated, TreeNodes, MVVM.
+    -->
+    <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" />
     <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
     <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Winform.Controls\TheTechIdea.Beep.Winform.Controls.csproj" />
   </ItemGroup>

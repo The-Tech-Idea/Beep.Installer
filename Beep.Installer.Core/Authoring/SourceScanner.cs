@@ -125,7 +125,7 @@ public class SourceScanner
 
         project.SourceDirectory = sourceDirectory;
 
-        var result = ScanDirectory(sourceDirectory);
+        var result = ScanDirectory(sourceDirectory, project.SourceIncludes);
         result.ScannedDirectory = sourceDirectory;
         result.ProjectDirectory = projectDir;
 
@@ -238,7 +238,7 @@ public class SourceScanner
                         var latest = DateTime.MinValue;
                         foreach (var f in exeFiles.Concat(dllFiles))
                         {
-                            try { var t = File.GetLastWriteTime(f); if (t > latest) latest = t; } catch { }
+                            try { var t = File.GetLastWriteTime(f); if (t > latest) latest = t; } catch (Exception ex) { Diag.Debug("SourceScanner", "timestamp read failed", ex); }
                         }
                         candidates.Add((subDir, latest, exeFiles.Count + dllFiles.Count));
                     }
@@ -268,7 +268,14 @@ public class SourceScanner
 
     // ── Directory scanning ──
 
-    public ScanResult ScanDirectory(string sourceDir)
+    public ScanResult ScanDirectory(string sourceDir) => ScanDirectory(sourceDir, null);
+
+    /// <summary>
+    /// Scans <paramref name="sourceDir"/>. <paramref name="includePatterns"/> is consulted only
+    /// to decide whether a conventionally build-only folder (bin, obj, …) should still be
+    /// walked; the patterns are applied as a filter later, by the caller.
+    /// </summary>
+    public ScanResult ScanDirectory(string sourceDir, IEnumerable<string>? includePatterns)
     {
         var r = new ScanResult();
         if (string.IsNullOrEmpty(sourceDir) || !Directory.Exists(sourceDir))
@@ -277,7 +284,7 @@ public class SourceScanner
             return r;
         }
 
-        foreach (var file in EnumerateDeployableFiles(sourceDir))
+        foreach (var file in EnumerateDeployableFiles(sourceDir, includePatterns, r.Warnings))
         {
             var rel = Path.GetRelativePath(sourceDir, file);
             var sf = new ScannedFile
@@ -314,7 +321,10 @@ public class SourceScanner
 
     // ── Smart enumeration: skip build artifacts ──
 
-    private static IEnumerable<string> EnumerateDeployableFiles(string root)
+    private static IEnumerable<string> EnumerateDeployableFiles(
+        string root,
+        IEnumerable<string>? includePatterns = null,
+        ICollection<string>? warnings = null)
     {
         // First, enumerate all top-level files
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly))
@@ -324,14 +334,46 @@ public class SourceScanner
         foreach (var subDir in Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly))
         {
             var dirName = Path.GetFileName(subDir);
-            // Skip folders that are definitely not deployable
-            if (ExcludedFolders.Contains(dirName))
+
+            // Pruning happens before include patterns are evaluated, so a pruned folder could
+            // never be recovered by an explicit include — a project whose payload genuinely
+            // lives in e.g. "bin" would silently build with no files. An include naming the
+            // folder is an unambiguous statement of intent, so it wins.
+            if (ExcludedFolders.Contains(dirName) && !IsExplicitlyIncluded(dirName, includePatterns))
+            {
+                warnings?.Add($"Skipped folder '{dirName}' (build-only by convention). " +
+                              $"Add an include pattern such as '{dirName}/**' to scan it.");
                 continue;
+            }
 
             // Recurse fully into remaining folders
             foreach (var file in Directory.EnumerateFiles(subDir, "*", SearchOption.AllDirectories))
                 yield return file;
         }
+    }
+
+    /// <summary>
+    /// True when an include pattern names <paramref name="dirName"/> as a path segment, e.g.
+    /// <c>bin/**</c> or <c>src/bin/*.dll</c>. Deliberately conservative: it can only ever add
+    /// folders back to the scan, never remove them.
+    /// </summary>
+    private static bool IsExplicitlyIncluded(string dirName, IEnumerable<string>? includePatterns)
+    {
+        if (includePatterns == null || string.IsNullOrEmpty(dirName)) return false;
+
+        foreach (var raw in includePatterns)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            var pattern = raw.Replace('\\', '/').Trim().TrimStart('/');
+
+            var firstSegment = pattern.Split('/')[0];
+            if (string.Equals(firstSegment, dirName, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (pattern.Contains($"/{dirName}/", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     // ── File classification ──
@@ -375,10 +417,18 @@ public class SourceScanner
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // A type reference we cannot read just means "not a service".
+                    Diag.Debug("SourceScanner", "type-reference scan skipped", ex);
+                }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Expected for any file that is not a managed PE — classification falls back.
+            Diag.Debug("SourceScanner", $"PE metadata unavailable for '{sf.RelativePath}'", ex);
+        }
     }
 
     // ── Dependency analysis ──
@@ -475,7 +525,13 @@ public class SourceScanner
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Without this the .NET prerequisite is simply never suggested, so the installer
+            // ships with no runtime check and fails on a machine that lacks .NET.
+            Diag.Warn("SourceScanner", "could not determine the target framework — " +
+                                       "no .NET prerequisite will be suggested", ex);
+        }
         return null;
     }
 
@@ -529,7 +585,11 @@ public class SourceScanner
                 refNames.Add(meta.GetString(ar.Name));
             }
         }
-        catch (BadImageFormatException) { }
+        catch (BadImageFormatException ex)
+        {
+            // Expected for native (unmanaged) binaries — they carry no assembly references.
+            Diag.Debug("SourceScanner", "assembly references unavailable (not a managed image)", ex);
+        }
     }
 
     private static void ReadDepsJson(string depsPath, HashSet<string> refNames)
@@ -544,7 +604,13 @@ public class SourceScanner
                         foreach (var asm in runtime.EnumerateObject())
                             refNames.Add(Path.GetFileNameWithoutExtension(Path.GetFileName(asm.Name)));
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Silence here meant the app's dependencies were never discovered, so the built
+            // installer shipped without them and failed only at run time on the user's machine.
+            Diag.Warn("SourceScanner", $"deps.json '{depsPath}' could not be parsed — " +
+                                       "dependent assemblies will not be detected", ex);
+        }
     }
 
     private static InstallComponent FindOrCreateComponent(InstallProject project, Options options)

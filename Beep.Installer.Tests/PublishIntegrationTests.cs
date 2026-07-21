@@ -54,7 +54,7 @@ public class PublishIntegrationTests
         Directory.CreateDirectory(tmp);
         var src = Path.Combine(tmp, "src");
         Directory.CreateDirectory(src);
-        File.WriteAllText(Path.Combine(src, "App.exe"), InstallerOutputFormat.Exe);
+        File.WriteAllText(Path.Combine(src, "App.exe"), "exe");
 
         var project = InstallerProjectFactory.CreateNew("MsixApp", "1.0.0", "P", src);
         project.Components.Clear();
@@ -68,11 +68,11 @@ public class PublishIntegrationTests
 project.UseTestDefaults();
         project.CreateUninstallEntry = false;
 project.UseTestDefaults();
-            project.OutputFormat = "msix";
+            project.OutputFormat = InstallerOutputFormat.Msix;
         project.MsixIdentity = "Co.MsixApp";
         project.MainExecutable = "App.exe";
 
-        var result = new InstallerBuilder().Build(project);
+        var result = TestHelpers.TestPipeline().Run(project);
 
         // The staging dir + manifest are always produced. MakeAppx may reject the minimal
         // manifest on this machine (it requires full Visual Studio MSIX project capabilities);
@@ -120,7 +120,7 @@ project.UseTestDefaults();
 project.UseTestDefaults();
         project.CreateUninstallEntry = false;
 project.UseTestDefaults();
-            var result = new InstallerBuilder().Build(project);
+            var result = TestHelpers.TestPipeline().Run(project);
         result.Success.Should().BeTrue(string.Join(" | ", result.Errors));
 
         var scriptPath = Path.Combine(project.OutputDir, "script.bsetup");
@@ -131,4 +131,6 @@ project.UseTestDefaults();
         runtimeProject.CustomActions[0].Timing.Should().Be(CustomActionTiming.AfterInstall);
     }
 }
+
+
 

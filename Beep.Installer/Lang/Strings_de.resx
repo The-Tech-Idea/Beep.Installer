@@ -1,37 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
-  <data name="Wizard_Title" xml:space="preserve"><value>Beep Installer</value></data>
-  <data name="Wizard_Welcome" xml:space="preserve"><value>Willkommen</value></data>
-  <data name="Wizard_License" xml:space="preserve"><value>Lizenzvereinbarung</value></data>
-  <data name="Wizard_Components" xml:space="preserve"><value>Komponenten auswählen</value></data>
-  <data name="Wizard_Folder" xml:space="preserve"><value>Zielordner</value></data>
-  <data name="Wizard_StartMenu" xml:space="preserve"><value>Startmenü-Ordner</value></data>
-  <data name="Wizard_Tasks" xml:space="preserve"><value>Zusätzliche Aufgaben</value></data>
-  <data name="Wizard_Ready" xml:space="preserve"><value>Bereit zur Installation</value></data>
-  <data name="Wizard_Installing" xml:space="preserve"><value>Installiere</value></data>
-  <data name="Wizard_Complete" xml:space="preserve"><value>Installation abgeschlossen</value></data>
-  <data name="Btn_Back" xml:space="preserve"><value>&lt; Zurück</value></data>
-  <data name="Btn_Next" xml:space="preserve"><value>Weiter &gt;</value></data>
-  <data name="Btn_Install" xml:space="preserve"><value>Installieren</value></data>
-  <data name="Btn_Cancel" xml:space="preserve"><value>Abbrechen</value></data>
-  <data name="Btn_Finish" xml:space="preserve"><value>Fertig</value></data>
-  <data name="Btn_Browse" xml:space="preserve"><value>Durchsuchen...</value></data>
-  <data name="License_Accept" xml:space="preserve"><value>Ich akzeptiere die Vereinbarung</value></data>
-  <data name="License_Decline" xml:space="preserve"><value>Ich lehne die Vereinbarung ab</value></data>
-  <data name="Comp_Required" xml:space="preserve"><value>Erforderlich</value></data>
-  <data name="Comp_Optional" xml:space="preserve"><value>Optional</value></data>
-  <data name="Task_DesktopIcon" xml:space="preserve"><value>Desktop-Symbol erstellen</value></data>
-  <data name="Task_AutoStart" xml:space="preserve"><value>Beep beim Windows-Start ausführen</value></data>
-  <data name="Task_FileAssoc" xml:space="preserve"><value>.beep-Dateien mit Beep verknüpfen</value></data>
-  <data name="Complete_Success" xml:space="preserve"><value>Beep wurde erfolgreich installiert.</value></data>
-  <data name="Complete_Failure" xml:space="preserve"><value>Installation fehlgeschlagen. Protokoll prüfen.</value></data>
-  <data name="Complete_Launch" xml:space="preserve"><value>Beep Data Manager starten</value></data>
-  <data name="Complete_ViewLog" xml:space="preserve"><value>Installationsprotokoll anzeigen</value></data>
-  <data name="Error_AdminRequired" xml:space="preserve"><value>Administratorrechte erforderlich.</value></data>
-  <data name="Error_DiskSpace" xml:space="preserve"><value>Nicht genügend Speicherplatz.</value></data>
-  <data name="Error_DotNetMissing" xml:space="preserve"><value>.NET nicht gefunden. Installieren Sie .NET 9.0 oder höher.</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Wizard_Title" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Welcome" xml:space="preserve">
+    <value>Willkommen</value>
+  </data>
+  <data name="Wizard_License" xml:space="preserve">
+    <value>Lizenzvereinbarung</value>
+  </data>
+  <data name="Wizard_Components" xml:space="preserve">
+    <value>Komponenten auswählen</value>
+  </data>
+  <data name="Wizard_Folder" xml:space="preserve">
+    <value>Zielordner</value>
+  </data>
+  <data name="Wizard_StartMenu" xml:space="preserve">
+    <value>Startmenü-Ordner</value>
+  </data>
+  <data name="Wizard_Tasks" xml:space="preserve">
+    <value>Zusätzliche Aufgaben</value>
+  </data>
+  <data name="Wizard_Ready" xml:space="preserve">
+    <value>Bereit zur Installation</value>
+  </data>
+  <data name="Wizard_Installing" xml:space="preserve">
+    <value>Installiere</value>
+  </data>
+  <data name="Wizard_Complete" xml:space="preserve">
+    <value>Installation abgeschlossen</value>
+  </data>
+  <data name="Btn_Back" xml:space="preserve">
+    <value>&lt; Zurück</value>
+  </data>
+  <data name="Btn_Next" xml:space="preserve">
+    <value>Weiter &gt;</value>
+  </data>
+  <data name="Btn_Install" xml:space="preserve">
+    <value>Installieren</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Btn_Finish" xml:space="preserve">
+    <value>Fertig</value>
+  </data>
+  <data name="Btn_Browse" xml:space="preserve">
+    <value>Durchsuchen...</value>
+  </data>
+  <data name="License_Accept" xml:space="preserve">
+    <value>Ich akzeptiere die Vereinbarung</value>
+  </data>
+  <data name="License_Decline" xml:space="preserve">
+    <value>Ich lehne die Vereinbarung ab</value>
+  </data>
+  <data name="Comp_Required" xml:space="preserve">
+    <value>Erforderlich</value>
+  </data>
+  <data name="Comp_Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Task_DesktopIcon" xml:space="preserve">
+    <value>Desktop-Symbol erstellen</value>
+  </data>
+  <data name="Task_AutoStart" xml:space="preserve">
+    <value>Beep beim Windows-Start ausführen</value>
+  </data>
+  <data name="Task_FileAssoc" xml:space="preserve">
+    <value>.beep-Dateien mit Beep verknüpfen</value>
+  </data>
+  <data name="Complete_Success" xml:space="preserve">
+    <value>Beep wurde erfolgreich installiert.</value>
+  </data>
+  <data name="Complete_Failure" xml:space="preserve">
+    <value>Installation fehlgeschlagen. Protokoll prüfen.</value>
+  </data>
+  <data name="Complete_Launch" xml:space="preserve">
+    <value>Beep Data Manager starten</value>
+  </data>
+  <data name="Complete_ViewLog" xml:space="preserve">
+    <value>Installationsprotokoll anzeigen</value>
+  </data>
+  <data name="Error_AdminRequired" xml:space="preserve">
+    <value>Administratorrechte erforderlich.</value>
+  </data>
+  <data name="Error_DiskSpace" xml:space="preserve">
+    <value>Nicht genügend Speicherplatz.</value>
+  </data>
+  <data name="Error_DotNetMissing" xml:space="preserve">
+    <value>.NET nicht gefunden. Installieren Sie .NET 9.0 oder höher.</value>
+  </data>
+  <data name="Welcome_Description" xml:space="preserve">
+    <value>Dieser Assistent führt Sie durch die Installation. Klicken Sie auf Weiter, um fortzufahren.</value>
+  </data>
+  <data name="Welcome_Subtitle" xml:space="preserve">
+    <value>Das Setup installiert {0} auf Ihrem Computer.</value>
+  </data>
+  <data name="License_Prompt" xml:space="preserve">
+    <value>Akzeptieren Sie die Bedingungen dieser Lizenzvereinbarung?</value>
+  </data>
+  <data name="Comp_TotalSize" xml:space="preserve">
+    <value>Ausgewählt insgesamt: {0} MB</value>
+  </data>
+  <data name="Folder_Prompt" xml:space="preserve">
+    <value>Wählen Sie den Ordner, in dem die Anwendung installiert werden soll:</value>
+  </data>
+  <data name="Folder_AvailableSpace" xml:space="preserve">
+    <value>Verfügbarer Speicherplatz: {0} GB</value>
+  </data>
+  <data name="Folder_SpaceUnknown" xml:space="preserve">
+    <value>Der Speicherplatz konnte nicht geprüft werden.</value>
+  </data>
+  <data name="StartMenu_Prompt" xml:space="preserve">
+    <value>Wählen Sie den Startmenü-Ordner, in dem die Verknüpfungen erstellt werden:</value>
+  </data>
+  <data name="StartMenu_Skip" xml:space="preserve">
+    <value>Keinen Startmenü-Ordner erstellen</value>
+  </data>
+  <data name="Install_Starting" xml:space="preserve">
+    <value>Installation wird gestartet...</value>
+  </data>
+  <data name="Install_CopyFiles" xml:space="preserve">
+    <value>Dateien werden kopiert...</value>
+  </data>
+  <data name="Install_Shortcuts" xml:space="preserve">
+    <value>Verknüpfungen werden erstellt...</value>
+  </data>
+  <data name="Install_Registry" xml:space="preserve">
+    <value>Registrierungseinträge werden geschrieben...</value>
+  </data>
+  <data name="Install_Verifying" xml:space="preserve">
+    <value>Installation wird überprüft...</value>
+  </data>
+  <data name="Install_Preparing" xml:space="preserve">
+    <value>Installation wird vorbereitet…</value>
+  </data>
+  <data name="Install_Progress" xml:space="preserve">
+    <value>{0} wird installiert… ({1} %)</value>
+  </data>
+  <data name="Install_CancelDisabled" xml:space="preserve">
+    <value>Die Installation kann nach dem Start nicht abgebrochen werden.</value>
+  </data>
+  <data name="Nav_Project" xml:space="preserve">
+    <value>Projekt</value>
+  </data>
+  <data name="Nav_Source" xml:space="preserve">
+    <value>Quelle</value>
+  </data>
+  <data name="Nav_Features" xml:space="preserve">
+    <value>Funktionen</value>
+  </data>
+  <data name="Nav_Customize" xml:space="preserve">
+    <value>Anpassen</value>
+  </data>
+  <data name="Nav_Build" xml:space="preserve">
+    <value>Erstellen</value>
+  </data>
+  <data name="Btn_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="Btn_Remove" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="Btn_Rescan" xml:space="preserve">
+    <value>Erneut prüfen</value>
+  </data>
+  <data name="Btn_Apply" xml:space="preserve">
+    <value>Übernehmen</value>
+  </data>
+  <data name="Builder_SourceDir" xml:space="preserve">
+    <value>Quellordner:</value>
+  </data>
+  <data name="Builder_NoScan" xml:space="preserve">
+    <value>Noch nicht geprüft.</value>
+  </data>
+  <data name="Builder_Modified" xml:space="preserve">
+    <value>Geändert</value>
+  </data>
+  <data name="Builder_Recent" xml:space="preserve">
+    <value>Zuletzt verwendet</value>
+  </data>
 </root>

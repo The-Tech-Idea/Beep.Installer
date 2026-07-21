@@ -70,7 +70,11 @@ public class WelcomePage : UserControl, IInstallerPage
                 _icon.Image = bmp;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Decorative product icon — absence must not block the wizard.
+            Engine.Diag.Debug("WelcomePage", "product icon could not be rendered", ex);
+        }
     }
 
     public new bool Validate() => true;
