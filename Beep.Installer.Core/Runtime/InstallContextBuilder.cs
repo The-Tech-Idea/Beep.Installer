@@ -34,7 +34,8 @@ public static class InstallContextBuilder
         bool perUser,
         RollbackManager? rollback = null,
         string? payloadRoot = null,
-        IDictionary<string, string>? customValues = null)
+        IDictionary<string, string>? customValues = null,
+        bool force = false)
     {
         ArgumentNullException.ThrowIfNull(project);
         if (string.IsNullOrWhiteSpace(installPath))
@@ -50,6 +51,10 @@ public static class InstallContextBuilder
         // TryGetProperty<T> is constrained to reference types.
         context.Properties[InstallContextKeys.PerUser] = perUser;
         context.Properties[InstallContextKeys.IsSelfContained] = project.SelfContained;
+
+        // Allows UpgradeStep to proceed with a downgrade (CLI /FORCE). Boxed bool.
+        if (force)
+            context.Properties[TheTechIdea.Beep.Installer.Steps.UpgradeStep.ForceInstallKey] = true;
 
         if (!string.IsNullOrWhiteSpace(payloadRoot))
             context.Properties[InstallContextKeys.PayloadRoot] = payloadRoot!;

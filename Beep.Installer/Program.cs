@@ -97,8 +97,9 @@ internal static class Program
             || IndexOf(args, "/VALIDATE=") >= 0
             || IndexOf(args, "/PREVIEW=") >= 0
             || IndexOf(args, "/PUBLISH=") >= 0
-            || Has(args, "/S", "/SILENT")
+            || Has(args, "/S", "/SILENT", "/VERYSILENT")
             || Has(args, "/UNINSTALL")
+            || Has(args, "/REPAIR")
             || Has(args, "/SELFTEST");
     }
 
@@ -119,8 +120,10 @@ internal static class Program
             return 0;
         }
 
-        // Silent install — used by the SHIPPED installer
-        if (Has(args, "/S", "/SILENT"))
+        // Silent install — used by the SHIPPED installer.
+        // /VERYSILENT and /SUPPRESSMSGBOXES are Inno Setup's grammar; accepting them means
+        // deployment scripts written for Inno (Intune/SCCM/winget) work unchanged.
+        if (Has(args, "/S", "/SILENT", "/VERYSILENT"))
         {
             var project = LoadRuntimeProject(args);
             if (project == null) { Console.Error.WriteLine("No installer script was found in the executable."); return 2; }
@@ -132,6 +135,13 @@ internal static class Program
         {
             var project = LoadRuntimeProject(args);
             return project == null ? 2 : RunUninstall(project, args);
+        }
+
+        // Repair — used by Add/Remove Programs "Modify" and directly
+        if (Has(args, "/REPAIR"))
+        {
+            var project = LoadRuntimeProject(args);
+            return project == null ? 2 : RunRepair(project, args);
         }
 
         // Self-test
@@ -256,22 +266,97 @@ internal static class Program
 
         // The steps consume BeepDM's InstallConfig, not our authoring model — the builder
         // performs that projection and supplies every key the step graph reads.
-        var context = Engine.InstallContextBuilder.ForInstall(project, installPath, perUser, rollback);
+        var context = Engine.InstallContextBuilder.ForInstall(project, installPath, perUser, rollback,
+            force: Has(args, "/FORCE"));
 
         // Same graph the wizard UI runs — see Hosting/InstallWizardGraph.
         var wizard = Hosting.InstallWizardGraph.BuildInstall(
             "beep-install-silent", new SetupOptions { Environment = "Production" });
 
-        var result = wizard.Run(context);
+        var logger = CreateRunLogger(args);
+        logger.Info("Install", $"{config.AppName} {config.AppVersion} → {installPath} (perUser={perUser})");
+        var progress = new SyncProgress(a =>
+        {
+            if (!string.IsNullOrEmpty(a.Messege)) logger.Info("Install", a.Messege);
+        });
+
+        var result = wizard.Run(context, progress);
+        LogRunReport(logger, wizard);
         var ok = result.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
         if (ok) rollback.Commit();
         else
         {
             Console.WriteLine("Installation failed — rolling back changes…");
             rollback.Rollback();
+            RestoreUpgradeBackupIfAny(context);
         }
-        Console.WriteLine(ok ? "Installation completed successfully." : $"Installation failed: {result.Message}");
+        var restartOverride = args.FirstOrDefault(a => a.StartsWith("/RESTARTEXITCODE=", StringComparison.OrdinalIgnoreCase)) is string r
+            && int.TryParse(r["/RESTARTEXITCODE=".Length..], out var code) ? code : (int?)null;
+        var exit = Hosting.ExitCodes.ForInstallResult(ok, context, Has(args, "/NORESTART"), restartOverride);
+
+        if (ok) RecordLogInArp(project, perUser, logger.LogFilePath);
+        logger.Info("Install", ok ? $"Completed (exit {exit})." : $"Failed: {result.Message}");
+
+        Console.WriteLine(ok
+            ? exit == Hosting.ExitCodes.Success
+                ? "Installation completed successfully."
+                : "Installation completed — a reboot is required to replace files that were in use."
+            : $"Installation failed: {result.Message}");
+        Console.WriteLine($"Log: {logger.LogFilePath}");
+        return exit;
+    }
+
+    // ── Repair ──────────────────────────────────────────────────────────
+
+    private static int RunRepair(InstallProject project, string[] args)
+    {
+        var perUser = Engine.InstallScopeResolver.IsPerUser(project);
+
+        // Resolve where the product is installed: explicit /D= wins, then the registration
+        // written at install time, then the script's default path.
+        var installPath = args.FirstOrDefault(a => a.StartsWith("/D=", StringComparison.OrdinalIgnoreCase))?[3..];
+        if (string.IsNullOrWhiteSpace(installPath))
+        {
+            using var hive = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                TheTechIdea.Beep.Installer.InstallScope.HiveFor(perUser),
+                TheTechIdea.Beep.Installer.InstallScope.ViewFor(project.Prefer64Bit));
+            installPath = new UpgradeEngine().DetectExisting(project.AppName, hive)?.InstallPath;
+        }
+        installPath ??= Engine.InstallScopeResolver.ResolveDefaultPath(project, perUser);
+
+        if (string.IsNullOrWhiteSpace(installPath) || !Directory.Exists(installPath))
+        {
+            Console.Error.WriteLine($"No installation of {project.AppName} was found to repair.");
+            return 2;
+        }
+
+        Console.WriteLine($"Repairing {project.AppName} at {installPath}…");
+
+        var context = Engine.InstallContextBuilder.ForInstall(project, installPath, perUser);
+        var wizard = Hosting.InstallWizardGraph.BuildRepair();
+        var result = wizard.Run(context);
+
+        var ok = result.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
+        Console.WriteLine(ok ? $"Repair completed: {result.Message}" : $"Repair failed: {result.Message}");
         return ok ? 0 : 1;
+    }
+
+    /// <summary>
+    /// A failed upgrade must put the previous version back. UpgradeStep recorded the backup;
+    /// CommitUpgradeStep only deletes it after a verified success, so on any failure the
+    /// backup still exists here.
+    /// </summary>
+    private static void RestoreUpgradeBackupIfAny(SetupContext context)
+    {
+        var backup = context.TryGetProperty<string>(UpgradeStep.BackupPathKey);
+        var installPath = context.TryGetProperty<string>("InstallPath");
+        if (string.IsNullOrWhiteSpace(backup) || string.IsNullOrWhiteSpace(installPath)) return;
+
+        Console.WriteLine($"Restoring previous version from backup…");
+        var restored = new UpgradeEngine().RestoreFromBackup(backup!, installPath!, CancellationToken.None);
+        Console.WriteLine(restored
+            ? "Previous version restored."
+            : $"Could not restore the previous version — backup preserved at: {backup}");
     }
 
     // ── Uninstall ───────────────────────────────────────────────────────
@@ -389,6 +474,14 @@ internal static class Program
         // launched from. Resolved in memory only, so the script stays portable.
         InstallerScriptSerializer.ResolveRelativePaths(project, projectPath);
 
+        // CI gate: refuse to produce an unsigned installer when the pipeline demands signing.
+        if (Has(args, "/REQUIRESIGNED") && string.IsNullOrWhiteSpace(project.CodeSignCertificatePath))
+        {
+            Console.Error.WriteLine("/REQUIRESIGNED: no code-signing certificate is configured " +
+                                    "(CodeSignCertificatePath is empty) — refusing to build an unsigned installer.");
+            return 1;
+        }
+
         // Allow overriding output via /OUT=
         var outIdx = IndexOf(args, "/OUT=");
         if (outIdx >= 0) project.OutputDir = args[outIdx][5..];
@@ -492,6 +585,61 @@ internal static class Program
         return result.Success ? 0 : 1;
     }
 
+    // ── Logging helpers ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates the install log for a headless run. <c>/LOG=&lt;path&gt;</c> chooses the file;
+    /// otherwise InstallLogger's default (%TEMP%\Beep_Install_*.log) is used — but now
+    /// announced instead of silently written.
+    /// </summary>
+    private static InstallLogger CreateRunLogger(string[] args)
+    {
+        var custom = args.FirstOrDefault(a => a.StartsWith("/LOG=", StringComparison.OrdinalIgnoreCase))?[5..];
+        return new InstallLogger(string.IsNullOrWhiteSpace(custom) ? null : custom);
+    }
+
+    /// <summary>
+    /// Synchronous IProgress: Progress&lt;T&gt; posts to a SynchronizationContext and a console
+    /// host has none, so its callbacks land on the thread pool and can arrive after Run()
+    /// returned — lines would be missing from the log.
+    /// </summary>
+    private sealed class SyncProgress : IProgress<TheTechIdea.Beep.Addin.PassedArgs>
+    {
+        private readonly Action<TheTechIdea.Beep.Addin.PassedArgs> _handler;
+        public SyncProgress(Action<TheTechIdea.Beep.Addin.PassedArgs> handler) => _handler = handler;
+        public void Report(TheTechIdea.Beep.Addin.PassedArgs value) => _handler(value);
+    }
+
+    /// <summary>Writes each step result from the run report into the log.</summary>
+    private static void LogRunReport(InstallLogger logger, TheTechIdea.Beep.SetUp.ISetupWizard wizard)
+    {
+        try
+        {
+            var report = wizard.GetReport();
+            foreach (var step in report.StepResults)
+                logger.StepComplete(step.StepId ?? "?", step.Succeeded, step.Message);
+        }
+        catch (Exception ex) { logger.Warn("Log", $"Could not append step report: {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// Records the log location in the ARP entry so support can find it later. Best-effort.
+    /// </summary>
+    private static void RecordLogInArp(InstallProject project, bool perUser, string logPath)
+    {
+        if (!project.CreateUninstallEntry) return;
+        try
+        {
+            using var baseKey = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                TheTechIdea.Beep.Installer.InstallScope.HiveFor(perUser),
+                TheTechIdea.Beep.Installer.InstallScope.ViewFor(project.Prefer64Bit));
+            using var key = baseKey.OpenSubKey(
+                $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{project.AppName}", writable: true);
+            key?.SetValue("LogFile", logPath);
+        }
+        catch (Exception ex) { Engine.Diag.Debug("Program", "ARP LogFile write skipped", ex); }
+    }
+
     // ── Arg helpers ─────────────────────────────────────────────────────
 
     private static bool Has(string[] args, params string[] flags)
@@ -537,6 +685,10 @@ internal static class Program
         Console.WriteLine("  Beep.Installer.exe /PREVIEW=<.bsetup>      Show project summary");
         Console.WriteLine("  Beep.Installer.exe /SCRIPT=<.bsetup> /S    Run installer from a script");
         Console.WriteLine("  Beep.Installer.exe /S [/D=<path>]        Silent install (runtime mode)");
+        Console.WriteLine("  Beep.Installer.exe /S /FORCE             Allow installing an older version over a newer one");
+        Console.WriteLine("  Beep.Installer.exe /REPAIR [/D=<path>]   Restore missing or modified files (runtime mode)");
+        Console.WriteLine("  Beep.Installer.exe /S /NORESTART         Report success (0) even when a reboot is pending");
+        Console.WriteLine("  Beep.Installer.exe /S /RESTARTEXITCODE=n Override the reboot-required exit code (default 3010)");
         Console.WriteLine("  Beep.Installer.exe /UNINSTALL [/D=<path>] Silent uninstall (runtime mode)");
         Console.WriteLine("  Beep.Installer.exe /SELFTEST             Install + verify + uninstall in %TEMP%");
         Console.WriteLine("  Beep.Installer.exe /LANGMGR              Open Language Manager");

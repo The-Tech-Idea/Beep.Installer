@@ -14,6 +14,9 @@ namespace Beep.Installer.Hosting;
 public static class StepIds
 {
     public const string Prerequisites = "installer.prerequisites.check";
+    public const string UpgradeDetect = "installer.upgrade.detect";
+    public const string UpgradeCommit = "installer.upgrade.commit";
+    public const string Verify = "installer.verify";
     public const string DirectoryCreate = "installer.directory.create";
     public const string CustomBeforeInstall = "installer.custom.beforeinstall";
     public const string PayloadDownload = "installer.payload.download";
@@ -24,6 +27,7 @@ public static class StepIds
     public const string EnvironmentVariables = "installer.envvars.write";
     public const string CustomAfterInstall = "installer.custom.afterinstall";
     public const string Uninstall = "installer.uninstall";
+    public const string RepairFiles = "installer.files.repair";
 }
 
 /// <summary>
@@ -44,7 +48,10 @@ public static class InstallWizardGraph
 
         return builder
             .AddStep(new PrerequisiteCheckStep())
-            .AddStep(new DirectoryCreateStep(StepIds.Prerequisites))
+            // Upgrade detection runs before anything touches disk: it may refuse a downgrade
+            // or back up the existing install.
+            .AddStep(new UpgradeStep(StepIds.Prerequisites))
+            .AddStep(new DirectoryCreateStep(StepIds.UpgradeDetect))
             .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, StepIds.DirectoryCreate))
             .AddStep(new Steps.PayloadDownloadStep(StepIds.CustomBeforeInstall))
             .AddStep(new Steps.PayloadPrepareStep(StepIds.PayloadDownload))
@@ -57,8 +64,29 @@ public static class InstallWizardGraph
             .AddStep(new EnvironmentVariableStep(StepIds.RegistryWrite))
             .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, StepIds.EnvironmentVariables))
             .AddStep(new VerifyInstallStep(StepIds.CustomAfterInstall))
+            // Last on purpose: the upgrade backup is only discarded once verification has
+            // proven the new install complete. On failure this never runs and the host
+            // restores from the backup instead.
+            .AddStep(new CommitUpgradeStep(StepIds.Verify))
             .Build();
     }
+
+    /// <summary>
+    /// Repair: restore missing/modified files from the payload, then re-run the idempotent
+    /// shortcut/registry/environment steps. Deliberately excludes upgrade detection, custom
+    /// actions and directory creation — repair must converge the install toward the manifest,
+    /// not re-run arbitrary author code.
+    /// </summary>
+    public static ISetupWizard BuildRepair(string wizardId = "beep-repair")
+        => new SetupWizardBuilder()
+            .WithId(wizardId)
+            .AddStep(new Steps.PayloadDownloadStep())
+            .AddStep(new Steps.PayloadPrepareStep(StepIds.PayloadDownload))
+            .AddStep(new RepairFilesStep(StepIds.PayloadPrepare))
+            .AddStep(new ShortcutCreateStep(StepIds.RepairFiles))
+            .AddStep(new RegistryWriteStep(StepIds.Shortcuts))
+            .AddStep(new EnvironmentVariableStep(StepIds.RegistryWrite))
+            .Build();
 
     /// <summary>Uninstall: custom actions bracket the reversal.</summary>
     public static ISetupWizard BuildUninstall(string wizardId = "beep-uninstall")

@@ -63,12 +63,29 @@ public class InstallWizardGraphTests
     }
 
     [Fact]
-    public void InstallGraph_VerifiesLast()
+    public void InstallGraph_VerifiesAfterEveryMutatingStep_AndCommitsLast()
     {
-        // VerifyInstallStep writes the uninstall manifest, so it must observe every
-        // preceding step's output.
+        // VerifyInstallStep writes the uninstall manifest, so it must observe every mutating
+        // step's output. CommitUpgradeStep is deliberately after it: the upgrade backup may
+        // only be discarded once verification has proven the new install complete.
         var ids = StepIdsOf(InstallWizardGraph.BuildInstall("beep-verify"));
-        ids.Last().Should().Be("installer.verify");
+
+        var verifyIndex = ids.IndexOf("installer.verify");
+        foreach (var mutating in new[] { StepIds.FileCopy, StepIds.Shortcuts, StepIds.RegistryWrite, StepIds.EnvironmentVariables })
+            verifyIndex.Should().BeGreaterThan(ids.IndexOf(mutating), $"verify must follow {mutating}");
+
+        ids.Last().Should().Be(StepIds.UpgradeCommit);
+    }
+
+    [Fact]
+    public void InstallGraph_DetectsUpgradeBeforeTouchingDisk()
+    {
+        // UpgradeStep may refuse a downgrade or back up the existing install — it must run
+        // before anything is created or copied.
+        var ids = StepIdsOf(InstallWizardGraph.BuildInstall("beep-upg"));
+
+        ids.IndexOf(StepIds.UpgradeDetect).Should().BeLessThan(ids.IndexOf(StepIds.DirectoryCreate));
+        ids.IndexOf(StepIds.UpgradeDetect).Should().BeLessThan(ids.IndexOf(StepIds.FileCopy));
     }
 
     [Fact]

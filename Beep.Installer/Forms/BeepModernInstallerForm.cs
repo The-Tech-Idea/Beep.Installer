@@ -706,11 +706,16 @@ public class BeepModernInstallerForm : BeepiFormPro
             var stepCount = Math.Max(1, wizard.Steps?.Count ?? 1);
             var stepsDone = 0;
 
+            // Same install log the silent path writes; "View installation log" points here.
+            var installLogger = new InstallLogger();
+            installLogger.Info("Install", $"{_project.AppName} {_project.AppVersion} → {_ctx.InstallPath} (perUser={_ctx.PerUser})");
+
             var progress = new Progress<PassedArgs>(args =>
             {
                 if (IsDisposed) return;
                 try
                 {
+                    if (!string.IsNullOrEmpty(args.Messege)) installLogger.Info("Install", args.Messege);
                     Invoke(() =>
                     {
                         if (!string.IsNullOrEmpty(args.Messege)) detail.Text = args.Messege;
@@ -736,14 +741,25 @@ public class BeepModernInstallerForm : BeepiFormPro
 
             if (!IsDisposed) { bar.Value = 100; detail.Text = ""; }
             var report = wizard.GetReport();
-            if (report.Succeeded) rollback.Commit(); else rollback.Rollback();
-            var manifestPath = Path.Combine(_ctx.InstallPath, "install-manifest.json");
+            if (report.Succeeded) rollback.Commit();
+            else
+            {
+                rollback.Rollback();
+
+                // A failed upgrade must put the previous version back (backup recorded by
+                // UpgradeStep; only deleted by CommitUpgradeStep after a verified success).
+                var backup = context.TryGetProperty<string>(UpgradeStep.BackupPathKey);
+                if (!string.IsNullOrWhiteSpace(backup))
+                    new UpgradeEngine().RestoreFromBackup(backup!, _ctx.InstallPath, CancellationToken.None);
+            }
+            installLogger.Info("Install", report.Succeeded ? "Completed." : "Failed.");
+            var logPath = File.Exists(installLogger.LogFilePath) ? installLogger.LogFilePath : null;
 
             if (report.Succeeded)
             {
                 ShowCompletePage(report.Succeeded,
                     $"{_ctx.Project.AppName} has been installed to {_ctx.InstallPath}.",
-                    File.Exists(manifestPath) ? manifestPath : null);
+                    logPath);
             }
             else
             {

@@ -728,10 +728,15 @@ public static class InstallerScriptSerializer
         var subkey = Value(d, "Subkey", "Key");
         if (string.IsNullOrWhiteSpace(subkey)) return;
 
-        var root = Value(d, "Root") ?? "HKLM";
+        // The Root: token is kept for script compatibility but NOT baked into KeyPath.
+        // KeyPath is hive-relative: the runtime install scope (per-user vs per-machine)
+        // chooses the hive. Prepending the hive name here made RegistryWriteStep create a
+        // literal "HKEY_LOCAL_MACHINE" subkey under the scope hive, so every entry —
+        // including the ARP set — landed at HKCU\HKEY_LOCAL_MACHINE\... where Windows
+        // never looks.
         project.RegistryEntries.Add(new RegistryOperation
         {
-            KeyPath = CombineRegistryRoot(root, subkey),
+            KeyPath = subkey.TrimStart('\\'),
             ValueName = Value(d, "ValueName") ?? "",
             Value = FromScriptPath(Value(d, "ValueData", "Value") ?? ""),
             ValueKind = ParseRegistryKind(Value(d, "ValueType") ?? "string")
@@ -965,17 +970,6 @@ public static class InstallerScriptSerializer
         .Replace("%ProgramFiles%", "{pf}", StringComparison.OrdinalIgnoreCase)
         .Replace("%Temp%", "{tmp}", StringComparison.OrdinalIgnoreCase);
 
-    private static string CombineRegistryRoot(string root, string subkey)
-    {
-        var normalizedRoot = root.ToUpperInvariant() switch
-        {
-            "HKCU" => "HKEY_CURRENT_USER",
-            "HKCR" => "HKEY_CLASSES_ROOT",
-            "HKU" => "HKEY_USERS",
-            _ => "HKEY_LOCAL_MACHINE"
-        };
-        return normalizedRoot + "\\" + subkey.TrimStart('\\');
-    }
 
     private static RegistryValueKind ParseRegistryKind(string value) => value.ToLowerInvariant() switch
     {

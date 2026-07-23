@@ -246,6 +246,17 @@ public class BuildPipeline
                 Report(85, "Code signing…");
                 SignExe(exePath, project, result, log);
             }
+            else
+            {
+                // Signed-by-default posture: an unsigned installer triggers Windows
+                // SmartScreen's "unrecognized app" interstitial on end-user machines, which
+                // most users read as "this is malware". Say so at build time, prominently.
+                result.Warnings.Add(
+                    "This installer is NOT code-signed. Windows SmartScreen will warn users " +
+                    "before running it. Configure CodeSignCertificatePath to sign, or use " +
+                    "/REQUIRESIGNED in CI to make unsigned builds fail.");
+                log.Add("  WARN: not code-signed (SmartScreen will warn end users)");
+            }
 
             if (project.OutputFormat is InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)
             {
@@ -466,7 +477,9 @@ Beep Installer v1.0.0
             new() { KeyPath = baseKey, ValueName = "Publisher", Value = project.AppPublisher, ValueKind = RegistryValueKind.String },
             new() { KeyPath = baseKey, ValueName = "InstallLocation", Value = "%InstallPath%", ValueKind = RegistryValueKind.String },
             new() { KeyPath = baseKey, ValueName = "UninstallString", Value = $"\"{Path.Combine("%InstallPath%", outputFileName)}\" /UNINSTALL", ValueKind = RegistryValueKind.ExpandString },
-            new() { KeyPath = baseKey, ValueName = "QuietUninstallString", Value = $"\"{Path.Combine("%InstallPath%", outputFileName)}\" /UNINSTALL /S", ValueKind = RegistryValueKind.ExpandString }
+            new() { KeyPath = baseKey, ValueName = "QuietUninstallString", Value = $"\"{Path.Combine("%InstallPath%", outputFileName)}\" /UNINSTALL /S", ValueKind = RegistryValueKind.ExpandString },
+            // ARP "Modify" verb → repair (restores missing/modified files from the payload).
+            new() { KeyPath = baseKey, ValueName = "ModifyPath", Value = $"\"{Path.Combine("%InstallPath%", outputFileName)}\" /REPAIR", ValueKind = RegistryValueKind.ExpandString }
         };
         if (!string.IsNullOrWhiteSpace(project.AppSupportURL))
             entries.Add(new() { KeyPath = baseKey, ValueName = "HelpLink", Value = project.AppSupportURL, ValueKind = RegistryValueKind.String });

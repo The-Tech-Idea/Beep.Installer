@@ -80,6 +80,63 @@ each intervening page and land the user on the first one needing attention. Back
 free. Focus is also set on the newly shown page — clearing the content panel destroyed the
 focused control, so keyboard and screen-reader users lost their place on every navigation.
 
+### P10.C shipped — and Add/Remove Programs turned out to be broken three ways (2026-07-23)
+
+`/LOG=` (announced default, host-wired `InstallLogger`, per-step results, ARP `LogFile`,
+wizard "View log" now points at the real log), Inno-compatible `/VERYSILENT` and
+`/SUPPRESSMSGBOXES`, an unsigned-build SmartScreen warning, and a `/REQUIRESIGNED` CI gate.
+
+The log-driven E2E gate then exposed that **uninstalling from Windows Settings had never
+worked**, for three stacked reasons, each masking the next:
+
+1. **`%InstallPath%` was never expanded** — `ExpandString` resolves only real environment
+   variables — so `UninstallString` was a literal unrunnable macro. Fixed in
+   `RegistryWriteStep` (expands `%InstallPath%`/`{InstallPath}` in key paths and values, and
+   records the *expanded* operations in the manifest).
+2. **The `.bsetup` loader baked `HKEY_LOCAL_MACHINE\` into every KeyPath** while the writer
+   stripped it again — round-trips looked symmetric, but at runtime `CreateSubKey` created a
+   literal `HKEY_LOCAL_MACHINE` subkey under the scope hive, landing the entire ARP set at
+   `HKCU\HKEY_LOCAL_MACHINE\…`. The step even logged "7 registry entries written" — success
+   while writing to a place Windows never reads. Loader fixed; new
+   `InstallScope.NormalizeKeyPath` strips hive tokens defensively on both write and uninstall
+   (older manifests still carry prefixed paths).
+3. **Uninstall left ARP key shells** — it deleted values, not keys, and the host-recorded
+   `LogFile` kept the key non-empty. ARP keys are wholly product-owned and are now deleted
+   outright; other touched keys are removed only when empty, mirroring the directory sweep.
+
+Final lifecycle gate: install → ARP present with runnable `UninstallString`/`ModifyPath` +
+`LogFile`, no stray HKLM key → uninstall → **ARP key and product registration both gone**.
+Suite 311/0. Registry residue from the broken era cleaned from the dev machine.
+
+### Repair mode + locked-file handling shipped (P10.B, 2026-07-23)
+
+`RepairFilesStep` in BeepDM with a pure `ComputePlan` (payload-vs-installed SHA-256; intact
+files untouched, payload-absent entries skipped — repair never deletes or invents). `/REPAIR`
+finds the install via `/D=`, the P10.A registration, or the script default, and runs a
+dedicated graph that deliberately excludes upgrade detection and custom actions: repair
+converges toward the manifest, it does not re-run author code. ARP gains `ModifyPath`.
+E2E: corrupted `app.txt` and deleted `docs\help.txt` both restored, `user-data.txt` preserved.
+Locked destinations now stage to `<dest>.pending` and schedule a reboot-time swap
+(`ScheduleFileForRestart`, previously uncalled) with MSI-style exit 3010
+(`/NORESTART`, `/RESTARTEXITCODE=n`); unelevated, where scheduling is impossible, the step
+fails with an actionable "in use" message instead of the old unhandled `IOException`.
+Suite 309/0. Outstanding: a live elevated locked-file run proving the 3010 process exit.
+
+### Upgrade-in-place shipped and E2E-proven (P10.A, 2026-07-23)
+
+The `UpgradeEngine` finally has callers. Scope-aware hive overloads (old HKLM signatures kept
+`[Obsolete]`, same pattern as the P2 `RollbackManager` fix); `VerifyInstallStep` registers the
+install and `UninstallStep` unregisters it, so detection has something to find and uninstall
+leaves no ghost — confirmed against the live registry. New `UpgradeStep` runs before anything
+touches disk: refuses a downgrade with a message naming the installed version and `/FORCE`,
+backs up before an upgrade or forced downgrade, and **aborts if the backup fails** rather than
+upgrading without a restore point. `CommitUpgradeStep` runs last — the backup is only
+discarded after verification proves the new install — migrating user config first; on failure
+both hosts restore from the backup. 10 new `UpgradeFlowTests` (all HKCU, elevation-free);
+suite 296/0. Four-leg E2E with two real builds: fresh 1.0.0 → upgrade to 1.1.0 with
+`settingsKept=True`/`backupGone=True` → downgrade refused (exit 1, registry untouched, message
+actionable) → `/FORCE` downgrade succeeds.
+
 ### 🎉 End-to-end verified for the first time
 
 `/BUILD` → `Setup.exe` → `/S` install → `/UNINSTALL` now completes cleanly: 3 files staged,
@@ -379,6 +436,9 @@ context-key tests are not yet written.
 | D7 | Builder restyle ambition | A: shared theme-token layer over existing controls · B: full Beep-control adoption | **A** first | P6 |
 | D8 | Adopt BeepDM's planned `feed.json` update protocol instead of ClickOnce update checking? | A: keep ClickOnce for now · B: converge | **A** — converging is a product decision, not a refactor | backlog |
 | D9 | Ship `Beep.Installer.Core` as its own NuGet package? | A: internal project only · B: publish | **A** until it stabilizes | backlog |
+| D10 | Update hosting model | A: static HTTPS host (GitHub Releases / S3 / LAN folder) serving `feed.json` + artifacts · B: A + tiny read-only API (staged rollout, gated downloads, stats) · C: full update service | **A** — no server code needed for hash-verified full/delta/module updates; the client sees only URLs + hashes, so A→B→C is a hosting migration, not a client change | P11 |
+| D11 | Feed integrity for v1 | A: TLS + per-artifact SHA-256 only · B: additionally sign `feed.json` itself | **A** for v1, B before any public-internet fleet — an attacker who controls the host can rewrite hashes under A | P11 |
+| D12 | **DECIDED (owner, 2026-07-23):** where does the app self-update API live? | — | **In BeepDM** — contracts `DataManagementModelsStandard/Updates/`, implementation `DataManagementEngineStandard/Updates/`, registered via `AddBeepAppUpdates()`. The update capability belongs to the *deployed app* as a developer-facing API; Beep.Installer only publishes the feed (`/PUBLISHFEED`) and stamps `update-settings.json` at build. In-scope for BeepDM per its own installer-service plan (online-update service is a listed component; only packaging/signing are excluded). | P11 |
 
 ---
 
@@ -551,6 +611,50 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 9.B.2 | CI smoke: `/SELFTEST` + build→install→uninstall E2E | ⬜ |
 | 9.B.3 | Final manual matrix (DPI/Narrator/RTL) + SOLID rows recorded | ⬜ |
 
+## Phase 10: Commercial-Grade Installer Parity ⬜ — P1
+
+> 📄 **[Design: P10_COMMERCIAL_PARITY_DESIGN.md](P10_COMMERCIAL_PARITY_DESIGN.md)** ·
+> **[Task List: P10_COMMERCIAL_PARITY.md](P10_COMMERCIAL_PARITY.md)**
+> Benchmark set: Inno Setup, MSI, Squirrel/Velopack, MSIX. Key lever: `UpgradeEngine`
+> (DetectExisting/Backup/IsNewer/MigrateUserConfig) exists in BeepDM but **nothing calls it** —
+> a re-run install today blindly overwrites.
+
+| # | Task | Status |
+|---|------|--------|
+| 10.A.1 | Scope-aware `UpgradeEngine` (+`UnregisterInstall`); registration wired into verify, unregistration into uninstall | ✅ |
+| 10.A.2 | `UpgradeStep`/`CommitUpgradeStep`: upgrade-in-place, backup/restore, config migration, downgrade guard + `/FORCE`; **four-leg E2E green** (see task list 10.A.G) | ✅ |
+| 10.B.1 | Repair mode: `RepairFilesStep` (pure planner) + `/REPAIR` + `BuildRepair` graph + ARP `ModifyPath`; **E2E green** (corrupt + deleted files restored, user data untouched) | ✅ |
+| 10.B.2 | Locked files → staged `.pending` + `ScheduleFileForRestart` + `RebootRequired`; `ExitCodes` 3010/`/NORESTART`/`/RESTARTEXITCODE`; unelevated path fails with actionable "in use" message | ✅ (live elevated 3010 run outstanding) |
+| 10.C.1 | `/LOG=` + `InstallLogger` wired at the hosts + ARP `LogFile`; wizard "View log" points at the real log | ✅ |
+| 10.C.2 | Inno aliases (`/VERYSILENT`, `/SUPPRESSMSGBOXES`), unsigned-build SmartScreen warning, `/REQUIRESIGNED` CI gate | ✅ |
+| 10.C.3 | **Three ARP bugs found & fixed by the gates**: `%InstallPath%` never expanded; hive prefix baked into KeyPath (entries landed at `HKCU\HKEY_LOCAL_MACHINE\…`); uninstall left ARP key shells. Full lifecycle now E2E-green: entry present with runnable strings, fully removed on uninstall | ✅ |
+| 10.M.1 | Gate matrix: upgrade ✅ · refused-downgrade ✅ · repair ✅ · log/ARP lifecycle ✅ · locked-file 3010 unit-covered (**live elevated run still outstanding**) | 🟡 |
+
+## Phase 11: Updates, Partial Updates & the NuGet Module Channel ⬜ — P1
+
+> 📄 **[Design: P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md)** ·
+> **[Task List: P11_UPDATES_AND_PARTIAL_UPDATES.md](P11_UPDATES_AND_PARTIAL_UPDATES.md)** · needs **D10, D11** · depends on P10.A
+> Answers: static feed + hashes (no dedicated server to start, D10); partial updates via
+> (a) blob-level deltas — the solid payload is already a content-addressed store
+> (`_blobs/<sha256>` + manifest, `PayloadPackager.cs:16`) — and (b) per-module NuGet updates.
+> **Per D12 the whole client API lives in BeepDM** (`IAppUpdateService` + `AddBeepAppUpdates()`),
+> so any Beep-based app self-updates regardless of how it was deployed.
+> BeepDM scan (2026-07-23) found the module-update core **already implemented**:
+> `NuGetManagement/Services/UpdateService` has `UpdateAsync`/`BulkUpdateAsync`/
+> `CheckForUpdatesAsync`/`GetPackagesWithUpdatesAsync` (`UpdateService.cs:39-164`) — the new
+> `ModuleUpdater` is only the governed layer (feed-pinned versions + sha256 + policy).
+> Feed immutability is a hard rule: the P0 stale-3.1.1 incident is what republishing in place causes.
+
+| # | Task | Status |
+|---|------|--------|
+| 11.A.1 | Feed contract POCOs + async hash-verified `UpdateFeedClient` | ⬜ |
+| 11.A.2 | `/PUBLISHFEED` publisher stage (versioned blob store + atomic `feed.json`) | ⬜ |
+| 11.B.1 | `DeltaPlanner` (pure: remote manifest vs local → blobs to fetch) | ⬜ |
+| 11.B.2 | Side-by-side `UpdateApplier` (`app-x.y.z/` + `current` junction flip; crash-safe; supersedes ClickOnce in-place swap) | ⬜ |
+| 11.C.1 | `ModuleUpdater` over `IAssemblyHandler` (single NuGet part updated, app files untouched; applies on next launch — hot reload out of scope) | ⬜ |
+| 11.C.2 | `UpdatePolicy` + `/CHECKUPDATE` `/UPDATE`; retire ClickOnce `UpdateChecker`/`UpdateApplier` → removes the two sync-over-async guard exemptions | ⬜ |
+| 11.M.1 | Gate: publish v1.0→v1.1, delta update, corrupt-blob abort, module-only update, kill-mid-update survival | ⬜ |
+
 ---
 
 ## Summary
@@ -567,6 +671,8 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 7 | Localization / RTL / a11y | P2 | ⬜ | [P7](P7_I18N_A11Y_DESIGN.md) |
 | 8 | Security & reliability | P1 | ⬜ | [P8](P8_SECURITY_RELIABILITY_DESIGN.md) |
 | 9 | Test migration & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
+| 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
+| 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | ⬜ | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
 
 **Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
 highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and
