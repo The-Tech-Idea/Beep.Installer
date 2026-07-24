@@ -105,6 +105,32 @@ public static class PayloadPackager
         }
     }
 
+    /// <summary>
+    /// Expands a solid zip's content-addressed store into loose files under
+    /// <paramref name="destDir"/>: <c>_payload-manifest.json</c> plus one <c>_blobs/&lt;hash&gt;</c>
+    /// file per unique blob. This is the shape the update feed serves — a delta updater fetches
+    /// the manifest, diffs blob hashes against what is installed, and downloads only the blobs it
+    /// is missing by <c>&lt;blobBaseUrl&gt;/&lt;hash&gt;</c>.
+    /// </summary>
+    public static void ExpandSolidToLooseStore(string zipPath, string destDir)
+    {
+        using var zip = ZipFile.OpenRead(zipPath);
+        var mEntry = zip.GetEntry(ManifestName)
+                     ?? throw new InvalidDataException("Not a solid payload (missing manifest); a delta feed needs solid compression.");
+
+        Directory.CreateDirectory(Path.Combine(destDir, "_blobs"));
+        mEntry.ExtractToFile(Path.Combine(destDir, ManifestName), overwrite: true);
+
+        foreach (var entry in zip.Entries)
+        {
+            if (!entry.FullName.StartsWith("_blobs/", StringComparison.Ordinal) || entry.FullName.EndsWith("/", StringComparison.Ordinal))
+                continue;
+            var dest = Path.Combine(destDir, entry.FullName.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            entry.ExtractToFile(dest, overwrite: true);
+        }
+    }
+
     // ── Shared extraction (solid + plain zip) ──────────────────────────────
 
     /// <summary>

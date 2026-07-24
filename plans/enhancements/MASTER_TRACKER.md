@@ -10,6 +10,137 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-07-24
+
+**P11 started — Stage 11.A.1 (feed contracts + client) landed.** Decisions **D10** (hosting) and
+**D11** (feed integrity) both recorded as **A**: a static HTTPS/folder feed with per-artifact
+SHA-256 and no server code. New BeepDM `Updates/` domain (namespace `TheTechIdea.Beep.Updates`,
+per D12 — update capability belongs to the deployed app, not the installer):
+
+- **Models** (`DataManagementModelsStandard/Updates/`): `UpdateFeed`/`AppReleaseInfo`/`ArtifactRef`/
+  `DeltaRef`/`ModuleRef` (feed shape from design §1), `UpdateSettings` (reuses
+  `Installer.UpdateMode` rather than a duplicate enum), `UpdateCheckResult`, `IAppUpdateService`.
+- **Engine** (`DataManagementEngineStandard/Updates/`): `IFeedTransport`/`HttpFeedTransport`
+  (HTTPS with transparent local/UNC-folder fallback — a folder feed needs no config),
+  `UpdateFeedClient` (async fetch/parse; artifacts SHA-256-verified via `InstallHelpers.VerifyFileHash`,
+  a mismatch is discarded; malformed feed → named `UpdateFeedException`, never a silent null),
+  `AppUpdateService` (`CheckAsync` compares installed vs feed via `NuGetVersion`, flags
+  `RequiresFullInstall` below `minSupportedVersion`, raises `UpdateAvailable`; apply/rollback
+  return an explicit "not yet — Stage 11.B/C" rather than doing nothing), and `AddBeepAppUpdates()`
+  DI registration reading `update-settings.json`.
+
+12 new `UpdatesTests` (round-trip incl. the design §1 JSON, malformed-feed, corrupt-artifact
+discard, version-decision matrix, disabled opt-out, DI resolve) — all offline via a fake
+transport. BeepDM `SetupWizardTests` **186/186**.
+
+**Stage 11.A.2 (`/PUBLISHFEED` publisher) landed** — the first Beep.Installer-repo change of the
+phase. New `Beep.Installer.Core/Build/FeedPublisher.cs`: builds then stages into a static feed —
+`<feedDir>/<version>/` holds the full Setup.exe (+ its SHA-256) and, when the payload is solid,
+the loose content-addressed store (`_blobs/` + `_payload-manifest.json`, via new
+`PayloadPackager.ExpandSolidToLooseStore`) that a delta updater will consume; `feed.json` written
+atomically (temp + rename), reusing `UpdateFeedClient.Serialize` so publish and consume agree on
+shape. **Immutability guard** (11.A.2b): republishing an existing version fails without
+`/REPUBLISH` — the stale-3.1.1 lesson encoded. **Provisioning** (11.A.2c):
+`BuildPipeline.StampUpdateSettings` writes `update-settings.json` from `AppUpdatesURL`/
+`AppUpdateMode` and adds it as a payload file so it installs beside the app. CLI:
+`/BUILD=<project> /PUBLISHFEED=<dir> [/FEEDURL=][/CHANNEL=][/MINVERSION=][/REPUBLISH]` in
+`Program.cs`. 6 new `FeedPublisherTests` (full-hash, two-version-latest, immutability,
+solid→loose delta store, non-solid full-only, absolute base URL). Beep.Installer suite
+**317/0/3**.
+
+**Stage 11.B.1 (`DeltaPlanner`) landed.** New `PayloadManifest`/`PayloadEntry`/`DeltaPlan`/
+`BlobFetch` models (round-trip the solid packager's `_payload-manifest.json`) + pure
+`DeltaPlanner.ComputePlan(remote, local)` in BeepDM: diffs blob hashes, not files, so a rename or
+duplicate downloads nothing; emits blobs-to-fetch, files-to-write/delete, and download-vs-full
+byte accounting; a null local manifest is a full install (also how the caller forces full below
+`minSupportedVersion` via `RequiresFullInstall`). 7 `DeltaPlannerTests` (unchanged / one-file /
+rename-zero-download / delete / full / shared-blob-once / savings).
+
+**Stage 11.B.2 (`SideBySideApplier`) landed** — the largest piece of P11. Stages the new version
+into `.staging-<ver>`, verifies every blob's SHA-256 as it writes (a mismatch aborts *before* any
+move or flip — `PointCalls==0`, no version folder left), promotes to `app-<ver>\`, then flips the
+`current` link — so the running version is never written to (locked-file problem gone). Deltas
+seed unchanged files from the live version; full installs materialize from blobs. Crash-safe:
+leftover `.staging-*` from a dead run is swept on the next apply. `Rollback` flips `current` back
+to the previous version (state tracked in `.sxs-state.json`); `RetireOldVersions` deletes all but
+current+previous. The junction op is behind `IDirectoryLink` (`JunctionLink` = `mklink /J`, no
+elevation) so the logic is tested with a fake link — 8 `SideBySideApplierTests`. An `OnApplied`
+hook carries the applied version out to the ledger (wired to `IVersionManagementService` when
+`AppUpdateService` is composed in 11.C). BeepDM `SetupWizardTests` **201/201**.
+
+**Stage 11.C.1 (`ModuleUpdater`) landed.** A thin *governed* layer over BeepDM's existing NuGet
+`UpdateService`, decoupled through a narrow `IModulePackageService` seam (real
+`NuGetModulePackageService` adapter reads the `<dir>/<id>/<version>/` inventory + delegates to
+`UpdateService.UpdateAsync`; a fake drives the tests). Pure `ComputeStaleModules` — the feed's
+pinned version wins over "latest", so an installed module that differs (newer *or* older) is
+stale; an optional module that's absent is left alone, a required one that's absent is stale and
+`HasBlockingRequiredModule` flags it to block app start. `ApplyAsync` updates each stale module to
+its pinned version and rejects any package that fails the feed's SHA-256 — never touching the
+app's own files (a module bump is not an app reinstall). 8 `ModuleUpdaterTests` (pin-wins
+downgrade, optional-skip/required-include, sha reject+accept, failure recorded). BeepDM
+`SetupWizardTests` **209/209**.
+
+**Stage 11.C.2 landed — Phase 11 feature-complete.** `AppUpdateService` now composes the real
+paths: `CheckAsync` populates stale modules from the feed + installed inventory; `ApplyAppUpdateAsync`
+fetches the payload manifest, plans a delta (`DeltaPlanner`), and drives `SideBySideApplier` with a
+feed-backed blob fetcher + a version-ledger `OnApplied` hook; `ApplyModuleUpdatesAsync` delegates
+to `ModuleUpdater`; `RollbackAsync` flips the junction back. Policy inputs (`Mode`,
+`Disabled`/`BEEP_NO_UPDATE`, `UpdateAvailable`, required-module blocking) live on the settings +
+service. Shell CLI verbs `/CHECKUPDATE` and `/UPDATE` wrap `IAppUpdateService` (`Program.cs`). The
+ClickOnce `UpdateChecker`/`UpdateApplier` sync-over-async pair — zero production callers, superseded
+by the async-from-day-one Updates domain — was **deleted** with its tests, shrinking the
+silent-failure-guard exemption to `{IInstallerHostBuilder}`. Developer README added. 4 new
+`AppUpdateServiceComposeTests` (full apply materialize+flip+record, module staleness+apply,
+no-delta fail, no-module-service fail); BeepDM Updates domain **38 tests**, `SetupWizardTests`
+**212/212**; Beep.Installer suite **300/0/3** (−17 from the retired ClickOnce updater tests).
+
+**Phase 11 is feature-complete** (11.A + 11.B + 11.C all ✅). Outstanding only: the live
+build→publish→check→delta-update→corrupt-blob→module→kill-mid-update **E2E** (integration bucket,
+needs a real multi-minute build), and shipping `_payload-manifest.json` beside the installed app so
+real runs delta rather than full-install (provisioning refinement).
+
+⚠️ Uncommitted, spanning the **BeepDM** and **Beep.Installer** repos.
+
+---
+
+## Progress log — 2026-07-24 (earlier)
+
+**BeepDM P10 steps had vanished from the checkout — restored.** A build failed with `CS0234:
+UpgradeStep does not exist in TheTechIdea.Beep.Installer.Steps`. Investigation showed the entire
+P10.A/B/C BeepDM contribution documented below as "✅ suite 311/0" was **absent** from the
+`DataManagementEngineStandard` working tree (and never in its git history) — `UpgradeStep`,
+`CommitUpgradeStep`, `RepairFilesStep`, the scope-aware `UpgradeEngine` overloads, and the
+`RegistryWriteStep`/`FileCopyStep`/`VerifyInstallStep`/`UninstallStep` integration edits were all
+gone, while the Beep.Installer shell/Core/tests still referenced them. The work was
+re-implemented against the tests and the design docs:
+
+- **New steps** (`Installer/Steps/`): `UpgradeStep` (fresh/reinstall/upgrade/downgrade decision,
+  downgrade refusal + `/FORCE`, backup-before-replace, aborts if backup fails; keys
+  `BackupPathKey`/`PreviousVersionKey`/`ForceInstallKey`), `CommitUpgradeStep` (config migration
+  then backup removal; `CanSkip` when no backup), `RepairFilesStep` (pure `ComputePlan`
+  missing/modified/intact; DryRun-aware; records `RepairedFiles`).
+- **`UpgradeEngine`**: `RegistrationKeyPath` + `RegistryKey`-based `RegisterInstall`/`DetectExisting`
+  + `UnregisterInstall`. Legacy HKLM-only single-arg overloads **removed** (dev — no back-compat
+  shims), all callers already pass the hive.
+- **Integration restored to the documented design:** `%InstallPath%` expansion + shared
+  `InstallScope.NormalizeKeyPath` hive-token stripping in `RegistryWriteStep` (and defensively in
+  `UninstallStep`); `VerifyInstallStep` now **registers** the install and `UninstallStep`
+  **unregisters** it, so `DetectExisting` finds real installs and uninstall leaves no ghost;
+  locked-destination copies stage `<dest>.pending` and schedule a reboot swap via the existing
+  `InstallHelpers.ScheduleFileForRestart` (unelevated → actionable "in use" failure, never a raw
+  `IOException`).
+
+- **ARP key-shell deletion restored (10.C.3, last missing piece):** `UninstallStep` now deletes
+  the product-owned Add/Remove Programs key **outright** (`IsArpKey` → `DeleteSubKeyTree`) instead
+  of only its values — a host-recorded `LogFile` value otherwise keeps the key non-empty forever —
+  and removes other touched keys **only when the value deletion leaves them empty**
+  (`DeleteKeyIfEmpty`), mirroring the empty-directory sweep.
+
+Suite back to **311 passed / 0 failed / 3 skipped**. ⚠️ These edits live in the **BeepDM** repo
+and are uncommitted — the loss will recur unless committed there.
+
+---
+
 ## Progress log — 2026-07-20
 
 **The installer now installs.** `/SELFTEST` passes end to end (install → manifest →
@@ -438,6 +569,8 @@ context-key tests are not yet written.
 | D9 | Ship `Beep.Installer.Core` as its own NuGet package? | A: internal project only · B: publish | **A** until it stabilizes | backlog |
 | D10 | Update hosting model | A: static HTTPS host (GitHub Releases / S3 / LAN folder) serving `feed.json` + artifacts · B: A + tiny read-only API (staged rollout, gated downloads, stats) · C: full update service | **A** — no server code needed for hash-verified full/delta/module updates; the client sees only URLs + hashes, so A→B→C is a hosting migration, not a client change | P11 |
 | D11 | Feed integrity for v1 | A: TLS + per-artifact SHA-256 only · B: additionally sign `feed.json` itself | **A** for v1, B before any public-internet fleet — an attacker who controls the host can rewrite hashes under A | P11 |
+| D10 | **DECIDED (2026-07-24):** update hosting model | — | **A** — static HTTPS host / folder feed serving `feed.json` + artifacts; no server code. Client sees only URLs + hashes, so A→B→C stays a hosting migration. | P11 |
+| D11 | **DECIDED (2026-07-24):** feed integrity v1 | — | **A** — TLS + per-artifact SHA-256 (`InstallHelpers.VerifyFileHash`). Feed-signing (B) deferred until a public-internet fleet exists. | P11 |
 | D12 | **DECIDED (owner, 2026-07-23):** where does the app self-update API live? | — | **In BeepDM** — contracts `DataManagementModelsStandard/Updates/`, implementation `DataManagementEngineStandard/Updates/`, registered via `AddBeepAppUpdates()`. The update capability belongs to the *deployed app* as a developer-facing API; Beep.Installer only publishes the feed (`/PUBLISHFEED`) and stamps `update-settings.json` at build. In-scope for BeepDM per its own installer-service plan (online-update service is a listed component; only packaging/signing are excluded). | P11 |
 
 ---
@@ -647,13 +780,13 @@ that would relocate existing installations, so it is flagged for P2 instead.
 
 | # | Task | Status |
 |---|------|--------|
-| 11.A.1 | Feed contract POCOs + async hash-verified `UpdateFeedClient` | ⬜ |
-| 11.A.2 | `/PUBLISHFEED` publisher stage (versioned blob store + atomic `feed.json`) | ⬜ |
-| 11.B.1 | `DeltaPlanner` (pure: remote manifest vs local → blobs to fetch) | ⬜ |
-| 11.B.2 | Side-by-side `UpdateApplier` (`app-x.y.z/` + `current` junction flip; crash-safe; supersedes ClickOnce in-place swap) | ⬜ |
-| 11.C.1 | `ModuleUpdater` over `IAssemblyHandler` (single NuGet part updated, app files untouched; applies on next launch — hot reload out of scope) | ⬜ |
-| 11.C.2 | `UpdatePolicy` + `/CHECKUPDATE` `/UPDATE`; retire ClickOnce `UpdateChecker`/`UpdateApplier` → removes the two sync-over-async guard exemptions | ⬜ |
-| 11.M.1 | Gate: publish v1.0→v1.1, delta update, corrupt-blob abort, module-only update, kill-mid-update survival | ⬜ |
+| 11.A.1 | Feed contract POCOs + async hash-verified `UpdateFeedClient` | ✅ (BeepDM `Updates/` domain; 12 tests) |
+| 11.A.2 | `/PUBLISHFEED` publisher stage (versioned blob store + atomic `feed.json`) | ✅ (`FeedPublisher`; immutability guard; provisioning stamp; 6 tests) |
+| 11.B.1 | `DeltaPlanner` (pure: remote manifest vs local → blobs to fetch) | ✅ (`PayloadManifest` model + pure planner; 7 tests) |
+| 11.B.2 | Side-by-side `UpdateApplier` (`app-x.y.z/` + `current` junction flip; crash-safe; supersedes ClickOnce in-place swap) | ✅ (`SideBySideApplier` + `IDirectoryLink`; rollback + retire; 8 tests). Ledger wiring → 11.C |
+| 11.C.1 | `ModuleUpdater` over `IAssemblyHandler` (single NuGet part updated, app files untouched; applies on next launch — hot reload out of scope) | ✅ (governed layer + `IModulePackageService` + adapter; 8 tests) |
+| 11.C.2 | `UpdatePolicy` + `/CHECKUPDATE` `/UPDATE`; retire ClickOnce `UpdateChecker`/`UpdateApplier` → removes the two sync-over-async guard exemptions | ✅ (`AppUpdateService` composed; CLI verbs; ClickOnce pair deleted; guard exemption shrunk to `IInstallerHostBuilder`) |
+| 11.M.1 | Gate: publish v1.0→v1.1, delta update, corrupt-blob abort, module-only update, kill-mid-update survival | 🟡 unit-level matrix green (44 Updates+publisher tests); live E2E in the deferred integration bucket |
 
 ---
 
@@ -672,7 +805,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 8 | Security & reliability | P1 | ⬜ | [P8](P8_SECURITY_RELIABILITY_DESIGN.md) |
 | 9 | Test migration & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
 | 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
-| 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | ⬜ | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
+| 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | 🟡 feature-complete (live E2E deferred) | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
 
 **Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
 highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and

@@ -74,10 +74,9 @@ public class SilentFailureGuardTests
         // stays visible:
         //   IInstallerHostBuilder — blocks deliberately; BuildPipeline.Run is synchronous by
         //     contract and always runs on a background thread.
-        //   UpdateChecker/UpdateApplier — the ClickOnce update path is still synchronous.
-        //     Converting it async-all-the-way changes the public surface and the /PUBLISH CLI,
-        //     so it is scheduled as P4 rather than patched here.
-        var exempt = new[] { "IInstallerHostBuilder.cs", "UpdateChecker.cs", "UpdateApplier.cs" };
+        // (The ClickOnce UpdateChecker/UpdateApplier sync-over-async pair was retired in P11.C —
+        //  superseded by the async-from-day-one BeepDM Updates domain — so those exemptions are gone.)
+        var exempt = new[] { "IInstallerHostBuilder.cs" };
         offenders.RemoveAll(o => exempt.Any(e => o.StartsWith(e, StringComparison.Ordinal)));
 
         offenders.Should().BeEmpty(

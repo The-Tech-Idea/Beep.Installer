@@ -97,9 +97,12 @@ internal static class Program
             || IndexOf(args, "/VALIDATE=") >= 0
             || IndexOf(args, "/PREVIEW=") >= 0
             || IndexOf(args, "/PUBLISH=") >= 0
+            || IndexOf(args, "/PUBLISHFEED=") >= 0
             || Has(args, "/S", "/SILENT", "/VERYSILENT")
             || Has(args, "/UNINSTALL")
             || Has(args, "/REPAIR")
+            || Has(args, "/CHECKUPDATE")
+            || Has(args, "/UPDATE")
             || Has(args, "/SELFTEST");
     }
 
@@ -148,6 +151,19 @@ internal static class Program
         if (Has(args, "/SELFTEST"))
         {
             return RunSelfTest();
+        }
+
+        // App self-update (Phase 11) — thin wrappers over the BeepDM IAppUpdateService.
+        if (Has(args, "/CHECKUPDATE")) return RunCheckUpdate(args);
+        if (Has(args, "/UPDATE")) return RunUpdate(args);
+
+        // Update-feed publish — build then stage into a static feed (Phase 11). Checked before
+        // /BUILD so that "/BUILD=<project> /PUBLISHFEED=<dir>" publishes rather than only building.
+        var publishFeedIdx = IndexOf(args, "/PUBLISHFEED=");
+        if (publishFeedIdx >= 0)
+        {
+            var feedDir = args[publishFeedIdx]["/PUBLISHFEED=".Length..];
+            return RunPublishFeed(feedDir, args);
         }
 
         // Headless build — used by CI pipelines
@@ -505,6 +521,124 @@ internal static class Program
         return result.Success ? 0 : 1;
     }
 
+    // ── Update-feed publish (Phase 11) ───────────────────────────────────
+
+    /// <summary>
+    /// Builds the installer and stages it into a static update feed: a versioned folder holding
+    /// the full Setup.exe (+ the loose delta blob store when the payload is solid) and an
+    /// atomically-updated <c>feed.json</c>. Usage:
+    /// <c>/BUILD=&lt;project.bsetup&gt; /PUBLISHFEED=&lt;feedDir&gt; [/FEEDURL=&lt;baseUrl&gt;] [/CHANNEL=x] [/MINVERSION=x.y.z] [/REPUBLISH]</c>.
+    /// </summary>
+    private static int RunPublishFeed(string feedDir, string[] args)
+    {
+        var buildIdx = IndexOf(args, "/BUILD=");
+        if (buildIdx < 0)
+        {
+            Console.Error.WriteLine("/PUBLISHFEED requires /BUILD=<project.bsetup> naming the project to build and publish.");
+            return 2;
+        }
+        var projectPath = args[buildIdx][7..];
+
+        Console.WriteLine("Beep Installer — publish update feed");
+        Console.WriteLine($"Script: {projectPath}");
+        Console.WriteLine($"Feed  : {feedDir}");
+
+        var (project, err) = InstallerScriptSerializer.Load(projectPath);
+        if (project == null) { Console.Error.WriteLine($"Error: {err}"); return 2; }
+        InstallerScriptSerializer.ResolveRelativePaths(project, projectPath);
+
+        var outIdx = IndexOf(args, "/OUT=");
+        if (outIdx >= 0) project.OutputDir = args[outIdx][5..];
+
+        // Build first — keep intermediates so the solid payload.zip survives for the delta store.
+        var buildProgress = new Progress<BuildPipeline.BuildProgress>(p =>
+            Console.WriteLine($"  [{p.Percent,3}%] {p.Message}"));
+        var pipeline = new BuildPipeline { Progress = buildProgress, KeepIntermediates = true };
+        var build = pipeline.Run(project);
+        Console.WriteLine();
+        Console.WriteLine(build.Summary);
+        foreach (var w in build.Warnings) Console.WriteLine($"  WARN: {w}");
+        foreach (var e in build.Errors) Console.Error.WriteLine($"  ERR : {e}");
+        if (!build.Success) return 1;
+
+        var baseUrl = Arg(args, "/FEEDURL=") ?? (string.IsNullOrWhiteSpace(project.AppUpdatesURL) ? null : project.AppUpdatesURL);
+        var request = new Engine.FeedPublisher.Request
+        {
+            FeedDir = feedDir,
+            Product = project.AppName,
+            Version = project.AppVersion,
+            Channel = Arg(args, "/CHANNEL=") ?? "stable",
+            FullExePath = build.OutputFile,
+            PayloadZipPath = build.PayloadPath,
+            BaseUrl = baseUrl,
+            MinSupportedVersion = Arg(args, "/MINVERSION="),
+            Mode = project.AppUpdateMode,
+            Republish = Has(args, "/REPUBLISH")
+        };
+
+        var publish = new Engine.FeedPublisher().Publish(request);
+        Console.WriteLine();
+        Console.WriteLine(publish.Summary);
+        foreach (var w in publish.Warnings) Console.WriteLine($"  WARN: {w}");
+        foreach (var e in publish.Errors) Console.Error.WriteLine($"  ERR : {e}");
+        return publish.Success ? 0 : 1;
+    }
+
+    /// <summary>Value of a <c>/KEY=value</c> flag, or null when absent.</summary>
+    private static string? Arg(string[] args, string prefix)
+    {
+        var idx = IndexOf(args, prefix);
+        return idx >= 0 ? args[idx][prefix.Length..] : null;
+    }
+
+    // ── App self-update (Phase 11) ───────────────────────────────────────
+
+    private static TheTechIdea.Beep.Updates.UpdateSettings BuildUpdateSettings(string[] args)
+    {
+        var settings = TheTechIdea.Beep.Updates.UpdateServiceExtensions.LoadSettings();
+        if (Arg(args, "/FEED=") is { } feed) settings.FeedUrl = feed;
+        if (Arg(args, "/D=") is { } root) settings.InstallRoot = root;
+        return settings;
+    }
+
+    /// <summary><c>/CHECKUPDATE [/FEED=url]</c> — report whether an app update (or stale module) is available.</summary>
+    private static int RunCheckUpdate(string[] args)
+    {
+        var svc = new TheTechIdea.Beep.Updates.AppUpdateService(BuildUpdateSettings(args));
+        var check = svc.CheckAsync().GetAwaiter().GetResult();
+        if (!check.Succeeded) { Console.Error.WriteLine($"Update check failed: {check.Error}"); return 1; }
+
+        Console.WriteLine($"Installed : {check.CurrentVersion}");
+        Console.WriteLine($"Latest    : {check.LatestVersion ?? "(none)"}");
+        Console.WriteLine(check.AppUpdateAvailable
+            ? $"App update available: {check.LatestVersion}{(check.RequiresFullInstall ? " (full install required)" : " (delta)")}"
+            : "The application is up to date.");
+        if (check.StaleModules.Count > 0)
+            Console.WriteLine($"Modules to update: {string.Join(", ", check.StaleModules.Select(m => $"{m.Id} {m.Version}"))}");
+        return 0;
+    }
+
+    /// <summary><c>/UPDATE [/FEED=url] [/D=installRoot]</c> — apply an available app update side-by-side.</summary>
+    private static int RunUpdate(string[] args)
+    {
+        var svc = new TheTechIdea.Beep.Updates.AppUpdateService(BuildUpdateSettings(args));
+        var check = svc.CheckAsync().GetAwaiter().GetResult();
+        if (!check.Succeeded) { Console.Error.WriteLine($"Update check failed: {check.Error}"); return 1; }
+        if (!check.AnyUpdateAvailable) { Console.WriteLine("Already up to date."); return 0; }
+
+        var progress = new SyncProgress(a => { if (!string.IsNullOrEmpty(a.Messege)) Console.WriteLine($"  {a.Messege}"); });
+        int rc = 0;
+
+        if (check.AppUpdateAvailable)
+        {
+            var result = svc.ApplyAppUpdateAsync(check, progress).GetAwaiter().GetResult();
+            Console.WriteLine(result.Message);
+            if (result.Flag != TheTechIdea.Beep.ConfigUtil.Errors.Ok) rc = 1;
+        }
+
+        return rc;
+    }
+
     // ── CLI validate ─────────────────────────────────────────────────────
 
     private static int RunValidate(string projectPath)
@@ -693,7 +827,11 @@ internal static class Program
         Console.WriteLine("  Beep.Installer.exe /SELFTEST             Install + verify + uninstall in %TEMP%");
         Console.WriteLine("  Beep.Installer.exe /LANGMGR              Open Language Manager");
         Console.WriteLine("  Beep.Installer.exe /PUBLISH=<.bsetup> [/OUT=<dir>] Publish as ClickOnce");
+        Console.WriteLine("  Beep.Installer.exe /BUILD=<.bsetup> /PUBLISHFEED=<dir> [/FEEDURL=<url>] [/MINVERSION=x.y.z] [/REPUBLISH]");
+        Console.WriteLine("                                          Build + stage into a static update feed");
         Console.WriteLine("  Beep.Installer.exe /BUILD=<.bsetup> /FORMAT=msix|msixbundle|exe Package as MSIX");
+        Console.WriteLine("  Beep.Installer.exe /CHECKUPDATE [/FEED=<url>]           Report if an app/module update is available");
+        Console.WriteLine("  Beep.Installer.exe /UPDATE [/FEED=<url>] [/D=<root>]    Apply an available app update (side-by-side)");
         Console.WriteLine("  Beep.Installer.exe /?                    Show this help");
     }
 }

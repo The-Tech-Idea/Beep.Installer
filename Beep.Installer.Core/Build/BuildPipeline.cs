@@ -33,6 +33,62 @@ namespace Beep.Installer.Engine;
 /// </summary>
 public class BuildPipeline
 {
+    /// <summary>
+    /// Writes <c>update-settings.json</c> from the project's <c>AppUpdatesURL</c>/<c>AppUpdateMode</c>
+    /// and adds it as a payload file so the installed app ships with its feed configuration. A
+    /// no-op when no update URL is authored. Idempotent — never adds the entry twice.
+    /// </summary>
+    private static void StampUpdateSettings(InstallProject project, string outputDir, BuildResult result, List<string> log)
+    {
+        if (string.IsNullOrWhiteSpace(project.AppUpdatesURL)) return;
+
+        try
+        {
+            var settings = new TheTechIdea.Beep.Updates.UpdateSettings
+            {
+                FeedUrl = project.AppUpdatesURL,
+                Channel = "stable",
+                Mode = project.AppUpdateMode,
+                CurrentVersion = project.AppVersion
+            };
+            var dir = Path.Combine(outputDir, "_provision");
+            Directory.CreateDirectory(dir);
+            var file = Path.Combine(dir, "update-settings.json");
+            File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(settings,
+                new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    WriteIndented = true,
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                }));
+
+            var comp = project.Components.FirstOrDefault(c => c.Required || c.Selected)
+                       ?? project.Components.FirstOrDefault();
+            if (comp == null)
+            {
+                comp = new TheTechIdea.Beep.Installer.InstallComponent { Id = "core", Name = "Core", Required = true, Selected = true };
+                project.Components.Add(comp);
+            }
+
+            if (!comp.Files.Any(f => string.Equals(f.DestinationPath, "update-settings.json", StringComparison.OrdinalIgnoreCase)))
+            {
+                comp.Files.Add(new TheTechIdea.Beep.Installer.FileCopyOperation
+                {
+                    SourcePath = file,
+                    DestinationPath = "update-settings.json",
+                    Description = "App update settings",
+                    IsRequired = false
+                });
+                log.Add("  ✓ provisioned update-settings.json (self-update feed)");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Provisioning must not break the build; the app simply ships without a feed pointer.
+            result.Warnings.Add($"Could not stamp update-settings.json: {ex.Message}");
+        }
+    }
+
     public class BuildResult
     {
         public bool Success { get; set; }
@@ -162,6 +218,10 @@ public class BuildPipeline
                 return result;
             }
             log.Add("  ✓ Project valid");
+
+            // 1b) Provision self-update: stamp update-settings.json into the payload so it installs
+            //     beside the app and AddBeepAppUpdates() can read the authored feed (Phase 11).
+            StampUpdateSettings(project, outputDir, result, log);
 
             // 2) Stage payload
             Report(8, "Staging payload…");
