@@ -94,10 +94,25 @@ silent-failure-guard exemption to `{IInstallerHostBuilder}`. Developer README ad
 no-delta fail, no-module-service fail); BeepDM Updates domain **38 tests**, `SetupWizardTests`
 **212/212**; Beep.Installer suite **300/0/3** (−17 from the retired ClickOnce updater tests).
 
-**Phase 11 is feature-complete** (11.A + 11.B + 11.C all ✅). Outstanding only: the live
-build→publish→check→delta-update→corrupt-blob→module→kill-mid-update **E2E** (integration bucket,
-needs a real multi-minute build), and shipping `_payload-manifest.json` beside the installed app so
-real runs delta rather than full-install (provisioning refinement).
+**Phase 11 is feature-complete** (11.A + 11.B + 11.C all ✅).
+
+**Side-by-side install landed (2026-07-24)** — the architectural piece so real `/UPDATE` applies
+deltas. New opt-in `InstallProject.SideBySide` (round-trips in `.bsetup`): files install to
+`<base>\app-<version>`, a `<base>\current` junction is the launch path shortcuts target
+(`JunctionCreateStep` + `LaunchPath` context key), `_payload-manifest.json` ships beside the files
+(`ExtractSolid`) for delta diffing, the shipped `update-settings.json` is patched with the runtime
+`InstallRoot`, and uninstall removes the whole product-owned base tree. **Flat install (default) is
+byte-identical** — every path stays equal, all existing tests unchanged (Beep.Installer 305/0/3,
+SetupWizardTests 212/0). Also: post-install extension libs (WinForms/WPF) + a full update server
+(rollout/telemetry/gating/publish/admin) shipped and committed; client telemetry reporting wired
+(`check`/`apply-*`/`modules-*`).
+
+Outstanding: the live build→publish→check→delta-update→corrupt-blob→module→kill-mid-update **E2E**
+(integration bucket, needs a real multi-minute build); and a minor ARP refinement (for a
+side-by-side install the synthesized `InstallLocation`/`UninstallString` still expand to the
+versioned dir rather than `<base>`/`current` — functional, since `/UNINSTALL` resolves the base and
+removes the whole tree, but worth pointing at `current` before retirement can delete an old
+version's Setup.exe).
 
 ⚠️ Uncommitted, spanning the **BeepDM** and **Beep.Installer** repos.
 
