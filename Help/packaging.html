@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packaging: ClickOnce &amp; MSIX - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Packaging</span></nav>
+                <div class="page-header">
+                    <h1>Packaging: ClickOnce &amp; MSIX</h1>
+                    <p class="page-subtitle">The same project, two more output shapes — plus code signing. All under <code>Beep.Installer.Core/Packaging</code>.</p>
+                </div>
+
+                <section class="section">
+                    <h2>Track B — ClickOnce</h2>
+                    <p><code>/PUBLISH=&lt;project.bsetup&gt;</code> lays out a ClickOnce publish folder: application files renamed to <code>*.deploy</code>, an application manifest and a deployment manifest, optional signing via <code>mage</code>/<code>signtool</code>, and a <code>deploymentProvider</code> (update URL) for auto-update.</p>
+                    <pre><code class="language-bash">Beep.Installer.exe /PUBLISH=MyApp.bsetup /OUT=publish /UPDATEURL=https://host/app</code></pre>
+                    <p>Key writers: <code>ApplicationManifestWriter</code>, <code>DeploymentManifestWriter</code>, <code>PublishStager</code>, plus the runtime <code>UpdateChecker</code>/<code>UpgradeEngine</code> for the on-launch update flow. (For new apps, the modern <a href="updates.html">Updates domain</a> supersedes ClickOnce updating.)</p>
+                </section>
+
+                <section class="section">
+                    <h2>Track C — MSIX</h2>
+                    <p><code>/BUILD=&lt;project&gt; /FORMAT=msix</code> stages a flat payload, generates <code>AppxManifest.xml</code> (identity, capabilities, applications, visual assets), synthesizes tiles/icons from the setup icon, and packages via <code>MakeAppx</code>. A <code>StoreReadinessChecker</code> flags Store-association issues. Where <code>MakeAppx</code> rejects a minimal manifest, the build reports the precise error and points at the staging folder rather than pretending success.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Code signing</h2>
+                    <p><code>Signing/SignTool</code> locates <code>signtool.exe</code> on PATH or in the Windows Kits, and signs with SHA-256 + an RFC 3161 timestamp. An unsigned build emits a prominent SmartScreen warning; <code>/REQUIRESIGNED</code> turns that into a hard CI failure.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="build.html"><i class="bi bi-arrow-left"></i> Build Pipeline</a>
+                    <a href="install-runtime.html">Install Pipeline <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install Pipeline - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Install Pipeline</span></nav>
+                <div class="page-header">
+                    <h1>Install Pipeline</h1>
+                    <p class="page-subtitle">The runtime step graph, upgrade/repair/rollback, locked-file handling and Add/Remove Programs — composed once in <code>InstallWizardGraph</code>.</p>
+                </div>
+
+                <section class="section">
+                    <h2>The step graph</h2>
+                    <p>The wizard and the silent CLI run the <em>same</em> graph, built in one place (<code>Hosting/InstallWizardGraph</code>) so they can never drift apart. Steps live in BeepDM; the graph orders them:</p>
+                    <pre><code class="language-text">PrerequisiteCheckStep      OS / .NET / admin / disk space / custom prereqs
+UpgradeStep                detect existing install; refuse downgrade; back up before replacing
+DirectoryCreateStep        create the install tree
+CustomActionStep(Before)   author's pre-install actions
+PayloadDownloadStep        (if PayloadSource=Url) download + extract
+PayloadPrepareStep         locate / extract the embedded payload
+FileCopyStep               copy component files (per-file progress, rollback-registered)
+SharedFileCountStep        SharedDLLs reference counting
+Com / Gac steps            register COM servers / install to the GAC
+JunctionCreateStep         (side-by-side) link <base>\current at this version
+ShortcutCreateStep         Desktop / Start Menu / Startup .lnk (target the launch path)
+RegistryWriteStep          HKLM/HKCU entries + Add/Remove Programs
+EnvironmentVariableStep    apply + broadcast; reversed on uninstall
+CustomActionStep(After)    author's post-install actions
+VerifyInstallStep          verify files, write install-manifest.json, register the install
+CommitUpgradeStep          discard the upgrade backup only after verification passes</code></pre>
+                </section>
+
+                <section class="section">
+                    <h2>Upgrade, repair &amp; rollback</h2>
+                    <ul>
+                        <li><strong>Upgrade</strong> — <code>UpgradeStep</code> runs before anything touches disk: fresh install proceeds; same version reinstalls; a newer installed version is refused (with an actionable message naming the version and <code>/FORCE</code>); an upgrade or forced downgrade is backed up first, and <strong>aborts if the backup fails</strong>. <code>CommitUpgradeStep</code> migrates user config and discards the backup only once verification succeeds — so any failure restores the previous version.</li>
+                        <li><strong>Repair</strong> (<code>/REPAIR</code>) — <code>RepairFilesStep</code> restores files that are missing or modified (payload-vs-installed), leaving intact files untouched and never inventing or deleting files. Its <code>ComputePlan</code> is pure and unit-tested.</li>
+                        <li><strong>Rollback</strong> — install runs under a <code>RollbackManager</code>: <code>FileCopyStep</code> registers each file and registry writes register against the hive used; on any failure the host rolls back and restores the pre-upgrade backup.</li>
+                    </ul>
+                </section>
+
+                <section class="section">
+                    <h2>Locked files &amp; reboots</h2>
+                    <p>A locked destination is staged to <code>&lt;dest&gt;.pending</code> and scheduled for a reboot-time swap via <code>MoveFileEx</code> (delay-until-reboot), setting a <code>RebootRequired</code> flag that surfaces as MSI exit code <code>3010</code>. Unelevated — where the pending-rename registry key can't be written — the step fails with an actionable "in use" message instead of an unhandled exception.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Add/Remove Programs</h2>
+                    <p>The synthesized ARP entries expand the <code>%InstallPath%</code> macro (so <code>UninstallString</code>/<code>ModifyPath</code> are runnable), strip stray hive tokens from key paths (<code>InstallScope.NormalizeKeyPath</code>), and — on uninstall — delete the product-owned ARP key outright while removing other touched keys only when empty. Uninstall reverses files, shortcuts, registry, env vars, COM and GAC from the recorded <code>install-manifest.json</code>, then unregisters the install.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="packaging.html"><i class="bi bi-arrow-left"></i> Packaging</a>
+                    <a href="side-by-side.html">Side-by-Side Install <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

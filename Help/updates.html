@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updates Overview - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Updates Overview</span></nav>
+                <div class="page-header">
+                    <h1>App Updates — <code>TheTechIdea.Beep.Updates</code></h1>
+                    <p class="page-subtitle">Self-update for any Beep-based app: a static hash-verified feed, delta &amp; side-by-side app updates, rollback, and a feed-pinned NuGet module channel. Lives in BeepDM (decision D12).</p>
+                </div>
+
+                <section class="section">
+                    <h2>Register once</h2>
+                    <pre><code class="language-csharp">services.AddBeepAppUpdates();                 // reads update-settings.json beside the app
+// or explicitly:
+services.AddBeepAppUpdates(new UpdateSettings {
+    FeedUrl        = "https://updates.example.com/stable/feed.json",
+    Channel        = "stable",
+    Mode           = UpdateMode.Optional,     // Required blocks the app until applied
+    CurrentVersion = "1.2.0",
+    InstallRoot    = @"C:\Program Files\MyApp"
+});</code></pre>
+                    <pre><code class="language-csharp">var updates = provider.GetRequiredService&lt;IAppUpdateService&gt;();
+var check = await updates.CheckAsync();
+if (check.AppUpdateAvailable)  await updates.ApplyAppUpdateAsync(check, progress);
+if (check.StaleModules.Count > 0) await updates.ApplyModuleUpdatesAsync(check);
+await updates.RollbackAsync();                 // flip current back to the previous version</code></pre>
+                </section>
+
+                <section class="section">
+                    <h2>The pieces</h2>
+                    <table>
+                        <thead><tr><th>Component</th><th>Role</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>UpdateFeedClient</code></td><td>Async fetch/parse of <code>feed.json</code> and the payload manifest; every artifact SHA-256-verified before use (a mismatch is discarded). Malformed input &rarr; a named <code>UpdateFeedException</code>, never a silent null. Transport is injectable (HTTPS with a transparent local/UNC-folder fallback).</td></tr>
+                            <tr><td><code>DeltaPlanner</code></td><td>Pure diff of the new manifest against the installed one over <strong>blob hashes</strong>, not files — so a rename or duplicate downloads nothing. Emits blobs-to-fetch, files-to-write/delete, and download-vs-full bytes.</td></tr>
+                            <tr><td><code>SideBySideApplier</code></td><td>Stages into <code>app-&lt;ver&gt;</code>, verifies each blob, flips the <code>current</code> junction (<code>IDirectoryLink</code>). Running version never written; corrupt blob aborts pre-flip; rollback + retire.</td></tr>
+                            <tr><td><code>ModuleUpdater</code></td><td>Governs the existing NuGet <code>UpdateService</code>: the feed's pinned version wins over "latest", a required stale module blocks start, each fetched package is hash-verified. Applies on next launch.</td></tr>
+                            <tr><td><code>AppUpdateService</code></td><td>The <code>IAppUpdateService</code> façade composing all of the above, plus best-effort telemetry (<code>check</code>/<code>apply-*</code>/<code>modules-*</code>) to a configured endpoint.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>What the check tells you</h2>
+                    <p><code>UpdateCheckResult</code> is a data snapshot: <code>AppUpdateAvailable</code>, <code>RequiresFullInstall</code> (installed version is below <code>minSupportedVersion</code>), <code>StaleModules</code>, and <code>AnyUpdateAvailable</code>. Subscribe to <code>IAppUpdateService.UpdateAvailable</code> to drive an Optional-mode notification.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Two ways to drive the UI</h2>
+                    <p>Use the <a href="extensions.html">WinForms/WPF extensions</a> for a drop-in dialog, or the <code>/CHECKUPDATE</code> and <code>/UPDATE</code> CLI verbs, or call <code>IAppUpdateService</code> directly from your own UI. All three share the same engine.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="side-by-side.html"><i class="bi bi-arrow-left"></i> Side-by-Side Install</a>
+                    <a href="update-feed.html">Feed &amp; Publishing <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

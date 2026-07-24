@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Pipeline - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Build Pipeline</span></nav>
+                <div class="page-header">
+                    <h1>Build Pipeline</h1>
+                    <p class="page-subtitle"><code>BuildPipeline</code> turns a <code>.bsetup</code> project into a self-contained <code>Setup.exe</code> with an embedded payload.</p>
+                </div>
+
+                <section class="section">
+                    <h2>Stages</h2>
+                    <ol>
+                        <li><strong>Validate</strong> — product name, version, components; abort on errors.</li>
+                        <li><strong>Provision self-update</strong> — <code>StampUpdateSettings</code> writes <code>update-settings.json</code> (from <code>AppUpdatesURL</code>/<code>AppUpdateMode</code>) as a payload file, when a feed URL is authored.</li>
+                        <li><strong>Stage payload</strong> — copy component files (or scan the source) into <code>payload/</code>.</li>
+                        <li><strong>Write runtime script</strong> + <code>install-config.json</code> beside it.</li>
+                        <li><strong>Build the host EXE</strong> — behind <code>IInstallerHostBuilder</code> (real impl runs <code>dotnet publish</code>; tests inject a stub). Uncompressed single-file, so the payload can be appended after the PE.</li>
+                        <li><strong>Embed the icon</strong> (Win32 <code>UpdateResource</code>).</li>
+                        <li><strong>Compress payload</strong> &rarr; <code>payload.zip</code> (optionally solid/deduplicated — see below).</li>
+                        <li><strong>Embed payload</strong> into the EXE (appended with a marker footer).</li>
+                        <li><strong>Sign</strong> (optional) and/or package <strong>MSIX</strong> (Track C).</li>
+                    </ol>
+                </section>
+
+                <section class="section">
+                    <h2>The solid (content-addressed) payload</h2>
+                    <p>With solid compression, identical file contents are stored once under <code>_blobs/&lt;sha256&gt;</code> and a <code>_payload-manifest.json</code> maps each path to its blob. This is the same content-addressed store a delta update diffs against — the hard part of delta updates already exists in the build output.</p>
+                    <pre><code class="language-json">// _payload-manifest.json
+{ "solid": true, "entries": [
+  { "path": "MyApp.exe", "blob": "A1B2…", "size": 20480 },
+  { "path": "docs/readme.txt", "blob": "C3D4…", "size": 512 }
+] }</code></pre>
+                </section>
+
+                <section class="section">
+                    <h2>Testable seams</h2>
+                    <ul>
+                        <li><strong>Host production</strong> is behind <code>IInstallerHostBuilder</code>, so the pipeline (staging, compression, embedding, cleanup) is exercised in tests without a multi-minute publish.</li>
+                        <li><code>PublishTimeout</code> (default 10 min), <code>ReadyToRun</code> (off by default — it costs far more build time than it returns for a run-once installer), and <code>KeepIntermediates</code> are configurable.</li>
+                        <li>Signing that silently did nothing, and compression options that were collected then ignored, are wired for real — a configured certificate really signs, and a failure is an error.</li>
+                    </ul>
+                </section>
+
+                <section class="section">
+                    <h2>Headless build</h2>
+                    <pre><code class="language-bash">Beep.Installer.exe /BUILD=MyApp.bsetup /OUT=out            # Track A Setup.exe
+Beep.Installer.exe /BUILD=MyApp.bsetup /FORMAT=msix        # Track C .msix
+Beep.Installer.exe /VALIDATE=MyApp.bsetup                  # gate in CI
+Beep.Installer.exe /BUILD=MyApp.bsetup /REQUIRESIGNED      # refuse unsigned</code></pre>
+                </section>
+
+                <div class="nav-links">
+                    <a href="authoring.html"><i class="bi bi-arrow-left"></i> Authoring</a>
+                    <a href="packaging.html">Packaging <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

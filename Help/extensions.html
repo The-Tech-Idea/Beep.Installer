@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extensions: WinForms &amp; WPF - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Extensions</span></nav>
+                <div class="page-header">
+                    <h1>Extensions: WinForms &amp; WPF</h1>
+                    <p class="page-subtitle">Drop-in update UI built from Beep controls — one call gives any app an "update available" prompt with progress.</p>
+                </div>
+
+                <section class="section">
+                    <h2>Two libraries, one API</h2>
+                    <table>
+                        <thead><tr><th>Package</th><th>Target</th><th>UI</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>Beep.Installer.Extensions.Winform</code></td><td>net10.0-windows</td><td><code>UpdateDialog</code> (a <code>Form</code>) from <code>BeepLabel</code>/<code>BeepButton</code>/<code>BeepProgressBar</code>.</td></tr>
+                            <tr><td><code>Beep.Installer.Extensions.WPF</code></td><td>net9.0-windows</td><td><code>UpdateWindow</code> (a <code>Window</code>) from the Beep WPF controls (Material3 chrome).</td></tr>
+                        </tbody>
+                    </table>
+                    <p>Both are pure presentation — all update <em>logic</em> stays in <code>TheTechIdea.Beep.Updates</code>, so the two UIs behave identically.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Use it — no DI required</h2>
+                    <pre><code class="language-csharp">// WinForms — from a "Check for updates" menu item:
+await BeepUpdater.CheckAndPromptAsync(this, new UpdateSettings {
+    FeedUrl        = "https://updates.example.com/stable/feed.json",
+    CurrentVersion = "1.2.0",
+    InstallRoot    = Application.StartupPath
+}, showWhenUpToDate: true);</code></pre>
+                    <pre><code class="language-csharp">// WPF — 'this' is the owner Window:
+await BeepUpdater.CheckAndPromptAsync(this, updateService);
+// quiet check just after the main window opens (never interrupts a launch):
+await BeepUpdater.CheckOnStartupAsync(mainWindow, updateService);</code></pre>
+                </section>
+
+                <section class="section">
+                    <h2>With DI</h2>
+                    <pre><code class="language-csharp">services.AddBeepAppUpdatesWinform();   // or AddBeepAppUpdatesWpf();
+// reads update-settings.json beside the app (stamped by the installer at build time)
+var updates = provider.GetRequiredService&lt;IAppUpdateService&gt;();
+await BeepUpdater.CheckOnStartupAsync(mainForm, updates);</code></pre>
+                    <ul>
+                        <li><code>CheckAndPromptAsync</code> — checks, and shows the dialog/window when an app or module update is available.</li>
+                        <li><code>CheckOnStartupAsync</code> — quiet variant for launch: prompts only when there's something to do, never surfaces errors or "up to date".</li>
+                        <li><code>UpdateDialog.ShowFor</code> / <code>UpdateWindow.ShowFor</code> — show directly for a check you already ran.</li>
+                    </ul>
+                    <p>The dialog reports the available version (delta vs full), applies the app update side-by-side plus any stale modules with live progress, and offers a restart when done.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="update-feed.html"><i class="bi bi-arrow-left"></i> Feed &amp; Publishing</a>
+                    <a href="update-server.html">Update Server <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

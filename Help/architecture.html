@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Architecture</span></nav>
+                <div class="page-header">
+                    <h1>Architecture</h1>
+                    <p class="page-subtitle">The big picture: three projects, a dual-mode executable, the two-model bridge, and why the install engine lives in BeepDM.</p>
+                </div>
+
+                <section class="section">
+                    <h2>Three projects, one rule</h2>
+                    <p>The solution is split by a deliberate boundary — <strong>authoring/build/packaging</strong> lives in Beep.Installer; the <strong>runtime install engine</strong> lives in BeepDM (whose own scope doc lists an installer service but excludes packaging and code-signing).</p>
+                    <table>
+                        <thead><tr><th>Project</th><th>Target</th><th>Responsibility</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>Beep.Installer.Core</code></td><td>net10.0 (no UI)</td><td>Authoring model, <code>.bsetup</code> serializer, source scanner, <code>BuildPipeline</code>, payload packaging, packaging (ClickOnce/MSIX/signing), the runtime context projector, and <code>FeedPublisher</code>.</td></tr>
+                            <tr><td><code>Beep.Installer</code></td><td>net10.0-windows (WinForms)</td><td>A thin shell: the Package Builder UI, the runtime wizard, wizard pages, the install step graph (<code>InstallWizardGraph</code>), i18n, and <code>Program.cs</code> mode dispatch.</td></tr>
+                            <tr><td><code>Beep.Installer.Tests</code></td><td>net10.0-windows</td><td>xUnit + FluentAssertions.</td></tr>
+                        </tbody>
+                    </table>
+                    <p>Two more libraries and a server layer post-install features on top: <code>Beep.Installer.Extensions.Winform</code> / <code>.WPF</code> (drop-in update UI) and <code>Beep.Installer.UpdateServer</code> (optional hosting).</p>
+                </section>
+
+                <section class="section">
+                    <h2>One executable, two modes</h2>
+                    <p><code>Beep.Installer.exe</code> is <em>both</em> the generator and the Track-A runtime. <code>Program.Dispatch</code> picks a mode from the CLI args and whether an installer script exists beside/inside the exe:</p>
+                    <ul>
+                        <li>A shipped installer carries <code>script.bsetup</code> (on disk next to the exe, or embedded as a PE resource) &rarr; it runs as the <strong>installer</strong> (wizard or silent).</li>
+                        <li>CLI verbs (<code>/BUILD</code>, <code>/PUBLISH</code>, <code>/S</code>, <code>/UNINSTALL</code>, <code>/CHECKUPDATE</code>, …) select the corresponding headless mode.</li>
+                        <li>Otherwise the <strong>Package Builder</strong> UI opens.</li>
+                    </ul>
+                </section>
+
+                <section class="section">
+                    <h2>The two-model bridge</h2>
+                    <p>The authoring model (<code>Beep.Installer.Models.InstallProject</code>) is <strong>not</strong> what the install steps consume — they read BeepDM's <code>InstallConfig</code> from a <code>SetupContext</code>. The <code>Runtime/</code> layer performs that projection and populates every context key the step graph reads:</p>
+                    <pre><code class="language-text">InstallProject (.bsetup authoring)
+      │  InstallConfigProjector.ToInstallConfig
+      ▼
+InstallConfig  +  InstallContextBuilder.ForInstall
+      │  (InstallPath, LaunchPath, PerUser, RollbackManager, SideBySide, …)
+      ▼
+SetupContext  →  BeepDM install steps (FileCopyStep, RegistryWriteStep, …)</code></pre>
+                    <p>When adding a step that needs new config, wire it through the projector/builder — never reach into the authoring model from a step.</p>
+                </section>
+
+                <section class="section">
+                    <h2>The install engine is in BeepDM</h2>
+                    <p>The actual install <em>steps</em> — <code>PrerequisiteCheckStep</code>, <code>FileCopyStep</code>, <code>ShortcutCreateStep</code>, <code>RegistryWriteStep</code>, <code>VerifyInstallStep</code>, <code>UpgradeStep</code>, <code>JunctionCreateStep</code>, <code>UninstallStep</code> — live in BeepDM under <code>TheTechIdea.Beep.Installer.Steps</code> / <code>TheTechIdea.Beep.SetUp</code>. Beep.Installer only <em>composes and drives</em> them via <code>Hosting/InstallWizardGraph</code>, which is the single place those steps are ordered into a wizard for install, repair, uninstall and self-test.</p>
+                    <p>The app self-update domain (<code>TheTechIdea.Beep.Updates</code>) also lives in BeepDM (decision D12), so any Beep-based app gets self-update by registering one service — independent of how it was deployed.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Cross-repo build note</h2>
+                    <p>Beep.Installer references sibling source repos by relative path (<code>..\..\BeepDM\</code>, <code>..\..\Beep.Winform\</code>). <code>DataManagementModels</code> is referenced <strong>directly</strong> (not just transitively) with <code>NoWarn NU1605</code> — the control libraries carry a same-versioned NuGet <code>DataManagementModels</code> and NuGet resolves nearest-to-root, so the direct reference is what makes the source win. The extension libraries and the server follow the same pattern.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="index.html"><i class="bi bi-arrow-left"></i> Home</a>
+                    <a href="cli-reference.html">CLI Reference <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>
