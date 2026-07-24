@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Beep.Installer.UpdateServer</AssemblyName>
+    <RootNamespace>Beep.Installer.UpdateServer</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>The Tech Idea</Authors>
+    <Company>The Tech Idea</Company>
+    <Product>Beep Installer Update Server</Product>
+    <Description>
+      Optional hosting server for Beep app self-update (D10 option C): serves the update feed and
+      artifacts, adds staged/percentage rollout, download/telemetry stats, token-gated downloads,
+      an authenticated publish API, and an admin dashboard — on top of the same static feed the
+      installer's /PUBLISHFEED produces. The app client (TheTechIdea.Beep.Updates) is unchanged;
+      it still sees only URLs + hashes.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reuse FeedPublisher/PayloadPackager + the Updates feed models so publish/serve/consume
+         agree on shape. Core pulls the source DataManagementModels/Engine (Updates domain). -->
+    <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
+  </ItemGroup>
+
+</Project>

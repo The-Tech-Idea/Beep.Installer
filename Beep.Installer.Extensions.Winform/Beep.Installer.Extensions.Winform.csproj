@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Beep.Installer.Extensions.Winform</AssemblyName>
+    <RootNamespace>Beep.Installer.Extensions.Winform</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>The Tech Idea</Authors>
+    <Company>The Tech Idea</Company>
+    <Product>Beep Installer Extensions (WinForms)</Product>
+    <Description>
+      Drop-in WinForms UI for post-install app features — chiefly self-update — built on the
+      BeepDM app-update service (TheTechIdea.Beep.Updates) and the Beep WinForms controls. A
+      developer adds one call to give their app an "update available" prompt with progress.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      DataManagementModels/Engine must be referenced DIRECTLY (source), not transitively, or NuGet
+      resolves the same-versioned stale package instead of the source that carries the Updates
+      domain. Same nearest-to-root rule the shell relies on; the repo Directory.Build.props carries
+      the matching NoWarn NU1605.
+    -->
+    <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" />
+    <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
+    <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Vis.Modules2.0\TheTechIdea.Beep.Vis.Modules.csproj" />
+    <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Winform.Controls\TheTechIdea.Beep.Winform.Controls.csproj" />
+  </ItemGroup>
+
+</Project>
