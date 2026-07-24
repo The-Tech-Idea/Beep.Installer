@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <!-- Authoring/build/packaging logic, deliberately free of any UI dependency. -->
-    <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
     <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Vis.Modules2.0\TheTechIdea.Beep.Vis.Modules.csproj" />
     <!--
       DataManagementModels must be referenced DIRECTLY, not just transitively via
@@ -29,6 +28,7 @@
     <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" />
     <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
     <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Winform.Controls\TheTechIdea.Beep.Winform.Controls.csproj" />
+    <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
