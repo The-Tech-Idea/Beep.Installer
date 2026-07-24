@@ -42,7 +42,10 @@ namespace Beep.Installer.UpdateServer.Services
                 {
                     if (e.Success) stats.Successes++; else stats.Failures++;
                 }
-                if (e.Success && !string.IsNullOrEmpty(e.ToVersion) && !string.IsNullOrEmpty(e.ClientId))
+                // Active-version counts reflect what clients actually run — only a completed apply,
+                // not a mere check (which reports the version that's *available*, not installed).
+                if (e.EventType.Equals("apply-success", StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrEmpty(e.ToVersion) && !string.IsNullOrEmpty(e.ClientId))
                 {
                     if (!latestPerClient.TryGetValue(e.ClientId, out var cur) || e.At > cur.at)
                         latestPerClient[e.ClientId] = (e.At, e.ToVersion);

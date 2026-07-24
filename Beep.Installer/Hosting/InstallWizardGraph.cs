@@ -22,6 +22,7 @@ public static class StepIds
     public const string PayloadDownload = "installer.payload.download";
     public const string PayloadPrepare = "installer.payload.prepare";
     public const string FileCopy = "installer.files.copy";
+    public const string JunctionCreate = "installer.junction.create";
     public const string Shortcuts = "installer.shortcuts.create";
     public const string RegistryWrite = "installer.registry.write";
     public const string EnvironmentVariables = "installer.envvars.write";
@@ -59,7 +60,10 @@ public static class InstallWizardGraph
             .AddStep(new SharedFileCountStep(StepIds.FileCopy))
             .AddStep(new ComServerRegistrationStep(StepIds.FileCopy))
             .AddStep(new GacInstallStep(StepIds.FileCopy))
-            .AddStep(new ShortcutCreateStep(StepIds.FileCopy))
+            // Side-by-side layout: link <base>\current at the installed version before shortcuts,
+            // so shortcuts target current. A no-op (skipped) for a flat install.
+            .AddStep(new JunctionCreateStep(StepIds.FileCopy))
+            .AddStep(new ShortcutCreateStep(StepIds.JunctionCreate))
             .AddStep(new RegistryWriteStep(StepIds.Shortcuts))
             .AddStep(new EnvironmentVariableStep(StepIds.RegistryWrite))
             .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, StepIds.EnvironmentVariables))

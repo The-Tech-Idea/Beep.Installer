@@ -90,10 +90,9 @@ public static class PayloadPackager
         using var zip = ZipFile.OpenRead(zipPath);
         var mEntry = zip.GetEntry(ManifestName) ?? throw new InvalidDataException("Not a solid payload (missing manifest).");
 
-        SolidManifest manifest;
-        using (var sr = new StreamReader(mEntry.Open()))
-            manifest = JsonSerializer.Deserialize<SolidManifest>(sr.ReadToEnd(), _json)
-                       ?? new SolidManifest();
+        string manifestJson;
+        using (var sr = new StreamReader(mEntry.Open())) manifestJson = sr.ReadToEnd();
+        var manifest = JsonSerializer.Deserialize<SolidManifest>(manifestJson, _json) ?? new SolidManifest();
 
         foreach (var e in manifest.Entries)
         {
@@ -103,6 +102,10 @@ public static class PayloadPackager
             Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
             blobEntry.ExtractToFile(destFile, overwrite: true);
         }
+
+        // Ship the payload manifest beside the installed files so a later delta update can diff
+        // against what is on disk (AppUpdateService.ReadLocalManifest). Harmless for flat installs.
+        File.WriteAllText(Path.Combine(destDir, ManifestName), manifestJson);
     }
 
     /// <summary>

@@ -244,6 +244,7 @@ public static class InstallerScriptSerializer
         WriteKey(sb, "AppSupportEmail", project.AppSupportEmail);
         WriteKey(sb, "AppUpdatesURL", project.AppUpdatesURL);
         WriteKey(sb, "AppUpdateMode", MapUpdateModeToString(project.AppUpdateMode));
+        WriteKey(sb, "SideBySide", YesNo(project.SideBySide));
         WriteKey(sb, "AppCopyright", project.AppCopyright);
 
         // Source
@@ -482,6 +483,9 @@ public static class InstallerScriptSerializer
             case "appupdatemode":
             case "updatemode":
                 project.AppUpdateMode = MapStringToUpdateMode(value);
+                break;
+            case "sidebyside":
+                project.SideBySide = ParseBool(value);
                 break;
             case "appcopyright":
             case "copyright":

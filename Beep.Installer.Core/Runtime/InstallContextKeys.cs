@@ -22,8 +22,21 @@ public static class InstallContextKeys
     /// <summary>The projected <c>InstallConfig</c>. Four steps hard-fail Validate() without it.</summary>
     public const string InstallConfig = "InstallConfig";
 
-    /// <summary>Absolute install directory. Nothing derives this from InstallConfig.DefaultInstallPath.</summary>
+    /// <summary>Absolute install directory — where files are physically written. For a side-by-side install this is <c>&lt;base&gt;\app-&lt;version&gt;</c>.</summary>
     public const string InstallPath = "InstallPath";
+
+    /// <summary>
+    /// The stable path shortcuts and launch targets point at: <c>&lt;base&gt;\current</c> for a
+    /// side-by-side install, or the same as <see cref="InstallPath"/> for a flat install. Steps
+    /// resolving a launch target read this and fall back to <see cref="InstallPath"/>.
+    /// </summary>
+    public const string LaunchPath = "LaunchPath";
+
+    /// <summary>The user-chosen install directory (the parent of <c>app-&lt;version&gt;</c> and <c>current</c> for side-by-side; equal to <see cref="InstallPath"/> for flat).</summary>
+    public const string InstallBaseDir = "InstallBaseDir";
+
+    /// <summary>Boxed bool. True when the install uses the side-by-side <c>app-&lt;version&gt;</c> + <c>current</c> junction layout.</summary>
+    public const string SideBySide = "SideBySide";
 
     /// <summary>Boxed bool. Drives registry hive selection in InstallScope; wrong value silently writes HKLM.</summary>
     public const string PerUser = "PerUser";

@@ -74,11 +74,39 @@ curl -X POST https://updates.example.com/api/publish \
 The server runs the same `FeedPublisher` the installer uses (immutable versions, solid→loose blob
 expansion), then stages the version at 10% rollout. Bump it in the dashboard when you're confident.
 
+## Deploy
+
+Publish a self-contained build and run it behind a TLS-terminating reverse proxy:
+
+```bash
+dotnet publish Beep.Installer.UpdateServer -c Release -o /opt/beep-updates
+# configure (never ship the defaults):
+export UpdateServer__ApiKey="$(openssl rand -hex 24)"
+export UpdateServer__TokenSecret="$(openssl rand -hex 32)"
+export UpdateServer__StorageRoot="/var/lib/beep-updates"
+export ASPNETCORE_URLS="http://127.0.0.1:5080"
+/opt/beep-updates/Beep.Installer.UpdateServer
+```
+
+- **HTTPS**: terminate TLS at nginx/Caddy/IIS and proxy to the Kestrel port above — artifacts and
+  the feed must be served over HTTPS (D11: the client trusts TLS + per-artifact SHA-256).
+- **Large uploads**: the publish endpoint accepts whole Setup.exe files, so raise the proxy's body
+  limit (nginx `client_max_body_size 0;`). Kestrel's own limit is already lifted in-process.
+- **Run as a service**: a systemd unit (`ExecStart=/opt/beep-updates/Beep.Installer.UpdateServer`,
+  `Restart=always`) or Windows IIS with the ASP.NET Core Module. Set the config via environment
+  variables (double-underscore = section nesting, as above) rather than editing `appsettings.json`.
+- **Back up `StorageRoot`** — it holds every published version, `channel.json` (rollout state) and
+  `telemetry.jsonl`. It is the whole server; the process is stateless.
+- **Scale**: it's a static file host plus small JSON reads/writes; one small VM serves large fleets.
+  For very large fleets, put a CDN in front of `/artifacts/*` (immutable, content-addressed) and
+  keep only the feed/publish/telemetry endpoints on the origin.
+
 ## Notes
 
 - File-backed (no database): channels/versions/rollout in `channel.json` per channel, telemetry in
-  `telemetry.jsonl`. Back up `StorageRoot`.
+  `telemetry.jsonl`.
 - Admin is **locked until you change the default `ApiKey`** (the server rejects the literal
   `change-me`). Put it behind HTTPS + real auth for internet exposure.
-- Telemetry only populates once clients POST to `/api/telemetry` — wire that from the app's update
-  flow (a small follow-on to the `TheTechIdea.Beep.Updates` client).
+- Telemetry populates automatically: the `TheTechIdea.Beep.Updates` client POSTs `check` /
+  `apply-success` / `apply-failure` / `modules-*` events to `/api/telemetry` when the app sets
+  `UpdateSettings.TelemetryUrl` (and `ClientId` for the rollout cohort).
