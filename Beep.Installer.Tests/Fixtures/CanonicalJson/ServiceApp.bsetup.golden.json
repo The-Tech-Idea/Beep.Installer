@@ -1,0 +1,336 @@
+{
+  "accentColor": "#2962FF",
+  "allowComponentSelection": true,
+  "allowNoIcons": false,
+  "allowPathChange": true,
+  "allowScopeSelection": true,
+  "alwaysShowDirOnReadyPage": true,
+  "appCopyright": "",
+  "appId": "70ff6133-02a0-451f-86ac-e1274af68f06",
+  "appInstallerForceUpdateFromAnyVersion": false,
+  "appInstallerHoursBetweenUpdateChecks": 24,
+  "appInstallerShowPrompt": true,
+  "appName": "ServiceApp",
+  "appPublisher": "The Tech Idea",
+  "appPublisherURL": "",
+  "appSupportEmail": "",
+  "appSupportURL": "https://github.com/The-Tech-Idea",
+  "appUpdateChannel": "",
+  "appUpdateMode": "optional",
+  "appUpdatesURL": "",
+  "appVersion": "1.0.0",
+  "architecturesAllowed": "x64Compatible",
+  "architecturesInstallIn64BitMode": "x64Compatible",
+  "certificates": [],
+  "codeSignCertificatePassword": "",
+  "codeSignCertificatePath": "",
+  "codeSignRemoteCredential": "",
+  "codeSignRemoteEndpoint": "",
+  "codeSignRemoteKeyId": "",
+  "codeSignRemoteProvider": "",
+  "codeSignStoreLocation": "",
+  "codeSignStoreName": "",
+  "codeSignStoreSubject": "",
+  "codeSignStoreThumbprint": "",
+  "codeSignTimestampUrl": "http://timestamp.digicert.com",
+  "comRegistrations": [
+    {
+      "arguments": "",
+      "clsid": "{8CF1D78E-2217-4B3C-B224-99DF615FE3D5}",
+      "description": "ServiceApp automation object",
+      "progId": "TheTechIdea.ServiceApp.Automation.1",
+      "removeOnUninstall": true,
+      "serverPath": "%InstallPath%\\ServiceApp.Automation.dll",
+      "serverType": "inProc",
+      "threadingModel": "Both",
+      "typeLibId": "",
+      "version": "1.0",
+      "versionIndependentProgId": "TheTechIdea.ServiceApp.Automation"
+    }
+  ],
+  "components": [
+    {
+      "comRegistrations": [],
+      "conditionExpression": "any",
+      "conditions": [
+        {
+          "operator": "==",
+          "type": "alwaysFalse",
+          "value": null,
+          "value2": null
+        },
+        {
+          "operator": "==",
+          "type": "alwaysTrue",
+          "value": null,
+          "value2": null
+        }
+      ],
+      "conflictsWith": [],
+      "dependsOn": [],
+      "description": "Service application files",
+      "files": [
+        {
+          "description": "appsettings.json",
+          "destinationPath": "appsettings.json",
+          "isRequired": true,
+          "overwrite": true,
+          "sharedCount": false,
+          "skipIfNewer": false,
+          "sourcePath": "HelloApp\\appsettings.json"
+        },
+        {
+          "description": "readme.txt",
+          "destinationPath": "readme.txt",
+          "isRequired": true,
+          "overwrite": true,
+          "sharedCount": false,
+          "skipIfNewer": false,
+          "sourcePath": "HelloApp\\readme.txt"
+        },
+        {
+          "description": "ServiceApp.bat",
+          "destinationPath": "ServiceApp.bat",
+          "isRequired": true,
+          "overwrite": true,
+          "sharedCount": false,
+          "skipIfNewer": false,
+          "sourcePath": "HelloApp\\MyApp.bat"
+        },
+        {
+          "description": "index.html",
+          "destinationPath": "wwwroot\\index.html",
+          "isRequired": true,
+          "overwrite": true,
+          "sharedCount": false,
+          "skipIfNewer": false,
+          "sourcePath": "HelloApp\\wwwroot\\index.html"
+        }
+      ],
+      "gacAssemblies": [],
+      "id": "core",
+      "includedIn": "typical",
+      "name": "core",
+      "registry": [],
+      "required": true,
+      "selected": true,
+      "shortcuts": [],
+      "sizeBytes": 0
+    }
+  ],
+  "compressPayload": true,
+  "compression": "zip",
+  "compressionLevel": "default",
+  "configTransforms": [
+    {
+      "backupOnInstall": true,
+      "format": "json",
+      "keyPath": "Api.Endpoint",
+      "name": "Set sample API endpoint",
+      "operation": "set",
+      "restoreOnRollback": true,
+      "section": "",
+      "targetPath": "%InstallPath%\\appsettings.json",
+      "value": "https://api.example.test"
+    }
+  ],
+  "createRestorePoint": true,
+  "createUninstallEntry": true,
+  "defaultDirName": "%ProgramFiles%\\ServiceApp",
+  "defaultGroupName": "Beep Samples\\ServiceApp",
+  "defaultInstallType": "typical",
+  "defaultScope": "machine",
+  "defaultTheme": "modern",
+  "deploymentSupersedence": [
+    {
+      "detectionKey": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\ServiceAppPrevious",
+      "displayName": "ServiceApp Previous Package",
+      "maximumVersion": "0.9.9",
+      "minimumVersion": "0.9.0",
+      "mode": "replace",
+      "notes": "Replace the development-era previous package with the current ServiceApp package.",
+      "packageId": "TheTechIdea.ServiceApp.Previous",
+      "uninstallPrevious": true
+    }
+  ],
+  "driverPackages": [
+    {
+      "className": "System",
+      "dependsOn": [],
+      "displayName": "",
+      "driverBinaryPath": "",
+      "errorControl": "normal",
+      "hardwareId": "ROOT\\SERVICEAPPVIRT",
+      "infPath": "%InstallPath%\\Drivers\\ServiceAppVirtualDevice.inf",
+      "installDevices": false,
+      "kind": "pnp",
+      "loadOrderGroup": "",
+      "name": "ServiceApp Virtual Device",
+      "publishedName": "",
+      "rebootBehavior": "possible",
+      "removeOnUninstall": true,
+      "requireSigned": true,
+      "serviceName": "",
+      "startMode": "demand"
+    }
+  ],
+  "environmentVariables": [],
+  "fileAssociations": [
+    {
+      "arguments": "open \u0022%1\u0022",
+      "contentType": "application/x-serviceapp",
+      "description": "ServiceApp sample document",
+      "executablePath": "%InstallPath%\\ServiceApp.bat",
+      "extension": ".svcapp",
+      "iconPath": "%InstallPath%\\ServiceApp.exe,0",
+      "perceivedType": "document",
+      "progId": "TheTechIdea.ServiceApp.Document",
+      "removeOnUninstall": true,
+      "verb": "open",
+      "verbDisplayName": "Open with ServiceApp"
+    }
+  ],
+  "firewallRules": [
+    {
+      "action": "allow",
+      "description": "Allows inbound API traffic for the sample service.",
+      "direction": "in",
+      "enabled": true,
+      "localPort": "443",
+      "name": "BeepSamples ServiceApp API",
+      "profile": "domain,private",
+      "program": "%InstallPath%\\ServiceApp.exe",
+      "protocol": "tcp",
+      "remotePort": "",
+      "removeOnUninstall": true,
+      "service": ""
+    }
+  ],
+  "iisAppPools": [
+    {
+      "autoStart": true,
+      "enable32Bit": false,
+      "identity": "ApplicationPoolIdentity",
+      "name": "ServiceAppPool",
+      "password": "",
+      "pipelineMode": "integrated",
+      "removeOnUninstall": true,
+      "runtimeVersion": "v4.0",
+      "startAfterInstall": true,
+      "username": ""
+    }
+  ],
+  "iisSites": [
+    {
+      "applicationPool": "ServiceAppPool",
+      "bindings": [
+        {
+          "certificateStoreName": "My",
+          "certificateThumbprint": "",
+          "host": "localhost",
+          "ipAddress": "*",
+          "port": 8080,
+          "protocol": "http",
+          "sslFlags": 0
+        }
+      ],
+      "name": "ServiceApp",
+      "physicalPath": "%InstallPath%\\wwwroot",
+      "removeOnUninstall": true,
+      "startAfterInstall": true
+    }
+  ],
+  "licenseFile": "",
+  "licenseText": "MIT License\r\n\r\nSee LICENSE.txt for details.",
+  "mainExecutable": "",
+  "msixIdentity": "",
+  "msixOptionalPackages": [],
+  "msixPublisher": "",
+  "outputBaseFilename": "Setup-ServiceApp-1.0.0.exe",
+  "outputDir": "",
+  "outputFormat": "exe",
+  "packages": [],
+  "payloadFolderName": "payload",
+  "payloadSource": "local",
+  "payloadUrl": "",
+  "prefer64Bit": true,
+  "prerequisiteCatalogs": [],
+  "prerequisites": [],
+  "privilegesRequired": "admin",
+  "privilegesRequiredOverridesAllowed": false,
+  "projectName": "ServiceApp",
+  "registryEntries": [
+    {
+      "createIfNotExists": true,
+      "keyPath": "SOFTWARE\\TheTechIdea\\ServiceApp",
+      "value": "%InstallPath%",
+      "valueKind": "string",
+      "valueName": "InstallPath"
+    },
+    {
+      "createIfNotExists": true,
+      "keyPath": "SOFTWARE\\TheTechIdea\\ServiceApp",
+      "value": "1.0.0",
+      "valueKind": "string",
+      "valueName": "Version"
+    }
+  ],
+  "resources": [],
+  "scheduledTasks": [
+    {
+      "arguments": "--maintenance",
+      "description": "Runs sample maintenance for ServiceApp.",
+      "enabled": true,
+      "executablePath": "%InstallPath%\\ServiceApp.bat",
+      "name": "BeepSamples\\ServiceApp Maintenance",
+      "password": "",
+      "runElevated": true,
+      "startTime": "02:15",
+      "stopOnUninstall": true,
+      "trigger": "daily",
+      "username": "SYSTEM",
+      "workingDirectory": "%InstallPath%"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "selfContained": false,
+  "setupIconFile": "",
+  "shortcuts": [],
+  "showEula": true,
+  "sidebarBackgroundColor": "#1E1E28",
+  "sidebarTextColor": "#FFFFFF",
+  "singleFile": true,
+  "solidCompression": true,
+  "sourceDirectory": "HelloApp",
+  "sourceExcludes": [
+    "**/*.log",
+    "**/*.pdb"
+  ],
+  "sourceIncludes": [
+    "**/*"
+  ],
+  "updateChannels": [],
+  "webDeployPackages": [],
+  "welcomeTitle": "Welcome to ServiceApp Setup",
+  "windowTitle": "ServiceApp Setup",
+  "windowsServices": [
+    {
+      "account": "localSystem",
+      "arguments": "--run-service",
+      "dependsOn": [
+        "EventLog"
+      ],
+      "description": "Sample background service managed by Beep Installer.",
+      "displayName": "ServiceApp Background Worker",
+      "executablePath": "%InstallPath%\\ServiceApp.exe",
+      "failureRestartDelaySeconds": 60,
+      "name": "ServiceApp",
+      "password": "",
+      "startAfterInstall": true,
+      "startMode": "delayedAuto",
+      "stopOnUninstall": true,
+      "username": ""
+    }
+  ],
+  "wizardImageFile": ""
+}

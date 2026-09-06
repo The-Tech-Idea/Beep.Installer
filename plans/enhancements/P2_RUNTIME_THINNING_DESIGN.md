@@ -149,8 +149,8 @@ the P0 version-bump decision so the local feed stays truthful.
 | New | `BeepDM/tests/InstallerTests/*` (first coverage) | ~600 | low |
 | Delete | `Beep.Installer/Engine/PrerequisiteDetector.cs` (runtime half) | ~-150 | medium |
 | Modify | `Beep.Installer/Engine/InstallScopeResolver.cs` (policy only) | ~-30 | low |
-| Modify | `Beep.Installer/Steps/Payload*.cs` (hash verify) | ~40 | low |
-| Modify | `Beep.Installer` wizard graph (register new steps) | ~15 | low |
+| Modify | Core-owned `Steps/Payload*.cs` (hash verify) | ~40 | low |
+| Modify | Core-owned wizard graph (register new steps) | ~15 | low |
 
 ## 5. Error handling matrix
 
@@ -162,12 +162,11 @@ the P0 version-bump decision so the local feed stays truthful.
 | Corrupt downloaded payload | extracted and copied | hash mismatch aborts before any file lands |
 | Both COM steps registered | `Build()` throws `InvalidOperationException` | distinct ids; both usable |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-New steps are opt-in via the wizard graph — existing graphs behave as before until the steps
-are added. `RegisterFileAssociation`/`RegisterRegistryWrite` signature changes are breaking
-for any external caller; both currently have callers only inside BeepDM (verified), so add
-overloads and mark the old ones `[Obsolete]` rather than replacing outright.
+The installer is still in dev mode. Replace runtime signatures directly when a cleaner
+contract exists, and update all in-repo callers/tests in the same slice. Do not add retired
+overloads just to preserve a discarded installer surface.
 
 ## 7. Verification
 
@@ -184,7 +183,7 @@ Beep.Installer.exe /SELFTEST
 
 | Risk | Mitigation |
 |------|------------|
-| Editing BeepDM affects other consumers | new steps are additive; signature changes go through `[Obsolete]` overloads; full `BeepDM.sln` build before merge |
+| Editing BeepDM affects other consumers | update the owning callers/tests in the same slice and run the relevant BeepDM/installer build before merge |
 | `SupportsRollback` across 6 steps is the largest behavioral change here | one step per commit, each with a failure-injection test |
 | ARP registration on per-user installs writes the wrong hive | scope-aware via `InstallScope.OpenBaseKey`; both scopes covered by tests |
 | D3 undecided blocks the phase | if declined, keep the five values as context keys — no other design change |

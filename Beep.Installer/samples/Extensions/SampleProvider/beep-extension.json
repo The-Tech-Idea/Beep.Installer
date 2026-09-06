@@ -1,0 +1,18 @@
+{
+  "Id": "beep.sample.provider",
+  "Publisher": "The Tech Idea",
+  "Version": "1.0.0",
+  "MinimumEngineVersion": "1.0.0",
+  "EntryAssembly": "SampleProvider.dll",
+  "Sha256": "ceb34fedc7e4477a9d05d1ad3863410f0d864594911f317714a0bec7d0bf97c8",
+  "ResourceTypes": [
+    "sample.resource"
+  ],
+  "ValidatorTypes": [
+    "sample.validator"
+  ],
+  "ExporterFormats": [
+    "sample-format"
+  ],
+  "Permissions": 1
+}

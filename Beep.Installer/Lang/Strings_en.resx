@@ -205,4 +205,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>Recent</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>Update center</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>Trusted project identity</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>Signed feed path or URL</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>Feed public key PEM path</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>Delta public key PEM path</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Installed application folder</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>Installed version</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>Current channel</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>Target channel</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>Device rollout identifier</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>Local delta folder (optional)</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>Recovery journal path</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>Update status and diagnostics</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>Enter the installed version and trusted public keys. Close the application being updated before applying.</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Check updates</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>Apply update</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>Recover</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>Roll back</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>Public keys (*.pem)|*.pem|All files (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>JSON files (*.json)|*.json|All files (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>Could not select a path: {0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>Cancellation requested. Waiting for a safe stopping point.</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0}: this changes application files. Close the application. Continue?</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>Confirm maintenance</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking signature, policy and eligibility…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>Running maintenance…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>Select an existing installed application folder.</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>Update applied. Recovery journal: {0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>Resolve policy errors before maintenance.</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>Recovery preview: {0}&#10;Installation: {1}&#10;Resulting version: {2}&#10;Journal: {3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>Proceed with recovery? Current files will be revalidated before changes.</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>{0} completed. {1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>Operation cancelled. Check again before applying.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Maintenance failed: {0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>Signature trusted.</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>Signature not trusted.</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>No update decision.</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>Decision: {0}</value></data>
 </root>

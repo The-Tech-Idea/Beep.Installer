@@ -195,4 +195,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>Recentes</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>Central de atualizações</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>Identidade do projeto confiável</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>Caminho ou URL do feed assinado</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>Caminho PEM da chave pública do feed</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>Caminho PEM da chave pública do delta</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Pasta do aplicativo instalado</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>Versão instalada</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>Canal atual</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>Canal de destino</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>Identificador do dispositivo para distribuição</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>Pasta delta local (opcional)</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>Caminho do registro de recuperação</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>Status e diagnóstico da atualização</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>Informe a versão instalada e as chaves públicas confiáveis. Feche o aplicativo antes de atualizar.</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Verificar atualizações</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>Aplicar atualização</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>Recuperar</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>Reverter</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>Fechar</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>Chaves públicas (*.pem)|*.pem|Todos os arquivos (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>Arquivos JSON (*.json)|*.json|Todos os arquivos (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>Não foi possível selecionar um caminho: {0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>Cancelamento solicitado. Aguardando um ponto de parada seguro.</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0}: os arquivos do aplicativo serão alterados. Feche o aplicativo. Continuar?</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>Confirmar manutenção</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Verificando assinatura, política e elegibilidade…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>Executando manutenção…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>Selecione uma pasta existente do aplicativo instalado.</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>Atualização aplicada. Registro de recuperação: {0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>Resolva os erros de política antes da manutenção.</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>Prévia da recuperação: {0}&#10;Instalação: {1}&#10;Versão resultante: {2}&#10;Registro: {3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>Continuar a recuperação? Os arquivos serão revalidados antes das alterações.</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>{0} concluído. {1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>Operação cancelada. Verifique novamente antes de aplicar.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Falha na manutenção: {0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>Assinatura confiável.</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>Assinatura não confiável.</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>Nenhuma decisão de atualização.</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>Decisão: {0}</value></data>
 </root>

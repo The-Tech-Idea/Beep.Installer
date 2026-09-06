@@ -10,11 +10,19 @@
     <Authors>The Tech Idea</Authors>
     <Company>The Tech Idea</Company>
     <Product>Beep Installer Core</Product>
+    <PackageId>TheTechIdea.Beep.Installer.Sdk</PackageId>
+    <Title>Beep Installer Headless SDK</Title>
+    <PackageTags>installer;setup;deployment;headless;ci;enterprise</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
     <Description>
       Authoring, build and packaging logic for Beep Installer. Deliberately free of any UI
       dependency so the WinForms shell stays a thin front end — and separate from BeepDM,
       whose installer-service scope explicitly excludes packaging and code signing.
     </Description>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeProjectReferenceOutputsInPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,8 +31,24 @@
       explicitly, not just transitively, or NuGet resolves a same-versioned package instead of
       the source project.
     -->
-    <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" />
-    <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
+    <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" PrivateAssets="all" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Packaging\Msi\ScenarioPacks\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="Packaging\Sdk\README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+  <Target Name="IncludeProjectReferenceOutputsInPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage
+        Include="@(ReferenceCopyLocalPaths)"
+        Condition="'%(ReferenceCopyLocalPaths.ReferenceSourceTarget)' == 'ProjectReference'"
+        TargetPath="%(Filename)%(Extension)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

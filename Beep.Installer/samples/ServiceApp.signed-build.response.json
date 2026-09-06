@@ -1,0 +1,14 @@
+{
+  "build": "Beep.Installer\\samples\\ServiceApp.bsetup",
+  "policy": "Beep.Installer\\samples\\enterprise-policy.sample.json",
+  "out": "Beep.Installer\\samples\\signed-build",
+  "signCert": "C:\\EnterpriseSigning\\ServiceApp.release.pfx",
+  "signPassword": "secret://env/SERVICEAPP_SIGNING_PFX_PASSWORD",
+  "timestamp": "https://timestamp.digicert.com",
+  "timestampOutage": "retry",
+  "timestampRetries": 2,
+  "sbom": true,
+  "provenance": true,
+  "sourceRoot": "Beep.Installer\\samples\\HelloApp",
+  "sourceRevision": "replace-with-git-commit"
+}

@@ -1,6 +1,7 @@
 using System;
+using System.IO;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Text;
 using System.Xml.Linq;
 
 namespace Beep.Installer.Engine.ClickOnce;
@@ -82,12 +83,15 @@ public static class UpdateChecker
         return info;
     }
 
-    /// <summary>Synchronous wrapper that blocks on the fetch (kept for non-async callers).</summary>
-    public static UpdateInfo CheckSync(string deploymentManifestUrl, string currentVersion, Func<string, string>? fetcher = null)
-        => Check(deploymentManifestUrl, currentVersion, fetcher);
-
     private static string Fetch(string url)
-        => _http.GetStringAsync(url).GetAwaiter().GetResult();
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var response = _http.Send(request);
+        response.EnsureSuccessStatusCode();
+        using var stream = response.Content.ReadAsStream();
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
 
     /// <summary>True when <paramref name="remote"/> is strictly newer than <paramref name="current"/>.</summary>
     public static bool IsNewer(string current, string remote)

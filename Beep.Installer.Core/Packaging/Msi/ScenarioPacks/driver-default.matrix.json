@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "pnp-driver-store-policy",
+      "category": "driver",
+      "description": "Exercise lifecycle install/uninstall for MSI packages that carry PnP driver-store custom actions.",
+      "requiredArtifacts": ["msi"],
+      "actions": ["driver-store-before", "msi-install", "driver-store-after-install", "msi-uninstall", "driver-store-after-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=pnp-driver-store-policy", "DRIVER_POLICY=require-signed"]
+    },
+    {
+      "id": "driver-reboot-required",
+      "category": "driver",
+      "description": "Exercise install/uninstall while allowing the matrix environment to record reboot-required behavior from driver operations.",
+      "requiredArtifacts": ["msi"],
+      "actions": ["driver-store-before", "msi-install", "driver-store-after-install", "msi-uninstall", "driver-store-after-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=driver-reboot-required", "DRIVER_REBOOT_POLICY=record"]
+    },
+    {
+      "id": "driver-device-in-use",
+      "category": "driver",
+      "description": "Exercise install/uninstall while the transport environment prepares device-in-use conditions for cleanup evidence.",
+      "requiredArtifacts": ["msi"],
+      "actions": ["driver-store-before", "msi-install", "driver-store-after-install", "msi-uninstall", "driver-store-after-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=driver-device-in-use", "DRIVER_DEVICE_STATE=in-use"]
+    }
+  ]
+}

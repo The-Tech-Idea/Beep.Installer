@@ -51,8 +51,8 @@ public static class PePayloadWriter
         fs.Position = fileLen - footerLen;
         var offBuf = new byte[8];
         var magBuf = new byte[Magic.Length];
-        fs.Read(offBuf, 0, 8);
-        fs.Read(magBuf, 0, Magic.Length);
+        fs.ReadExactly(offBuf);
+        fs.ReadExactly(magBuf);
         if (!magBuf.SequenceEqual(Magic)) return null;
 
         long offset = BitConverter.ToInt64(offBuf, 0);
@@ -68,7 +68,7 @@ public static class PePayloadWriter
         using var fs = new FileStream(exePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         fs.Position = range.Value.offset;
         var buf = new byte[range.Value.length];
-        fs.Read(buf, 0, buf.Length);
+        fs.ReadExactly(buf);
         File.WriteAllBytes(tempZipPath, buf);
         return tempZipPath;
     }

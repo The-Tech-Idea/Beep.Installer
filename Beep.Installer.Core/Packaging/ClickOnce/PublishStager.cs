@@ -13,6 +13,13 @@ namespace Beep.Installer.Engine.ClickOnce;
 /// </summary>
 public static class PublishStager
 {
+    public static string IdentityName(string appId)
+    {
+        if (!Guid.TryParseExact(appId, "D", out var id) || id == Guid.Empty)
+            throw new ArgumentException("ClickOnce publication requires a nonzero AppId GUID.", nameof(appId));
+        return $"Beep.{id:D}";
+    }
+
     /// <summary>Result of staging a publish folder.</summary>
     public class StageResult
     {
@@ -26,8 +33,9 @@ public static class PublishStager
     /// <param name="entryPoint">Payload-relative main executable (e.g. <c>MyApp.exe</c>).</param>
     public static StageResult Stage(
         string payloadDir, string publishDir, string productName, string version,
-        string? publisher, string? description, string entryPoint, string? updateUrl)
+        string? publisher, string? description, string entryPoint, string? updateUrl, string appId)
     {
+        var identity = IdentityName(appId);
         if (!Directory.Exists(payloadDir)) throw new DirectoryNotFoundException(payloadDir);
         Directory.CreateDirectory(publishDir);
         var appDir = Path.Combine(publishDir, "Application");
@@ -46,20 +54,20 @@ public static class PublishStager
         }
 
         // 2) Application manifest under Application\ (NOT renamed).
-        var appManifestPath = Path.Combine(appDir, productName + ".manifest");
+        var appManifestPath = Path.Combine(appDir, identity + ".manifest");
         var (digest, size) = ApplicationManifestWriter.Write(
-            payloadDir, entryPoint, appManifestPath, productName, version, description);
+            payloadDir, entryPoint, appManifestPath, identity, version, description);
 
         // 3) Deployment manifest at the publish root (NOT renamed) referencing the app manifest.
-        var deployManifestPath = Path.Combine(publishDir, productName + ".application");
-        var codebase = $"Application/{productName + ".manifest"}";
+        var deployManifestPath = Path.Combine(publishDir, identity + ".application");
+        var codebase = $"Application/{identity}.manifest";
         DeploymentManifestWriter.Write(
-            deployManifestPath, productName, version, publisher, description,
+            deployManifestPath, identity, version, publisher, description,
             codebase, digest, size, updateUrl);
 
         // 4) Landing page.
         var htmlPath = Path.Combine(publishDir, "publish.htm");
-        File.WriteAllText(htmlPath, BuildPublishHtml(productName, version, publisher));
+        File.WriteAllText(htmlPath, BuildPublishHtml(productName, version, publisher, identity));
 
         return new StageResult
         {
@@ -71,11 +79,11 @@ public static class PublishStager
         };
     }
 
-    private static string BuildPublishHtml(string product, string version, string? publisher)
+    private static string BuildPublishHtml(string product, string version, string? publisher, string identity)
     {
         var title = System.Net.WebUtility.HtmlEncode(product);
         var pub = System.Net.WebUtility.HtmlEncode(publisher ?? "");
-        var appRef = System.Net.WebUtility.HtmlEncode(product + ".application");
+        var appRef = System.Net.WebUtility.HtmlEncode(identity + ".application");
         return $@"<!DOCTYPE html>
 <html><head><meta charset=""utf-8""><title>{title} {System.Net.WebUtility.HtmlEncode(version)} Setup</title></head>
 <body style=""font-family:Segoe UI,Arial,sans-serif;margin:40px"">

@@ -5,6 +5,7 @@
 SchemaVersion=1.0
 ScriptName=MyApplication
 AppName=MyApplication
+AppId=f4c99727-3455-41e4-9ca0-7dfba8f098c2
 AppVersion=1.0.0
 AppPublisher=f_ald
 AppUpdateMode=optional

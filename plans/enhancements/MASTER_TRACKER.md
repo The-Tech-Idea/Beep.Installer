@@ -124,14 +124,14 @@ Suite 309/0. Outstanding: a live elevated locked-file run proving the 3010 proce
 
 ### Upgrade-in-place shipped and E2E-proven (P10.A, 2026-07-23)
 
-The `UpgradeEngine` finally has callers. Scope-aware hive overloads (old HKLM signatures kept
-`[Obsolete]`, same pattern as the P2 `RollbackManager` fix); `VerifyInstallStep` registers the
+The `UpgradeEngine` finally has callers. Scope-aware hive APIs require the caller to pass the
+target hive explicitly; `VerifyInstallStep` registers the
 install and `UninstallStep` unregisters it, so detection has something to find and uninstall
 leaves no ghost — confirmed against the live registry. New `UpgradeStep` runs before anything
 touches disk: refuses a downgrade with a message naming the installed version and `/FORCE`,
 backs up before an upgrade or forced downgrade, and **aborts if the backup fails** rather than
 upgrading without a restore point. `CommitUpgradeStep` runs last — the backup is only
-discarded after verification proves the new install — migrating user config first; on failure
+discarded after verification proves the new install — carrying user config forward first; on failure
 both hosts restore from the backup. 10 new `UpgradeFlowTests` (all HKCU, elevation-free);
 suite 296/0. Four-leg E2E with two real builds: fresh 1.0.0 → upgrade to 1.1.0 with
 `settingsKept=True`/`backupGone=True` → downgrade refused (exit 1, registry untouched, message
@@ -185,7 +185,7 @@ in four places — silent install, the wizard UI, uninstall and self-test — ea
 same ordering and the same magic dependency strings. Nothing kept them in agreement, so the
 wizard and `/S` could silently install *differently from the same script*; this is the identical
 duplication pattern that let the shortcut create/remove paths drift and orphan shortcuts.
-Now `Hosting/InstallWizardGraph` with a `StepIds` constants class, and 7 tests pinning the
+Now Core owns `Hosting/InstallWizardGraph` with a `StepIds` constants class, and 7 tests pinning the
 properties that matter: that the silent and UI graphs are step-for-step identical, that file
 copy follows payload preparation, that shortcuts and registry writes follow file copy, and that
 verification runs last (it writes the uninstall manifest, so it must observe everything before
@@ -375,7 +375,7 @@ matters: create and remove resolve to the identical path in both scopes.
 **Registry rollback was broken and unused.** `RollbackManager.RegisterRegistryWrite` hardcoded
 HKLM, so rolling back a per-user install probed the wrong hive — and `RegistryWriteStep` never
 registered its writes anyway, so a failure after it left the keys behind. The method now takes
-the hive explicitly (old signature kept as `[Obsolete]`), and `RegistryWriteStep` registers
+the hive explicitly, and `RegistryWriteStep` registers
 each write against the hive it actually used.
 
 **Environment variables now actually apply (P2.A.2).** New BeepDM
@@ -436,7 +436,7 @@ context-key tests are not yet written.
 | D7 | Builder restyle ambition | A: shared theme-token layer over existing controls · B: full Beep-control adoption | **A** first | P6 |
 | D8 | Adopt BeepDM's planned `feed.json` update protocol instead of ClickOnce update checking? | A: keep ClickOnce for now · B: converge | **A** — converging is a product decision, not a refactor | backlog |
 | D9 | Ship `Beep.Installer.Core` as its own NuGet package? | A: internal project only · B: publish | **A** until it stabilizes | backlog |
-| D10 | Update hosting model | A: static HTTPS host (GitHub Releases / S3 / LAN folder) serving `feed.json` + artifacts · B: A + tiny read-only API (staged rollout, gated downloads, stats) · C: full update service | **A** — no server code needed for hash-verified full/delta/module updates; the client sees only URLs + hashes, so A→B→C is a hosting migration, not a client change | P11 |
+| D10 | Update hosting model | A: static HTTPS host (GitHub Releases / S3 / LAN folder) serving `feed.json` + artifacts · B: A + tiny read-only API (staged rollout, gated downloads, stats) · C: full update service | **A** — no server code needed for hash-verified full/delta/module updates; the client sees only URLs + hashes, so A→B→C is a hosting evolution, not a client change | P11 |
 | D11 | Feed integrity for v1 | A: TLS + per-artifact SHA-256 only · B: additionally sign `feed.json` itself | **A** for v1, B before any public-internet fleet — an attacker who controls the host can rewrite hashes under A | P11 |
 | D12 | **DECIDED (owner, 2026-07-23):** where does the app self-update API live? | — | **In BeepDM** — contracts `DataManagementModelsStandard/Updates/`, implementation `DataManagementEngineStandard/Updates/`, registered via `AddBeepAppUpdates()`. The update capability belongs to the *deployed app* as a developer-facing API; Beep.Installer only publishes the feed (`/PUBLISHFEED`) and stamps `update-settings.json` at build. In-scope for BeepDM per its own installer-service plan (online-update service is a listed component; only packaging/signing are excluded). | P11 |
 
@@ -546,7 +546,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 |---|------|--------|
 | 5.A.1 | `CliOptions` parser; `Dispatch` < 100 lines | ⬜ |
 | 5.A.2 | Composition root: `AddBeepForDesktop()` + `AddSetupWizard()` + Core registrations | ⬜ |
-| 5.B.1 | `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
+| 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
 | 5.B.2 | `IDMLogger` adoption; retire `Diag` | ⬜ |
 | 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ⬜ |
 | 5.M.2 | SOLID review | ⬜ |
@@ -598,7 +598,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 8.M.1 | Gate: security test matrix + full suite | ⬜ |
 | 8.M.2 | SOLID review | ⬜ |
 
-## Phase 9: Test Migration & Regression 🟡 — P0 gate
+## Phase 9: Test Consolidation & Regression 🟡 — P0 gate
 
 > 📄 **[P9_REGRESSION_DESIGN.md](P9_REGRESSION_DESIGN.md)** · needs D5
 
@@ -616,13 +616,13 @@ that would relocate existing installations, so it is flagged for P2 instead.
 > 📄 **[Design: P10_COMMERCIAL_PARITY_DESIGN.md](P10_COMMERCIAL_PARITY_DESIGN.md)** ·
 > **[Task List: P10_COMMERCIAL_PARITY.md](P10_COMMERCIAL_PARITY.md)**
 > Benchmark set: Inno Setup, MSI, Squirrel/Velopack, MSIX. Key lever: `UpgradeEngine`
-> (DetectExisting/Backup/IsNewer/MigrateUserConfig) exists in BeepDM but **nothing calls it** —
+> (DetectExisting/Backup/IsNewer/config preservation) exists in BeepDM but **nothing calls it** —
 > a re-run install today blindly overwrites.
 
 | # | Task | Status |
 |---|------|--------|
 | 10.A.1 | Scope-aware `UpgradeEngine` (+`UnregisterInstall`); registration wired into verify, unregistration into uninstall | ✅ |
-| 10.A.2 | `UpgradeStep`/`CommitUpgradeStep`: upgrade-in-place, backup/restore, config migration, downgrade guard + `/FORCE`; **four-leg E2E green** (see task list 10.A.G) | ✅ |
+| 10.A.2 | `UpgradeStep`/`CommitUpgradeStep`: upgrade-in-place, backup/restore, config preservation, downgrade guard + `/FORCE`; **four-leg E2E green** (see task list 10.A.G) | ✅ |
 | 10.B.1 | Repair mode: `RepairFilesStep` (pure planner) + `/REPAIR` + `BuildRepair` graph + ARP `ModifyPath`; **E2E green** (corrupt + deleted files restored, user data untouched) | ✅ |
 | 10.B.2 | Locked files → staged `.pending` + `ScheduleFileForRestart` + `RebootRequired`; `ExitCodes` 3010/`/NORESTART`/`/RESTARTEXITCODE`; unelevated path fails with actionable "in use" message | ✅ (live elevated 3010 run outstanding) |
 | 10.C.1 | `/LOG=` + `InstallLogger` wired at the hosts + ARP `LogFile`; wizard "View log" points at the real log | ✅ |
@@ -670,7 +670,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 6 | UI/UX overhaul | P1 | ⬜ | [P6](P6_UIUX_DESIGN.md) |
 | 7 | Localization / RTL / a11y | P2 | ⬜ | [P7](P7_I18N_A11Y_DESIGN.md) |
 | 8 | Security & reliability | P1 | ⬜ | [P8](P8_SECURITY_RELIABILITY_DESIGN.md) |
-| 9 | Test migration & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
+| 9 | Test consolidation & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
 | 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
 | 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | ⬜ | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
 

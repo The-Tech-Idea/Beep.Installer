@@ -74,7 +74,7 @@ public class FolderPage : UserControl, IInstallerPage
 
         _perUserCheck = new CheckBox
         {
-            Text = "Install for current user only (no admin required)",
+            Text = "Install for current user only",
             Location = new Point(32, 158),
             Size = new Size(620, 24),
             Font = new Font("Segoe UI", 10)
@@ -113,7 +113,7 @@ public class FolderPage : UserControl, IInstallerPage
         _perUserCheck.DataBindings.Add("Checked", ctx, nameof(InstallContext.PerUser), true, DataSourceUpdateMode.OnPropertyChanged);
 
         _prompt.Text = LanguageManager.GetOrDefault("Folder_Prompt", "Select the folder where the application will be installed:");
-        _perUserCheck.Visible = ctx.Project.PrivilegesRequired == PrivilegeLevel.Admin;
+        _perUserCheck.Visible = ctx.Project.AllowScopeSelection;
         if (!_userEdited) _pathBox.Text = InstallScopeResolver.ResolveDefaultPath(ctx.Project, _perUserCheck.Checked);
         UpdateSpaceInfo();
     }

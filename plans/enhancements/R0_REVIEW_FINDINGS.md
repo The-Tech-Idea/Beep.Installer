@@ -84,7 +84,7 @@ duplicate enums `InstallationTypeEx`/`UpdateModeEx` shadowing `InstallationType`
 (`Models/InstallProject.cs:80-91`).
 
 **Therefore a projection is cheap** — list payloads need no conversion at all. This is why
-P1 is a mapper, not a migration.
+P1 is a mapper, not a data-store change.
 
 ### 2.1 …but the mapper alone is not sufficient
 
@@ -158,10 +158,10 @@ pipeline does:
 This directly contradicts `InstallProject`'s `OutputFormat`, `Compression`, `SingleFile`,
 `SelfContained`, `Msix*` and `CodeSign*` fields — Beep.Installer is doing precisely what
 BeepDM's plan calls out of scope. **Rev. 1's P2/P3 (move BuildPipeline + serializer + MSIX +
-signing into BeepDM) would violate BeepDM's stated architecture.**
+signing into the shared runtime layer) would violate the split already documented for the product.**
 
-Note also: BeepDM has **no `.bsetup` handling anywhere** (zero matches repo-wide). Its only
-programmatic `InstallConfig` builders are `ConfigManager.Load` (JSON) and
+Note also: the shared runtime layer has **no `.bsetup` handling anywhere** (zero matches repo-wide).
+Its programmatic `InstallConfig` builders are `ConfigManager.Load` (JSON) and
 `ConfigManager.GenerateFromDirectory` (`ConfigManager.cs:155-205`).
 
 ### 3.1 Resulting target architecture
@@ -170,12 +170,12 @@ The correct split is **by lifecycle stage**, not by "push everything down":
 
 | Concern | Owner | Rationale |
 |---|---|---|
-| Runtime install/uninstall/upgrade execution | **BeepDM** (`Installer/Steps`, `SetUp`) | already implemented there; installer should delegate, not duplicate |
-| Runtime install contract (`InstallConfig`, branding, language models) | **BeepDM** | serialization contract with schema handshake |
-| Authoring model (`InstallProject`), `.bsetup` format, build pipeline, payload packaging, MSIX/ClickOnce/signing | **Beep.Installer** (extracted to a non-UI class library) | explicitly out of BeepDM's scope; keeps BeepDM free of Win32 packaging deps |
+| Runtime install/uninstall/upgrade execution | **Shared runtime layer** (`Installer/Steps`, `SetUp`) | installer consumes the runtime contract without duplicating step execution |
+| Runtime install contract (`InstallConfig`, branding, language models) | **Shared runtime layer** | serialization contract with package metadata handshake |
+| Authoring model (`InstallProject`), `.bsetup` format, build pipeline, payload packaging, MSIX/ClickOnce/signing | **Beep.Installer** (extracted to a non-UI class library) | explicitly owned by the installer; keeps runtime components free of Win32 packaging deps |
 | WinForms shell (Forms/Pages/Ui/Lang) | **Beep.Installer** | UI |
 
-"Thin" therefore means: **thin on runtime-install logic** (delegate to BeepDM) while
+"Thin" therefore means: **thin on runtime-install logic** (consume the shared runtime contract) while
 legitimately owning authoring/packaging — with that authoring logic pulled out of the WinForms
 exe into its own library so the exe really is just a shell.
 
@@ -185,7 +185,7 @@ exe into its own library so the exe really is just a shell.
 
 | # | Defect | Evidence |
 |---|---|---|
-| A1 | Global mutable static | `Engine/RuntimeProjectContext.cs:8`, written `Program.cs:229,237,301,341`, read `Steps/PayloadPrepareStep.cs:132,137,152` |
+| A1 | Global mutable static | `Engine/RuntimeProjectContext.cs:8`, written by old program call sites and read by old payload-step paths before the Core-owned context bridge replaced it |
 | A2 | Wizard graph duplicated 3× with magic-string deps | `Program.cs:267-283, 315-320, 346-352` |
 | A3 | No DI; ~30 statics; no `IDMEEditor`/`BeepService` usage at all | `new BuildPipeline()` `Program.cs:445`, `InstallerController.cs:134` |
 | A4 | God classes | `InstallerScriptSerializer` 1,248; `BuildPipeline` 770; `SourceScanner` 605 |
@@ -237,4 +237,4 @@ be validated until P0 and P1 land**.
 - **P6** UI/UX overhaul
 - **P7** Localization, RTL, accessibility
 - **P8** Security & reliability hardening
-- **P9** Test migration & regression (including first-ever BeepDM installer-domain tests)
+- **P9** Test consolidation & regression (including first-ever BeepDM installer-domain tests)

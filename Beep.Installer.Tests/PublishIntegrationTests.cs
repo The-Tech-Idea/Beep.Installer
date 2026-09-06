@@ -28,11 +28,13 @@ public class PublishIntegrationTests
         File.WriteAllText(Path.Combine(payload, "readme.txt"), "hello");
         var publish = Path.Combine(tmp, "publish");
 
-        var r = PublishStager.Stage(payload, publish, "TestApp", "2.0.0", "CN=Co", null, "App.exe", null);
+        var id = Guid.NewGuid().ToString("D");
+        var identity = PublishStager.IdentityName(id);
+        var r = PublishStager.Stage(payload, publish, "TestApp", "2.0.0", "CN=Co", null, "App.exe", null, id);
 
         r.DeployFiles.Should().Be(2);
-        File.Exists(Path.Combine(publish, "TestApp.application")).Should().BeTrue();
-        File.Exists(Path.Combine(publish, "Application", "TestApp.manifest")).Should().BeTrue();
+        File.Exists(Path.Combine(publish, identity + ".application")).Should().BeTrue();
+        File.Exists(Path.Combine(publish, "Application", identity + ".manifest")).Should().BeTrue();
         File.Exists(Path.Combine(publish, "publish.htm")).Should().BeTrue();
         File.Exists(Path.Combine(publish, "Application", "App.exe.deploy")).Should().BeTrue();
         File.Exists(Path.Combine(publish, "Application", "readme.txt.deploy")).Should().BeTrue();
@@ -41,7 +43,7 @@ public class PublishIntegrationTests
         var deployDoc = XDocument.Load(r.DeploymentManifestPath);
         var asm = XNamespace.Get("urn:schemas-microsoft-com:asm.v1");
         var depAsm = deployDoc.Root!.Element(asm + "dependency")!.Element(asm + "dependentAssembly")!;
-        depAsm.Attribute("codebase")!.Value.Should().Be("Application/TestApp.manifest");
+        depAsm.Attribute("codebase")!.Value.Should().Be("Application/" + identity + ".manifest");
         var (digest, size) = ApplicationManifestWriter.HashOf(r.ApplicationManifestPath);
         depAsm.Attribute("hash")!.Value.Should().Be(digest);
         ((long)depAsm.Attribute("size")!).Should().Be(size);
@@ -70,6 +72,7 @@ project.UseTestDefaults();
 project.UseTestDefaults();
             project.OutputFormat = InstallerOutputFormat.Msix;
         project.MsixIdentity = "Co.MsixApp";
+        project.MsixPublisher = "CN=Co";
         project.MainExecutable = "App.exe";
 
         var result = TestHelpers.TestPipeline().Run(project);

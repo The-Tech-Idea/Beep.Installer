@@ -1,0 +1,1380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thetechidea.com/schemas/beep-installer/bsetup-1.0.schema.json",
+  "title": "Beep Installer Project",
+  "description": "Canonical JSON representation of a Beep Installer .bsetup project after parsing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "appId",
+    "appName",
+    "appVersion"
+  ],
+  "properties": {
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "displayName": { "type": "string" },
+          "dependsOn": { "type": "array", "items": { "type": "string" } },
+          "inputs": { "type": "object", "additionalProperties": { "type": "string" } },
+          "sensitiveInputs": { "type": "array", "items": { "type": "string" } },
+          "condition": { "type": "string" },
+          "rollbackSupported": { "type": "boolean" },
+          "rebootBehavior": { "type": "string" }
+        }
+      }
+    },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "projectName": {
+      "type": "string"
+    },
+    "appName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "appId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "not": { "const": "00000000-0000-0000-0000-000000000000" }
+    },
+    "appVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "appPublisher": {
+      "type": "string"
+    },
+    "appPublisherURL": {
+      "type": "string"
+    },
+    "appSupportURL": {
+      "type": "string"
+    },
+    "appSupportEmail": {
+      "type": "string"
+    },
+    "appUpdatesURL": {
+      "type": "string"
+    },
+    "appUpdateMode": {
+      "enum": [
+        "optional",
+        "required"
+      ]
+    },
+    "appUpdateChannel": {
+      "type": "string"
+    },
+    "appInstallerHoursBetweenUpdateChecks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "appInstallerShowPrompt": {
+      "type": "boolean"
+    },
+    "appInstallerForceUpdateFromAnyVersion": {
+      "type": "boolean"
+    },
+    "appCopyright": {
+      "type": "string"
+    },
+    "sourceDirectory": {
+      "type": "string"
+    },
+    "sourceIncludes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sourceExcludes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "defaultDirName": {
+      "type": "string"
+    },
+    "defaultGroupName": {
+      "type": "string"
+    },
+    "privilegesRequired": {
+      "enum": [
+        "admin",
+        "lowest",
+        "user"
+      ]
+    },
+    "privilegesRequiredOverridesAllowed": {
+      "type": "boolean"
+    },
+    "defaultInstallType": {
+      "enum": [
+        "typical",
+        "custom",
+        "complete"
+      ]
+    },
+    "prefer64Bit": {
+      "type": "boolean"
+    },
+    "allowScopeSelection": {
+      "type": "boolean"
+    },
+    "defaultScope": {
+      "enum": [
+        "machine",
+        "user"
+      ]
+    },
+    "allowNoIcons": {
+      "type": "boolean"
+    },
+    "alwaysShowDirOnReadyPage": {
+      "type": "boolean"
+    },
+    "licenseFile": {
+      "type": "string"
+    },
+    "licenseText": {
+      "type": "string"
+    },
+    "showEula": {
+      "type": "boolean"
+    },
+    "windowTitle": {
+      "type": "string"
+    },
+    "welcomeTitle": {
+      "type": "string"
+    },
+    "setupIconFile": {
+      "type": "string"
+    },
+    "wizardImageFile": {
+      "type": "string"
+    },
+    "defaultTheme": {
+      "type": "string"
+    },
+    "sidebarBackgroundColor": {
+      "type": "string"
+    },
+    "sidebarTextColor": {
+      "type": "string"
+    },
+    "accentColor": {
+      "type": "string"
+    },
+    "allowComponentSelection": {
+      "type": "boolean"
+    },
+    "allowPathChange": {
+      "type": "boolean"
+    },
+    "outputBaseFilename": {
+      "type": "string"
+    },
+    "outputDir": {
+      "type": "string"
+    },
+    "outputFormat": {
+      "enum": [
+        "exe",
+        "msix",
+        "msixbundle"
+      ]
+    },
+    "architecturesAllowed": {
+      "type": "string"
+    },
+    "architecturesInstallIn64BitMode": {
+      "type": "string"
+    },
+    "mainExecutable": {
+      "type": "string"
+    },
+    "payloadFolderName": {
+      "type": "string"
+    },
+    "payloadSource": {
+      "enum": [
+        "folder",
+        "url"
+      ]
+    },
+    "payloadUrl": {
+      "type": "string"
+    },
+    "compressPayload": {
+      "type": "boolean"
+    },
+    "compression": {
+      "type": "string"
+    },
+    "solidCompression": {
+      "type": "boolean"
+    },
+    "compressionLevel": {
+      "type": "integer"
+    },
+    "singleFile": {
+      "type": "boolean"
+    },
+    "selfContained": {
+      "type": "boolean"
+    },
+    "createUninstallEntry": {
+      "type": "boolean"
+    },
+    "createRestorePoint": {
+      "type": "boolean"
+    },
+    "codeSignCertificatePath": {
+      "type": "string"
+    },
+    "codeSignCertificatePassword": {
+      "type": "string"
+    },
+    "codeSignStoreName": {
+      "type": "string"
+    },
+    "codeSignStoreLocation": {
+      "type": "string"
+    },
+    "codeSignStoreThumbprint": {
+      "type": "string"
+    },
+    "codeSignStoreSubject": {
+      "type": "string"
+    },
+    "codeSignRemoteProvider": {
+      "type": "string"
+    },
+    "codeSignRemoteEndpoint": {
+      "type": "string"
+    },
+    "codeSignRemoteKeyId": {
+      "type": "string"
+    },
+    "codeSignRemoteCredential": {
+      "type": "string"
+    },
+    "codeSignTimestampUrl": {
+      "type": "string"
+    },
+    "msixIdentity": {
+      "type": "string"
+    },
+    "msixPublisher": {
+      "type": "string"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/prerequisite"
+      }
+    },
+    "prerequisiteCatalogs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/prerequisiteCatalog"
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/packageNode"
+      }
+    },
+    "msixOptionalPackages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/msixOptionalPackage"
+      }
+    },
+    "updateChannels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/updateChannel"
+      }
+    },
+    "deploymentSupersedence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/deploymentSupersedenceRule"
+      }
+    },
+    "shortcuts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/shortcut"
+      }
+    },
+    "registryEntries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/registryEntry"
+      }
+    },
+    "environmentVariables": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/environmentVariable"
+      }
+    },
+    "windowsServices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/windowsService"
+      }
+    },
+    "scheduledTasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scheduledTask"
+      }
+    },
+    "firewallRules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/firewallRule"
+      }
+    },
+    "fileAssociations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fileAssociation"
+      }
+    },
+    "certificates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/certificate"
+      }
+    },
+    "comRegistrations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/comRegistration"
+      }
+    },
+    "driverPackages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/driverPackage"
+      }
+    },
+    "configTransforms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/configTransform"
+      }
+    },
+    "iisAppPools": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/iisAppPool"
+      }
+    },
+    "iisSites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/iisSite"
+      }
+    },
+    "webDeployPackages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/webDeployPackage"
+      }
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "conditionExpression": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "not"
+          ]
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "prerequisite": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "versionRequired": {
+          "type": "string"
+        },
+        "downloadUrl": {
+          "type": "string"
+        },
+        "downloadUrlX86": {
+          "type": "string"
+        },
+        "isMandatory": {
+          "type": "boolean"
+        }
+      }
+    },
+    "prerequisiteCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signature": {
+          "type": "string"
+        },
+        "trustedPublicKeyPath": {
+          "type": "string"
+        },
+        "trustedPublicKey": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deploymentSupersedenceRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packageId"
+      ],
+      "properties": {
+        "packageId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "minimumVersion": {
+          "type": "string"
+        },
+        "maximumVersion": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "replace",
+            "update",
+            "blockDowngrade"
+          ]
+        },
+        "uninstallPrevious": {
+          "type": "boolean"
+        },
+        "detectionKey": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "packageNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "packageType": {
+          "enum": [
+            "exe",
+            "msi",
+            "msp",
+            "msu"
+          ]
+        },
+        "sourcePath": {
+          "type": "string"
+        },
+        "downloadUrl": {
+          "type": "string"
+        },
+        "downloadUrlX86": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "sha512": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{128}$"
+        },
+        "sha512X86": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{128}$"
+        },
+        "detectionCommand": {
+          "type": "string"
+        },
+        "detectionCommandX86": {
+          "type": "string"
+        },
+        "detectionPattern": {
+          "type": "string"
+        },
+        "detectionPatternX86": {
+          "type": "string"
+        },
+        "installArgs": {
+          "type": "string"
+        },
+        "repairArgs": {
+          "type": "string"
+        },
+        "uninstallCommand": {
+          "type": "string"
+        },
+        "uninstallArgs": {
+          "type": "string"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isMandatory": {
+          "type": "boolean"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        },
+        "successExitCodes": {
+          "type": "string"
+        },
+        "rebootExitCodes": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retryCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "helpUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "msixOptionalPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "uri"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "publisher": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "architecture": {
+          "enum": [
+            "x64",
+            "x86",
+            "arm64",
+            "neutral"
+          ]
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "package",
+            "bundle"
+          ]
+        }
+      }
+    },
+    "updateChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "ring": {
+          "type": "string"
+        },
+        "feedUrl": {
+          "type": "string"
+        },
+        "rolloutPercentage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "minimumVersion": {
+          "type": "string"
+        },
+        "deadlineUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "critical": {
+          "type": "boolean"
+        },
+        "maintenanceWindow": {
+          "type": "string"
+        },
+        "rollbackVersion": {
+          "type": "string"
+        },
+        "revoked": {
+          "type": "boolean"
+        }
+      }
+    },
+    "shortcut": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "targetPath": {
+          "type": "string"
+        },
+        "location": {
+          "enum": [
+            "desktop",
+            "startmenu",
+            "startup",
+            "quicklaunch"
+          ]
+        }
+      }
+    },
+    "registryEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "keyPath"
+      ],
+      "properties": {
+        "keyPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "valueName": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "valueKind": {
+          "type": "string"
+        }
+      }
+    },
+    "environmentVariable": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "machine",
+            "user",
+            "process"
+          ]
+        }
+      }
+    },
+    "windowsService": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "executablePath"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "executablePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "startMode": {
+          "enum": [
+            "auto",
+            "delayedAuto",
+            "manual",
+            "disabled"
+          ]
+        },
+        "startAfterInstall": {
+          "type": "boolean"
+        },
+        "stopOnUninstall": {
+          "type": "boolean"
+        },
+        "account": {
+          "enum": [
+            "localSystem",
+            "localService",
+            "networkService",
+            "user"
+          ]
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "failureRestartDelaySeconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scheduledTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "executablePath"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "executablePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "trigger": {
+          "enum": [
+            "onLogon",
+            "onStartup",
+            "daily",
+            "once"
+          ]
+        },
+        "startTime": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "runElevated": {
+          "type": "boolean"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "stopOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    },
+    "firewallRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "in",
+            "out"
+          ]
+        },
+        "action": {
+          "enum": [
+            "allow",
+            "block"
+          ]
+        },
+        "protocol": {
+          "enum": [
+            "any",
+            "tcp",
+            "udp"
+          ]
+        },
+        "localPort": {
+          "type": "string"
+        },
+        "remotePort": {
+          "type": "string"
+        },
+        "program": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fileAssociation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extension",
+        "progId",
+        "executablePath"
+      ],
+      "properties": {
+        "extension": {
+          "type": "string",
+          "pattern": "^\\.[A-Za-z0-9][A-Za-z0-9_-]*$"
+        },
+        "progId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "executablePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "iconPath": {
+          "type": "string"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "perceivedType": {
+          "type": "string"
+        },
+        "verb": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verbDisplayName": {
+          "type": "string"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    },
+    "certificate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePath",
+        "storeName"
+      ],
+      "properties": {
+        "sourcePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "password": {
+          "type": "string"
+        },
+        "storeName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storeLocation": {
+          "enum": [
+            "machine",
+            "user"
+          ]
+        },
+        "thumbprint": {
+          "type": "string",
+          "pattern": "^([A-Fa-f0-9]{2}\\s*){20}$"
+        },
+        "friendlyName": {
+          "type": "string"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    },
+    "comRegistration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clsid",
+        "serverPath"
+      ],
+      "properties": {
+        "clsid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "progId": {
+          "type": "string"
+        },
+        "versionIndependentProgId": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "serverPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "serverType": {
+          "enum": [
+            "inProc",
+            "localServer"
+          ]
+        },
+        "threadingModel": {
+          "enum": [
+            "Apartment",
+            "Free",
+            "Both",
+            "Neutral"
+          ]
+        },
+        "typeLibId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "string"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    },
+    "driverPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "pnp",
+            "kernel",
+            "fileSystem"
+          ]
+        },
+        "infPath": {
+          "type": "string",
+          "pattern": "\\.[Ii][Nn][Ff]$"
+        },
+        "driverBinaryPath": {
+          "type": "string",
+          "pattern": "\\.[Ss][Yy][Ss]$"
+        },
+        "serviceName": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "startMode": {
+          "enum": [
+            "boot",
+            "system",
+            "automatic",
+            "demand",
+            "disabled"
+          ]
+        },
+        "errorControl": {
+          "enum": [
+            "ignore",
+            "normal",
+            "severe",
+            "critical"
+          ]
+        },
+        "loadOrderGroup": {
+          "type": "string"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "publishedName": {
+          "type": "string",
+          "pattern": "\\.[Ii][Nn][Ff]$"
+        },
+        "hardwareId": {
+          "type": "string"
+        },
+        "className": {
+          "type": "string"
+        },
+        "installDevices": {
+          "type": "boolean"
+        },
+        "requireSigned": {
+          "type": "boolean"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        },
+        "rebootBehavior": {
+          "enum": [
+            "possible",
+            "required",
+            "suppress"
+          ]
+        }
+      }
+    },
+    "configTransform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetPath",
+        "keyPath"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "targetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "format": {
+          "enum": [
+            "json",
+            "xml",
+            "ini"
+          ]
+        },
+        "operation": {
+          "enum": [
+            "set",
+            "delete"
+          ]
+        },
+        "keyPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "backupOnInstall": {
+          "type": "boolean"
+        },
+        "restoreOnRollback": {
+          "type": "boolean"
+        }
+      }
+    },
+    "iisAppPool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtimeVersion": {
+          "type": "string"
+        },
+        "pipelineMode": {
+          "enum": [
+            "integrated",
+            "classic"
+          ]
+        },
+        "enable32Bit": {
+          "type": "boolean"
+        },
+        "identity": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "autoStart": {
+          "type": "boolean"
+        },
+        "startAfterInstall": {
+          "type": "boolean"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    },
+    "iisSite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "physicalPath"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "physicalPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicationPool": {
+          "type": "string"
+        },
+        "startAfterInstall": {
+          "type": "boolean"
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/iisBinding"
+          }
+        }
+      }
+    },
+    "iisBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "enum": [
+            "http",
+            "https"
+          ]
+        },
+        "ipAddress": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "host": {
+          "type": "string"
+        },
+        "certificateThumbprint": {
+          "type": "string",
+          "pattern": "^([A-Fa-f0-9]{2}\\s*){20}$"
+        },
+        "certificateStoreName": {
+          "type": "string"
+        },
+        "sslFlags": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "webDeployPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "packagePath",
+        "siteName"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "packagePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "siteName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "destination": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "removeOnUninstall": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

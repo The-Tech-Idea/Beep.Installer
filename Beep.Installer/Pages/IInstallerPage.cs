@@ -29,7 +29,12 @@ public class InstallContext : INotifyPropertyChanged
     public InstallProject Project
     {
         get => _project;
-        set => Set(ref _project, value);
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            Set(ref _project, value);
+            PerUser = Beep.Installer.Engine.InstallScopeResolver.IsPerUser(value);
+        }
     }
 
     private string _installPath = "";

@@ -26,14 +26,14 @@ public class TrustCheckerTests
     }
 
     [Fact]
-    public void CheckManifestSignature_Detects_DsSignature()
+    public void CheckManifestSignature_RejectsFakeDsSignature()
     {
         var tmp = Path.Combine(Path.GetTempPath(), "beepsig_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tmp);
         try
         {
             var signed = WriteManifest(Path.Combine(tmp, "s.manifest"), signed: true);
-            TrustChecker.CheckManifestSignature(signed).Signed.Should().BeTrue();
+            TrustChecker.CheckManifestSignature(signed).Signed.Should().BeFalse();
 
             var plain = WriteManifest(Path.Combine(tmp, "p.manifest"), signed: false);
             TrustChecker.CheckManifestSignature(plain).Signed.Should().BeFalse();
@@ -65,10 +65,10 @@ public class TrustCheckerTests
         Directory.CreateDirectory(Path.Combine(tmp, "Application"));
         try
         {
-            // Both signed → fully signed.
+            // Two fabricated signature elements do not establish signing.
             WriteManifest(Path.Combine(tmp, "App.application"), true);
             WriteManifest(Path.Combine(tmp, "Application", "App.manifest"), true);
-            TrustChecker.CheckPublishing(tmp, "App").Signed.Should().BeTrue();
+            TrustChecker.CheckPublishing(tmp, "App").Signed.Should().BeFalse();
 
             // App manifest unsigned → aggregate unsigned.
             WriteManifest(Path.Combine(tmp, "Application", "App.manifest"), false);

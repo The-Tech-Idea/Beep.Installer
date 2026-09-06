@@ -43,7 +43,7 @@ public class Publisher
             var staged = PublishStager.Stage(
                 project.SourceDirectory, publishDir,
                 project.AppName, project.AppVersion,
-                project.AppPublisher, null, entryPoint, url);
+                project.AppPublisher, null, entryPoint, url, project.AppId);
 
             result.PublishDir = staged.PublishDir;
             result.ApplicationManifest = staged.ApplicationManifestPath;
@@ -64,9 +64,15 @@ public class Publisher
             }
 
             // Post-staging trust check — catches "sign was skipped" or "signtool silently failed".
-            var trust = TrustChecker.CheckPublishing(publishDir, project.AppName);
-            if (trust.ManifestsInspected > 0 && !trust.Signed && !result.Signed)
+            var trust = TrustChecker.CheckPublishing(publishDir, PublishStager.IdentityName(project.AppId));
+            result.Signed = trust.Signed;
+            if (trust.ManifestsInspected > 0 && !trust.Signed)
                 result.Warnings.Add(trust.Message ?? "Manifests are not signed.");
+            if (sign && !string.IsNullOrWhiteSpace(project.CodeSignCertificatePath) && !result.Signed)
+            {
+                result.Errors.Add("Requested ClickOnce signing did not produce two validated manifest signatures.");
+                return result;
+            }
             Report(100, result.Success ? "Publish complete." : "Publish completed with issues.");
             sw.Stop();
             result.Elapsed = sw.Elapsed;
@@ -98,35 +104,28 @@ public class Publisher
         if (string.IsNullOrWhiteSpace(cert))
             return (false, "Manifests left unsigned — set a code-signing certificate to avoid the unknown-publisher warning.");
 
-        var signtool = SignTool.Find();
-        if (signtool == null)
-            return (false, "signtool.exe not found — manifests were not signed.");
-
-        var args = new System.Text.StringBuilder("sign /fd SHA256 ");
+        var arguments = new List<string> { "-Sign", staged.ApplicationManifestPath, "-Algorithm", "sha256RSA", "-CertFile", cert };
+        if (!string.IsNullOrEmpty(project.CodeSignCertificatePassword))
+            arguments.AddRange(["-Password", project.CodeSignCertificatePassword]);
         if (!string.IsNullOrEmpty(project.CodeSignTimestampUrl))
-            args.Append($"/tr \"{project.CodeSignTimestampUrl}\" /td SHA256 ");
-        args.Append(string.IsNullOrEmpty(project.CodeSignCertificatePassword)
-            ? $"/f \"{cert}\" "
-            : $"/f \"{cert}\" /p \"{project.CodeSignCertificatePassword}\" ");
+            arguments.AddRange(["-TimestampUri", project.CodeSignTimestampUrl]);
 
-        var targets = new[] { staged.DeploymentManifestPath, staged.ApplicationManifestPath };
-        foreach (var t in targets)
-        {
-            try
-            {
-                var psi = new ProcessStartInfo(signtool, args + $"\"{t}\"")
-                {
-                    UseShellExecute = false, CreateNoWindow = true,
-                    RedirectStandardOutput = true, RedirectStandardError = true
-                };
-                using var p = Process.Start(psi);
-                p?.WaitForExit(60_000);
-                if (p?.ExitCode != 0)
-                    return (false, $"signtool exited {p?.ExitCode} signing {Path.GetFileName(t)}.");
-            }
-            catch (Exception ex) { return (false, $"Signing failed: {ex.Message}"); }
-        }
-        return (true, null);
+        var application = MageManifestTool.Run(arguments.ToArray());
+        if (!application.success) return (false, application.error);
+
+        // Signing changes the application manifest bytes. Refresh the dependency before
+        // signing the deployment manifest, using the existing digest implementation.
+        var document = System.Xml.Linq.XDocument.Load(staged.DeploymentManifestPath);
+        var dependency = document.Root!.Element(DeploymentManifestWriter.AsmV1 + "dependency")!
+            .Element(DeploymentManifestWriter.AsmV1 + "dependentAssembly")!;
+        var (digest, size) = ApplicationManifestWriter.HashOf(staged.ApplicationManifestPath);
+        dependency.SetAttributeValue("hash", digest);
+        dependency.SetAttributeValue("size", size);
+        document.Save(staged.DeploymentManifestPath);
+
+        arguments[1] = staged.DeploymentManifestPath;
+        var deployment = MageManifestTool.Run(arguments.ToArray());
+        return (deployment.success, deployment.error);
     }
 
     private void Report(int percent, string message) => Progress?.Report((percent, message));

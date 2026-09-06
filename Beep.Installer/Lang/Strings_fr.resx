@@ -195,4 +195,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>Récents</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>Centre de mises à jour</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>Identité du projet approuvé</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>Chemin ou URL du flux signé</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>Chemin PEM de la clé publique du flux</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>Chemin PEM de la clé publique du delta</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Dossier de l’application installée</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>Version installée</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>Canal actuel</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>Canal cible</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>Identifiant de déploiement de l’appareil</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>Dossier delta local (facultatif)</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>Chemin du journal de récupération</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>État et diagnostic de mise à jour</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>Saisissez la version installée et les clés publiques approuvées. Fermez l’application avant la mise à jour.</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Rechercher les mises à jour</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>Appliquer la mise à jour</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>Récupérer</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>Rétablir</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>Fermer</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>Clés publiques (*.pem)|*.pem|Tous les fichiers (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>Fichiers JSON (*.json)|*.json|Tous les fichiers (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>Impossible de sélectionner un chemin : {0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>Annulation demandée. En attente d’un point d’arrêt sûr.</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0} : les fichiers de l’application seront modifiés. Fermez-la. Continuer ?</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>Confirmer la maintenance</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Vérification de la signature, de la stratégie et de l’éligibilité…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>Maintenance en cours…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>Sélectionnez un dossier existant de l’application installée.</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>Mise à jour appliquée. Journal de récupération : {0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>Corrigez les erreurs de stratégie avant la maintenance.</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>Aperçu de récupération : {0}&#10;Installation : {1}&#10;Version résultante : {2}&#10;Journal : {3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>Poursuivre la récupération ? Les fichiers seront revérifiés avant toute modification.</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>{0} terminé. {1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>Opération annulée. Vérifiez à nouveau avant d’appliquer.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Échec de la maintenance : {0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>Signature approuvée.</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>Signature non approuvée.</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>Aucune décision de mise à jour.</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>Décision : {0}</value></data>
 </root>

@@ -100,10 +100,10 @@ Core, and this phase deletes the three local variants
 | Unsigned publish | warning text only (`TrustChecker.cs:75`) | warning surfaced on `InstallerPublishResult.Warnings` AND builder UI banner (P6) |
 | MakeAppx/signtool missing | mixed (stub vs real) | uniform `ToolLocator` failure with probe list |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-Published ClickOnce layouts (`Application\*.deploy`, `publish.htm`, manifest schema)
-unchanged — existing deployed apps continue to update. `.bsetup` unchanged.
+Published ClickOnce layouts and `.bsetup` fields follow the current contract. Remove duplicate
+packaging paths as Core ownership expands.
 
 ## 7. Verification
 
@@ -117,7 +117,7 @@ Beep.Installer.exe /PUBLISH=samples\... /OUT=%TEMP%\p4pub /NOSIGN
 
 | Risk | Mitigation |
 |------|------------|
-| COM shortcut writer behaves differently on server SKUs | keep PowerShell path as fallback behind a flag for one release |
+| COM shortcut writer behaves differently on server SKUs | replace it with the tested canonical shortcut writer |
 | ~40 tests reference old namespaces | mechanical namespace update in same commit (P9 owns final sweep) |
 | ClickOnce update path overlaps BeepDM's planned update feed (`installer-service/00-overview-and-scope.md:139-165`) | this phase preserves today's behavior only; convergence is a backlog decision, not a silent rewrite |
 
@@ -131,4 +131,4 @@ adopting BeepDM's planned `feed.json` update protocol.
 1. **4.A.2** Add `Packaging/` to Core; move Msix + Signing onto the shared `ToolLocator`. Verify: Msix/StoreReadiness tests green.
 3. **4.A.3** Move ClickOnce files; rename `RollbackManager`→`VersionBackupRotator`; async Update*. Verify: ClickOnce/Update tests green.
 4. **4.A.4** `ClickOncePublisher : IInstallerPublisher`; rewire shell `/PUBLISH`; delete old Engine files. Verify: publish integration test green.
-5. **4.B.1** Replace shortcut PowerShell shelling. Verify: shortcut created on clean VM; fallback flag works.
+5. **4.B.1** Replace shortcut PowerShell shelling. Verify: shortcut created on clean VM through the canonical writer.

@@ -174,6 +174,9 @@ namespace Beep.Installer.Engine
 
         private static string? GetRegistryDotNetVersion()
         {
+            if (!OperatingSystem.IsWindows())
+                return null;
+
             try
             {
                 using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(

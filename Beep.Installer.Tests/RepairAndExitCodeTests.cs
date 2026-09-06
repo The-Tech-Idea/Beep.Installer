@@ -148,11 +148,12 @@ public class RepairAndExitCodeTests : IDisposable
         var ids = new List<string>();
         foreach (var s in wizard.Steps) ids.Add(s.StepId);
 
-        ids.Should().Contain(StepIds.RepairFiles);
+        ids.Should().Contain(StepIds.ResourceProviders);
         // Repair converges toward the manifest; it must not re-run author code or upgrade logic.
         ids.Should().NotContain(StepIds.UpgradeDetect);
         ids.Should().NotContain(id => id.StartsWith("installer.custom."));
         ids.Should().NotContain(StepIds.FileCopy);
+        ids.Should().NotContain(StepIds.RepairFiles);
     }
 
     // ── Registry macro expansion ──

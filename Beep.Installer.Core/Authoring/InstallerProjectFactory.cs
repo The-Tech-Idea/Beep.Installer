@@ -9,6 +9,13 @@ public static class InstallerProjectFactory
 {
     public static InstallProject CreateNew(string productName, string version, string publisher, string sourceDirectory)
     {
+        var project = CreateDefaults(productName, version, publisher, sourceDirectory);
+        project.AppId = Guid.NewGuid().ToString("D");
+        return project;
+    }
+
+    internal static InstallProject CreateDefaults(string productName, string version, string publisher, string sourceDirectory)
+    {
         var product = string.IsNullOrWhiteSpace(productName) ? "MyApplication" : productName.Trim();
         var ver = string.IsNullOrWhiteSpace(version) ? "1.0.0" : version.Trim();
         var pub = string.IsNullOrWhiteSpace(publisher) ? "Publisher" : publisher.Trim();

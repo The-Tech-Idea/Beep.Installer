@@ -26,6 +26,7 @@ public class UpgradeFlowTests : IDisposable
 {
     private readonly string _product = "BeepUpgradeTest_" + Guid.NewGuid().ToString("N")[..8];
     private readonly string _root;
+    private readonly string _appId = Guid.NewGuid().ToString("D");
 
     public UpgradeFlowTests()
     {
@@ -35,13 +36,13 @@ public class UpgradeFlowTests : IDisposable
 
     public void Dispose()
     {
-        try { Registry.CurrentUser.DeleteSubKeyTree(UpgradeEngine.RegistrationKeyPath(_product), throwOnMissingSubKey: false); } catch { }
+        try { Registry.CurrentUser.DeleteSubKeyTree(UpgradeEngine.RegistrationKeyPath(_appId), throwOnMissingSubKey: false); } catch { }
         try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); } catch { }
     }
 
     private InstallProject MakeProject(string version) => new()
     {
-        AppName = _product,
+        AppId = _appId, AppName = _product,
         AppVersion = version,
         Components = new ObservableCollection<InstallComponent>
         {
@@ -63,18 +64,23 @@ public class UpgradeFlowTests : IDisposable
     public void RegisterAndDetect_RoundTrip_InTheGivenHive()
     {
         var installDir = MakeInstallDir("roundtrip");
-        var config = new InstallConfig { ProductName = _product, ProductVersion = "1.0.0", Publisher = "Test" };
+        var config = new InstallConfig { AppId = _appId, ProductName = _product, ProductVersion = "1.0.0", Publisher = "Test" };
         var engine = new UpgradeEngine();
 
         engine.RegisterInstall(config, installDir, Registry.CurrentUser);
 
-        var existing = engine.DetectExisting(_product, Registry.CurrentUser);
+        var existing = engine.DetectExisting(_appId, Registry.CurrentUser);
         existing.Should().NotBeNull("registration and detection must use the same hive");
         existing!.InstalledVersion.Should().Be("1.0.0");
         existing.InstallPath.Should().Be(installDir);
 
-        engine.UnregisterInstall(_product, Registry.CurrentUser);
-        engine.DetectExisting(_product, Registry.CurrentUser).Should().BeNull();
+        config.ProductName = "Renamed display name";
+        engine.RegisterInstall(config, installDir, Registry.CurrentUser);
+        engine.DetectExisting(_appId.ToUpperInvariant(), Registry.CurrentUser)!.ProductName.Should().Be("Renamed display name");
+        engine.DetectExisting(Guid.NewGuid().ToString("D"), Registry.CurrentUser).Should().BeNull();
+
+        engine.UnregisterInstall(_appId, Registry.CurrentUser);
+        engine.DetectExisting(_appId, Registry.CurrentUser).Should().BeNull();
     }
 
     // ── UpgradeStep decisions ──
@@ -148,10 +154,10 @@ public class UpgradeFlowTests : IDisposable
         context.TryGetProperty<string>(UpgradeStep.PreviousVersionKey).Should().Be("1.0.0");
     }
 
-    // ── Commit: config migration + backup removal ──
+    // ── Commit: config upgrade + backup removal ──
 
     [Fact]
-    public void Commit_MigratesUserConfig_AndRemovesBackup()
+    public void Commit_UpgradesUserConfig_AndRemovesBackup()
     {
         var installDir = MakeInstallDir("commit");
         RegisterExisting("1.0.0", installDir);
@@ -207,6 +213,6 @@ public class UpgradeFlowTests : IDisposable
 
     private void RegisterExisting(string version, string installDir)
         => new UpgradeEngine().RegisterInstall(
-            new InstallConfig { ProductName = _product, ProductVersion = version, Publisher = "Test" },
+            new InstallConfig { AppId = _appId, ProductName = _product, ProductVersion = version, Publisher = "Test" },
             installDir, Registry.CurrentUser);
 }

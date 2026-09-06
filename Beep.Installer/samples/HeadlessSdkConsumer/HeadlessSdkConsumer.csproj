@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UsePackagedBeepInstallerSdk Condition="'$(UsePackagedBeepInstallerSdk)' == ''">false</UsePackagedBeepInstallerSdk>
+    <BeepInstallerSdkVersion Condition="'$(BeepInstallerSdkVersion)' == ''">1.0.0</BeepInstallerSdkVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UsePackagedBeepInstallerSdk)' != 'true'">
+    <ProjectReference Include="..\..\..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UsePackagedBeepInstallerSdk)' == 'true'">
+    <PackageReference Include="TheTechIdea.Beep.Installer.Sdk" Version="$(BeepInstallerSdkVersion)" />
+  </ItemGroup>
+
+</Project>

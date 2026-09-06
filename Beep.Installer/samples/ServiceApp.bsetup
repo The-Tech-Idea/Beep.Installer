@@ -1,0 +1,77 @@
+; Beep Installer service sample script
+; Demonstrates the enterprise Windows service authoring surface.
+; Inspect the compiled dry-run plan with:
+;   Beep.Installer.exe /PLAN=samples\ServiceApp.bsetup /JSON
+
+[Setup]
+SchemaVersion=1.0
+AppName=ServiceApp
+AppId=70ff6133-02a0-451f-86ac-e1274af68f06
+AppVersion=1.0.0
+Publisher=The Tech Idea
+SourceDir=HelloApp
+DefaultDirName={pf}\ServiceApp
+DefaultGroupName=Beep Samples\ServiceApp
+OutputBaseFilename=Setup-ServiceApp-1.0.0
+Compression=zip
+CompressionLevel=6
+SolidCompression=yes
+SingleFile=yes
+SelfContained=no
+PrivilegesRequired=admin
+CreateUninstallEntry=yes
+Theme=Modern
+WelcomeTitle=Welcome to ServiceApp Setup
+WindowTitle=ServiceApp Setup
+SupportUrl=https://github.com/The-Tech-Idea
+LicenseText=MIT License\r\n\r\nSee LICENSE.txt for details.
+
+[Components]
+Name: "core"; Description: "Service application files"; Required: yes; Selected: yes; Types: typical; ConditionExpression: any
+
+[Conditions]
+Component: "core"; Type: AlwaysFalse; Expression: any
+Component: "core"; Type: AlwaysTrue
+
+[Supersedence]
+PackageId: "TheTechIdea.ServiceApp.Previous"; DisplayName: "ServiceApp Previous Package"; MinimumVersion: "0.9.0"; MaximumVersion: "0.9.9"; Mode: replace; UninstallPrevious: yes; DetectionKey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\ServiceAppPrevious"; Notes: "Replace the development-era previous package with the current ServiceApp package."
+
+[Files]
+Source: "HelloApp\MyApp.bat"; DestDir: "{app}"; DestName: "ServiceApp.bat"; Component: core
+Source: "HelloApp\readme.txt"; DestDir: "{app}"; DestName: "readme.txt"; Component: core
+Source: "HelloApp\appsettings.json"; DestDir: "{app}"; DestName: "appsettings.json"; Component: core
+Source: "HelloApp\wwwroot\index.html"; DestDir: "{app}\wwwroot"; DestName: "index.html"; Component: core
+[Services]
+Name: "ServiceApp"; DisplayName: "ServiceApp Background Worker"; Description: "Sample background service managed by Beep Installer."; ExecutablePath: "{app}\ServiceApp.exe"; Arguments: "--run-service"; StartMode: DelayedAuto; StartAfterInstall: yes; StopOnUninstall: yes; Account: LocalSystem; DependsOn: EventLog; FailureRestartDelaySeconds: 60
+
+[ScheduledTasks]
+Name: "BeepSamples\ServiceApp Maintenance"; Description: "Runs sample maintenance for ServiceApp."; ExecutablePath: "{app}\ServiceApp.bat"; Arguments: "--maintenance"; WorkingDirectory: "{app}"; Trigger: daily; StartTime: 02:15; Enabled: yes; RunElevated: yes; Username: SYSTEM; StopOnUninstall: yes
+
+[Firewall]
+Name: "BeepSamples ServiceApp API"; Description: "Allows inbound API traffic for the sample service."; Direction: in; Action: allow; Protocol: tcp; LocalPort: 443; Program: "{app}\ServiceApp.exe"; Profile: domain,private; Enabled: yes; RemoveOnUninstall: yes
+
+[FileAssociations]
+Extension: ".svcapp"; ProgId: "TheTechIdea.ServiceApp.Document"; Description: "ServiceApp sample document"; Executable: "{app}\ServiceApp.bat"; Arguments: "open ""%1"""; Icon: "{app}\ServiceApp.exe,0"; ContentType: "application/x-serviceapp"; PerceivedType: "document"; Verb: "open"; VerbDisplayName: "Open with ServiceApp"; RemoveOnUninstall: yes
+
+[Com]
+Clsid: "{8CF1D78E-2217-4B3C-B224-99DF615FE3D5}"; ProgId: "TheTechIdea.ServiceApp.Automation.1"; VersionIndependentProgId: "TheTechIdea.ServiceApp.Automation"; Description: "ServiceApp automation object"; Server: "{app}\ServiceApp.Automation.dll"; ServerType: inProc; ThreadingModel: Both; Version: "1.0"; RemoveOnUninstall: yes
+
+[Drivers]
+Inf: "{app}\Drivers\ServiceAppVirtualDevice.inf"; Name: "ServiceApp Virtual Device"; HardwareId: "ROOT\SERVICEAPPVIRT"; ClassName: "System"; InstallDevices: no; RequireSigned: yes; RemoveOnUninstall: yes; RebootBehavior: possible
+
+[ConfigTransforms]
+Target: "{app}\appsettings.json"; Name: "Set sample API endpoint"; Format: json; Operation: set; KeyPath: "Api.Endpoint"; Value: "https://api.example.test"; BackupOnInstall: yes; RestoreOnRollback: yes
+
+[IisAppPools]
+Name: "ServiceAppPool"; RuntimeVersion: "v4.0"; PipelineMode: integrated; Enable32Bit: no; Identity: ApplicationPoolIdentity; AutoStart: yes; StartAfterInstall: yes; RemoveOnUninstall: yes
+
+[IisSites]
+Name: "ServiceApp"; PhysicalPath: "{app}\wwwroot"; ApplicationPool: "ServiceAppPool"; StartAfterInstall: yes; RemoveOnUninstall: yes; Protocol: http; IpAddress: "*"; Port: 8080; Host: "localhost"
+
+[Registry]
+Root: HKLM; Subkey: "SOFTWARE\TheTechIdea\ServiceApp"; ValueName: "InstallPath"; ValueType: string; ValueData: "{app}"
+Root: HKLM; Subkey: "SOFTWARE\TheTechIdea\ServiceApp"; ValueName: "Version"; ValueType: string; ValueData: "1.0.0"
+
+[Exclude]
+**/*.pdb
+**/*.log

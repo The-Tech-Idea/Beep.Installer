@@ -175,11 +175,10 @@ None. No product code behavior changes in this phase.
 | `dotnet test` | build error, 0 tests run | tests run; step-dependent ones explicitly skipped with a phase reference |
 | Stale package silently used | invisible | CI assertion fails the build |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-The version bump to 3.1.2 means consumers pinned to `3.1.1` keep resolving the old package
-until they bump — which is correct and intended, because 3.1.1's published content is
-ambiguous. Nothing in the installer's own file formats or CLI changes.
+The installer consumes the current BeepDM package/source identity only. Remove ambiguous
+binding paths instead of preserving alternate resolution behavior.
 
 ## 7. Verification
 

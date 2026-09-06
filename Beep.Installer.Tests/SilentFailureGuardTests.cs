@@ -33,7 +33,7 @@ public class SilentFailureGuardTests
     }
 
     /// <summary>
-    /// The same rule for the WinForms shell. Two categories are legitimately silent and are
+    /// The same rule for the WinForms shell. Two teardown categories are explicitly allowed and are
     /// listed explicitly rather than filtered by a blanket pattern.
     /// </summary>
     [Fact]
@@ -45,10 +45,7 @@ public class SilentFailureGuardTests
                 // Disposal races on a form teardown: the exception TYPE is the documentation,
                 // and there is nothing useful to record once the window is gone.
                 !o.Contains("catch (ObjectDisposedException)") &&
-                !o.Contains("catch (InvalidOperationException)") &&
-                // Program.cs writes a crash log while already handling a fatal error; a
-                // failure there has nowhere left to be reported to.
-                !o.Contains("Program.cs"))
+                !o.Contains("catch (InvalidOperationException)"))
             .ToList();
 
         offenders.Should().BeEmpty(
@@ -58,7 +55,7 @@ public class SilentFailureGuardTests
 
     /// <summary>
     /// Sync-over-async deadlocks when called on a thread with a synchronization context — the
-    /// installer's UI thread. <c>Main</c> is exempt: it has no context to deadlock against.
+    /// installer's UI thread. Core has no exemptions.
     /// </summary>
     [Fact]
     public void CoreLibrary_DoesNotBlockOnAsync()
@@ -69,16 +66,6 @@ public class SilentFailureGuardTests
                 .Where(x => x.line.Contains(".GetAwaiter().GetResult()"))
                 .Select(x => $"{Path.GetFileName(file)}:{x.number}"))
             .ToList();
-
-        // Known, tracked exemptions — listed rather than filtered out silently, so the debt
-        // stays visible:
-        //   IInstallerHostBuilder — blocks deliberately; BuildPipeline.Run is synchronous by
-        //     contract and always runs on a background thread.
-        //   UpdateChecker/UpdateApplier — the ClickOnce update path is still synchronous.
-        //     Converting it async-all-the-way changes the public surface and the /PUBLISH CLI,
-        //     so it is scheduled as P4 rather than patched here.
-        var exempt = new[] { "IInstallerHostBuilder.cs", "UpdateChecker.cs", "UpdateApplier.cs" };
-        offenders.RemoveAll(o => exempt.Any(e => o.StartsWith(e, StringComparison.Ordinal)));
 
         offenders.Should().BeEmpty(
             "sync-over-async risks deadlock; found:" + Environment.NewLine +

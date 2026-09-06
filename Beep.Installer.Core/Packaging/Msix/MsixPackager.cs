@@ -13,10 +13,67 @@ public class MsixResult
 {
     public bool Success { get; set; }
     public string MsixPackagePath { get; set; } = "";
+    public string AppInstallerPath { get; set; } = "";
+    public string PackageUri { get; set; } = "";
+    public string AppInstallerUri { get; set; } = "";
     public string StagingDir { get; set; } = "";
     public string ManifestPath { get; set; } = "";
     public List<string> Warnings { get; } = new();
     public string? Error { get; set; }
+}
+
+public sealed class MsixAppInstallerOptions
+{
+    public string Uri { get; init; } = "";
+    public string OutputPath { get; init; } = "";
+    public IReadOnlyList<MsixAppInstallerPackageReference> OptionalPackages { get; init; } = Array.Empty<MsixAppInstallerPackageReference>();
+    public int HoursBetweenUpdateChecks { get; init; } = 24;
+    public bool ShowPrompt { get; init; } = true;
+    public bool UpdateBlocksActivation { get; init; }
+    public bool ForceUpdateFromAnyVersion { get; init; }
+}
+
+public sealed class MsixAppInstallerPackageReference
+{
+    public string Name { get; init; } = "";
+    public string Publisher { get; init; } = "";
+    public string Version { get; init; } = "";
+    public string Architecture { get; init; } = "x64";
+    public string Uri { get; init; } = "";
+    public MsixRelatedPackageKind Kind { get; init; } = MsixRelatedPackageKind.Package;
+}
+
+public interface IMsixPackageService
+{
+    MsixResult Package(
+        string payloadDir,
+        string outputDir,
+        string identity,
+        string publisher,
+        string displayName,
+        string version,
+        string? exeName = null,
+        string description = "",
+        string architecture = "x64",
+        MsixRelatedPackageKind packageKind = MsixRelatedPackageKind.Package,
+        MsixAppInstallerOptions? appInstaller = null);
+}
+
+public sealed class DefaultMsixPackageService : IMsixPackageService
+{
+    public MsixResult Package(
+        string payloadDir,
+        string outputDir,
+        string identity,
+        string publisher,
+        string displayName,
+        string version,
+        string? exeName = null,
+        string description = "",
+        string architecture = "x64",
+        MsixRelatedPackageKind packageKind = MsixRelatedPackageKind.Package,
+        MsixAppInstallerOptions? appInstaller = null)
+        => MsixPackager.Package(payloadDir, outputDir, identity, publisher, displayName, version, exeName, description, architecture, packageKind, appInstaller);
 }
 
 /// <summary>
@@ -27,6 +84,14 @@ public class MsixResult
 /// </summary>
 public static class MsixPackager
 {
+    private static void RequirePackageIdentity(string identity, string publisher)
+    {
+        var check = Msix.StoreReadinessChecker.CheckIdentityName(identity);
+        if (!check.Passed) throw new ArgumentException(check.Message, nameof(identity));
+        if (string.IsNullOrWhiteSpace(publisher))
+            throw new ArgumentException("MSIX publisher certificate subject is required.", nameof(publisher));
+    }
+
     private static readonly XNamespace AppPkg = "http://schemas.microsoft.com/appx/manifest/foundation/windows10";
     private static readonly XNamespace Uap = "http://schemas.microsoft.com/appx/manifest/uap/windows10";
 
@@ -71,7 +136,7 @@ public static class MsixPackager
                                          string displayName, string version, string exeName,
                                          string description = "", string architecture = "x64")
     {
-        publisher = string.IsNullOrWhiteSpace(publisher) ? "CN=Publisher" : publisher;
+        RequirePackageIdentity(identity, publisher);
         var safeExe = string.IsNullOrWhiteSpace(exeName) ? displayName + ".exe" : exeName;
         var arch = NormalizeArchitecture(architecture);
         var ver = NormalizeFourPart(version);
@@ -146,12 +211,13 @@ public static class MsixPackager
         return null;
     }
 
-    /// <summary>Invokes <c>MakeAppx pack</c>; MakeAppx diagnostics land in <paramref name="stderr"/>.</summary>
-    public static int RunMakeAppx(string makeAppx, string stagingDir, string outputMsix, out string stderr)
+    /// <summary>Invokes <c>MakeAppx pack</c> or <c>MakeAppx bundle</c>; diagnostics land in <paramref name="stderr"/>.</summary>
+    public static int RunMakeAppx(string makeAppx, string stagingDir, string outputPath, out string stderr, MsixRelatedPackageKind packageKind = MsixRelatedPackageKind.Package)
     {
         try
         {
-            var args = $"pack /d \"{stagingDir}\" /p \"{outputMsix}\" /o";
+            var verb = packageKind == MsixRelatedPackageKind.Bundle ? "bundle" : "pack";
+            var args = $"{verb} /d \"{stagingDir}\" /p \"{outputPath}\" /o";
             var psi = new ProcessStartInfo(makeAppx, args)
             {
                 UseShellExecute = false, CreateNoWindow = true,
@@ -174,15 +240,18 @@ public static class MsixPackager
 
     /// <summary>Orchestrator: stage, generate manifest, run MakeAppx (when available).</summary>
     public static MsixResult Package(string payloadDir, string outputDir, string identity, string publisher,
-                                    string displayName, string version, string exeName = null,
-                                    string description = "", string architecture = "x64")
+                                    string displayName, string version, string? exeName = null,
+                                    string description = "", string architecture = "x64",
+                                    MsixRelatedPackageKind packageKind = MsixRelatedPackageKind.Package,
+                                    MsixAppInstallerOptions? appInstaller = null)
     {
         var r = new MsixResult();
         try
         {
             if (string.IsNullOrWhiteSpace(payloadDir) || !Directory.Exists(payloadDir))
             { r.Error = $"Payload directory not found: {payloadDir}"; return r; }
-            publisher = string.IsNullOrWhiteSpace(publisher) ? "CN=Publisher" : publisher;
+            RequirePackageIdentity(identity, publisher);
+            var packageIdentity = identity;
 
             Directory.CreateDirectory(outputDir);
             var stagingDir = Path.Combine(outputDir, "stage");
@@ -193,19 +262,42 @@ public static class MsixPackager
                 ? (Directory.EnumerateFiles(stagingDir, "*.exe").Select(Path.GetFileName).FirstOrDefault() ?? (displayName + ".exe"))
                 : exeName;
 
-            r.ManifestPath = GenerateManifest(stagingDir, identity, publisher, displayName, version, safeExe, description, architecture);
+            r.ManifestPath = GenerateManifest(stagingDir, packageIdentity, publisher, displayName, version, safeExe, description, architecture);
+
+            r.MsixPackagePath = Path.Combine(outputDir, packageIdentity + PackageExtension(packageKind));
+
+            if (appInstaller != null && !string.IsNullOrWhiteSpace(appInstaller.Uri))
+            {
+                var endpoints = ResolveAppInstallerEndpoints(appInstaller.Uri, r.MsixPackagePath, packageIdentity, outputDir);
+                r.PackageUri = endpoints.PackageUri;
+                r.AppInstallerUri = endpoints.AppInstallerUri;
+                r.AppInstallerPath = GenerateAppInstaller(
+                    string.IsNullOrWhiteSpace(appInstaller.OutputPath)
+                        ? Path.Combine(outputDir, $"{packageIdentity}.appinstaller")
+                        : appInstaller.OutputPath,
+                    packageIdentity,
+                    publisher,
+                    version,
+                    architecture,
+                    endpoints.PackageUri,
+                    endpoints.AppInstallerUri,
+                    packageKind,
+                    appInstaller.OptionalPackages,
+                    appInstaller.HoursBetweenUpdateChecks,
+                    appInstaller.ShowPrompt,
+                    appInstaller.UpdateBlocksActivation,
+                    appInstaller.ForceUpdateFromAnyVersion);
+            }
 
             var makeAppx = FindMakeAppx();
             if (makeAppx == null)
             {
                 r.Warnings.Add("MakeAppx.exe not found — staging dir + AppxManifest.xml were produced but the .msix was NOT packaged. Install the Windows 10/11 SDK or run on a machine with the SDK to get MakeAppx.");
-                r.MsixPackagePath = Path.Combine(outputDir, (identity ?? displayName) + ".msix");
                 r.Success = true;
                 return r;
             }
 
-            r.MsixPackagePath = Path.Combine(outputDir, (identity ?? displayName) + ".msix");
-            var exit = RunMakeAppx(makeAppx, stagingDir, r.MsixPackagePath, out var stderr);
+            var exit = RunMakeAppx(makeAppx, stagingDir, r.MsixPackagePath, out var stderr, packageKind);
             if (exit != 0)
             {
                 r.Success = false;
@@ -222,6 +314,131 @@ public static class MsixPackager
         }
         return r;
     }
+
+    public static string GenerateAppInstaller(
+        string outputPath,
+        string identity,
+        string publisher,
+        string version,
+        string architecture,
+        string packageUri,
+        string appInstallerUri,
+        MsixRelatedPackageKind mainPackageKind = MsixRelatedPackageKind.Package,
+        IReadOnlyList<MsixAppInstallerPackageReference>? optionalPackages = null,
+        int hoursBetweenUpdateChecks = 24,
+        bool showPrompt = true,
+        bool updateBlocksActivation = false,
+        bool forceUpdateFromAnyVersion = false)
+    {
+        RequirePackageIdentity(identity, publisher);
+        var ns = XNamespace.Get("http://schemas.microsoft.com/appx/appinstaller/2021");
+        var normalizedHours = Math.Max(0, hoursBetweenUpdateChecks);
+        var normalizedVersion = NormalizeFourPart(version);
+        var normalizedArchitecture = NormalizeArchitecture(architecture);
+        var mainElementName = mainPackageKind == MsixRelatedPackageKind.Bundle ? "MainBundle" : "MainPackage";
+        var mainAttributes = new List<object>
+        {
+            new XAttribute("Name", identity),
+            new XAttribute("Publisher", publisher),
+            new XAttribute("Version", normalizedVersion),
+            new XAttribute("Uri", packageUri)
+        };
+        if (mainPackageKind == MsixRelatedPackageKind.Package)
+            mainAttributes.Insert(3, new XAttribute("ProcessorArchitecture", normalizedArchitecture));
+
+        var updateSettings = new XElement(ns + "UpdateSettings",
+            new XElement(ns + "OnLaunch",
+                new XAttribute("HoursBetweenUpdateChecks", normalizedHours),
+                new XAttribute("ShowPrompt", XmlBool(showPrompt)),
+                new XAttribute("UpdateBlocksActivation", XmlBool(updateBlocksActivation))));
+
+        if (forceUpdateFromAnyVersion)
+            updateSettings.Add(new XElement(ns + "ForceUpdateFromAnyVersion", "true"));
+
+        var optionalElements = (optionalPackages ?? Array.Empty<MsixAppInstallerPackageReference>())
+            .Where(p => !string.IsNullOrWhiteSpace(p.Name) && !string.IsNullOrWhiteSpace(p.Uri))
+            .Select(p =>
+            {
+                var packageElementName = p.Kind == MsixRelatedPackageKind.Bundle ? "Bundle" : "Package";
+                var packageAttributes = new List<object>
+                {
+                    new XAttribute("Name", p.Name),
+                    new XAttribute("Publisher", string.IsNullOrWhiteSpace(p.Publisher) ? publisher : p.Publisher),
+                    new XAttribute("Version", NormalizeFourPart(string.IsNullOrWhiteSpace(p.Version) ? version : p.Version)),
+                    new XAttribute("Uri", p.Uri)
+                };
+                if (p.Kind == MsixRelatedPackageKind.Package)
+                    packageAttributes.Insert(3, new XAttribute("ProcessorArchitecture", NormalizeArchitecture(p.Architecture)));
+                return new XElement(ns + packageElementName, packageAttributes.ToArray());
+            })
+            .ToArray();
+
+        var doc = new XDocument(
+            new XDeclaration("1.0", "utf-8", null),
+            new XElement(ns + "AppInstaller",
+                new XAttribute("Version", normalizedVersion),
+                new XAttribute("Uri", appInstallerUri),
+                new XElement(ns + mainElementName, mainAttributes.ToArray()),
+                optionalElements.Length == 0 ? null : new XElement(ns + "OptionalPackages", optionalElements),
+                updateSettings));
+
+        var dir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrWhiteSpace(dir))
+            Directory.CreateDirectory(dir);
+        doc.Save(outputPath);
+        return outputPath;
+    }
+
+    private static (string PackageUri, string AppInstallerUri) ResolveAppInstallerEndpoints(
+        string configuredUri,
+        string packagePath,
+        string identity,
+        string outputDir)
+    {
+        var packageFile = Path.GetFileName(packagePath);
+        var appInstallerFile = $"{identity}.appinstaller";
+        var value = configuredUri.Trim();
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute))
+        {
+            if (LooksLikePackageUri(absolute))
+            {
+                var appInstaller = new Uri(absolute, appInstallerFile).ToString();
+                return (absolute.ToString(), appInstaller);
+            }
+
+            var package = new Uri(EnsureTrailingSlash(absolute), packageFile).ToString();
+            var feed = new Uri(EnsureTrailingSlash(absolute), appInstallerFile).ToString();
+            return (package, feed);
+        }
+
+        var basePath = Path.IsPathRooted(value) ? value : Path.Combine(outputDir, value);
+        var packageLocal = LooksLikePackagePath(basePath)
+            ? Path.GetFullPath(basePath)
+            : Path.GetFullPath(Path.Combine(basePath, packageFile));
+        var appInstallerLocal = LooksLikePackagePath(basePath)
+            ? Path.Combine(Path.GetDirectoryName(packageLocal) ?? outputDir, appInstallerFile)
+            : Path.GetFullPath(Path.Combine(basePath, appInstallerFile));
+        return (new Uri(packageLocal).ToString(), new Uri(appInstallerLocal).ToString());
+    }
+
+    private static Uri EnsureTrailingSlash(Uri uri)
+    {
+        var value = uri.ToString();
+        return value.EndsWith("/", StringComparison.Ordinal) ? uri : new Uri(value + "/");
+    }
+
+    private static bool LooksLikePackageUri(Uri uri)
+        => LooksLikePackagePath(uri.AbsolutePath);
+
+    private static bool LooksLikePackagePath(string path)
+        => path.EndsWith(".msix", StringComparison.OrdinalIgnoreCase)
+           || path.EndsWith(".msixbundle", StringComparison.OrdinalIgnoreCase);
+
+    private static string XmlBool(bool value) => value ? "true" : "false";
+
+    private static string PackageExtension(MsixRelatedPackageKind packageKind)
+        => packageKind == MsixRelatedPackageKind.Bundle ? ".msixbundle" : ".msix";
 
     /// <summary>MSIX versions are 4-octet numeric (x.y.z[.w]).</summary>
     public static string NormalizeFourPart(string version)

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "msi-maintenance",
+      "category": "lifecycle",
+      "description": "Install, repair and uninstall the MSI package silently as the baseline enterprise maintenance contract.",
+      "requiredArtifacts": ["msi"],
+      "actions": ["msi-install", "msi-repair", "msi-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=msi-maintenance"]
+    },
+    {
+      "id": "mst-enterprise-profile",
+      "category": "transform",
+      "description": "Install the MSI with the enterprise MST transform and then uninstall it silently.",
+      "requiredArtifacts": ["msi", "mst"],
+      "actions": ["mst-install", "mst-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=mst-enterprise-profile"]
+    },
+    {
+      "id": "upgrade-downgrade-policy",
+      "category": "upgrade",
+      "description": "Install the baseline MSI, upgrade to the updated MSI, verify the older MSI is rejected as a downgrade, then uninstall.",
+      "requiredArtifacts": ["msi", "msi-updated"],
+      "actions": ["msi-install", "msi-upgrade", "msi-downgrade-blocked", "msi-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=upgrade-downgrade-policy", "UPGRADE_POLICY=strict"]
+    },
+    {
+      "id": "pnp-driver-store-policy",
+      "category": "driver",
+      "description": "Exercise lifecycle install/uninstall for MSI packages that carry PnP driver-store custom actions.",
+      "requiredArtifacts": ["msi"],
+      "actions": ["driver-store-before", "msi-install", "driver-store-after-install", "msi-uninstall", "driver-store-after-uninstall"],
+      "properties": ["BEEP_MATRIX_SCENARIO=pnp-driver-store-policy", "DRIVER_POLICY=require-signed"]
+    },
+    {
+      "id": "msp-supersedence-removal",
+      "category": "patch",
+      "description": "Apply and remove the MSP patch silently as the base supersedence/removal qualification contract.",
+      "requiredArtifacts": ["msp", "msp-product"],
+      "actions": ["msp-inventory-before", "msp-apply", "msp-inventory-after-apply", "msp-remove", "msp-inventory-after-remove"],
+      "properties": ["BEEP_MATRIX_SCENARIO=msp-supersedence-removal", "PATCH_POLICY=supersede"]
+    }
+  ]
+}

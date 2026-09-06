@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace Beep.Installer.Engine;
@@ -72,6 +73,8 @@ public sealed class DotnetPublishHostBuilder : IInstallerHostBuilder
     {
         try
         {
+            request.CancellationToken.ThrowIfCancellationRequested();
+
             var csprojPath = _projectPathResolver();
             if (string.IsNullOrWhiteSpace(csprojPath) || !File.Exists(csprojPath))
             {
@@ -104,28 +107,70 @@ public sealed class DotnetPublishHostBuilder : IInstallerHostBuilder
                 return false;
             }
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
+            var stdout = new StringBuilder();
+            var stderr = new StringBuilder();
+            using var stdoutClosed = new ManualResetEventSlim(false);
+            using var stderrClosed = new ManualResetEventSlim(false);
 
-            if (!process.WaitForExit((int)request.Timeout.TotalMilliseconds))
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data == null)
+                {
+                    stdoutClosed.Set();
+                    return;
+                }
+
+                stdout.AppendLine(e.Data);
+            };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data == null)
+                {
+                    stderrClosed.Set();
+                    return;
+                }
+
+                stderr.AppendLine(e.Data);
+            };
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            var deadlineUtc = DateTime.UtcNow.Add(request.Timeout);
+            while (!process.WaitForExit(250))
+            {
+                if (request.CancellationToken.IsCancellationRequested)
+                {
+                    try { process.Kill(entireProcessTree: true); } catch { /* already gone */ }
+                    result.Errors.Add("dotnet publish was canceled.");
+                    return false;
+                }
+
+                if (DateTime.UtcNow >= deadlineUtc)
+                {
+                    try { process.Kill(entireProcessTree: true); } catch { /* already gone */ }
+                    result.Errors.Add($"dotnet publish timed out after {request.Timeout.TotalMinutes:0.#} minutes.");
+                    return false;
+                }
+            }
+
+            if (request.CancellationToken.IsCancellationRequested)
             {
                 try { process.Kill(entireProcessTree: true); } catch { /* already gone */ }
-                result.Errors.Add($"dotnet publish timed out after {request.Timeout.TotalMinutes:0.#} minutes.");
+                result.Errors.Add("dotnet publish was canceled.");
                 return false;
             }
 
             // The parameterless overload additionally waits for redirected output to flush.
             // Without it the reads below can return truncated text on a fast-exiting process.
             process.WaitForExit();
-
-            var stdout = stdoutTask.GetAwaiter().GetResult();
-            var stderr = stderrTask.GetAwaiter().GetResult();
+            stdoutClosed.Wait(TimeSpan.FromSeconds(2));
+            stderrClosed.Wait(TimeSpan.FromSeconds(2));
 
             if (process.ExitCode != 0)
             {
                 result.Errors.Add($"dotnet publish failed (exit {process.ExitCode}).");
-                foreach (var line in NonEmptyLines(stderr)) result.Errors.Add(line);
-                foreach (var line in NonEmptyLines(stdout)) result.Warnings.Add(line);
+                foreach (var line in NonEmptyLines(stderr.ToString())) result.Errors.Add(line);
+                foreach (var line in NonEmptyLines(stdout.ToString())) result.Warnings.Add(line);
                 return false;
             }
 

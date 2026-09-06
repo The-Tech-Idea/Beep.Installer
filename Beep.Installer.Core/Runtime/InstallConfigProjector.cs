@@ -43,6 +43,7 @@ public static class InstallConfigProjector
 
             // ── Identity (load-bearing: manifest, restore point, custom-action macros) ──
             ProductName = project.AppName ?? "",
+            AppId = project.AppId ?? "",
             ProductVersion = project.AppVersion ?? "",
             Publisher = project.AppPublisher ?? "",
 

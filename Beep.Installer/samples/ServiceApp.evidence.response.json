@@ -1,0 +1,8 @@
+{
+  "releaseEvidence": "Beep.Installer\\samples\\ServiceApp.bsetup",
+  "policy": "Beep.Installer\\samples\\enterprise-policy.sample.json",
+  "installer": "Beep.Installer\\bin\\Debug\\net10.0-windows\\Beep.Installer.exe",
+  "out": "Beep.Installer\\samples\\evidence",
+  "sourceRoot": "Beep.Installer\\samples\\HelloApp",
+  "sourceRevision": "replace-with-git-commit"
+}

@@ -47,7 +47,7 @@ public static class UpdateApplier
     public static UpdateResult DownloadAndStage(string remoteManifestUrl, string stageRoot, Func<string, byte[]>? fetcher = null)
     {
         var r = new UpdateResult { StagedDir = stageRoot };
-        byte[] Get(string url) => fetcher != null ? fetcher(url) : _http.GetByteArrayAsync(url).GetAwaiter().GetResult();
+        byte[] Get(string url) => fetcher != null ? fetcher(url) : FetchBytes(url);
         try
         {
             Directory.CreateDirectory(stageRoot);
@@ -87,6 +87,17 @@ public static class UpdateApplier
             Diag.Warn("UpdateApplier", "download+stage failed", ex);
         }
         return r;
+    }
+
+    private static byte[] FetchBytes(string url)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var response = _http.Send(request);
+        response.EnsureSuccessStatusCode();
+        using var stream = response.Content.ReadAsStream();
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
     }
 
     /// <summary>

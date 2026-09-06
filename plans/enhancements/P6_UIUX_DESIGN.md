@@ -49,8 +49,8 @@ only the wizard shell follows it today.
 
 Replace the single label (`:437-444`) with a `BeepProgressBar` + step label + optional
 details expander fed by the existing `Progress<PassedArgs>` (`:486-498`). `PassedArgs`
-already carries messages; percent derives from completed-step count over
-`InstallWizardGraphFactory.StepIds` total (P5). Cancel button requests the token from P3.
+already carries messages; percent derives from completed-step count over the Core-owned
+`StepIds` total (P5). Cancel button requests the token from P3.
 
 ### 2.3 Branding pipeline (U1)
 
@@ -84,7 +84,7 @@ already carries messages; percent derives from completed-step count over
   pages stop self-padding, the shell's 24px content padding (`:277`) is the single source.
 - `LanguageManagerForm` toolbar (`:45-71`): fixed x-pixels → `FlowLayoutPanel`; emoji
   glyphs → embedded SVG icons (`Resources/Icons`, U12/#14).
-- Builder plain controls migrate to Beep equivalents opportunistically per section
+- Builder plain controls are replaced with Beep equivalents opportunistically per section
   (Open Decision D4 sets the ambition level: token-layer restyle only vs full Beep
   control adoption).
 
@@ -123,10 +123,10 @@ N/A (desktop UI).
 | Branding asset missing (image/icon path) | n/a (never loaded) | warning badge in builder; runtime falls back to defaults silently |
 | Stepper jump past failing page | allowed (skips validation) | blocked; failing page shown with its message |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-`.bsetup` unchanged. Old scripts without `Branding` values render exactly like today
-(token defaults match current hardcoded palette).
+`.bsetup` branding fields follow the current schema. Missing optional branding values use the
+current token defaults.
 
 ## 7. Verification
 
@@ -153,7 +153,7 @@ LTR or fixed string widths. Undo/redo for the builder (backlog).
 1. **6.A.1** Wizard: stepper from pages + gated jumps + focus. Verify: manual walkthrough; can't skip license.
 2. **6.A.2** Install progress bar + cancel. Verify: visible progress on selftest-style install.
 3. **6.A.3** Branding pipeline runtime + builder preview. Verify: custom-branding build shows colors/banner.
-4. **6.B.1** `InstallerTheme` tokens; migrate wizard + dialogs + builder palettes. Verify: 150% DPI pass, dark Beep theme sanity.
+4. **6.B.1** `InstallerTheme` tokens; refresh wizard + dialogs + builder palettes. Verify: 150% DPI pass, dark Beep theme sanity.
 5. **6.B.2** Page/dialog re-layout to containers + DPI mode everywhere. Verify: DPI matrix.
 6. **6.C.1** Async scan/tree/sizing + real cancellation. Verify: 10k-file scan responsive; cancel works.
 7. **6.C.2** Grid/editor improvements + contextual dialogs + inline validation. Verify: component edit flow without re-selection.

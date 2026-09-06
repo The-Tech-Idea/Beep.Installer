@@ -195,4 +195,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>Zuletzt verwendet</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>Update-Center</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>Vertrauenswürdige Projektidentität</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>Pfad oder URL des signierten Feeds</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>PEM-Pfad des öffentlichen Feed-Schlüssels</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>PEM-Pfad des öffentlichen Delta-Schlüssels</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Ordner der installierten Anwendung</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>Installierte Version</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>Aktueller Kanal</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>Zielkanal</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>Gerätekennung für den Rollout</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>Lokaler Delta-Ordner (optional)</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>Pfad des Wiederherstellungsjournals</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>Update-Status und Diagnose</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>Installierte Version und vertrauenswürdige öffentliche Schlüssel eingeben. Anwendung vor dem Update schließen.</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Updates suchen</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>Update anwenden</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>Wiederherstellen</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>Zurücksetzen</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>Schließen</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>Öffentliche Schlüssel (*.pem)|*.pem|Alle Dateien (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>JSON-Dateien (*.json)|*.json|Alle Dateien (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>Pfad konnte nicht ausgewählt werden: {0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>Abbruch angefordert. Sicherer Haltepunkt wird abgewartet.</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0}: Anwendungsdateien werden geändert. Anwendung schließen. Fortfahren?</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>Wartung bestätigen</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Signatur, Richtlinie und Berechtigung werden geprüft…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>Wartung wird ausgeführt…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>Vorhandenen Ordner der installierten Anwendung auswählen.</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>Update angewendet. Wiederherstellungsjournal: {0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>Richtlinienfehler vor der Wartung beheben.</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>Wiederherstellungsvorschau: {0}&#10;Installation: {1}&#10;Ergebnisversion: {2}&#10;Journal: {3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>Wiederherstellung fortsetzen? Dateien werden vor Änderungen erneut geprüft.</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>{0} abgeschlossen. {1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>Vorgang abgebrochen. Vor dem Anwenden erneut prüfen.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Wartung fehlgeschlagen: {0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>Signatur vertrauenswürdig.</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>Signatur nicht vertrauenswürdig.</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>Keine Update-Entscheidung.</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>Entscheidung: {0}</value></data>
 </root>

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
+PackageIdentifier: TheTechIdea.ServiceApp
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: "The Tech Idea"
+PackageName: ServiceApp
+License: MIT
+ShortDescription: "ServiceApp sample MSIX bundle installer."
+Moniker: serviceapp
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0

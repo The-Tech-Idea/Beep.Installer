@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.Installer.Extensibility;
 using Beep.Installer.Models;
 using TheTechIdea.Beep.Installer;
 using TheTechIdea.Beep.Installer.Steps;
@@ -35,17 +36,24 @@ public static class InstallContextBuilder
         RollbackManager? rollback = null,
         string? payloadRoot = null,
         IDictionary<string, string>? customValues = null,
-        bool force = false)
+        bool force = false,
+        string? journalPath = null)
     {
         ArgumentNullException.ThrowIfNull(project);
+        perUser = InstallScopeResolver.IsPerUser(project, perUser);
         if (string.IsNullOrWhiteSpace(installPath))
             throw new ArgumentException("Install path is required.", nameof(installPath));
 
+        // The runtime model is the effective selection consumed by policy, plans and journals.
+        project.DefaultScope = perUser ? InstallationScope.User : InstallationScope.Machine;
         var context = new SetupContext();
         var config = InstallConfigProjector.ToInstallConfig(project, payloadRoot);
 
+        context.Properties[InstallContextKeys.InstallProject] = project;
         context.Properties[InstallContextKeys.InstallConfig] = config;
         context.Properties[InstallContextKeys.InstallPath] = installPath;
+        context.Properties[InstallContextKeys.ResourceExecutionJournalPath] =
+            ResourceExecutionJournalStore.ResolvePath(installPath, project.AppId, journalPath);
 
         // Boxed value types — steps read these with TryGetValue + pattern match, because
         // TryGetProperty<T> is constrained to reference types.
@@ -66,8 +74,12 @@ public static class InstallContextBuilder
             new List<CustomAction>(project.CustomActions);
 
         if (customValues != null && customValues.Count > 0)
+        {
             context.Properties[InstallContextKeys.CustomValues] =
                 new Dictionary<string, string>(customValues, StringComparer.OrdinalIgnoreCase);
+            context.Properties[InstallContextKeys.RuntimeVariables] =
+                new Dictionary<string, string>(customValues, StringComparer.OrdinalIgnoreCase);
+        }
 
         // Payload location hints for our own payload steps. These previously came from a
         // global static, which made the runtime install path non-reentrant and untestable.
@@ -83,23 +95,57 @@ public static class InstallContextBuilder
         return context;
     }
 
+    /// <summary>Builds a repair context using the scope recorded by the installation.</summary>
+    public static SetupContext ForRepair(
+        InstallProject project,
+        string installPath,
+        IDictionary<string, string>? runtimeVariables = null,
+        string? journalPath = null)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        if (string.IsNullOrWhiteSpace(installPath))
+            throw new ArgumentException("Install path is required.", nameof(installPath));
+        var perUser = InstallScopeResolver.ReadInstalledScope(project, installPath, journalPath)
+            ?? InstallScopeResolver.IsPerUser(project);
+        project.DefaultScope = perUser ? InstallationScope.User : InstallationScope.Machine;
+        var context = ForInstall(project, installPath, perUser, customValues: runtimeVariables, journalPath: journalPath);
+        context.Properties[InstallContextKeys.ResourceExecutionMode] = "repair";
+        if (journalPath is not null)
+            context.Properties[InstallContextKeys.ResourceExecutionJournalPath] = journalPath;
+        return context;
+    }
+
     /// <summary>
     /// Builds the context for an uninstall run. UninstallStep reads the install manifest from
     /// disk for the file/registry/shortcut inventory; the config is still needed for scope.
     /// </summary>
-    public static SetupContext ForUninstall(InstallProject project, string installPath, bool perUser)
+    public static SetupContext ForUninstall(
+        InstallProject project,
+        string installPath,
+        bool perUser,
+        IDictionary<string, string>? runtimeVariables = null,
+        string? journalPath = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         if (string.IsNullOrWhiteSpace(installPath))
             throw new ArgumentException("Install path is required.", nameof(installPath));
 
+        perUser = InstallScopeResolver.ReadInstalledScope(project, installPath, journalPath)
+            ?? InstallScopeResolver.IsPerUser(project, perUser);
+        project.DefaultScope = perUser ? InstallationScope.User : InstallationScope.Machine;
         var context = new SetupContext();
+        context.Properties[InstallContextKeys.InstallProject] = project;
         context.Properties[InstallContextKeys.InstallConfig] =
             InstallConfigProjector.ToInstallConfig(project);
         context.Properties[InstallContextKeys.InstallPath] = installPath;
+        context.Properties[InstallContextKeys.ResourceExecutionJournalPath] =
+            ResourceExecutionJournalStore.ResolvePath(installPath, project.AppId, journalPath);
         context.Properties[InstallContextKeys.PerUser] = perUser;
         context.Properties[InstallContextKeys.CustomActions] =
             new List<CustomAction>(project.CustomActions);
+        if (runtimeVariables != null && runtimeVariables.Count > 0)
+            context.Properties[InstallContextKeys.RuntimeVariables] =
+                new Dictionary<string, string>(runtimeVariables, StringComparer.OrdinalIgnoreCase);
         return context;
     }
 

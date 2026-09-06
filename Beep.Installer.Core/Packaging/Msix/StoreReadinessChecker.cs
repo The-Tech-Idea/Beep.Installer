@@ -28,8 +28,13 @@ public static class StoreReadinessChecker
     private static readonly XNamespace AppPkg = XNamespace.Get("http://schemas.microsoft.com/appx/manifest/foundation/windows10");
     private static readonly XNamespace W3CDsig = XNamespace.Get("http://www.w3.org/2000/09/xmldsig#");
 
-    /// <summary>Identity name: reverse-DNS, alphanumeric/hyphens, no leading digit, ≥3 chars.</summary>
-    private static readonly Regex IdentityNameRe = new(@"^[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z0-9-]+)+$", RegexOptions.Compiled);
+    /// <summary>Windows package name: 3–50 ASCII letters, digits, periods or hyphens.</summary>
+    private static readonly Regex IdentityNameRe = new(@"\A[A-Za-z0-9.-]{3,50}\z", RegexOptions.Compiled);
+
+    public static CheckResult CheckIdentityName(string? name)
+        => name is not null && IdentityNameRe.IsMatch(name)
+            ? Info("Identity format", "Package identity name is valid.")
+            : Error("Identity format", "MSIX identity is required: use 3–50 ASCII letters, digits, periods or hyphens. Display names do not supply package identity.");
 
     /// <summary>Runs all checks. The order is stable; a Partner Center upload wants zero Error results.</summary>
     public static IReadOnlyList<CheckResult> Check(string stagingDir)
@@ -48,11 +53,7 @@ public static class StoreReadinessChecker
         var doc = TryLoad(stagingDir);
         if (doc == null) return Error("Identity format", "AppxManifest.xml could not be loaded.");
         var name = (string?)doc.Root?.Element(AppPkg + "Identity")?.Attribute("Name");
-        if (string.IsNullOrWhiteSpace(name))
-            return Error("Identity format", "<Identity Name=\"\"> is missing or empty.");
-        return IdentityNameRe.IsMatch(name!)
-            ? Info("Identity format", "Identity name '" + name + "' is a valid reverse-DNS identifier.")
-            : Error("Identity format", "Identity name '" + name + "' is not a valid reverse-DNS identifier (e.g. 'MyCompany.MyApp').");
+        return CheckIdentityName(name);
     }
 
     private static CheckResult CheckVersion(string stagingDir)

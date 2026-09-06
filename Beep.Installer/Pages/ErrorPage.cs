@@ -13,10 +13,12 @@ public class ErrorPage : UserControl, IInstallerPage
     private BeepLabel _title = null!;
     private TextBox _details = null!;
     private BeepButton _viewLogBtn = null!;
+    private BeepButton _viewSupportBundleBtn = null!;
     private BeepButton _retryBtn = null!;
     private BeepLabel _hint = null!;
 
     private string? _logPath;
+    private string? _supportBundlePath;
     private bool _retryRequested;
 
     public string PageTitle => "Installation Failed";
@@ -66,6 +68,22 @@ public class ErrorPage : UserControl, IInstallerPage
                 Process.Start("notepad.exe", _logPath);
             else
                 MessageBox.Show(this, "No log file was generated.", "View Log",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        };
+        _viewSupportBundleBtn = new BeepButton
+        {
+            Text = "View Support Bundle",
+            Location = new Point(170, 260),
+            Size = new Size(160, 30),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+            Visible = false
+        };
+        _viewSupportBundleBtn.Click += (_, _) =>
+        {
+            if (!string.IsNullOrEmpty(_supportBundlePath) && File.Exists(_supportBundlePath))
+                Process.Start("notepad.exe", _supportBundlePath);
+            else
+                MessageBox.Show(this, "No support bundle was generated.", "Support Bundle",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
         _retryBtn = new BeepButton
@@ -89,7 +107,7 @@ public class ErrorPage : UserControl, IInstallerPage
             Text = "Check the log for details, or click Retry to attempt the installation again."
         };
 
-        Controls.AddRange(new Control[] { _icon, _title, _details, _viewLogBtn, _retryBtn, _hint });
+        Controls.AddRange(new Control[] { _icon, _title, _details, _viewLogBtn, _viewSupportBundleBtn, _retryBtn, _hint });
 
         LoadErrorIcon();
     }
@@ -117,13 +135,15 @@ public class ErrorPage : UserControl, IInstallerPage
 
     public void OnEnter(InstallContext ctx) { }
 
-    public void SetError(string errorMessage, string? logPath = null)
+    public void SetError(string errorMessage, string? logPath = null, string? supportBundlePath = null)
     {
         _details.Text = string.IsNullOrWhiteSpace(errorMessage)
             ? "An unknown error occurred during installation. Please check the log for details."
             : errorMessage;
         _logPath = logPath;
+        _supportBundlePath = supportBundlePath;
         _viewLogBtn.Visible = !string.IsNullOrEmpty(logPath) && File.Exists(logPath);
+        _viewSupportBundleBtn.Visible = !string.IsNullOrEmpty(supportBundlePath) && File.Exists(supportBundlePath);
         _retryRequested = false;
     }
 

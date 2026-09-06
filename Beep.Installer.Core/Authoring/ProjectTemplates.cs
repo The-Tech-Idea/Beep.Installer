@@ -36,14 +36,16 @@ public static class ProjectTemplates
         new ProjectTemplate { Id = ServiceId,  Name = "Windows Service", Description = "Background service: core component + Start Menu shortcut.", Category = "Service" },
     };
 
-    /// <summary>Creates a fresh installer model from the named template. Unknown ids fall back to Empty.</summary>
+    /// <summary>Creates a fresh installer model from the named template.</summary>
     public static InstallProject Create(string templateId, string productName, string version, string publisher, string sourceDirectory)
     {
         var p = InstallerProjectFactory.CreateNew(productName, version, publisher, sourceDirectory);
         var product = string.IsNullOrWhiteSpace(productName) ? "MyApplication" : productName.Trim();
 
-        switch ((templateId ?? EmptyId).ToLowerInvariant())
+        switch ((templateId ?? "").ToLowerInvariant())
         {
+            case EmptyId:
+                break;
             case ConsoleId:
                 AddCoreComponent(p, "Console Application");
                 p.Shortcuts.Add(Shortcut(product, "consoleapp.exe", ShortcutLocation.StartMenu, product));
@@ -59,6 +61,8 @@ public static class ProjectTemplates
                 AddCoreComponent(p, "Service Host");
                 p.Shortcuts.Add(Shortcut(product, "servicehost.exe", ShortcutLocation.Startup, ""));
                 break;
+            default:
+                throw new ArgumentException($"Unknown project template '{templateId}'.", nameof(templateId));
         }
         return p;
     }

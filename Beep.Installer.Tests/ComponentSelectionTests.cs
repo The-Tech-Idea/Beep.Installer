@@ -1,4 +1,8 @@
+using System;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using Beep.Installer.Extensibility;
 using Beep.Installer.Models;
 using System.Collections.Generic;
 using Beep.Installer.Engine;
@@ -88,6 +92,82 @@ public class ComponentSelectionTests
         config.Components[0].Selected.Should().BeTrue();
         config.Components[1].Selected.Should().BeTrue();
         config.Components[2].Selected.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ConditionExpression_ControlsAuthoringPreviewAvailability()
+    {
+        var config = MakeConfig();
+        config.Components[1].ConditionExpression = ConditionExpressionMode.Any;
+        config.Components[1].Conditions.Add(new InstallCondition { Type = ConditionType.AlwaysFalse });
+        config.Components[1].Conditions.Add(new InstallCondition { Type = ConditionType.AlwaysTrue });
+        config.Components[2].ConditionExpression = ConditionExpressionMode.Not;
+        config.Components[2].Conditions.Add(new InstallCondition { Type = ConditionType.AlwaysTrue });
+
+        ComponentSelection.AvailableComponents(config)
+            .Select(c => c.Id)
+            .Should().Contain("docs")
+            .And.NotContain("extras");
+    }
+
+    [Fact]
+    public void AuthoringPreview_UsesInjectedEnvironmentFacts()
+    {
+        var config = MakeConfig();
+        config.Components[1].Conditions.Add(new InstallCondition
+        {
+            Type = ConditionType.Architecture,
+            Value = "arm64",
+            Operator = "=="
+        });
+        config.Components[2].Conditions.Add(new InstallCondition
+        {
+            Type = ConditionType.FileExists,
+            Value = "{InstallPath}\\marker.txt"
+        });
+
+        var installRoot = Path.Combine(Path.GetTempPath(), "beep-component-facts-" + Guid.NewGuid().ToString("N"));
+        var facts = new FakeConditionFacts { Architecture = "arm64" };
+        facts.Files.Add(Path.Combine(installRoot, "marker.txt"));
+
+        ComponentSelection.AvailableComponents(config, facts, installRoot)
+            .Select(component => component.Id)
+            .Should().Contain(new[] { "docs", "extras" });
+
+        facts.Architecture = "x64";
+        facts.Files.Clear();
+
+        ComponentSelection.AvailableComponents(config, facts, installRoot)
+            .Select(component => component.Id)
+            .Should().NotContain(new[] { "docs", "extras" });
+    }
+
+    [Fact]
+    public void SelectedSize_ExcludesRequiredComponentsWhenConditionsFail()
+    {
+        var config = MakeConfig();
+        config.Components[0].Conditions.Add(new InstallCondition { Type = ConditionType.AlwaysFalse });
+        ComponentSelection.ApplyInstallType(config, InstallationType.Complete, new FakeConditionFacts());
+
+        config.Components[0].Selected.Should().BeFalse();
+        ComponentSelection.SelectedSize(config, new FakeConditionFacts()).Should().Be(20 + 50 + 200);
+    }
+
+    private sealed class FakeConditionFacts : IInstallerConditionFacts
+    {
+        public Version OsVersion { get; set; } = new(10, 0, 22631);
+        public string Architecture { get; set; } = "x64";
+        public bool IsAdmin { get; set; }
+        public HashSet<string> Files { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<string> Directories { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> RegistryValues { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public bool FileExists(string path) => Files.Contains(path);
+        public bool DirectoryExists(string path) => Directories.Contains(path);
+        public bool RegistryKeyExists(string keyPath) => RegistryValues.Keys.Any(key => key.StartsWith(keyPath + "|", StringComparison.OrdinalIgnoreCase));
+        public string? RegistryValue(string keyPath, string valueName)
+            => RegistryValues.TryGetValue($"{keyPath}|{valueName}", out var value) ? value : null;
+        public CommandConditionResult RunCommand(string command) => new(0, "");
     }
 }
 

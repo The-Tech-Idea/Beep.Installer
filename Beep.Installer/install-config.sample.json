@@ -116,7 +116,7 @@
       "overwrite": false,
       "defaultValues": {
         "Logging:LogLevel:Default": "Information",
-        "ConnectionStrings:DefaultConnection": "Data Source={InstallPath}\\beep.db"
+        "Api:Endpoint": "https://api.example.test"
       }
     }
   ]

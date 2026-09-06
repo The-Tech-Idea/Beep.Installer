@@ -59,6 +59,31 @@ public class InstallContextBridgeTests
     };
 
     [Fact]
+    public void Projection_PreservesAppIdThroughRuntimeSerializationAndRegistration()
+    {
+        var project = MakeProject();
+        project.AppId = System.Guid.NewGuid().ToString("D");
+        project.AppName = "BeepIdentityBridge_" + System.Guid.NewGuid().ToString("N");
+        var config = InstallConfigProjector.ToInstallConfig(project);
+        var roundTrip = System.Text.Json.JsonSerializer.Deserialize<InstallConfig>(
+            System.Text.Json.JsonSerializer.Serialize(config))!;
+        roundTrip.AppId.Should().Be(project.AppId);
+        var path = UpgradeEngine.RegistrationKeyPath(project.AppId);
+        try
+        {
+            new UpgradeEngine().RegisterInstall(roundTrip, System.IO.Path.GetTempPath(), Microsoft.Win32.Registry.CurrentUser);
+            using var registration = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(path);
+            registration.Should().NotBeNull();
+            registration!.GetValue("AppId").Should().Be(project.AppId);
+            registration.GetValue("Publisher").Should().Be(project.AppPublisher);
+        }
+        finally
+        {
+            Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(path, throwOnMissingSubKey: false);
+        }
+    }
+
+    [Fact]
     public void Projection_MapsEveryLoadBearingField()
     {
         var config = InstallConfigProjector.ToInstallConfig(MakeProject());

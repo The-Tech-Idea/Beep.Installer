@@ -6,12 +6,17 @@ using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using Beep.Installer.Models;
+using Beep.Installer.Engine.Msix;
+using Beep.Installer.Engine.Updates;
 using Microsoft.Win32;
 using TheTechIdea.Beep.Installer;
 
 namespace Beep.Installer.Engine;
+
+#pragma warning disable CA1416 // RegistryValueKind values are build metadata for generated installer operations; this file does not access the host registry.
 
 /// <summary>
 /// SINGLE self-contained class that produces a working, uncorrupted installer
@@ -40,6 +45,9 @@ public class BuildPipeline
         public string PayloadPath { get; set; } = "";
         public string SetupScriptPath { get; set; } = "";
         public string MsixPackagePath { get; set; } = "";
+        public string AppInstallerPath { get; set; } = "";
+        public string MsixCapabilityReportPath { get; set; } = "";
+        public List<BuildSigningEvidence> SigningEvidence { get; } = new();
         public long OutputSizeBytes { get; set; }
         public int FileCount { get; set; }
         public long PayloadSizeBytes { get; set; }
@@ -56,6 +64,9 @@ public class BuildPipeline
                 sb.AppendLine($"Output   : {OutputFile}");
                 sb.AppendLine($"Setup    : {SetupScriptPath}");
                 sb.AppendLine($"Payload  : {PayloadPath}");
+                if (!string.IsNullOrWhiteSpace(MsixPackagePath)) sb.AppendLine($"MSIX     : {MsixPackagePath}");
+                if (!string.IsNullOrWhiteSpace(AppInstallerPath)) sb.AppendLine($"Updates  : {AppInstallerPath}");
+                if (!string.IsNullOrWhiteSpace(MsixCapabilityReportPath)) sb.AppendLine($"MSIX caps: {MsixCapabilityReportPath}");
                 sb.AppendLine($"Files    : {FileCount:N0}");
                 sb.AppendLine($"Size     : {OutputSizeBytes / 1024.0:F1} KB (executable)");
                 sb.AppendLine($"Payload  : {PayloadSizeBytes / 1024.0 / 1024.0:F2} MB");
@@ -65,6 +76,44 @@ public class BuildPipeline
                 return sb.ToString();
             }
         }
+    }
+
+    public sealed class BuildSigningEvidence
+    {
+        public string ArtifactKind { get; init; } = "";
+        public string ArtifactPath { get; init; } = "";
+        public string CertificatePath { get; init; } = "";
+        public string TimestampUrl { get; init; } = "";
+        public string ToolPath { get; init; } = "";
+        public string ToolVersion { get; init; } = "";
+        public string CertificateSubject { get; init; } = "";
+        public string CertificateIssuer { get; init; } = "";
+        public string CertificateThumbprint { get; init; } = "";
+        public string CertificateStoreName { get; init; } = "";
+        public string CertificateStoreLocation { get; init; } = "";
+        public string CertificateStoreThumbprint { get; init; } = "";
+        public string CertificateStoreSubject { get; init; } = "";
+        public DateTimeOffset? CertificateNotBeforeUtc { get; init; }
+        public DateTimeOffset? CertificateNotAfterUtc { get; init; }
+        public string SignatureDigestAlgorithm { get; init; } = "";
+        public string FileDigestSha256 { get; init; } = "";
+        public bool? Timestamped { get; init; }
+        public string TimestampDescription { get; init; } = "";
+        public string TimestampCertificateSubject { get; init; } = "";
+        public string TimestampCertificateIssuer { get; init; } = "";
+        public string TimestampCertificateThumbprint { get; init; } = "";
+        public string TimestampOutagePolicy { get; init; } = "";
+        public int TimestampRetryCount { get; init; }
+        public string TimestampPolicyWarning { get; init; } = "";
+        public string RemoteProvider { get; init; } = "";
+        public string RemoteEndpoint { get; init; } = "";
+        public string RemoteKeyId { get; init; } = "";
+        public bool RemoteCredentialWasSecretReference { get; init; }
+        public List<CodeSigningAuditEvent> AuditEvents { get; init; } = new();
+        public bool Success { get; init; }
+        public bool PasswordWasSecretReference { get; init; }
+        public string VerificationSummary { get; init; } = "";
+        public string Error { get; init; } = "";
     }
 
     public readonly record struct BuildProgress(int Percent, string Message);
@@ -80,6 +129,8 @@ public class BuildPipeline
     /// exercised without a multi-minute publish of the whole installer project.
     /// </summary>
     public IInstallerHostBuilder HostBuilder { get; set; } = new DotnetPublishHostBuilder();
+    public IReadOnlyList<string> ExtensionDirectories { get; set; } = Array.Empty<string>();
+    public Beep.Installer.Policy.InstallerPolicy? ExtensionPolicy { get; set; }
 
     /// <summary>Hard limit for the host publish. Was previously hardcoded to 5 minutes.</summary>
     public TimeSpan PublishTimeout { get; set; } = TimeSpan.FromMinutes(10);
@@ -101,6 +152,11 @@ public class BuildPipeline
     /// the intermediate layout.
     /// </summary>
     public bool KeepIntermediates { get; set; }
+    public CodeSigningService SigningService { get; set; } = new();
+    public IMsixPackageService MsixPackageService { get; set; } = new DefaultMsixPackageService();
+    public string? ExpectedSigningSubject { get; set; }
+    public string? TimestampOutagePolicy { get; set; }
+    public int TimestampRetryCount { get; set; } = 2;
     public bool CancelRequested { get; private set; }
 
     public void RequestCancel() => CancelRequested = true;
@@ -119,17 +175,30 @@ public class BuildPipeline
     public BuildResult Run(InstallProject project, bool cleanOutput = false)
     {
         var result = new BuildResult();
+        if (project.Resources.Count > 0 && ExtensionDirectories.Count == 0)
+        {
+            result.Errors.Add("Explicit extension directories are required to package authored extension resources.");
+            return result;
+        }
+        if (project.Resources.Count > 0 && project.OutputFormat != InstallerOutputFormat.Exe)
+        {
+            result.Errors.Add("Extension resource execution requires the EXE installer host; MSIX cannot execute extension providers.");
+            return result;
+        }
         var sw = Stopwatch.StartNew();
         var log = result.Steps;
         string outputDir = "";
 
         try
         {
-            outputDir = ResolveOutputDirectory(project);
+            ThrowIfBuildCanceled();
+            outputDir = Path.GetFullPath(ResolveOutputDirectory(project));
+            ThrowIfBuildCanceled();
             if (cleanOutput && Directory.Exists(outputDir))
                 try { Directory.Delete(outputDir, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", "clean-output delete failed", ex); }
             Directory.CreateDirectory(outputDir);
             log.Add($"[1/11] Output: {outputDir}");
+            ThrowIfBuildCanceled();
 
             // 1) If nothing has been scanned yet, scan the source directory. Only
             //    Components[].Files are staged, so without this a project that was never
@@ -148,11 +217,13 @@ public class BuildPipeline
                 log.Add($"  ✓ scanned source directory: {scan.FileCount} files");
                 foreach (var w in scan.Warnings) result.Warnings.Add(w);
             }
+            ThrowIfBuildCanceled();
 
             // 2) Validate
             Report(2, "Validating project…");
             ValidateProject(project, result);
             if (result.Errors.Count > 0) { result.Success = false; return result; }
+            ThrowIfBuildCanceled();
             var outputFileName = EnsureExeFileName(project.OutputBaseFilename, project);
             var exePath = Path.Combine(outputDir, outputFileName);
             if (!TryEnsureOutputFileAvailable(exePath, out var lockError))
@@ -167,14 +238,17 @@ public class BuildPipeline
             Report(8, "Staging payload…");
             var stageResult = StagePayload(project, outputDir, result);
             if (result.Errors.Count > 0) { result.Success = false; return result; }
+            ThrowIfBuildCanceled();
             result.FileCount = stageResult.FileCount;
             result.PayloadSizeBytes = stageResult.TotalBytes;
             log.Add($"  ✓ {stageResult.FileCount} files, {stageResult.TotalBytes / 1024.0 / 1024.0:F1} MB");
 
             // 3) Write runtime script
             Report(20, "Writing runtime script…");
+            ThrowIfBuildCanceled();
             result.SetupScriptPath = WriteRuntimeScript(project, outputDir, outputFileName, result);
             log.Add($"  ✓ {Path.GetFileName(result.SetupScriptPath)}");
+            ThrowIfBuildCanceled();
 
             // 3b) Emit the runtime install contract beside the script. The shipped installer
             //     builds its own InstallConfig from the .bsetup, but writing it here makes the
@@ -183,6 +257,7 @@ public class BuildPipeline
 
             // 4) Copy branding assets
             Report(28, "Copying branding assets…");
+            ThrowIfBuildCanceled();
             CopyBrandingAssets(project, outputDir, result);
             log.Add("  ✓ banner.png, setup.ico");
 
@@ -191,20 +266,26 @@ public class BuildPipeline
             //    The compressed .NET single-file adds its own bundle+footer to the PE.
             //    Appending our payload after that footer corrupts the .NET host.
             Report(40, "Building installer EXE…");
+            ThrowIfBuildCanceled();
             var publishDir = Path.Combine(outputDir, "_publish");
             try
             {
                 if (!BuildInstallerExe(project, outputDir, publishDir, outputFileName, result))
+                {
+                    ThrowIfBuildCanceled();
                     return BuildFailure(result, sw, log);
+                }
             }
             finally
             {
                 try { if (Directory.Exists(publishDir)) Directory.Delete(publishDir, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", "publish-dir cleanup failed", ex); }
             }
             log.Add($"  ✓ {outputFileName} ({new FileInfo(Path.Combine(outputDir, outputFileName)).Length / 1024.0 / 1024.0:F1} MB)");
+            ThrowIfBuildCanceled();
 
             // 6) Embed icon into the EXE (Win32 UpdateResource)
             Report(50, "Embedding icon…");
+            ThrowIfBuildCanceled();
             if (!string.IsNullOrWhiteSpace(project.SetupIconFile) && File.Exists(project.SetupIconFile))
             {
                 var iconPath = Path.Combine(outputDir, "setup.ico");
@@ -217,6 +298,7 @@ public class BuildPipeline
 
             // 7) Compress payload into a single zip
             Report(60, "Compressing payload…");
+            ThrowIfBuildCanceled();
             var zipPath = Path.Combine(outputDir, project.PayloadFolderName + ".zip");
             var solidStats = CompressZip(Path.Combine(outputDir, project.PayloadFolderName), zipPath,
                                          project.SolidCompression,
@@ -231,19 +313,26 @@ public class BuildPipeline
             }
             result.PayloadPath = zipPath;
             log.Add($"  ✓ {Path.GetFileName(zipPath)} ({new FileInfo(zipPath).Length / 1024.0 / 1024.0:F1} MB)");
+            ThrowIfBuildCanceled();
 
             // 8) Append script sidecars to the zip
             AddScriptSidecarsToZip(outputDir, zipPath);
+            if (project.Resources.Count > 0)
+                Beep.Installer.Extensibility.InstallerExtensionBundle.AddToArchive(zipPath, ExtensionDirectories, ExtensionPolicy, project.Resources.ToList());
+            ThrowIfBuildCanceled();
 
             // 9) Embed the zip into the EXE (append to the end of the PE)
             Report(75, "Embedding payload into EXE…");
+            ThrowIfBuildCanceled();
             EmbedPayloadIntoExe(exePath, zipPath);
             log.Add("  ✓ payload embedded");
+            ThrowIfBuildCanceled();
 
             // 10) (Optional) code-sign + (optional) MSIX
-            if (!string.IsNullOrWhiteSpace(project.CodeSignCertificatePath))
+            if (project.HasCodeSigningCertificate)
             {
                 Report(85, "Code signing…");
+                ThrowIfBuildCanceled();
                 SignExe(exePath, project, result, log);
             }
             else
@@ -253,7 +342,7 @@ public class BuildPipeline
                 // most users read as "this is malware". Say so at build time, prominently.
                 result.Warnings.Add(
                     "This installer is NOT code-signed. Windows SmartScreen will warn users " +
-                    "before running it. Configure CodeSignCertificatePath to sign, or use " +
+                    "before running it. Configure PFX signing or a Windows certificate-store selector, or use " +
                     "/REQUIRESIGNED in CI to make unsigned builds fail.");
                 log.Add("  WARN: not code-signed (SmartScreen will warn end users)");
             }
@@ -261,17 +350,19 @@ public class BuildPipeline
             if (project.OutputFormat is InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)
             {
                 Report(90, "Packaging MSIX…");
+                ThrowIfBuildCanceled();
                 PackageMsix(project, outputDir, result, log);
             }
 
             // 11) Final cleanup
             Report(98, "Cleaning intermediates…");
+            ThrowIfBuildCanceled();
             var finalExe = result.OutputFile = exePath;
             result.OutputSizeBytes = new FileInfo(finalExe).Length;
 
             if (result.Errors.Count == 0 && !KeepIntermediates)
             {
-                CleanupIntermediates(outputDir, finalExe, result.SetupScriptPath, result.MsixPackagePath, log);
+                CleanupIntermediates(outputDir, finalExe, result.SetupScriptPath, result.MsixPackagePath, result.AppInstallerPath, result.MsixCapabilityReportPath, log);
             }
             else
             {
@@ -283,6 +374,16 @@ public class BuildPipeline
             result.Success = result.Errors.Count == 0;
             Report(100, result.Success ? "Build complete." : "Build completed with errors.");
             log.Add($"[11/11] {(result.Success ? "Build succeeded" : "Build failed")} in {result.Elapsed.TotalSeconds:F1}s");
+        }
+        catch (OperationCanceledException)
+        {
+            sw.Stop();
+            result.Success = false;
+            result.Errors.Add("Build canceled.");
+            result.Elapsed = sw.Elapsed;
+            log.Add($"[11/11] CANCELED after {result.Elapsed.TotalSeconds:F1}s");
+            CleanupCanceledOutput(outputDir, project?.PayloadFolderName ?? "payload", log);
+            Report(100, "Build canceled.");
         }
         catch (Exception ex)
         {
@@ -469,10 +570,11 @@ Beep Installer v1.0.0
 
     private static List<RegistryOperation> BuildUninstallRegistryEntries(InstallProject project, string outputFileName)
     {
-        var baseKey = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{project.AppName}";
+        var baseKey = InstallationRegistration.UninstallKeyPath(project.AppId);
         var entries = new List<RegistryOperation>
         {
             new() { KeyPath = baseKey, ValueName = "DisplayName", Value = project.AppName, ValueKind = RegistryValueKind.String },
+            new() { KeyPath = baseKey, ValueName = "AppId", Value = project.AppId, ValueKind = RegistryValueKind.String },
             new() { KeyPath = baseKey, ValueName = "DisplayVersion", Value = project.AppVersion, ValueKind = RegistryValueKind.String },
             new() { KeyPath = baseKey, ValueName = "Publisher", Value = project.AppPublisher, ValueKind = RegistryValueKind.String },
             new() { KeyPath = baseKey, ValueName = "InstallLocation", Value = "%InstallPath%", ValueKind = RegistryValueKind.String },
@@ -696,20 +798,42 @@ Beep Installer v1.0.0
     /// </summary>
     private void SignExe(string exePath, InstallProject project, BuildResult result, List<string> log)
     {
-        var (ok, error) = SignTool.Sign(
+        var signing = SigningService.SignInstaller(
             exePath,
             project.CodeSignCertificatePath,
             project.CodeSignCertificatePassword,
-            project.CodeSignTimestampUrl);
+            project.CodeSignTimestampUrl,
+            ExpectedSigningSubject,
+            storeName: project.CodeSignStoreName,
+            storeLocation: project.CodeSignStoreLocation,
+            storeThumbprint: project.CodeSignStoreThumbprint,
+            storeSubject: project.CodeSignStoreSubject,
+            timestampOutagePolicy: TimestampOutagePolicy,
+            timestampRetryCount: TimestampRetryCount,
+            remoteProvider: project.CodeSignRemoteProvider,
+            remoteEndpoint: project.CodeSignRemoteEndpoint,
+            remoteKeyId: project.CodeSignRemoteKeyId,
+            remoteCredential: project.CodeSignRemoteCredential);
 
-        if (ok)
+        if (signing.Success)
         {
-            log.Add("  ✓ signed");
+            result.SigningEvidence.Add(CreateSigningEvidence("exe", exePath, project, signing));
+            log.Add(signing.PasswordWasSecretReference
+                ? "  ✓ signed (password resolved from secret reference)"
+                : "  ✓ signed");
+            if (!string.IsNullOrWhiteSpace(signing.VerificationSummary))
+                log.Add("  ✓ signature verified");
+            if (!string.IsNullOrWhiteSpace(signing.TimestampPolicyWarning))
+            {
+                result.Warnings.Add(signing.TimestampPolicyWarning);
+                log.Add($"  WARN: {signing.TimestampPolicyWarning}");
+            }
             return;
         }
 
-        result.Errors.Add($"Code signing failed: {error}");
-        log.Add($"  ERR: signing: {error}");
+        result.Errors.Add($"Code signing failed: {signing.Error}");
+        result.SigningEvidence.Add(CreateSigningEvidence("exe", exePath, project, signing));
+        log.Add($"  ERR: signing: {signing.Error}");
     }
 
     /// <summary>
@@ -727,13 +851,8 @@ Beep Installer v1.0.0
             return;
         }
 
-        var identity = string.IsNullOrWhiteSpace(project.MsixIdentity)
-            ? MakeMsixIdentity(project.AppPublisher, project.AppName)
-            : project.MsixIdentity;
-
-        var publisher = string.IsNullOrWhiteSpace(project.MsixPublisher)
-            ? $"CN={project.AppPublisher}"
-            : project.MsixPublisher;
+        var identity = project.MsixIdentity;
+        var publisher = project.MsixPublisher;
 
         var architecture = project.ArchitecturesAllowed switch
         {
@@ -742,7 +861,54 @@ Beep Installer v1.0.0
             _ => "x64"
         };
 
-        var msix = MsixPackager.Package(
+        var capability = MsixProjectCapabilityAnalyzer.Analyze(project);
+        result.MsixCapabilityReportPath = WriteMsixCapabilityReport(project, outputDir, identity, publisher, architecture, capability, result);
+        log.Add($"  ✓ MSIX capability report: {Path.GetFileName(result.MsixCapabilityReportPath)}");
+
+        var capabilityHasErrors = false;
+        foreach (var check in capability)
+        {
+            if (check.Severity == Severity.Error)
+            {
+                capabilityHasErrors = true;
+                result.Errors.Add($"MSIX capability '{check.Name}': {check.Message}");
+            }
+            else if (check.Severity == Severity.Warning)
+            {
+                result.Warnings.Add($"MSIX capability '{check.Name}': {check.Message}");
+            }
+        }
+        if (capabilityHasErrors)
+        {
+            log.Add("  ERR: MSIX capability gate blocked packaging");
+            return;
+        }
+
+        var selectedUpdateChannel = SelectedUpdateChannel(project);
+        var appInstallerFeedUrl = EffectiveAppInstallerFeedUrl(project, selectedUpdateChannel);
+        var appInstaller = string.IsNullOrWhiteSpace(appInstallerFeedUrl)
+            ? null
+            : new MsixAppInstallerOptions
+            {
+                Uri = appInstallerFeedUrl,
+                OptionalPackages = project.MsixOptionalPackages
+                    .Select(p => new MsixAppInstallerPackageReference
+                    {
+                        Name = p.Name,
+                        Publisher = p.Publisher,
+                        Version = p.Version,
+                        Architecture = MsixPackager.NormalizeArchitecture(p.Architecture),
+                        Uri = p.Uri,
+                        Kind = p.Kind
+                    })
+                    .ToArray(),
+                HoursBetweenUpdateChecks = project.AppInstallerHoursBetweenUpdateChecks,
+                ShowPrompt = project.AppInstallerShowPrompt,
+                UpdateBlocksActivation = project.AppUpdateMode == UpdateMode.Required || selectedUpdateChannel?.Critical == true,
+                ForceUpdateFromAnyVersion = project.AppInstallerForceUpdateFromAnyVersion
+            };
+
+        var msix = MsixPackageService.Package(
             payloadDir,
             outputDir,          // packager creates its own "stage" subfolder here
             identity,
@@ -751,38 +917,438 @@ Beep Installer v1.0.0
             project.AppVersion,
             project.MainExecutable,
             description: "",
-            architecture: architecture);
+            architecture: architecture,
+            packageKind: project.OutputFormat == InstallerOutputFormat.MsixBundle
+                ? MsixRelatedPackageKind.Bundle
+                : MsixRelatedPackageKind.Package,
+            appInstaller: appInstaller);
 
         foreach (var w in msix.Warnings) result.Warnings.Add(w);
 
         // Surface the orchestration outputs regardless: staging dir and AppxManifest.xml are
         // written even when the final MakeAppx step is unavailable or rejects the manifest.
         result.MsixPackagePath = msix.MsixPackagePath;
+        result.AppInstallerPath = msix.AppInstallerPath;
 
         if (!msix.Success)
         {
-            // MakeAppx's bundled validator enforces more than the public XSD (capabilities,
-            // visual elements). That is a packaging-input problem, not a broken build: the
-            // Setup.exe is still valid, so report it loudly but do not fail the whole build.
-            result.Warnings.Add(
+            result.Errors.Add(
                 $"MSIX package was NOT written ({msix.Error}). The staging folder and " +
                 $"AppxManifest.xml are in '{msix.StagingDir}' for inspection.");
-            log.Add($"  WARN: MSIX not packaged: {msix.Error}");
+            log.Add($"  ERR: MSIX not packaged: {msix.Error}");
             return;
         }
 
+        if (!File.Exists(msix.MsixPackagePath))
+        {
+            result.Errors.Add($"MSIX package was requested but '{msix.MsixPackagePath}' was not produced.");
+            log.Add("  ERR: MSIX package missing after packaging");
+            return;
+        }
+
+        SignMsixArtifacts(project, msix, result, log);
+        result.MsixCapabilityReportPath = WriteMsixCapabilityReport(project, outputDir, identity, publisher, architecture, capability, result);
+
         log.Add($"  ✓ MSIX: {Path.GetFileName(msix.MsixPackagePath)}");
+        if (!string.IsNullOrWhiteSpace(msix.AppInstallerPath))
+            log.Add($"  ✓ AppInstaller feed: {Path.GetFileName(msix.AppInstallerPath)}");
     }
 
-    /// <summary>MSIX identity must look like <c>Publisher.Product</c> with no spaces.</summary>
-    private static string MakeMsixIdentity(string publisher, string product)
+    private void SignMsixArtifacts(InstallProject project, MsixResult msix, BuildResult result, List<string> log)
     {
-        static string Clean(string value, string fallback)
+        if (!project.HasCodeSigningCertificate)
+            return;
+
+        SignBuildArtifact("msix", msix.MsixPackagePath, project, result, log);
+
+        if (!string.IsNullOrWhiteSpace(msix.AppInstallerPath) && File.Exists(msix.AppInstallerPath))
+            SignBuildArtifact("appinstaller", msix.AppInstallerPath, project, result, log);
+    }
+
+    private void SignBuildArtifact(string artifactKind, string artifactPath, InstallProject project, BuildResult result, List<string> log)
+    {
+        if (string.IsNullOrWhiteSpace(artifactPath) || !File.Exists(artifactPath))
         {
-            var cleaned = new string((value ?? "").Where(char.IsLetterOrDigit).ToArray());
-            return string.IsNullOrEmpty(cleaned) ? fallback : cleaned;
+            var message = $"Signing {artifactKind.ToUpperInvariant()} output requires existing artifact '{artifactPath}'.";
+            result.Errors.Add(message);
+            log.Add($"  ERR: {message}");
+            return;
         }
-        return $"{Clean(publisher, "Publisher")}.{Clean(product, "Product")}";
+
+        var signing = SigningService.SignInstaller(
+            artifactPath,
+            project.CodeSignCertificatePath,
+            project.CodeSignCertificatePassword,
+            project.CodeSignTimestampUrl,
+            ExpectedSigningSubject,
+            storeName: project.CodeSignStoreName,
+            storeLocation: project.CodeSignStoreLocation,
+            storeThumbprint: project.CodeSignStoreThumbprint,
+            storeSubject: project.CodeSignStoreSubject,
+            timestampOutagePolicy: TimestampOutagePolicy,
+            timestampRetryCount: TimestampRetryCount,
+            remoteProvider: project.CodeSignRemoteProvider,
+            remoteEndpoint: project.CodeSignRemoteEndpoint,
+            remoteKeyId: project.CodeSignRemoteKeyId,
+            remoteCredential: project.CodeSignRemoteCredential);
+
+        result.SigningEvidence.Add(CreateSigningEvidence(artifactKind, artifactPath, project, signing));
+
+        if (signing.Success)
+        {
+            log.Add(signing.PasswordWasSecretReference
+                ? $"  ✓ signed {artifactKind} (password resolved from secret reference)"
+                : $"  ✓ signed {artifactKind}");
+            if (!string.IsNullOrWhiteSpace(signing.TimestampPolicyWarning))
+            {
+                result.Warnings.Add(signing.TimestampPolicyWarning);
+                log.Add($"  WARN: {signing.TimestampPolicyWarning}");
+            }
+            return;
+        }
+
+        result.Errors.Add($"Code signing {artifactKind} failed: {signing.Error}");
+        log.Add($"  ERR: signing {artifactKind}: {signing.Error}");
+    }
+
+    private static BuildSigningEvidence CreateSigningEvidence(
+        string artifactKind,
+        string artifactPath,
+        InstallProject project,
+        CodeSigningResult signing)
+        => new()
+        {
+            ArtifactKind = artifactKind,
+            ArtifactPath = artifactPath,
+            CertificatePath = project.CodeSignCertificatePath,
+            TimestampUrl = project.CodeSignTimestampUrl,
+            ToolPath = signing.ToolPath ?? "",
+            ToolVersion = signing.ToolVersion ?? "",
+            CertificateSubject = signing.CertificateSubject ?? "",
+            CertificateIssuer = signing.CertificateIssuer ?? "",
+            CertificateThumbprint = signing.CertificateThumbprint ?? "",
+            CertificateStoreName = signing.CertificateStoreName ?? project.CodeSignStoreName,
+            CertificateStoreLocation = signing.CertificateStoreLocation ?? project.CodeSignStoreLocation,
+            CertificateStoreThumbprint = signing.CertificateStoreThumbprint ?? project.CodeSignStoreThumbprint,
+            CertificateStoreSubject = signing.CertificateStoreSubject ?? project.CodeSignStoreSubject,
+            CertificateNotBeforeUtc = signing.CertificateNotBeforeUtc,
+            CertificateNotAfterUtc = signing.CertificateNotAfterUtc,
+            SignatureDigestAlgorithm = signing.SignatureDigestAlgorithm ?? "",
+            FileDigestSha256 = signing.FileDigestSha256 ?? "",
+            Timestamped = signing.Timestamped,
+            TimestampDescription = signing.TimestampDescription ?? "",
+            TimestampCertificateSubject = signing.TimestampCertificateSubject ?? "",
+            TimestampCertificateIssuer = signing.TimestampCertificateIssuer ?? "",
+            TimestampCertificateThumbprint = signing.TimestampCertificateThumbprint ?? "",
+            TimestampOutagePolicy = signing.TimestampOutagePolicy ?? "",
+            TimestampRetryCount = signing.TimestampRetryCount,
+            TimestampPolicyWarning = signing.TimestampPolicyWarning ?? "",
+            RemoteProvider = signing.RemoteProvider ?? project.CodeSignRemoteProvider,
+            RemoteEndpoint = signing.RemoteEndpoint ?? project.CodeSignRemoteEndpoint,
+            RemoteKeyId = signing.RemoteKeyId ?? project.CodeSignRemoteKeyId,
+            RemoteCredentialWasSecretReference = signing.RemoteCredentialWasSecretReference,
+            AuditEvents = signing.AuditEvents,
+            Success = signing.Success,
+            PasswordWasSecretReference = signing.PasswordWasSecretReference,
+            VerificationSummary = signing.VerificationSummary ?? "",
+            Error = signing.Error ?? ""
+        };
+
+    private static UpdateChannelDefinition? SelectedUpdateChannel(InstallProject project)
+        => string.IsNullOrWhiteSpace(project.AppUpdateChannel)
+            ? null
+            : project.UpdateChannels.FirstOrDefault(channel =>
+                channel.Id.Equals(project.AppUpdateChannel, StringComparison.OrdinalIgnoreCase));
+
+    private static string EffectiveAppInstallerFeedUrl(InstallProject project, UpdateChannelDefinition? selectedUpdateChannel)
+        => !string.IsNullOrWhiteSpace(selectedUpdateChannel?.FeedUrl)
+            ? selectedUpdateChannel.FeedUrl
+            : project.AppUpdatesURL;
+
+    private static string WriteMsixCapabilityReport(
+        InstallProject project,
+        string outputDir,
+        string identity,
+        string publisher,
+        string architecture,
+        IReadOnlyList<CheckResult> checks,
+        BuildResult buildResult)
+    {
+        var path = Path.Combine(outputDir, "msix-capabilities.json");
+        var selectedUpdateChannel = SelectedUpdateChannel(project);
+        var appInstallerFeedUrl = EffectiveAppInstallerFeedUrl(project, selectedUpdateChannel);
+        var rolloutDecision = UpdateRolloutEvaluator.Evaluate(project, selectedUpdateChannel, UpdateRolloutEvaluator.DefaultCohortSeed());
+        var packageKind = project.OutputFormat == InstallerOutputFormat.MsixBundle ? "msixbundle" : "msix";
+        var msixPackageExists = !string.IsNullOrWhiteSpace(buildResult.MsixPackagePath) && File.Exists(buildResult.MsixPackagePath);
+        var appInstallerExists = !string.IsNullOrWhiteSpace(buildResult.AppInstallerPath) && File.Exists(buildResult.AppInstallerPath);
+        var msixSigned = buildResult.SigningEvidence.Any(s =>
+            s.Success && s.ArtifactKind.Equals("msix", StringComparison.OrdinalIgnoreCase));
+        var appInstallerSigned = buildResult.SigningEvidence.Any(s =>
+            s.Success && s.ArtifactKind.Equals("appinstaller", StringComparison.OrdinalIgnoreCase));
+        var appInstallerUri = string.IsNullOrWhiteSpace(appInstallerFeedUrl)
+            ? ""
+            : new Uri(new Uri(appInstallerFeedUrl.TrimEnd('/') + "/"), $"{identity}.appinstaller").ToString();
+        var packageUri = string.IsNullOrWhiteSpace(appInstallerFeedUrl) || string.IsNullOrWhiteSpace(buildResult.MsixPackagePath)
+            ? ""
+            : new Uri(new Uri(appInstallerFeedUrl.TrimEnd('/') + "/"), Path.GetFileName(buildResult.MsixPackagePath)).ToString();
+        var intuneChecks = MsixIntuneIngestionChecks(
+            project,
+            appInstallerFeedUrl,
+            msixPackageExists,
+            appInstallerExists,
+            msixSigned,
+            appInstallerSigned);
+        var intuneErrors = intuneChecks.Count(c => c.Severity == "error");
+        var intuneWarnings = intuneChecks.Count(c => c.Severity == "warning");
+        var payload = new
+        {
+            schemaVersion = "1.0",
+            generatedAtUtc = DateTimeOffset.UtcNow,
+            outputFormat = project.OutputFormat.ToString().ToLowerInvariant(),
+            identity,
+            publisher,
+            architecture,
+            appInstaller = new
+            {
+                enabled = !string.IsNullOrWhiteSpace(appInstallerFeedUrl),
+                artifactPath = buildResult.AppInstallerPath,
+                updateUrl = appInstallerFeedUrl,
+                updateMode = project.AppUpdateMode.ToString().ToLowerInvariant(),
+                selectedChannel = selectedUpdateChannel is null ? null : new
+                {
+                    id = selectedUpdateChannel.Id,
+                    name = selectedUpdateChannel.Name,
+                    ring = selectedUpdateChannel.Ring,
+                    feedUrl = selectedUpdateChannel.FeedUrl,
+                    rolloutPercentage = selectedUpdateChannel.RolloutPercentage,
+                    minimumVersion = selectedUpdateChannel.MinimumVersion,
+                    deadlineUtc = selectedUpdateChannel.DeadlineUtc,
+                    critical = selectedUpdateChannel.Critical,
+                    maintenanceWindow = selectedUpdateChannel.MaintenanceWindow,
+                    rollbackVersion = selectedUpdateChannel.RollbackVersion,
+                    revoked = selectedUpdateChannel.Revoked
+                },
+                rolloutDecision = selectedUpdateChannel is null ? null : new
+                {
+                    channelId = rolloutDecision.ChannelId,
+                    ring = rolloutDecision.Ring,
+                    rolloutPercentage = rolloutDecision.RolloutPercentage,
+                    bucket = rolloutDecision.Bucket,
+                    included = rolloutDecision.Included,
+                    cohortHash = rolloutDecision.CohortHash,
+                    reason = rolloutDecision.Reason
+                },
+                channels = project.UpdateChannels.Select(channel => new
+                {
+                    id = channel.Id,
+                    name = channel.Name,
+                    ring = channel.Ring,
+                    feedUrl = channel.FeedUrl,
+                    rolloutPercentage = channel.RolloutPercentage,
+                    minimumVersion = channel.MinimumVersion,
+                    deadlineUtc = channel.DeadlineUtc,
+                    critical = channel.Critical,
+                    maintenanceWindow = channel.MaintenanceWindow,
+                    rollbackVersion = channel.RollbackVersion,
+                    revoked = channel.Revoked
+                }).ToArray(),
+                hoursBetweenUpdateChecks = project.AppInstallerHoursBetweenUpdateChecks,
+                showPrompt = project.AppInstallerShowPrompt,
+                forceUpdateFromAnyVersion = project.AppInstallerForceUpdateFromAnyVersion,
+                optionalPackages = project.MsixOptionalPackages.Select(p => new
+                {
+                    name = p.Name,
+                    publisher = p.Publisher,
+                    version = p.Version,
+                    architecture = MsixPackager.NormalizeArchitecture(p.Architecture),
+                    uri = p.Uri,
+                    kind = p.Kind.ToString().ToLowerInvariant()
+                }).ToArray()
+            },
+            artifacts = new
+            {
+                msixPackagePath = buildResult.MsixPackagePath,
+                appInstallerPath = buildResult.AppInstallerPath
+            },
+            intuneIngestion = new
+            {
+                packageType = packageKind,
+                deploymentModel = "line-of-business-app",
+                recommendedInstallCommand = appInstallerExists
+                    ? $"Add-AppxPackage -AppInstallerFile \"{buildResult.AppInstallerPath}\""
+                    : $"Add-AppxPackage \"{buildResult.MsixPackagePath}\"",
+                recommendedAssignmentIntent = project.AppUpdateMode == UpdateMode.Required || selectedUpdateChannel?.Critical == true ? "required" : "available",
+                requiresTrustedCertificate = true,
+                requiresAppInstallerFeed = !string.IsNullOrWhiteSpace(appInstallerFeedUrl),
+                appInstallerArtifactPath = buildResult.AppInstallerPath,
+                packageArtifactPath = buildResult.MsixPackagePath,
+                appInstallerUri,
+                packageUri,
+                updateUrl = appInstallerFeedUrl,
+                selectedChannelId = selectedUpdateChannel?.Id ?? "",
+                optionalPackageCount = project.MsixOptionalPackages.Count,
+                packageArtifactExists = msixPackageExists,
+                appInstallerArtifactExists = appInstallerExists,
+                packageSigned = msixSigned,
+                appInstallerSigned = appInstallerSigned,
+                ready = intuneErrors == 0,
+                summary = new
+                {
+                    errors = intuneErrors,
+                    warnings = intuneWarnings,
+                    checks = intuneChecks.Length
+                },
+                checks = intuneChecks.Select(c => new
+                {
+                    name = c.Name,
+                    severity = c.Severity,
+                    passed = c.Passed,
+                    message = c.Message
+                }).ToArray()
+            },
+            signingEvidence = buildResult.SigningEvidence.Select(s => new
+            {
+                artifactKind = s.ArtifactKind,
+                artifactPath = s.ArtifactPath,
+                certificatePath = s.CertificatePath,
+                timestampUrl = s.TimestampUrl,
+                toolPath = s.ToolPath,
+                toolVersion = s.ToolVersion,
+                certificateSubject = s.CertificateSubject,
+                certificateIssuer = s.CertificateIssuer,
+                certificateThumbprint = s.CertificateThumbprint,
+                certificateStoreName = s.CertificateStoreName,
+                certificateStoreLocation = s.CertificateStoreLocation,
+                certificateStoreThumbprint = s.CertificateStoreThumbprint,
+                certificateStoreSubject = s.CertificateStoreSubject,
+                certificateNotBeforeUtc = s.CertificateNotBeforeUtc,
+                certificateNotAfterUtc = s.CertificateNotAfterUtc,
+                signatureDigestAlgorithm = s.SignatureDigestAlgorithm,
+                fileDigestSha256 = s.FileDigestSha256,
+                timestamped = s.Timestamped,
+                timestampDescription = s.TimestampDescription,
+                timestampCertificateSubject = s.TimestampCertificateSubject,
+                timestampCertificateIssuer = s.TimestampCertificateIssuer,
+                timestampCertificateThumbprint = s.TimestampCertificateThumbprint,
+                timestampOutagePolicy = s.TimestampOutagePolicy,
+                timestampRetryCount = s.TimestampRetryCount,
+                timestampPolicyWarning = s.TimestampPolicyWarning,
+                remoteProvider = s.RemoteProvider,
+                remoteEndpoint = s.RemoteEndpoint,
+                remoteKeyId = s.RemoteKeyId,
+                remoteCredentialWasSecretReference = s.RemoteCredentialWasSecretReference,
+                auditEvents = s.AuditEvents,
+                success = s.Success,
+                passwordWasSecretReference = s.PasswordWasSecretReference,
+                verificationSummary = s.VerificationSummary,
+                error = s.Error
+            }).ToArray(),
+            summary = new
+            {
+                errors = checks.Count(c => c.Severity == Severity.Error),
+                warnings = checks.Count(c => c.Severity == Severity.Warning),
+                info = checks.Count(c => c.Severity == Severity.Info)
+            },
+            checks = checks.Select(c => new
+            {
+                name = c.Name,
+                severity = c.Severity.ToString().ToLowerInvariant(),
+                message = c.Message
+            }).ToArray()
+        };
+
+        File.WriteAllText(path, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+        return path;
+    }
+
+    private sealed record MsixIntuneIngestionCheck(string Name, string Severity, bool Passed, string Message);
+
+    private static MsixIntuneIngestionCheck[] MsixIntuneIngestionChecks(
+        InstallProject project,
+        string appInstallerFeedUrl,
+        bool msixPackageExists,
+        bool appInstallerExists,
+        bool msixSigned,
+        bool appInstallerSigned)
+    {
+        var checks = new List<MsixIntuneIngestionCheck>
+        {
+            new(
+                "artifact.package",
+                msixPackageExists ? "info" : "error",
+                msixPackageExists,
+                msixPackageExists
+                    ? "MSIX/MSIX bundle artifact exists for Intune line-of-business upload."
+                    : "MSIX/MSIX bundle artifact is missing; Intune upload would fail."
+            ),
+            new(
+                "identity.name",
+                string.IsNullOrWhiteSpace(project.MsixIdentity) ? "error" : "info",
+                !string.IsNullOrWhiteSpace(project.MsixIdentity),
+                string.IsNullOrWhiteSpace(project.MsixIdentity)
+                    ? "MSIX identity is required for Intune app inventory correlation."
+                    : "MSIX identity is present."
+            ),
+            new(
+                "certificate.trust",
+                msixSigned ? "info" : "warning",
+                msixSigned,
+                msixSigned
+                    ? "MSIX package signing evidence is present."
+                    : "MSIX package signing evidence is missing; Intune devices must trust the package certificate before deployment."
+            )
+        };
+
+        if (!string.IsNullOrWhiteSpace(appInstallerFeedUrl))
+        {
+            checks.Add(new(
+                "appinstaller.artifact",
+                appInstallerExists ? "info" : "error",
+                appInstallerExists,
+                appInstallerExists
+                    ? "AppInstaller feed artifact exists for managed update ingestion."
+                    : "AppInstaller feed URL is configured, but the .appinstaller artifact is missing."
+            ));
+            checks.Add(new(
+                "appinstaller.signature",
+                appInstallerSigned ? "info" : "warning",
+                appInstallerSigned,
+                appInstallerSigned
+                    ? "AppInstaller signing evidence is present."
+                    : "AppInstaller signing evidence is missing; sign the feed before release qualification."
+            ));
+            checks.Add(new(
+                "appinstaller.update-settings",
+                project.AppInstallerHoursBetweenUpdateChecks > 0 ? "info" : "error",
+                project.AppInstallerHoursBetweenUpdateChecks > 0,
+                project.AppInstallerHoursBetweenUpdateChecks > 0
+                    ? "AppInstaller update interval is configured."
+                    : "AppInstaller update interval must be greater than zero."
+            ));
+        }
+        else
+        {
+            checks.Add(new(
+                "appinstaller.feed",
+                "warning",
+                false,
+                "No AppInstaller feed URL is configured; Intune can deploy the package, but managed web-update metadata is absent."
+            ));
+        }
+
+        if (project.MsixOptionalPackages.Count > 0)
+        {
+            checks.Add(new(
+                "appinstaller.optional-packages",
+                appInstallerExists ? "info" : "error",
+                appInstallerExists,
+                appInstallerExists
+                    ? "Optional package metadata is represented in the AppInstaller feed."
+                    : "Optional packages require an AppInstaller feed for Intune release review."
+            ));
+        }
+
+        return checks.ToArray();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -916,7 +1482,15 @@ Beep Installer v1.0.0
     private void Report(int percent, string message)
         => Progress?.Report(new BuildProgress(percent, message));
 
-    private static void CleanupIntermediates(string outputDir, string finalExe, string setupScriptPath, string msixPath, List<string> log)
+    private void ThrowIfBuildCanceled()
+    {
+        if (CancelRequested)
+            throw new OperationCanceledException("Build canceled by RequestCancel().");
+
+        CancellationToken.ThrowIfCancellationRequested();
+    }
+
+    private static void CleanupIntermediates(string outputDir, string finalExe, string setupScriptPath, string msixPath, string appInstallerPath, string msixCapabilityReportPath, List<string> log)
     {
         try
         {
@@ -925,6 +1499,8 @@ Beep Installer v1.0.0
             if (File.Exists(finalExe)) keep.Add(Path.GetFileName(finalExe));
             if (File.Exists(setupScriptPath)) keep.Add(Path.GetFileName(setupScriptPath));
             if (File.Exists(msixPath)) keep.Add(Path.GetFileName(msixPath));
+            if (File.Exists(appInstallerPath)) keep.Add(Path.GetFileName(appInstallerPath));
+            if (File.Exists(msixCapabilityReportPath)) keep.Add(Path.GetFileName(msixCapabilityReportPath));
 
             foreach (var f in Directory.EnumerateFiles(outputDir))
             {
@@ -947,6 +1523,39 @@ Beep Installer v1.0.0
         }
     }
 
+    private static void CleanupCanceledOutput(string outputDir, string payloadFolderName, List<string> log)
+    {
+        if (string.IsNullOrWhiteSpace(outputDir) || !Directory.Exists(outputDir))
+            return;
+
+        var targets = new[]
+        {
+            Path.Combine(outputDir, payloadFolderName),
+            Path.Combine(outputDir, payloadFolderName + ".zip"),
+            Path.Combine(outputDir, "_publish"),
+            Path.Combine(outputDir, "MSIX_staging"),
+            Path.Combine(outputDir, "MSIX")
+        };
+
+        foreach (var target in targets)
+        {
+            try
+            {
+                if (Directory.Exists(target))
+                    Directory.Delete(target, recursive: true);
+                else if (File.Exists(target))
+                    File.Delete(target);
+            }
+            catch (Exception ex)
+            {
+                Diag.Debug("BuildPipeline", $"canceled-build cleanup failed for \"{target}\"", ex);
+                log.Add($"  WARN: canceled-build cleanup failed for {Path.GetFileName(target)}: {ex.Message}");
+            }
+        }
+
+        log.Add("  ✓ canceled-build intermediates cleaned");
+    }
+
     private static BuildResult BuildFailure(BuildResult result, Stopwatch sw, List<string> log)
     {
         sw.Stop();
@@ -956,3 +1565,5 @@ Beep Installer v1.0.0
         return result;
     }
 }
+
+#pragma warning restore CA1416

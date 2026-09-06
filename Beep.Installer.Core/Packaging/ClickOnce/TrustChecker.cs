@@ -14,16 +14,14 @@ public class TrustReport
 }
 
 /// <summary>
-/// Static trust helpers (Track B2.3). Detects whether a ClickOnce manifest carries a
-/// <c>&lt;ds:Signature&gt;</c> element (indicating it was signed by <c>mage -sign</c> or equivalent),
-/// and surfaces the "code-signing certificate required" warning that ClickOnce's unknown-publisher
-/// dialog triggers when manifests are unsigned.
+/// Validates manifest signatures through the native ClickOnce verifier. A signature
+/// element alone is never evidence of a valid signature or trusted publisher.
 /// </summary>
 public static class TrustChecker
 {
     private static readonly XNamespace W3CDsig = "http://www.w3.org/2000/09/xmldsig#";
 
-    /// <summary>True if <paramref name="manifestPath"/> contains a top-level &lt;Signature&gt; element.</summary>
+    /// <summary>Signed is true only after native manifest signature validation succeeds.</summary>
     public static TrustReport CheckManifestSignature(string manifestPath)
     {
         var r = new TrustReport();
@@ -36,12 +34,18 @@ public static class TrustChecker
         {
             var doc = XDocument.Load(manifestPath);
             // <ds:Signature> is added as a top-level child of the root <assembly> by mage -sign.
-            r.Signed = doc.Root?.Elements()
+            var hasSignature = doc.Root?.Elements()
                 .Any(e => e.Name.LocalName == "Signature" &&
-                          (e.Name.NamespaceName == W3CDsig.NamespaceName || e.GetNamespaceOfPrefix("ds")?.NamespaceName == W3CDsig.NamespaceName))
+                          e.Name.NamespaceName == W3CDsig.NamespaceName)
                 ?? false;
-            if (!r.Signed) r.Message = "Manifest has no <ds:Signature>.";
             r.ManifestsInspected = 1;
+            if (!hasSignature) r.Message = "Manifest has no <ds:Signature>.";
+            else
+            {
+                var verification = MageManifestTool.Run("-Verify", Path.GetFullPath(manifestPath));
+                r.Signed = verification.success;
+                r.Message = verification.error;
+            }
         }
         catch (System.Exception ex)
         {
@@ -51,7 +55,7 @@ public static class TrustChecker
     }
 
     /// <summary>Inspects both the deployment and application manifests inside <paramref name="publishDir"/>.</summary>
-    public static TrustReport CheckPublishing(string publishDir, string productName)
+    public static TrustReport CheckPublishing(string publishDir, string identityName)
     {
         var r = new TrustReport();
         if (string.IsNullOrWhiteSpace(publishDir) || !Directory.Exists(publishDir))
@@ -59,8 +63,8 @@ public static class TrustChecker
             r.Message = "Publish directory missing.";
             return r;
         }
-        var deploy = Path.Combine(publishDir, productName + ".application");
-        var app = Path.Combine(publishDir, "Application", productName + ".manifest");
+        var deploy = Path.Combine(publishDir, identityName + ".application");
+        var app = Path.Combine(publishDir, "Application", identityName + ".manifest");
         var d = CheckManifestSignature(deploy);
         var a = CheckManifestSignature(app);
         r.ManifestsInspected = d.ManifestsInspected + a.ManifestsInspected;

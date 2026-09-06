@@ -61,6 +61,7 @@ public static class LanguageManager
     public static string GetString(string key)
     {
         if (string.IsNullOrEmpty(key)) return "";
+        _currentStrings ??= LoadStrings(_currentCulture.TwoLetterISOLanguageName);
         if (_currentStrings != null && _currentStrings.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
 
         // Fall back to English (only if we are not already English)

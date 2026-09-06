@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Beep.Installer.Lang;
+using Beep.Installer.Engine;
 using Beep.Installer.Models;
 using Beep.Installer.Pages;
 using TheTechIdea.Beep.Addin;
@@ -643,6 +644,10 @@ public class BeepModernInstallerForm : BeepiFormPro
     private async Task RunInstallAsync()
     {
         CapturePageState();
+        var runCorrelationId = $"bi-wizard-install-{Guid.NewGuid():N}";
+        using var diagScope = Engine.Diag.BeginScope("wizard-install", runCorrelationId);
+        Engine.Diag.Info("Wizard", $"Starting interactive install for {_project.AppName} {_project.AppVersion}.", "BI2431");
+
         if (!_ctx.AcceptLicense)
         {
             MessageBox.Show(this, "You must accept the license to continue.", "Beep Installer",
@@ -689,13 +694,14 @@ public class BeepModernInstallerForm : BeepiFormPro
             // (notably the InstallConfig the BeepDM steps require).
             var context = Engine.InstallContextBuilder.ForInstall(
                 _project, _ctx.InstallPath, _ctx.PerUser, rollback, payloadRoot: null, customValues);
+            context.Properties[InstallContextKeys.ResourceExecutionMode] = "install";
 
             // Wizard-page answers the built-in steps don't model.
             context.Properties["CreateDesktopIcon"] = _ctx.CreateDesktopIcon;
             context.Properties["CreateStartMenu"] = _ctx.CreateStartMenu;
             context.Properties["AutoStart"] = _ctx.AutoStart;
 
-            // Identical graph to the silent CLI install — see Hosting/InstallWizardGraph.
+            // Identical Core-hosted graph to the silent CLI install.
             // Keeping these in step matters: a difference between them means the wizard and
             // /S produce different installations from the same script.
             var wizard = Hosting.InstallWizardGraph.BuildInstall(
@@ -737,45 +743,101 @@ public class BeepModernInstallerForm : BeepiFormPro
                 catch (InvalidOperationException) { }
             });
 
-            await Task.Run(() => wizard.Run(context, progress));
+            var report = await Task.Run(() =>
+            {
+                using var operationLock = Engine.InstallationOperationLock.Acquire(_ctx.InstallPath);
+                wizard.Run(context, progress);
+                var completedReport = wizard.GetReport();
+                if (completedReport.Succeeded) rollback.Commit();
+                else
+                {
+                    rollback.Rollback();
+
+                    // Restore the previous version before releasing the installation lease.
+                    var backup = context.TryGetProperty<string>(UpgradeStep.BackupPathKey);
+                    if (!string.IsNullOrWhiteSpace(backup))
+                        new UpgradeEngine().RestoreFromBackup(backup!, _ctx.InstallPath, CancellationToken.None);
+                }
+                return completedReport;
+            });
 
             if (!IsDisposed) { bar.Value = 100; detail.Text = ""; }
-            var report = wizard.GetReport();
-            if (report.Succeeded) rollback.Commit();
-            else
-            {
-                rollback.Rollback();
-
-                // A failed upgrade must put the previous version back (backup recorded by
-                // UpgradeStep; only deleted by CommitUpgradeStep after a verified success).
-                var backup = context.TryGetProperty<string>(UpgradeStep.BackupPathKey);
-                if (!string.IsNullOrWhiteSpace(backup))
-                    new UpgradeEngine().RestoreFromBackup(backup!, _ctx.InstallPath, CancellationToken.None);
-            }
             installLogger.Info("Install", report.Succeeded ? "Completed." : "Failed.");
             var logPath = File.Exists(installLogger.LogFilePath) ? installLogger.LogFilePath : null;
+            Engine.Diag.Info("Wizard", report.Succeeded ? "Interactive install completed." : "Interactive install failed.", report.Succeeded ? "BI2432" : "BI2435");
+            var supportBundlePath = CreateWizardSupportBundle(
+                context,
+                report.Succeeded,
+                report.Succeeded ? 0 : 1,
+                report.Succeeded ? "Interactive installation completed." : report.StepResults.LastOrDefault(r => !r.Succeeded)?.Message ?? "Interactive installation failed.",
+                logPath,
+                runCorrelationId);
 
             if (report.Succeeded)
             {
                 ShowCompletePage(report.Succeeded,
                     $"{_ctx.Project.AppName} has been installed to {_ctx.InstallPath}.",
-                    logPath);
+                    logPath,
+                    supportBundlePath);
             }
             else
             {
-                ShowErrorPage(report);
+                ShowErrorPage(report, supportBundlePath: supportBundlePath);
             }
         }
         catch (Exception ex)
         {
-            ShowErrorPage(null, ex.Message);
+            Engine.Diag.Warn("Wizard", $"Interactive install crashed: {ex.Message}", ex, "BI2435");
+            var context = Engine.InstallContextBuilder.ForInstall(
+                _project,
+                _ctx.InstallPath,
+                _ctx.PerUser,
+                rollback: null,
+                payloadRoot: null,
+                customValues: null);
+            var supportBundlePath = CreateWizardSupportBundle(context, false, 1, ex.Message, null, runCorrelationId);
+            ShowErrorPage(null, ex.Message, supportBundlePath);
         }
     }
 
-    private void ShowErrorPage(SetupReport? report = null, string? detail = null)
+    private string? CreateWizardSupportBundle(
+        SetupContext context,
+        bool success,
+        int exitCode,
+        string message,
+        string? logPath,
+        string correlationId)
+    {
+        try
+        {
+            var result = new Engine.RuntimeSupportBundleGenerator().Generate(new Engine.RuntimeSupportBundleOptions
+            {
+                Action = "install",
+                Project = _project,
+                InstallPath = _ctx.InstallPath,
+                Success = success,
+                ExitCode = exitCode,
+                Message = message,
+                LogPath = logPath ?? "",
+                Context = context,
+                OutputPath = null,
+                CorrelationId = correlationId,
+                PreviewOnly = true,
+                ConsentGranted = false
+            });
+            return result.Path;
+        }
+        catch (Exception ex)
+        {
+            Engine.Diag.Warn("WizardSupportBundle", "interactive support bundle generation failed", ex, "BI2436");
+            return null;
+        }
+    }
+
+    private void ShowErrorPage(SetupReport? report = null, string? detail = null, string? supportBundlePath = null)
     {
         var msg = detail ?? $"Installation failed at step: {report?.StepResults.LastOrDefault(r => !r.Succeeded)?.Message ?? "unknown"}";
-        _errorPage?.SetError(msg, null);
+        _errorPage?.SetError(msg, null, supportBundlePath);
         NavigateTo(_pages.Count - 1);
         _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Finish", "Finish");
         _nextBtn.Enabled = false;
@@ -788,10 +850,10 @@ public class BeepModernInstallerForm : BeepiFormPro
         _cancelBtn.ToolTipText = "";
     }
 
-    private void ShowCompletePage(bool success = true, string? message = null, string? logPath = null)
+    private void ShowCompletePage(bool success = true, string? message = null, string? logPath = null, string? supportBundlePath = null)
     {
         _content.Controls.Clear();
-        _completePage?.SetResult(success, message ?? "", logPath);
+        _completePage?.SetResult(success, message ?? "", logPath, supportBundlePath);
         if (_completePage != null)
         {
             _completePage.Dock = DockStyle.Fill;

@@ -12,6 +12,8 @@ This sample demonstrates building a real installer for a tiny "Hello World" app.
 
 ## How to use
 
+For maintenance and enterprise updates, see the [operator guide](../../plans/professional-enterprise-roadmap/OPERATOR_GUIDE.md) and `ServiceApp.update-check.response.json`. The response example checks eligibility only; replace its fictional URL, identity and paths before use.
+
 ### Option A: Open in the Package Builder
 
 ```bash

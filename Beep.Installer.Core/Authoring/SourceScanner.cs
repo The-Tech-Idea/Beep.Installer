@@ -98,7 +98,7 @@ public class SourceScanner
           ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg",
           ".html", ".htm", ".css", ".js", ".map",
           ".ttf", ".otf", ".woff", ".woff2",
-          ".so", ".dylib", ".dat", ".db", ".sqlite", ".sqlite3" };
+          ".so", ".dylib", ".dat" };
 
     // ── Public API ──
 
@@ -248,7 +248,7 @@ public class SourceScanner
 
         if (candidates.Count == 0)
         {
-            // Fallback: look for build output at project root level (e.g., .NET Framework)
+            // Also check build output at project root level for projects that emit there.
             var rootExe = Directory.EnumerateFiles(projectDir, "*.exe").FirstOrDefault();
             var rootDll = Directory.EnumerateFiles(projectDir, "*.dll").FirstOrDefault();
             if (rootExe != null || rootDll != null)

@@ -82,7 +82,7 @@ installed version is too old to delta from; the feed itself should eventually be
 
 ## 2. Client design — the BeepDM `Updates` domain (D12)
 
-Split per BeepDM's standard Models/Engine pattern (same as Migration, ETL, SetUp):
+Split per BeepDM's standard Models/Engine pattern (same as ETL and SetUp):
 
 **Contracts — `DataManagementModelsStandard/Updates/`** (namespace `TheTechIdea.Beep.Updates`):
 
@@ -172,12 +172,12 @@ incident (P0) is exactly what feed immutability prevents — new content ⇒ new
 | B | A, plus a tiny read-only API (single container) | + staged rollout, per-license channels, download stats | — |
 | C | Full update service (accounts, delta-on-demand) | everything | overkill until there is a fleet to justify it |
 
-The client only ever sees URLs + hashes, so A→B→C is a hosting migration, not a client change.
+The client only ever sees URLs + hashes, so A→B→C is a hosting evolution, not a client change.
 
 If B is ever chosen, BeepDM already holds the governance primitive for it:
 `IDeploymentMetadataService` and its approval-token records
 (`Studio/Deployment/IDeploymentMetadataService.cs:22,61-79`) — the same HMAC approval-token
-flow the installer-service plan prescribes for Staging/Live migrations — can gate a
+flow the installer-service plan prescribes for Staging/Live promotions — can gate a
 `Required` update behind an issued token rather than inventing a new auth mechanism.
 
 ## 4. Files to change

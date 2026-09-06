@@ -2,6 +2,7 @@ using Beep.Installer.Models;
 using System;
 using System.Collections.Generic;
 using Beep.Installer.Engine;
+using Beep.Installer.Forms;
 using FluentAssertions;
 using TheTechIdea.Beep.Installer;
 using Xunit;
@@ -69,5 +70,30 @@ public class ConditionListValidatorTests
     public void UnrecognizedOperator_IsWarning()
         => ConditionListValidator.Validate(new List<InstallCondition> { Cond(ConditionType.OsVersion, "10.0.0", null, "%%") })
             .Should().Contain(i => i.Message.Contains("Operator"));
-}
 
+    [Fact]
+    public void ConditionBuilderPreview_ExplainsGroupedExpressionAndIssues()
+    {
+        var component = new InstallComponent
+        {
+            Id = "analytics",
+            Name = "Analytics",
+            ConditionExpression = ConditionExpressionMode.Any,
+            Conditions =
+            {
+                Cond(ConditionType.Architecture, "x64"),
+                Cond(ConditionType.RegistryValue, "HKLM\\Software\\ACME")
+            }
+        };
+        var issues = ConditionListValidator.Validate(component.Conditions);
+
+        var preview = ComponentConditionsDialog.BuildConditionPreview(component, issues);
+
+        preview.Should().Contain("Expression: Any");
+        preview.Should().Contain("at least one rule passes");
+        preview.Should().Contain("Machine architecture == x64");
+        preview.Should().Contain("Registry value HKLM\\Software\\ACME");
+        preview.Should().Contain("Issues:");
+        preview.Should().Contain("Value2 is required");
+    }
+}

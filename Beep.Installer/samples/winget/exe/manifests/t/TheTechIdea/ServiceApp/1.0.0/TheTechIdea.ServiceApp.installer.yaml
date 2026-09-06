@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
+PackageIdentifier: TheTechIdea.ServiceApp
+PackageVersion: 1.0.0
+Platform:
+- Windows.Desktop
+MinimumOSVersion: 10.0.17763.0
+InstallerType: exe
+InstallModes:
+- silent
+- silentWithProgress
+Scope: machine
+InstallerSwitches:
+  Silent: "/S /JSON /NORESTART"
+  SilentWithProgress: "/SILENT /JSON /NORESTART"
+  InstallLocation: /D=<INSTALLPATH>
+  Log: /LOG=<LOGPATH>
+  Repair: "/REPAIR /JSON"
+UpgradeBehavior: install
+InstallerSuccessCodes:
+- 3010
+AppsAndFeaturesEntries:
+- DisplayName: ServiceApp
+  DisplayVersion: 1.0.0
+  Publisher: "The Tech Idea"
+  InstallerType: exe
+Installers:
+- Architecture: x64
+  InstallerUrl: https://downloads.example.test/serviceapp/1.0.0/ServiceAppSetup.exe
+  InstallerSha256: 1111111111111111111111111111111111111111111111111111111111111111
+ManifestType: installer
+ManifestVersion: 1.12.0

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Beep.Installer.Engine.Msix;
+using Beep.Installer.Engine;
 using TheTechIdea.Beep.Installer;
 using Beep.Installer.Models;
 using FluentAssertions;
@@ -54,9 +55,12 @@ public class StoreReadinessTests
 
     [Theory]
     [InlineData("MyCo.MyApp", true)]
-    [InlineData("MyApp", false)]
-    [InlineData("1Bad.MyApp", false)]
-    [InlineData("MyCo.", false)]
+    [InlineData("MyApp", true)]
+    [InlineData("1Bad.MyApp", true)]
+    [InlineData("MyCo.", true)]
+    [InlineData("ab", false)]
+    [InlineData("My App", false)]
+    [InlineData("Co.App\n", false)]
     [InlineData("MyCo.My-App_2", false)]
     public void IdentityFormat_RejectsInvalid(string name, bool expectPass)
     {
@@ -141,5 +145,52 @@ public class StoreReadinessTests
             r.Where(c => c.Severity == Severity.Error).Count().Should().BeGreaterOrEqualTo(2);
         }
         finally { try { Directory.Delete(d, recursive: true); } catch { } }
+    }
+
+    [Fact]
+    public void ProjectCapabilityAnalyzer_Allows_FileOnly_Msix_Project_With_UpdateFeed()
+    {
+        var project = InstallerProjectFactory.CreateNew("MsixReady", "1.0.0", "ACME", @"C:\src");
+        project.MsixIdentity = "ACME.MsixReady";
+        project.MsixPublisher = "CN=ACME";
+        project.OutputFormat = InstallerOutputFormat.Msix;
+        project.AppUpdatesURL = "https://updates.example.test/msix/";
+        project.CodeSignCertificatePath = @"certs\release.pfx";
+        project.Components.Add(new InstallComponent
+        {
+            Id = "core",
+            Name = "Core",
+            Required = true,
+            Selected = true,
+            Files = { new FileCopyOperation { SourcePath = "App.exe", DestinationPath = "App.exe" } }
+        });
+
+        var result = MsixProjectCapabilityAnalyzer.Analyze(project);
+
+        result.Where(x => x.Severity == Severity.Error).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ProjectCapabilityAnalyzer_Blocks_Classic_Resources_Not_Represented_In_Msix()
+    {
+        var project = InstallerProjectFactory.CreateNew("ClassicHeavy", "1.0.0", "ACME", @"C:\src");
+        project.OutputFormat = InstallerOutputFormat.Msix;
+        project.RegistryEntries.Add(new RegistryOperation { KeyPath = @"HKCU\Software\ACME" });
+        project.WindowsServices.Add(new WindowsServiceDefinition { Name = "Svc", ExecutablePath = "Svc.exe" });
+        project.Components.Add(new InstallComponent
+        {
+            Id = "optional",
+            Name = "Optional",
+            Required = false,
+            Selected = false,
+            Registry = { new RegistryOperation { KeyPath = @"HKCU\Software\ACME\Component" } }
+        });
+
+        var result = MsixProjectCapabilityAnalyzer.Analyze(project);
+
+        result.Should().Contain(x => x.Severity == Severity.Error && x.Name == "Registry");
+        result.Should().Contain(x => x.Severity == Severity.Error && x.Name == "Windows services");
+        result.Should().Contain(x => x.Severity == Severity.Error && x.Name.Contains("selection"));
+        result.Should().Contain(x => x.Severity == Severity.Error && x.Name.Contains("registry"));
     }
 }

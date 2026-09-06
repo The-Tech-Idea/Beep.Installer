@@ -63,10 +63,13 @@ public class InstallerController : INotifyPropertyChanged
     // ── Lifecycle ──
 
     public void New(string name, string version, string publisher, string sourceDir)
+        => New(ProjectTemplates.EmptyId, name, version, publisher, sourceDir);
+
+    public void New(string templateId, string name, string version, string publisher, string sourceDir)
     {
         if (_project != null)
             _project.PropertyChanged -= OnProjectPropertyChanged;
-        _project = InstallerProjectFactory.CreateNew(name, version, publisher, sourceDir);
+        _project = ProjectTemplates.Create(templateId, name, version, publisher, sourceDir);
         _project.PropertyChanged += OnProjectPropertyChanged;
         _filePath = null;
         OnPropertyChanged(nameof(Project));
@@ -146,14 +149,41 @@ public class InstallerController : INotifyPropertyChanged
 
     public BuildPipeline.BuildResult Validate()
     {
+        var snapshot = ProjectAuthoringWorkspace.CreateSnapshot(
+            _project,
+            new ProjectSchemaValidationOptions { Strict = true });
         var result = new BuildPipeline.BuildResult();
-        if (string.IsNullOrWhiteSpace(_project.AppName))
-            result.Errors.Add("Product name is required.");
-        if (string.IsNullOrWhiteSpace(_project.AppVersion))
-            result.Errors.Add("Product version is required.");
-        if (_project.Components == null || _project.Components.Count == 0)
-            result.Warnings.Add("No components defined.");
+        foreach (var diagnostic in snapshot.Diagnostics)
+        {
+            var message = $"{diagnostic.Code} {diagnostic.Path}: {diagnostic.Message}";
+            if (diagnostic.Severity == ProjectSchemaDiagnosticSeverity.Error)
+                result.Errors.Add(message);
+            else
+                result.Warnings.Add(message);
+        }
         return result;
+    }
+
+    public ProjectAuthoringSnapshot CreateAuthoringSnapshot()
+        => ProjectAuthoringWorkspace.CreateSnapshot(_project, new ProjectSchemaValidationOptions { Strict = true });
+
+    public ProjectValidationCenterReport CreateValidationCenterReport()
+        => ProjectValidationCenter.Create(_project, new ProjectSchemaValidationOptions { Strict = true });
+
+    public PackageFormatCapabilityReport CreatePackageFormatCapabilityReport()
+        => PackageFormatCapabilityReporter.Create(_project);
+
+    public ProjectTemplateUpdatePreview PreviewTemplateUpdate(string templateId)
+        => ProjectAuthoringWorkspace.PreviewTemplateUpdate(_project, templateId);
+
+    public ProjectTemplateUpdatePreview ApplyTemplateUpdate(string templateId)
+    {
+        var preview = PreviewTemplateUpdate(templateId);
+        var updated = ProjectAuthoringWorkspace.CreateTemplateCandidate(_project, templateId);
+        updated.MarkDirty();
+        ReplaceProject(updated);
+        ProjectReloaded?.Invoke(this, EventArgs.Empty);
+        return preview;
     }
 
     // ── Scan ──

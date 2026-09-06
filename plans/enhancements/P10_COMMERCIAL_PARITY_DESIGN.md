@@ -18,17 +18,17 @@ What we already have (verified in code, not assumed):
 |---|---|
 | Detect existing install + version compare | `UpgradeEngine.DetectExisting:22`, `IsNewer:93` — **but nothing calls it**; a re-run install today blindly overwrites |
 | Backup / restore | `UpgradeEngine.Backup:46`, `RestoreFromBackup:71` — uncalled |
-| User-config migration across versions | `UpgradeEngine.MigrateUserConfig:106` — uncalled |
+| User-config preservation across versions | upgrade config merge path — uncalled |
 | Transactional rollback on failed install | `RollbackManager` + wired steps (verified live: failed registry write rolled back copied files) |
 | ARP entry | synthesized by `BuildUninstallRegistryEntries` |
-| Shared-file refcounting (SharedDLLs) | `SharedFileCountStep` + tests |
+| Shared-file refcounting | `SharedFileCountStep` + tests |
 | Restore point, locked-file/restart-manager, firewall, file assoc | `InstallHelpers` (restore point wired; RestartManager helpers **uncalled**) |
 | Silent install/uninstall, exit codes | `/S`, `/UNINSTALL`, 0/1/2/99 |
 
 ## 1. Goals (each = one commercial behaviour, testable)
 
 1. **Upgrade-in-place.** Running a newer installer over an existing install detects it,
-   backs up, migrates user config, installs, and removes the backup on success — instead of
+   backs up, preserves user config, installs, and removes the backup on success — instead of
    blind overwrite. Downgrade prompts (UI) / fails with exit code (silent) unless `/FORCE`.
 2. **Repair mode.** `Setup.exe /REPAIR` (and an ARP "Repair" verb via `ModifyPath`) re-copies
    files whose hash differs from the manifest, restores shortcuts/registry, touches nothing else.
@@ -57,7 +57,7 @@ graph after prerequisites:
   same pattern as the P2 fixes.
 - Same version → switch context into **repair** semantics (goal 2). Older installer than
   installed → fail `Errors.Failed` with a clear message; `/FORCE` overrides.
-- Newer → `Backup()` to `<installPath>.backup`, record path in context; `MigrateUserConfig`
+- Newer → `Backup()` to `<installPath>.backup`, record path in context; preserve user config
   after file copy; delete backup in a new terminal `CommitUpgradeStep`; on failure the
   existing rollback plus `RestoreFromBackup` reinstates the old version.
 
@@ -94,13 +94,13 @@ path in the ARP entry (`InstallLocation` sibling value `LogFile`).
 | Modify | `BeepDM/.../Installer/Steps/{FileCopyStep,VerifyInstallStep}.cs` (locked files; RegisterInstall) | medium |
 | New | `Beep.Installer.Core/Runtime/RepairPlanner.cs` | medium |
 | Modify | `Beep.Installer/Program.cs` (+`/REPAIR /FORCE /LOG /VERYSILENT /NORESTART /RESTARTEXITCODE`) | medium |
-| Modify | `Hosting/InstallWizardGraph.cs` (upgrade/repair variants) | low |
+| Modify | Core-owned `Hosting/InstallWizardGraph.cs` (upgrade/repair variants) | low |
 | Tests | upgrade/downgrade/repair/locked-file suites | — |
 
 ## 4. Verification
 
 ```
-build v1.0 → install → build v1.1 → install over it   # upgrade path, config migrated, backup gone
+build v1.0 → install → build v1.1 → install over it   # upgrade path, config preserved, backup gone
 run v1.0 installer again over v1.1                    # downgrade refused; /FORCE overrides
 corrupt an installed file → Setup.exe /REPAIR         # only that file restored
 hold a file open → /S install                         # exit 3010, file scheduled for reboot

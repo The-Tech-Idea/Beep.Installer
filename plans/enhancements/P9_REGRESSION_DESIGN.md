@@ -1,4 +1,4 @@
-# Phase 9: Test Migration & Full Regression — Design Document
+# Phase 9: Test Consolidation & Full Regression — Design Document
 
 **Status:** ⬜ not started · **Priority:** P0 gate (runs partly inside every phase, closes at the end)
 **Depends on:** all phases
@@ -86,7 +86,7 @@ N/A.
 
 N/A (test phase).
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
 N/A.
 

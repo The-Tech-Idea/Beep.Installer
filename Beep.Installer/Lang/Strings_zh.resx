@@ -195,4 +195,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>最近使用</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>更新中心</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>受信任的项目标识</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>已签名更新源的路径或 URL</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>更新源公钥 PEM 路径</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>增量更新公钥 PEM 路径</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>已安装应用程序文件夹</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>已安装版本</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>当前通道</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>目标通道</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>设备分批发布标识</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>本地增量更新文件夹（可选）</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>恢复日志路径</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>更新状态和诊断</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>请输入已安装版本和受信任的公钥。应用更新前请关闭目标应用程序。</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>检查更新</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>应用更新</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>恢复</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>回滚</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>公钥 (*.pem)|*.pem|所有文件 (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>无法选择路径：{0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>已请求取消。正在等待安全停止点。</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0}：这将更改应用程序文件。请关闭应用程序。是否继续？</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>确认维护</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>正在检查签名、策略和更新资格…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>正在执行维护…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>请选择现有的已安装应用程序文件夹。</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>更新已应用。恢复日志：{0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>请先解决策略错误，再执行维护。</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>恢复预览：{0}&#10;安装位置：{1}&#10;恢复后版本：{2}&#10;日志：{3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>是否继续恢复？更改前将重新验证当前文件。</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>{0}已完成。{1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>操作已取消。应用前请重新检查。</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>维护失败：{0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>签名受信任。</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>签名不受信任。</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>无更新决定。</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>决定：{0}</value></data>
 </root>

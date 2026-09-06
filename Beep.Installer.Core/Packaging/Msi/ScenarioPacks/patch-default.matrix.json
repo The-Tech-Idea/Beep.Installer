@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "msp-supersedence-removal",
+      "category": "patch",
+      "description": "Apply and remove the MSP patch silently as the base supersedence/removal qualification contract.",
+      "requiredArtifacts": ["msp", "msp-product"],
+      "actions": ["msp-inventory-before", "msp-apply", "msp-inventory-after-apply", "msp-remove", "msp-inventory-after-remove"],
+      "properties": ["BEEP_MATRIX_SCENARIO=msp-supersedence-removal", "PATCH_POLICY=supersede"]
+    },
+    {
+      "id": "msp-managed-channel",
+      "category": "patch",
+      "description": "Apply and remove the MSP under managed deployment channel policy markers for Intune or ConfigMgr transport runs.",
+      "requiredArtifacts": ["msp", "msp-product"],
+      "actions": ["msp-inventory-before", "msp-apply", "msp-inventory-after-apply", "msp-remove", "msp-inventory-after-remove"],
+      "properties": ["BEEP_MATRIX_SCENARIO=msp-managed-channel", "PATCH_CHANNEL=managed"]
+    }
+  ]
+}

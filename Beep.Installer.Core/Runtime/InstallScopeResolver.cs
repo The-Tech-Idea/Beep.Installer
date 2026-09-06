@@ -24,22 +24,45 @@ public static class InstallScopeResolver
     /// context key and selects the registry hive for the registry, COM, shared-file and
     /// uninstall steps. Getting it wrong silently sends every write to HKLM.
     ///
-    /// Note the current mapping treats only <see cref="PrivilegeLevel.User"/> as per-user;
-    /// <see cref="PrivilegeLevel.Lowest"/> resolves to per-machine, which is arguably
-    /// backwards. Behaviour is preserved here deliberately — changing it would relocate
-    /// existing installations. Revisit alongside the scope-awareness work in phase P2.
+    /// DefaultScope controls ownership; PrivilegesRequired controls elevation independently.
+    /// An explicit selection is accepted only when the project allows scope selection.
     /// </summary>
-    public static bool IsPerUser(InstallProject project)
+    public static bool IsPerUser(InstallProject project, bool? selection = null)
     {
-        if (project == null) return false;
-        return project.PrivilegesRequired != PrivilegeLevel.Admin
-            && project.PrivilegesRequired != PrivilegeLevel.Lowest;
+        ArgumentNullException.ThrowIfNull(project);
+        var authored = project.DefaultScope == InstallationScope.User;
+        if (selection.HasValue && selection.Value != authored && !project.AllowScopeSelection)
+            throw new ArgumentException("This project does not allow changing the authored installation scope.", nameof(selection));
+        return selection ?? authored;
     }
 
     public static string DefaultBase(bool prefer64Bit, bool perUser)
         => perUser
             ? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
             : ProgramFilesFolder(prefer64Bit);
+
+    public static bool? ReadInstalledScope(InstallProject project, string installPath, string? journalPath = null)
+    {
+        string path;
+        try { path = Beep.Installer.Extensibility.ResourceExecutionJournalStore.ResolvePath(installPath, project.AppId, journalPath); }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        { throw new InvalidOperationException("Cannot determine installed scope: " + ex.Message, ex); }
+        var loaded = new Beep.Installer.Extensibility.ResourceExecutionJournalStore(path).TryLoad();
+        if (loaded.Status == Beep.Installer.Extensibility.ResourceExecutionJournalLoadStatus.Missing) return null;
+        if (!loaded.Success || loaded.Journal is null)
+            throw new InvalidOperationException("Cannot determine installed scope: " + loaded.Message);
+        var metadata = loaded.Journal.Metadata;
+        var appIdError = Beep.Installer.Extensibility.ResourceJournalRecoveryService.ValidateAppId(metadata, project.AppId);
+        if (appIdError.Length > 0) throw new InvalidOperationException(appIdError);
+        var identityError = Beep.Installer.Extensibility.ResourceJournalRecoveryService.ValidatePublisher(metadata, project.AppPublisher);
+        if (identityError.Length > 0) throw new InvalidOperationException(identityError);
+        return metadata.InstallScope switch
+        {
+            "user" => true,
+            "machine" => false,
+            _ => throw new InvalidOperationException("Installed scope journal contains an invalid scope.")
+        };
+    }
 
     public static string ResolveDefaultPath(InstallProject project, bool perUser)
     {
@@ -51,6 +74,28 @@ public static class InstallScopeResolver
             .Replace("%ProgramFilesX86%", folder)
             .Replace("%ProgramFiles%", folder);
         return TheTechIdea.Beep.Installer.ConfigManager.ExpandVariables(resolved);
+    }
+
+    /// <summary>Resolves one maintenance target; multiple installations require an explicit path.</summary>
+    public static string ResolveMaintenancePath(InstallProject project, string? explicitPath = null,
+        Func<bool, string?>? registrationLookup = null)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        if (!string.IsNullOrWhiteSpace(explicitPath)) return Path.GetFullPath(explicitPath);
+        registrationLookup ??= perUser =>
+        {
+            using var hive = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                TheTechIdea.Beep.Installer.InstallScope.HiveFor(perUser),
+                TheTechIdea.Beep.Installer.InstallScope.ViewFor(project.Prefer64Bit));
+            return new TheTechIdea.Beep.Installer.UpgradeEngine().DetectExisting(project.AppId, hive)?.InstallPath;
+        };
+        var candidates = new[] { registrationLookup(true), registrationLookup(false) }
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path!)))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        if (candidates.Length > 1)
+            throw new InvalidOperationException("Multiple installations were found. Specify /D=<install-directory> to select the maintenance target.");
+        return candidates.Length == 1 ? candidates[0] : ResolveDefaultPath(project, IsPerUser(project));
     }
 
     public static string ResolveOutputDirectory(InstallProject project)

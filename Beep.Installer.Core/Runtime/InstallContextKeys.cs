@@ -22,6 +22,37 @@ public static class InstallContextKeys
     /// <summary>The projected <c>InstallConfig</c>. Four steps hard-fail Validate() without it.</summary>
     public const string InstallConfig = "InstallConfig";
 
+    /// <summary>The first-class Beep Installer authoring project used by compiled-plan resource providers.</summary>
+    public const string InstallProject = "InstallProject";
+
+    /// <summary>The deterministic compiled plan for provider-based resource execution.</summary>
+    public const string CompiledInstallPlan = "CompiledInstallPlan";
+
+    /// <summary>Optional override for the runtime resource provider registry.</summary>
+    public const string ResourceProviderRegistry = "ResourceProviderRegistry";
+    public const string ExtensionBundleRoot = "ExtensionBundleRoot";
+
+    /// <summary>Optional override for condition fact evaluation during provider execution.</summary>
+    public const string ResourceConditionFacts = "ResourceConditionFacts";
+
+    /// <summary>Execution journal produced by provider-based resource execution.</summary>
+    public const string ResourceExecutionJournal = "ResourceExecutionJournal";
+
+    /// <summary>Absolute path to the durable provider execution journal JSON file.</summary>
+    public const string ResourceExecutionJournalPath = "ResourceExecutionJournalPath";
+
+    /// <summary>Optional externally supplied provider execution attempt id.</summary>
+    public const string ResourceExecutionAttemptId = "ResourceExecutionAttemptId";
+
+    /// <summary>install, repair or update. Written into provider journal metadata and entries.</summary>
+    public const string ResourceExecutionMode = "ResourceExecutionMode";
+
+    /// <summary>Optional runtime secret provider used by resource providers at execution boundaries.</summary>
+    public const string ResourceSecretProvider = "ResourceSecretProvider";
+
+    /// <summary>Effective enterprise policy used by runtime resource providers.</summary>
+    public const string ResourcePolicy = "ResourcePolicy";
+
     /// <summary>Absolute install directory. Nothing derives this from InstallConfig.DefaultInstallPath.</summary>
     public const string InstallPath = "InstallPath";
 
@@ -42,6 +73,9 @@ public static class InstallContextKeys
 
     /// <summary>Values backing the <c>{Custom:fieldId}</c> macros.</summary>
     public const string CustomValues = "CustomValues";
+
+    /// <summary>Runtime variables supplied by silent/enterprise command-line properties.</summary>
+    public const string RuntimeVariables = "RuntimeVariables";
 
     /// <summary>Extra directories for DirectoryCreateStep to create.</summary>
     public const string ComponentDirs = "ComponentDirs";
@@ -68,7 +102,6 @@ public static class InstallContextKeys
     public const string RegistryEntriesWritten = "RegistryEntriesWritten";
     public const string ShortcutsCreated = "ShortcutsCreated";
     public const string SharedFiles = "SharedFiles";
-    public const string ComRegistrationsWritten = "ComRegistrationsWritten";
     public const string GacAssembliesInstalled = "GacAssembliesInstalled";
 
     /// <summary>

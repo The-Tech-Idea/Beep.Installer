@@ -157,18 +157,18 @@ Key names are exact string literals today; they become `InstallContextKeys` cons
 
 ### 2.5 Deleting the global static
 
-`RuntimeProjectContext.Current` (`Engine/RuntimeProjectContext.cs:8`) is read by
-`Steps/PayloadPrepareStep.cs:132,137,152` and `Steps/PayloadDownloadStep.cs:95,103` for
+`RuntimeProjectContext.Current` (`Engine/RuntimeProjectContext.cs:8`) was read by
+Core-owned `Steps/PayloadPrepareStep.cs` and `Steps/PayloadDownloadStep.cs` for
 `PayloadFolderName`, `SourceDirectory`, and `Compression`. Those three values move into
 context keys set by `InstallContextBuilder`; both steps take them from `SetupContext`. The
-file is then deleted along with all writes (`Program.cs:229,237,301,341`).
+file is then deleted along with all direct writes.
 
 ### 2.6 Enum de-duplication
 
 `InstallationTypeEx`/`UpdateModeEx` (`Models/InstallProject.cs:80-91`) are deleted and
 replaced by BeepDM's `InstallationType`/`UpdateMode`; the serializer's hand-written mappers
-(`InstallerScriptSerializer.cs:1000-1019`) collapse to `Enum.TryParse` plus a legacy-string
-table for `.bsetup` backward compatibility.
+(`InstallerScriptSerializer.cs:1000-1019`) collapse to strict `Enum.TryParse` handling for
+the current `.bsetup` contract.
 
 ## 3. API surface
 
@@ -185,9 +185,9 @@ entry point. `.bsetup` remains the authoring format.
 | New | `Engine/InstallContextBuilder.cs` + `InstallContextKeys.cs` | ~140 | medium |
 | Modify | `Program.cs` (4 call sites use the builder) | ~-60/+25 | medium |
 | Modify | `Forms/BeepModernInstallerForm.cs` (UI install path uses the builder) | ~30 | medium |
-| Modify | `Steps/PayloadPrepareStep.cs`, `Steps/PayloadDownloadStep.cs` (context, not global) | ~40 | medium |
+| Modify | Core-owned `Steps/PayloadPrepareStep.cs`, `Steps/PayloadDownloadStep.cs` (context, not global) | ~40 | medium |
 | Modify | `Models/InstallProject.cs` (drop `...Ex` enums) | ~-15 | low |
-| Modify | `Engine/InstallerScriptSerializer.cs` (enum mapping + legacy strings) | ~30 | medium |
+| Modify | `Engine/InstallerScriptSerializer.cs` (strict enum mapping) | ~30 | medium |
 | Modify | `Engine/InstallScopeResolver.cs` (single `PerUser` decision) | ~30 | low |
 | Modify | `Engine/BuildPipeline.cs` (also emit `install-config.json`) | ~25 | low |
 | Delete | `Engine/RuntimeProjectContext.cs` | -9 | medium |
@@ -202,11 +202,10 @@ entry point. `.bsetup` remains the authoring format.
 | `PerUser` unset | silently writes HKLM | resolved once in `InstallScopeResolver`; asserted in the context test |
 | `IsSelfContained` unset | `PrerequisiteCheckStep` hard-fails on a machine without .NET | always set from `InstallProject.SelfContained` |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-`.bsetup` files unchanged (legacy `InstallationTypeEx`/`UpdateModeEx` strings still parse).
-Adding `install-config.json` to build output is additive. Already-shipped installers are
-unaffected — they carry their own embedded runtime.
+`.bsetup` files follow the current schema. Remove discarded enum names and stale runtime
+aliases instead of carrying alternate parsing tables.
 
 ## 7. Verification
 
@@ -241,5 +240,5 @@ dotnet test Beep.Installer.Tests             # projector + context tests green; 
 3. **1.A.3** Route `Program.cs` silent-install/uninstall/selftest through the builder. Verify: `/SELFTEST` passes.
 4. **1.B.1** Move payload steps off `RuntimeProjectContext` onto context keys. Verify: `/SELFTEST` still passes; payload located from a built exe.
 5. **1.B.2** Delete `RuntimeProjectContext`; route the UI install path through the builder. Verify: wizard install works.
-6. **1.B.3** Drop `...Ex` enums; serializer legacy-string parse. Verify: both sample `.bsetup` files round-trip unchanged.
+6. **1.B.3** Drop `...Ex` enums; strict serializer enum parse. Verify: both sample `.bsetup` files round-trip unchanged.
 7. **1.C.1** Single `PerUser` decision in `InstallScopeResolver`; emit `install-config.json` at build. Verify: per-user and per-machine installs both land in the right hive/path.

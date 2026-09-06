@@ -1,0 +1,12 @@
+{
+  "winget": "Beep.Installer\\samples\\ServiceApp.bsetup",
+  "policy": "Beep.Installer\\samples\\enterprise-policy.sample.json",
+  "installer": "Beep.Installer\\bin\\Debug\\net10.0-windows\\Beep.Installer.exe",
+  "installerUrl": "https://downloads.example.test/Setup-ServiceApp.exe",
+  "out": "Beep.Installer\\samples\\winget",
+  "packageId": "TheTechIdea.ServiceApp",
+  "packageLocale": "en-US",
+  "license": "MIT",
+  "description": "ServiceApp sample installer.",
+  "moniker": "serviceapp"
+}

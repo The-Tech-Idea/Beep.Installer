@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 using Beep.Installer.Lang;
 using TheTechIdea.Beep.Winform.Controls;
@@ -13,6 +15,7 @@ public class CompletePage : UserControl, IInstallerPage
     private BeepLabel _message = null!;
     private CheckBox _launchCheck = null!;
     private CheckBox _openLogCheck = null!;
+    private BeepButton _viewSupportBundleBtn = null!;
     private bool _success;
 
     public string PageTitle => _success
@@ -31,6 +34,7 @@ public class CompletePage : UserControl, IInstallerPage
     public bool LaunchApplication => _launchCheck.Checked;
     public bool OpenLog => _openLogCheck.Checked;
     public string? LogPath { get; private set; }
+    public string? SupportBundlePath { get; private set; }
 
     public CompletePage()
     {
@@ -66,16 +70,32 @@ public class CompletePage : UserControl, IInstallerPage
             Size = new Size(500, 24),
             Checked = false
         };
+        _viewSupportBundleBtn = new BeepButton
+        {
+            Text = "View Support Bundle",
+            Location = new Point(0, 248),
+            Size = new Size(170, 32),
+            Visible = false
+        };
+        _viewSupportBundleBtn.Click += (_, _) =>
+        {
+            if (!string.IsNullOrWhiteSpace(SupportBundlePath) && File.Exists(SupportBundlePath))
+                Process.Start("notepad.exe", SupportBundlePath);
+            else
+                MessageBox.Show(this, "No support bundle was generated.", "Support Bundle",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+        };
 
-        Controls.AddRange(new Control[] { _icon, _title, _message, _launchCheck, _openLogCheck });
+        Controls.AddRange(new Control[] { _icon, _title, _message, _launchCheck, _openLogCheck, _viewSupportBundleBtn });
     }
 
     public void OnEnter(InstallContext ctx) { }
 
-    public void SetResult(bool success, string message, string? logPath = null)
+    public void SetResult(bool success, string message, string? logPath = null, string? supportBundlePath = null)
     {
         _success = success;
         LogPath = logPath;
+        SupportBundlePath = supportBundlePath;
         _title.Text = success ? "Installation Complete" : "Installation Failed";
         _message.Text = message;
 
@@ -84,6 +104,7 @@ public class CompletePage : UserControl, IInstallerPage
         _launchCheck.Visible = success;
         _openLogCheck.Visible = !string.IsNullOrEmpty(logPath);
         if (_openLogCheck.Visible) _openLogCheck.Tag = logPath;
+        _viewSupportBundleBtn.Visible = !string.IsNullOrWhiteSpace(supportBundlePath) && File.Exists(supportBundlePath);
     }
 
     private static Image? LoadStatusIcon(bool success)

@@ -31,6 +31,7 @@ public class PackageBuilderForm : Form
     private static Font SectionTitleFont => Ui.InstallerTheme.SectionTitle;
 
     private readonly InstallerController _controller;
+    private readonly string[] _runtimeArgs;
     private InstallProject _project;
 
     private ToolStrip _toolbar = null!;
@@ -44,6 +45,7 @@ public class PackageBuilderForm : Form
     private ToolStripProgressBar _progress = null!;
 
     private LeftNavPanel _nav = null!;
+    private TextBox _navSearchBox = null!;
     private Panel _contentHost = null!;
     private Panel? _activeContent;
 
@@ -68,6 +70,15 @@ public class PackageBuilderForm : Form
     private Panel? _contentMsix;
     private Panel? _contentLog;
     private Panel? _contentResult;
+    private Panel? _contentScheduledTasks;
+    private Panel? _contentFirewallRules;
+    private Panel? _contentCertificates;
+    private Panel? _contentComRegistrations;
+    private Panel? _contentDriverPackages;
+    private Panel? _contentConfigTransforms;
+    private Panel? _contentIisAppPools;
+    private Panel? _contentIisSites;
+    private Panel? _contentWebDeployPackages;
 
     private TextBox _sourceDirBox = null!;
     private TreeView _fileTree = null!;
@@ -88,7 +99,10 @@ public class PackageBuilderForm : Form
     private BindingSource _registryBinding = null!;
     private CheckedListBox _wizardPagesList = null!;
     private TextBox _scriptPreviewBox = null!;
+    private TextBox _keyboardWalkthroughBox = null!;
+    private TextBox _validationCenterBox = null!;
     private TextBox _buildLogBox = null!;
+    private TextBox _formatCapabilityBox = null!;
     private TextBox _licenseTextBox = null!;
 
     private System.Windows.Forms.Timer? _scriptDebounce;
@@ -98,8 +112,9 @@ public class PackageBuilderForm : Form
 
     public InstallProject Project => _project;
 
-    public PackageBuilderForm(InstallerController controller)
+    public PackageBuilderForm(InstallerController controller, string[]? runtimeArgs = null)
     {
+        _runtimeArgs = runtimeArgs?.ToArray() ?? Array.Empty<string>();
         _controller = controller;
         _project = controller.Project;
         InitializeUi();
@@ -180,19 +195,52 @@ public class PackageBuilderForm : Form
         {
             NewButton(), OpenButton(), SaveButton(), SaveAsButton(),
             new ToolStripSeparator(), RecentButton(), new ToolStripSeparator(),
-            PreviewButton(), BuildButton(), PublishButton(), ActionsButton(), ConditionsButton(),
+            PreviewButton(), BuildButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
             new ToolStripSeparator(), LangButton(), HelpButton(), AboutButton()
         });
 
-        _nav = new LeftNavPanel { Width = 220, Dock = DockStyle.Left, BackColor = Color.FromArgb(241, 244, 248) };
+        _nav = new LeftNavPanel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(241, 244, 248) };
         PopulateLeftNav();
         _nav.SectionSelected += OnSectionSelected;
+        _navSearchBox = new TextBox
+        {
+            Dock = DockStyle.Top,
+            PlaceholderText = "Search sections…",
+            Margin = new Padding(8),
+            AccessibleName = "Search authoring sections"
+        };
+        _navSearchBox.TextChanged += (_, _) => _nav.FilterText = _navSearchBox.Text;
+        _navSearchBox.KeyDown += (_, e) =>
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                if (_nav.SelectFirstMatch())
+                    e.Handled = true;
+            }
+            else if (e.KeyCode == Keys.Escape)
+            {
+                _navSearchBox.Clear();
+                e.Handled = true;
+            }
+        };
+        var navHost = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            RowCount = 2,
+            ColumnCount = 1,
+            BackColor = Color.FromArgb(241, 244, 248),
+            Padding = new Padding(8, 8, 8, 8)
+        };
+        navHost.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        navHost.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        navHost.Controls.Add(_navSearchBox, 0, 0);
+        navHost.Controls.Add(_nav, 0, 1);
 
         _contentHost = new Panel { Dock = DockStyle.Fill, BackColor = ShellBackColor, Padding = new Padding(14) };
         var split = new SplitContainer { Dock = DockStyle.Fill, FixedPanel = FixedPanel.Panel1, IsSplitterFixed = true, SplitterWidth = 1 };
-        split.Panel1.Controls.Add(_nav);
+        split.Panel1.Controls.Add(navHost);
         split.Panel2.Controls.Add(_contentHost);
-        split.SplitterDistance = _nav.Width;
+        split.SplitterDistance = 236;
 
         _status = new StatusStrip { BackColor = PanelBackColor, SizingGrip = false };
         _statusLabel = new ToolStripStatusLabel("Ready.") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
@@ -240,27 +288,38 @@ public class PackageBuilderForm : Form
         // Section headers go through the resource manager; the English text stays as the
         // fallback so behaviour is unchanged for en.
         var g = _nav.AddSection("project", L("Nav_Project", "Project"));
-        _nav.AddItem(g, "identity", "Identity");
-        _nav.AddItem(g, "layout", "Layout");
-        _nav.AddItem(g, "eula", "EULA");
+        _nav.AddItem(g, "identity", "Identity", "Product name, version, publisher, setup titles");
+        _nav.AddItem(g, "layout", "Layout", "Install directory, scope, privileges, install type");
+        _nav.AddItem(g, "eula", "EULA", "License agreement and EULA display");
 
         g = _nav.AddSection("source", L("Nav_Source", "Source"));
-        _nav.AddItem(g, "source", "Files");
-        _nav.AddItem(g, "includes", "Includes");
+        _nav.AddItem(g, "source", "Files", "Source directory, payload files, scan");
+        _nav.AddItem(g, "includes", "Includes", "Include and exclude patterns");
 
         g = _nav.AddSection("features", L("Nav_Features", "Features"));
-        _nav.AddItem(g, "components", "Components");
-        _nav.AddItem(g, "prerequisites", "Prerequisites");
-        _nav.AddItem(g, "shortcuts", "Shortcuts");
-        _nav.AddItem(g, "registry", "Registry");
+        _nav.AddItem(g, "components", "Components", "Feature tree, selected components, conditions");
+        _nav.AddItem(g, "prerequisites", "Prerequisites", "Runtime packages, prerequisite catalogs, dependencies");
+        _nav.AddItem(g, "shortcuts", "Shortcuts", "Desktop, Start Menu and Startup shortcuts");
+        _nav.AddItem(g, "registry", "Registry", "Registry keys, values and uninstall metadata");
+
+        g = _nav.AddSection("advanced", "Advanced Resources");
+        _nav.AddItem(g, "scheduledtasks", "Scheduled Tasks", "Task Scheduler actions, triggers, elevation and credentials");
+        _nav.AddItem(g, "firewallrules", "Firewall Rules", "Windows Firewall ports, programs, services and profiles");
+        _nav.AddItem(g, "certificates", "Certificates", "Certificate source, store, thumbprint and rollback");
+        _nav.AddItem(g, "comregistrations", "COM", "COM CLSID, ProgID, server type and typelib registration");
+        _nav.AddItem(g, "driverpackages", "Drivers", "INF/sys packages, service identity, signing and reboot behavior");
+        _nav.AddItem(g, "configtransforms", "Config Transforms", "JSON/XML/INI transforms with rollback backups");
+        _nav.AddItem(g, "iisapppools", "IIS App Pools", "Runtime, pipeline, identity and ownership settings");
+        _nav.AddItem(g, "iissites", "IIS Sites", "Physical path, application pool, bindings and ownership");
+        _nav.AddItem(g, "webdeploy", "Web Deploy", "msdeploy packages, IIS site target and parameters");
 
         g = _nav.AddSection("customize", L("Nav_Customize", "Customize"));
-        _nav.AddItem(g, "branding", "Branding");
-        _nav.AddItem(g, "wizardpages", "Wizard Pages");
+        _nav.AddItem(g, "branding", "Branding", "Theme, banner, logo and installer branding");
+        _nav.AddItem(g, "wizardpages", "Wizard Pages", "Custom wizard pages and unattended properties");
 
         g = _nav.AddSection("build", L("Nav_Build", "Build"));
-        _nav.AddItem(g, "script", "Script");
-        _nav.AddItem(g, "build", "Build Workflow");
+        _nav.AddItem(g, "script", "Script", "Canonical .bsetup script preview and editor");
+        _nav.AddItem(g, "build", "Build Workflow", "Validation, plan hash, package build and diagnostics");
     }
 
     private void OnSectionSelected(object? sender, string id)
@@ -290,6 +349,15 @@ public class PackageBuilderForm : Form
             "msix"         => GetOrCreate(ref _contentMsix, BuildMsixSection),
             "log"          => GetOrCreate(ref _contentLog, BuildLogSection),
             "result"       => GetOrCreate(ref _contentResult, BuildResultSection),
+            "scheduledtasks" => GetOrCreate(ref _contentScheduledTasks, BuildScheduledTasksSection),
+            "firewallrules" => GetOrCreate(ref _contentFirewallRules, BuildFirewallRulesSection),
+            "certificates" => GetOrCreate(ref _contentCertificates, BuildCertificatesSection),
+            "comregistrations" => GetOrCreate(ref _contentComRegistrations, BuildComRegistrationsSection),
+            "driverpackages" => GetOrCreate(ref _contentDriverPackages, BuildDriverPackagesSection),
+            "configtransforms" => GetOrCreate(ref _contentConfigTransforms, BuildConfigTransformsSection),
+            "iisapppools" => GetOrCreate(ref _contentIisAppPools, BuildIisAppPoolsSection),
+            "iissites" => GetOrCreate(ref _contentIisSites, BuildIisSitesSection),
+            "webdeploy" => GetOrCreate(ref _contentWebDeployPackages, BuildWebDeployPackagesSection),
             _ => null
         };
         if (_activeContent != null)
@@ -327,6 +395,16 @@ public class PackageBuilderForm : Form
         var proj = _project;
         AddBoundRow(layout, "Script name:",        proj, nameof(InstallProject.ProjectName));
         AddBoundRow(layout, "Product name:",       proj, nameof(InstallProject.AppName));
+        AddBoundRow(layout, "Product ID (AppId):",  proj, nameof(InstallProject.AppId));
+        var identityHelp = new Label
+        {
+            AutoSize = true,
+            Text = "Keep this GUID unchanged for updates and renames. A different GUID identifies a different product.",
+            AccessibleName = "Product ID guidance",
+            Margin = new Padding(3, 0, 3, 8)
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(identityHelp, 1, layout.RowCount++);
         AddBoundRow(layout, "Version:",            proj, nameof(InstallProject.AppVersion));
         AddBoundRow(layout, "Publisher:",          proj, nameof(InstallProject.AppPublisher));
         AddBoundRow(layout, "Publisher URL:",      proj, nameof(InstallProject.AppPublisherURL));
@@ -426,7 +504,13 @@ public class PackageBuilderForm : Form
     private static void AddBoundRow(TableLayoutPanel layout, string label, InstallProject proj, string propertyName)
     {
         var lbl = CreateRowLabel(label);
-        var box = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 4, 0, 4) };
+        var box = new TextBox
+        {
+            Name = propertyName,
+            AccessibleName = label.TrimEnd(':'),
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 4, 0, 4)
+        };
         box.DataBindings.Add("Text", proj, propertyName, true, DataSourceUpdateMode.OnPropertyChanged);
         int row = AddTableRow(layout);
         layout.Controls.Add(lbl, 0, row);
@@ -750,6 +834,290 @@ public class PackageBuilderForm : Form
         return p;
     }
 
+    private Panel BuildScheduledTasksSection()
+        => BuildAdvancedResourceSection(
+            "Scheduled Tasks",
+            "Create Task Scheduler entries with trigger, elevation, working-directory, credential and uninstall behavior.",
+            _project.ScheduledTasks,
+            () => new ScheduledTaskDefinition
+            {
+                Name = $"{SafeIdentifier(_project.AppName)} Task",
+                Description = $"Runs {_project.AppName}.",
+                ExecutablePath = DefaultMainExecutableReference(),
+                WorkingDirectory = "{app}",
+                Trigger = ScheduledTaskTrigger.OnLogon,
+                Enabled = true,
+                StopOnUninstall = true
+            });
+
+    private Panel BuildFirewallRulesSection()
+        => BuildAdvancedResourceSection(
+            "Firewall Rules",
+            "Author Windows Firewall rules for ports, programs, services and profile scope.",
+            _project.FirewallRules,
+            () => new FirewallRuleDefinition
+            {
+                Name = $"{_project.AppName} inbound",
+                Description = $"Allows inbound traffic for {_project.AppName}.",
+                Direction = FirewallRuleDirection.In,
+                Action = FirewallRuleAction.Allow,
+                Protocol = FirewallRuleProtocol.Tcp,
+                LocalPort = "443",
+                Program = DefaultMainExecutableReference(),
+                Profile = "domain,private",
+                Enabled = true,
+                RemoveOnUninstall = true
+            });
+
+    private Panel BuildCertificatesSection()
+        => BuildAdvancedResourceSection(
+            "Certificates",
+            "Install certificate assets into the Windows certificate store with thumbprint and rollback ownership controls.",
+            _project.Certificates,
+            () => new CertificateDefinition
+            {
+                SourcePath = "{app}\\certificates\\certificate.cer",
+                StoreName = "My",
+                StoreLocation = InstallationScope.Machine,
+                RemoveOnUninstall = true
+            });
+
+    private Panel BuildComRegistrationsSection()
+        => BuildAdvancedResourceSection(
+            "COM Registrations",
+            "Register COM CLSID/ProgID metadata against in-process or local-server binaries.",
+            _project.ComRegistrations,
+            () => new ComRegistrationDefinition
+            {
+                Description = $"{_project.AppName} COM server",
+                ServerPath = DefaultMainExecutableReference(),
+                ServerType = ComServerType.LocalServer,
+                ThreadingModel = "Both",
+                RemoveOnUninstall = true
+            });
+
+    private Panel BuildDriverPackagesSection()
+        => BuildAdvancedResourceSection(
+            "Driver Packages",
+            "Stage driver INF/sys packages with service identity, signing requirements and reboot behavior.",
+            _project.DriverPackages,
+            () => new DriverPackageDefinition
+            {
+                Name = $"{SafeIdentifier(_project.AppName)}Driver",
+                Kind = DriverPackageKind.Pnp,
+                InfPath = "{app}\\drivers\\driver.inf",
+                RequireSigned = true,
+                RemoveOnUninstall = true,
+                RebootBehavior = DriverPackageRebootBehavior.Possible
+            });
+
+    private Panel BuildConfigTransformsSection()
+        => BuildAdvancedResourceSection(
+            "Config Transforms",
+            "Apply JSON/XML/INI configuration changes with install backup and rollback restore controls.",
+            _project.ConfigTransforms,
+            () => new ConfigTransformDefinition
+            {
+                Name = "Set app setting",
+                TargetPath = "{app}\\appsettings.json",
+                Format = ConfigTransformFormat.Json,
+                Operation = ConfigTransformOperation.Set,
+                KeyPath = "Logging:LogLevel:Default",
+                Value = "Information",
+                BackupOnInstall = true,
+                RestoreOnRollback = true
+            });
+
+    private Panel BuildIisAppPoolsSection()
+        => BuildAdvancedResourceSection(
+            "IIS App Pools",
+            "Define IIS application-pool runtime, pipeline mode, identity, autostart and ownership.",
+            _project.IisAppPools,
+            () => new IisAppPoolDefinition
+            {
+                Name = SafeIdentifier(_project.AppName),
+                RuntimeVersion = "v4.0",
+                PipelineMode = IisManagedPipelineMode.Integrated,
+                Identity = "ApplicationPoolIdentity",
+                AutoStart = true,
+                StartAfterInstall = true,
+                RemoveOnUninstall = true
+            });
+
+    private Panel BuildIisSitesSection()
+        => BuildAdvancedResourceSection(
+            "IIS Sites",
+            "Define IIS site physical path, application pool, binding collection and uninstall ownership.",
+            _project.IisSites,
+            () => new IisSiteDefinition
+            {
+                Name = _project.AppName,
+                PhysicalPath = "{app}\\wwwroot",
+                ApplicationPool = SafeIdentifier(_project.AppName),
+                StartAfterInstall = true,
+                RemoveOnUninstall = true,
+                Bindings =
+                {
+                    new IisBindingDefinition { Protocol = IisBindingProtocol.Http, IpAddress = "*", Port = 80 }
+                }
+            });
+
+    private Panel BuildWebDeployPackagesSection()
+        => BuildAdvancedResourceSection(
+            "Web Deploy Packages",
+            "Attach msdeploy packages to an IIS site target with package parameters and uninstall ownership.",
+            _project.WebDeployPackages,
+            () => new WebDeployPackageDefinition
+            {
+                Name = $"{SafeIdentifier(_project.AppName)}WebDeploy",
+                PackagePath = "{app}\\deploy\\package.zip",
+                SiteName = _project.AppName,
+                Destination = "auto",
+                RemoveOnUninstall = true
+            });
+
+    private Panel BuildAdvancedResourceSection<T>(
+        string title,
+        string description,
+        System.Collections.ObjectModel.ObservableCollection<T> collection,
+        Func<T> createDefault)
+        where T : class
+    {
+        var p = new Panel { Dock = DockStyle.Fill };
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = PanelBackColor,
+            Padding = new Padding(8)
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = PanelBackColor };
+        header.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        header.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        header.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, Font = SectionTitleFont, ForeColor = TextColor }, 0, 0);
+        header.Controls.Add(new Label { Text = description, Dock = DockStyle.Fill, ForeColor = MutedTextColor }, 0, 1);
+        layout.Controls.Add(header, 0, 0);
+
+        var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 560 };
+        var binding = new BindingSource { DataSource = collection };
+        var grid = new DataGridView
+        {
+            Dock = DockStyle.Fill,
+            DataSource = binding,
+            AutoGenerateColumns = true,
+            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+            AllowUserToAddRows = false
+        };
+        grid.DataError += (_, e) => e.ThrowException = false;
+        grid.CellValueChanged += (_, _) => _project.MarkDirty();
+        grid.UserDeletedRow += (_, _) => _project.MarkDirty();
+        grid.DataBindingComplete += (_, _) =>
+        {
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                var propertyType = typeof(T).GetProperty(column.DataPropertyName)?.PropertyType;
+                if (propertyType == null)
+                    continue;
+                if (propertyType != typeof(string) && typeof(System.Collections.IEnumerable).IsAssignableFrom(propertyType))
+                    column.Visible = false;
+            }
+        };
+
+        var props = new PropertyGrid { Dock = DockStyle.Fill, HelpVisible = true };
+        props.DataBindings.Add("SelectedObject", binding, "", true, DataSourceUpdateMode.OnPropertyChanged);
+        props.PropertyValueChanged += (_, _) => _project.MarkDirty();
+
+        var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 36, FlowDirection = FlowDirection.LeftToRight };
+        var addBtn = new Button { Text = L("Btn_Add", "Add"), AutoSize = true };
+        var duplicateBtn = new Button { Text = "Duplicate", AutoSize = true };
+        var removeBtn = new Button { Text = L("Btn_Remove", "Remove"), AutoSize = true };
+        addBtn.Click += (_, _) =>
+        {
+            var item = createDefault();
+            collection.Add(item);
+            binding.Position = collection.Count - 1;
+            _project.MarkDirty();
+        };
+        duplicateBtn.Click += (_, _) =>
+        {
+            if (binding.Current is not T current)
+                return;
+            var item = CloneAdvancedResource(current);
+            collection.Add(item);
+            binding.Position = collection.Count - 1;
+            _project.MarkDirty();
+        };
+        removeBtn.Click += (_, _) =>
+        {
+            if (binding.Current is not T current)
+                return;
+            collection.Remove(current);
+            _project.MarkDirty();
+        };
+        btnPanel.Controls.AddRange(new Control[] { addBtn, duplicateBtn, removeBtn });
+
+        var left = new Panel { Dock = DockStyle.Fill };
+        left.Controls.Add(grid);
+        left.Controls.Add(btnPanel);
+        split.Panel1.Controls.Add(left);
+        split.Panel2.Controls.Add(props);
+        layout.Controls.Add(split, 0, 1);
+        p.Controls.Add(layout);
+        return p;
+    }
+
+    private static T CloneAdvancedResource<T>(T source) where T : class
+    {
+        var clone = Activator.CreateInstance<T>();
+        foreach (var property in typeof(T).GetProperties().Where(p => p.CanRead && p.CanWrite))
+        {
+            var value = property.GetValue(source);
+            if (value is System.Collections.IDictionary sourceDictionary)
+            {
+                var targetDictionary = property.GetValue(clone) as System.Collections.IDictionary;
+                if (targetDictionary != null)
+                {
+                    foreach (System.Collections.DictionaryEntry entry in sourceDictionary)
+                        targetDictionary.Add(entry.Key, entry.Value);
+                    continue;
+                }
+            }
+            if (value is System.Collections.IList sourceList)
+            {
+                var targetList = property.GetValue(clone) as System.Collections.IList;
+                if (targetList != null)
+                {
+                    foreach (var item in sourceList)
+                        targetList.Add(item);
+                    continue;
+                }
+            }
+            property.SetValue(clone, value);
+        }
+        return clone;
+    }
+
+    private string DefaultMainExecutableReference()
+    {
+        var exe = string.IsNullOrWhiteSpace(_project.MainExecutable)
+            ? $"{SafeIdentifier(_project.AppName)}.exe"
+            : Path.GetFileName(_project.MainExecutable);
+        return "{app}\\" + exe;
+    }
+
+    private static string SafeIdentifier(string value)
+    {
+        var chars = (string.IsNullOrWhiteSpace(value) ? "App" : value)
+            .Where(char.IsLetterOrDigit)
+            .ToArray();
+        return chars.Length == 0 ? "App" : new string(chars);
+    }
+
     private Panel BuildBrandingSection()
     {
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
@@ -873,6 +1241,33 @@ public class PackageBuilderForm : Form
         {
             AddFolderRow(workflow, "Output directory:", _project, nameof(InstallProject.OutputDir));
         }), 0, layout.RowCount++);
+
+        var keyboardGroup = BuildWorkflowTextGroup("Keyboard Walkthrough", 150, out _keyboardWalkthroughBox);
+        _keyboardWalkthroughBox.ReadOnly = true;
+        _keyboardWalkthroughBox.Text = KeyboardWalkthroughText();
+        layout.Controls.Add(keyboardGroup, 0, layout.RowCount++);
+
+        var validationGroup = BuildWorkflowTextGroup("Validation Center", 190, out _validationCenterBox);
+        _validationCenterBox.ReadOnly = true;
+        _validationCenterBox.Text = "Validation Center is ready. Click Validate Project to see grouped schema, semantic and resource diagnostics.";
+        layout.Controls.Add(validationGroup, 0, layout.RowCount++);
+
+        var capabilityGroup = BuildWorkflowTextGroup("Format Readiness", 190, out _formatCapabilityBox);
+        _formatCapabilityBox.ReadOnly = true;
+        _formatCapabilityBox.Text = "Release readiness: pending. Click Refresh Format Readiness to see EXE, MSI, MSIX, WinGet and Intune/ConfigMgr capability status.";
+        var capabilityActions = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 36,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(0, 0, 0, 6)
+        };
+        var refreshCapability = new Button { Name = "RefreshFormatReadinessButton", Text = "Refresh Format Readiness", AutoSize = true, Height = 28, Padding = new Padding(12, 0, 12, 0) };
+        refreshCapability.Click += (_, _) => RefreshFormatCapabilityReport();
+        capabilityActions.Controls.Add(refreshCapability);
+        capabilityGroup.Controls.Add(capabilityActions);
+        capabilityActions.BringToFront();
+        layout.Controls.Add(capabilityGroup, 0, layout.RowCount++);
 
         var logGroup = BuildWorkflowTextGroup("Build Log", 180, out _buildLogBox);
         _buildLogBox.ReadOnly = true;
@@ -1045,6 +1440,11 @@ public class PackageBuilderForm : Form
         var proj = _project;
         AddBoundRow(layout, "MSIX identity:",    proj, nameof(InstallProject.MsixIdentity));
         AddBoundRow(layout, "MSIX publisher:",   proj, nameof(InstallProject.MsixPublisher));
+        AddBoundRow(layout, "Update URL:",       proj, nameof(InstallProject.AppUpdatesURL));
+        AddEnumRow<UpdateMode>(layout, "Update mode:", proj, nameof(InstallProject.AppUpdateMode));
+        AddBoundRow(layout, "Update check hours:", proj, nameof(InstallProject.AppInstallerHoursBetweenUpdateChecks));
+        AddCheckRow(layout, "Prompt users before update", proj, nameof(InstallProject.AppInstallerShowPrompt));
+        AddCheckRow(layout, "Allow downgrade/force update", proj, nameof(InstallProject.AppInstallerForceUpdateFromAnyVersion));
         p.Controls.Add(layout);
         return p;
     }
@@ -1373,6 +1773,12 @@ public class PackageBuilderForm : Form
     private ToolStripButton PreviewButton() => MakeButton("Preview", "Preview the install wizard", (_, _) => PreviewWizard());
     private ToolStripButton BuildButton() => MakeButton("Build", "Build the Setup.exe", (_, _) => BuildInstaller());
     private ToolStripButton PublishButton() => MakeButton("Publish", "Publish as ClickOnce", (_, _) => PublishProject());
+    private ToolStripButton UpdatesButton() => MakeButton(Lang.LanguageManager.T("Update_Title"), Lang.LanguageManager.T("Update_Instructions"), (_, _) =>
+    {
+        using var form = global::Beep.Installer.Program.CreateUpdateCenter(_project, _runtimeArgs);
+        form.ShowDialog(this);
+    });
+    private ToolStripButton TemplateButton() => MakeButton("Templates", "Preview and apply a built-in template update", (_, _) => UpdateFromTemplate());
     private ToolStripButton ActionsButton() => MakeButton("Actions", "Edit custom actions", (_, _) => EditCustomActions());
     private ToolStripButton ConditionsButton() => MakeButton("Conditions", "Edit component conditions", (_, _) => EditComponentConditions());
     private ToolStripButton LangButton() => MakeButton("Languages", "Open Language Manager", (_, _) => { using var f = new LanguageManagerForm(); f.ShowDialog(this); });
@@ -1401,7 +1807,7 @@ public class PackageBuilderForm : Form
         if (!_controller.ConfirmDiscardChanges(this)) return;
         using var dlg = new ProjectNewDialog();
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
-        _controller.New(dlg.ProductName, dlg.Version, dlg.Publisher, dlg.SourceDirectory);
+        _controller.New(dlg.TemplateId, dlg.ProductName, dlg.Version, dlg.Publisher, dlg.SourceDirectory);
     }
 
     private void OpenProject()
@@ -1455,19 +1861,117 @@ public class PackageBuilderForm : Form
     {
         if (!ApplyScriptEditor()) return;
         var result = _controller.Validate();
+        var snapshot = _controller.CreateAuthoringSnapshot();
         _nav.SelectSection("build");
         if (_buildLogBox != null)
         {
             _buildLogBox.Clear();
             _buildLogBox.AppendText($"Validation: {_project.ProjectName}\r\nErrors: {result.Errors.Count}, Warnings: {result.Warnings.Count}\r\n");
+            _buildLogBox.AppendText($"Schema: {snapshot.SchemaVersion}\r\nPlan hash: {snapshot.PlanHash}\r\nCanonical JSON bytes: {snapshot.CanonicalJson.Length}\r\n\r\n");
             foreach (var e in result.Errors) _buildLogBox.AppendText($"ERR: {e}\r\n");
             foreach (var w in result.Warnings) _buildLogBox.AppendText($"WARN: {w}\r\n");
         }
+        PopulateValidationCenter(_controller.CreateValidationCenterReport());
         SetStatus(result.Errors.Count == 0 ? "Validation passed." : $"{result.Errors.Count} error(s).");
+    }
+
+    private void PopulateValidationCenter(ProjectValidationCenterReport report)
+    {
+        if (_validationCenterBox == null || _validationCenterBox.IsDisposed)
+            return;
+
+        var writer = new StringWriter();
+        writer.WriteLine($"Validation center: {_project.ProjectName}");
+        writer.WriteLine($"Schema: {report.SchemaVersion}");
+        writer.WriteLine($"Plan hash: {report.PlanHash}");
+        writer.WriteLine($"Errors: {report.ErrorCount}, Warnings: {report.WarningCount}");
+        writer.WriteLine();
+
+        if (report.Areas.Count == 0)
+        {
+            writer.WriteLine("No validation findings. The project is clean under strict authoring validation.");
+        }
+        else
+        {
+            foreach (var area in report.Areas)
+            {
+                writer.WriteLine($"{area.Label} — {area.ErrorCount} error(s), {area.WarningCount} warning(s)");
+                foreach (var finding in area.Findings)
+                {
+                    writer.WriteLine($"  [{finding.Severity}] {finding.Code} {finding.Path}");
+                    writer.WriteLine($"      {finding.Message}");
+                    if (!string.IsNullOrWhiteSpace(finding.Fix))
+                        writer.WriteLine($"      Fix: {finding.Fix}");
+                }
+                writer.WriteLine();
+            }
+        }
+
+        _validationCenterBox.Text = writer.ToString();
+    }
+
+    private void RefreshFormatCapabilityReport()
+    {
+        if (!ApplyScriptEditor()) return;
+        var report = _controller.CreatePackageFormatCapabilityReport();
+        var writer = new StringWriter();
+        writer.WriteLine($"Format readiness: {_project.ProjectName}");
+        writer.WriteLine($"Plan hash: {report.PlanHash}");
+        writer.WriteLine($"Release readiness: {report.ReleaseReadinessStatus}");
+        writer.WriteLine($"Ready: {report.ReadyFormatCount}, Warnings: {report.WarningFormatCount}, Blocked: {report.BlockedFormatCount}");
+        writer.WriteLine(report.ReleaseReadinessSummary);
+        writer.WriteLine();
+
+        foreach (var format in report.Formats)
+        {
+            writer.WriteLine($"{format.Format}: {format.Status}");
+            writer.WriteLine($"  {format.Summary}");
+            if (format.CanonicalArtifacts.Count > 0)
+                writer.WriteLine($"  Artifacts: {string.Join(", ", format.CanonicalArtifacts)}");
+
+            foreach (var finding in format.Findings.Take(12))
+            {
+                var code = string.IsNullOrWhiteSpace(finding.Code) ? "finding" : finding.Code;
+                writer.WriteLine($"  [{finding.Severity}] {code}: {finding.Message}");
+            }
+
+            if (format.Findings.Count > 12)
+                writer.WriteLine($"  ... {format.Findings.Count - 12} more finding(s)");
+            writer.WriteLine();
+        }
+
+        _nav.SelectSection("build");
+        _formatCapabilityBox.Text = writer.ToString();
+        SetStatus("Format readiness refreshed.");
     }
 
     private void PreviewWizard() { if (!ApplyScriptEditor()) return; using var f = new WizardPreviewForm(_project); f.ShowDialog(this); }
     private void ShowAbout() { MessageBox.Show(this, "Beep Installer — Package Builder\r\nVersion 1.0.0\r\n\r\nBuild self-contained Setup.exe installers for Windows.", "About Beep Installer", MessageBoxButtons.OK, MessageBoxIcon.Information); }
+
+    private void UpdateFromTemplate()
+    {
+        if (!ApplyScriptEditor()) return;
+        using var dlg = new TemplateUpdateDialog(ProjectTemplates.Builtins, id => _controller.PreviewTemplateUpdate(id));
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        var preview = _controller.ApplyTemplateUpdate(dlg.SelectedTemplateId);
+        _project = _controller.Project;
+        _nav.SelectSection("build");
+        if (_buildLogBox != null)
+        {
+            _buildLogBox.Clear();
+            _buildLogBox.AppendText($"Template update: {dlg.SelectedTemplateId}\r\n");
+            _buildLogBox.AppendText($"Previous plan hash: {preview.Current.PlanHash}\r\n");
+            _buildLogBox.AppendText($"Updated plan hash: {preview.Updated.PlanHash}\r\n");
+            _buildLogBox.AppendText($"Diff entries: {preview.Diff.Count}\r\n\r\n");
+            foreach (var diff in preview.Diff.Take(200))
+                _buildLogBox.AppendText($"{diff.Path}\r\n  - {diff.CurrentValue}\r\n  + {diff.UpdatedValue}\r\n");
+            if (preview.Diff.Count > 200)
+                _buildLogBox.AppendText($"... {preview.Diff.Count - 200} more diff entries omitted from the UI log.\r\n");
+        }
+        SetStatus($"Applied template '{dlg.SelectedTemplateId}' — {preview.Diff.Count} change(s).");
+        RefreshScriptPreview(force: true);
+    }
 
     private void RecordLastBuild(BuildPipeline.BuildResult result)
     {
@@ -1580,7 +2084,25 @@ public class PackageBuilderForm : Form
     private void EditCustomActions() { using var dlg = new CustomActionsDialog(_project.CustomActions); if (dlg.ShowDialog(this) != DialogResult.OK) return; _project.MarkDirty(); }
     private void EditComponentConditions() { using var dlg = new ComponentConditionsDialog(_project.Components); if (dlg.ShowDialog(this) != DialogResult.OK) return; _project.MarkDirty(); }
 
-    private void ShowHelp() { MessageBox.Show(this, "1. Set source directory (build output of your app).\r\n2. Configure components, prerequisites, shortcuts, registry.\r\n3. Customize branding and wizard pages.\r\n4. Save the .bsetup script.\r\n5. Build → produces a self-contained Setup.exe.", "Beep Installer", MessageBoxButtons.OK, MessageBoxIcon.Information); }
+    private void ShowHelp()
+    {
+        MessageBox.Show(
+            this,
+            "1. Set source directory (build output of your app).\r\n2. Configure components, prerequisites, shortcuts, registry and advanced resources.\r\n3. Use Ctrl+F to search sections, Ctrl+Tab / Ctrl+Shift+Tab to move through authoring sections, F7 to validate and F5 to build.\r\n4. Save the .bsetup script.\r\n5. Build → produces a self-contained Setup.exe.",
+            "Beep Installer",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
+    }
+
+    internal static string KeyboardWalkthroughText()
+        => """
+           Keyboard-only authoring path
+           1. Ctrl+F focuses section search. Type identity, source, components, firewall, IIS, config, build, etc.; Enter opens the first match and Escape clears search.
+           2. Ctrl+Tab moves to the next visible authoring section; Ctrl+Shift+Tab moves to the previous visible section.
+           3. Tab and Shift+Tab move through fields, grids, property details and action buttons inside the active section.
+           4. Ctrl+T opens template diff/apply, Ctrl+P previews the wizard, F7 validates into the grouped Validation Center, and F5 builds.
+           5. Ctrl+S saves, Ctrl+Shift+S saves as, Ctrl+O opens, and Ctrl+N starts a new installer project.
+           """;
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
@@ -1592,11 +2114,16 @@ public class PackageBuilderForm : Form
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Control && e.Shift && e.KeyCode == Keys.S) { SaveProjectAs(); e.Handled = true; return; }
+        if (e.Control && e.Shift && e.KeyCode == Keys.Tab) { _nav.SelectAdjacentSection(-1); e.Handled = true; return; }
+        if (e.Control && e.KeyCode == Keys.F) { _navSearchBox.Focus(); _navSearchBox.SelectAll(); e.Handled = true; return; }
+        if (e.Control && e.KeyCode == Keys.Tab) { _nav.SelectAdjacentSection(+1); e.Handled = true; return; }
         if (e.Control && e.KeyCode == Keys.N) { NewProject(); e.Handled = true; return; }
         if (e.Control && e.KeyCode == Keys.O) { OpenProject(); e.Handled = true; return; }
         if (e.Control && e.KeyCode == Keys.S) { SaveProject(); e.Handled = true; return; }
         if (e.Control && e.KeyCode == Keys.P) { PreviewWizard(); e.Handled = true; return; }
+        if (e.Control && e.KeyCode == Keys.T) { UpdateFromTemplate(); e.Handled = true; return; }
         if (e.KeyCode == Keys.F5) { BuildInstaller(); e.Handled = true; return; }
+        if (e.KeyCode == Keys.F1) { ShowHelp(); e.Handled = true; return; }
         if (e.KeyCode == Keys.F7) { ValidateProject(); e.Handled = true; return; }
     }
 

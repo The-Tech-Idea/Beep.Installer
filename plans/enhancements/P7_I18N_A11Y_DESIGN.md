@@ -99,10 +99,10 @@ N/A.
 | Missing key in culture | silent English fallback | unchanged at runtime; **build-time parity test fails** |
 | Language switch mid-wizard | impossible | re-render; failures fall back to previous culture with logged warning |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-Default behavior (system culture, LTR) unchanged for non-RTL users who never touch the
-combo.
+Default behavior follows the current system culture and layout direction rules unless the
+user selects another language.
 
 ## 7. Verification
 

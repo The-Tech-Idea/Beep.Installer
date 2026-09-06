@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Beep.Installer.Tests;
 
-/// <summary>Phase 1 (Track A3.2) — shared-file reference counting (MSI SharedDLLs parity).</summary>
+/// <summary>Phase 1 (Track A3.2) — shared-file reference counting parity.</summary>
 public class SharedFileCountTests : IDisposable
 {
     private readonly string _tempRoot;
@@ -23,7 +23,7 @@ public class SharedFileCountTests : IDisposable
     {
         _tempRoot = Path.Combine(Path.GetTempPath(), $"BeepShared_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempRoot);
-        _testKeyPath = $@"SOFTWARE\BeepInstaller\Tests\SharedDLLs_{Guid.NewGuid():N}";
+        _testKeyPath = $@"SOFTWARE\BeepInstaller\Tests\SharedFiles_{Guid.NewGuid():N}";
     }
 
     public void Dispose()

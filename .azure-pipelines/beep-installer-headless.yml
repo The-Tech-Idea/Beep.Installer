@@ -1,0 +1,257 @@
+trigger:
+  branches:
+    include:
+      - master
+      - main
+
+pr:
+  branches:
+    include:
+      - master
+      - main
+
+variables:
+  DOTNET_VERSION: 10.0.x
+  PROJECT_SCRIPT: Beep.Installer/samples/ServiceApp.bsetup
+  ARTIFACT_DIR: $(Build.ArtifactStagingDirectory)/headless
+  SDK_PACKAGE_VERSION: 1.0.0-ci.$(Build.BuildId)
+  SDK_FEED: https://api.nuget.org/v3/index.json
+
+jobs:
+  - job: linux_schema_validation
+    displayName: Linux SDK schema validation
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+      NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+    steps:
+      - task: UseDotNet@2
+        displayName: Install .NET
+        inputs:
+          packageType: sdk
+          version: $(DOTNET_VERSION)
+
+      - task: Cache@2
+        displayName: Cache NuGet packages
+        inputs:
+          key: 'nuget | "$(Agent.OS)" | **/*.csproj'
+          restoreKeys: |
+            nuget | "$(Agent.OS)"
+          path: $(NUGET_PACKAGES)
+
+      - script: dotnet restore Beep.Installer/samples/HeadlessSdkConsumer/HeadlessSdkConsumer.csproj
+        displayName: Restore headless SDK consumer
+
+      - script: dotnet build Beep.Installer/samples/HeadlessSdkConsumer/HeadlessSdkConsumer.csproj --no-restore --nologo --verbosity quiet
+        displayName: Build headless SDK consumer
+
+      - script: |
+          mkdir -p "$(ARTIFACT_DIR)/linux"
+          dotnet run --project Beep.Installer/samples/HeadlessSdkConsumer/HeadlessSdkConsumer.csproj --no-restore -- validate "$(PROJECT_SCRIPT)" | tee "$(ARTIFACT_DIR)/linux/validate.txt"
+        displayName: Validate installer schema through headless SDK
+
+      - script: |
+          mkdir -p "$(ARTIFACT_DIR)/linux"
+          dotnet run --project Beep.Installer/samples/HeadlessSdkConsumer/HeadlessSdkConsumer.csproj --no-restore -- plan "$(PROJECT_SCRIPT)" | tee "$(ARTIFACT_DIR)/linux/plan.txt"
+        displayName: Compile installer plan through headless SDK
+
+      - pwsh: |
+          $evidenceDir = Join-Path "$(ARTIFACT_DIR)" "linux"
+          New-Item -ItemType Directory -Force -Path $evidenceDir | Out-Null
+
+          $manifest = [ordered]@{
+            schemaVersion = "1.0"
+            generatedAtUtc = (Get-Date).ToUniversalTime().ToString("O")
+            provider = "azure-pipelines"
+            pipeline = "$(Build.DefinitionName)"
+            buildId = "$(Build.BuildId)"
+            buildNumber = "$(Build.BuildNumber)"
+            repository = "$(Build.Repository.Name)"
+            sourceRevision = "$(Build.SourceVersion)"
+            sourceBranch = "$(Build.SourceBranch)"
+            projectScript = "$(PROJECT_SCRIPT)"
+            evidenceRoots = [ordered]@{
+              sdkValidateOutput = "validate.txt"
+              sdkPlanOutput = "plan.txt"
+            }
+            evidenceExists = [ordered]@{
+              sdkValidateOutput = (Test-Path (Join-Path $evidenceDir "validate.txt"))
+              sdkPlanOutput = (Test-Path (Join-Path $evidenceDir "plan.txt"))
+            }
+          }
+
+          $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceDir "ci-evidence-manifest.json") -Encoding utf8
+        displayName: Finalize Linux validation evidence manifest
+        condition: always()
+
+      - publish: $(ARTIFACT_DIR)/linux
+        artifact: beep-installer-linux-validation
+        displayName: Publish Linux validation evidence
+        condition: always()
+
+  - job: validate_plan_build
+    displayName: Validate, plan and build installer
+    dependsOn: linux_schema_validation
+    pool:
+      vmImage: windows-latest
+    steps:
+      - task: UseDotNet@2
+        displayName: Install .NET
+        inputs:
+          packageType: sdk
+          version: $(DOTNET_VERSION)
+
+      - task: Cache@2
+        displayName: Cache NuGet packages
+        inputs:
+          key: 'nuget | "$(Agent.OS)" | **/*.csproj'
+          restoreKeys: |
+            nuget | "$(Agent.OS)"
+          path: $(UserProfile)/.nuget/packages
+
+      - pwsh: dotnet restore Beep.Installer.Tests/Beep.Installer.Tests.csproj
+        displayName: Restore
+
+      - pwsh: dotnet test Beep.Installer.Tests/Beep.Installer.Tests.csproj --filter "HeadlessInstallerSdkTests|InstallPlanCompilerTests|ProjectSchemaServiceTests" --no-restore --nologo --verbosity quiet
+        displayName: Verify headless SDK parity
+
+      - pwsh: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /VALIDATE="$(PROJECT_SCRIPT)" /STRICT
+        displayName: Validate installer script
+
+      - pwsh: |
+          New-Item -ItemType Directory -Force -Path "$(ARTIFACT_DIR)" | Out-Null
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /PLAN="$(PROJECT_SCRIPT)" /JSON /OUT="$(ARTIFACT_DIR)/install-plan.json"
+        displayName: Compile deterministic install plan
+
+      - pwsh: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /BUILD="$(PROJECT_SCRIPT)" /OUT="$(ARTIFACT_DIR)/unsigned"
+        displayName: Build unsigned development artifact
+
+      - pwsh: |
+          $installer = Get-ChildItem "$(ARTIFACT_DIR)/unsigned" -Filter *.exe -File | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if ($null -eq $installer) {
+            throw "No installer executable was produced under $(ARTIFACT_DIR)/unsigned."
+          }
+
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /EVIDENCE="$(PROJECT_SCRIPT)" /INSTALLER="$($installer.FullName)" /OUT="$(ARTIFACT_DIR)/evidence" /SOURCEREVISION="$(Build.SourceVersion)"
+        displayName: Publish release evidence for development artifact
+
+      - pwsh: |
+          if ([string]::IsNullOrWhiteSpace("$(BEEP_SIGNING_CERT_BASE64)")) {
+            Write-Host "Signing variables are not configured; signed release build skipped."
+            return
+          }
+
+          $signingDir = Join-Path "$(Agent.TempDirectory)" "beep-signing"
+          New-Item -ItemType Directory -Force -Path $signingDir | Out-Null
+          $certPath = Join-Path $signingDir "release.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("$(BEEP_SIGNING_CERT_BASE64)"))
+
+          $args = @(
+            "/BUILD=$(PROJECT_SCRIPT)",
+            "/OUT=$(ARTIFACT_DIR)/signed",
+            "/SIGNCERT=$certPath",
+            "/SIGNPASSWORD=secret://env/BEEP_SIGNING_PASSWORD",
+            "/REQUIRESIGNED"
+          )
+
+          if (-not [string]::IsNullOrWhiteSpace("$(BEEP_SIGNING_SUBJECT)")) {
+            $args += "/SIGNINGSUBJECT=$(BEEP_SIGNING_SUBJECT)"
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace("$(BEEP_TIMESTAMP_URL)")) {
+            $args += "/TIMESTAMP=$(BEEP_TIMESTAMP_URL)"
+            $args += "/TIMESTAMPOUTAGE=retry"
+          }
+
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- $args
+        displayName: Build signed release artifact when signing variables are configured
+        env:
+          BEEP_SIGNING_PASSWORD: $(BEEP_SIGNING_PASSWORD)
+
+      - pwsh: dotnet pack Beep.Installer.Core/Beep.Installer.Core.csproj --no-restore --nologo --configuration Release --output "$(ARTIFACT_DIR)/sdk" /p:PackageVersion="$(SDK_PACKAGE_VERSION)"
+        displayName: Pack headless SDK package
+
+      - pwsh: |
+          dotnet restore Beep.Installer/samples/HeadlessSdkConsumer/HeadlessSdkConsumer.csproj `
+            -p:UsePackagedBeepInstallerSdk=true `
+            -p:BeepInstallerSdkVersion="$(SDK_PACKAGE_VERSION)" `
+            --source "$(ARTIFACT_DIR)/sdk"
+
+          dotnet build Beep.Installer/samples/HeadlessSdkConsumer/HeadlessSdkConsumer.csproj `
+            --no-restore `
+            --nologo `
+            --verbosity quiet `
+            -p:UsePackagedBeepInstallerSdk=true `
+            -p:BeepInstallerSdkVersion="$(SDK_PACKAGE_VERSION)"
+        displayName: Verify packaged SDK consumer
+
+      - pwsh: |
+          $package = Get-ChildItem "$(ARTIFACT_DIR)/sdk" -Filter *.nupkg -File | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if ($null -eq $package) {
+            throw "No SDK package was produced under $(ARTIFACT_DIR)/sdk."
+          }
+
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /PUBLISHSDK="$($package.FullName)" /SDKFEED="$(SDK_FEED)" /DRYRUN /OUT="$(ARTIFACT_DIR)/sdk-publish-dry-run"
+        displayName: Validate SDK package publish command
+
+      - pwsh: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+            Write-Host "NUGET_API_KEY is not configured; SDK package publish skipped."
+            return
+          }
+
+          $package = Get-ChildItem "$(ARTIFACT_DIR)/sdk" -Filter *.nupkg -File | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if ($null -eq $package) {
+            throw "No SDK package was produced under $(ARTIFACT_DIR)/sdk."
+          }
+
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /PUBLISHSDK="$($package.FullName)" /SDKFEED="$(SDK_FEED)" /SDKAPIKEY=secret://env/NUGET_API_KEY /OUT="$(ARTIFACT_DIR)/sdk-publish"
+        displayName: Publish SDK package when NuGet secret is configured
+        env:
+          NUGET_API_KEY: $(NUGET_API_KEY)
+
+      - pwsh: |
+          New-Item -ItemType Directory -Force -Path "$(ARTIFACT_DIR)" | Out-Null
+
+          $manifest = [ordered]@{
+            schemaVersion = "1.0"
+            generatedAtUtc = (Get-Date).ToUniversalTime().ToString("O")
+            provider = "azure-pipelines"
+            pipeline = "$(Build.DefinitionName)"
+            buildId = "$(Build.BuildId)"
+            buildNumber = "$(Build.BuildNumber)"
+            repository = "$(Build.Repository.Name)"
+            sourceRevision = "$(Build.SourceVersion)"
+            sourceBranch = "$(Build.SourceBranch)"
+            projectScript = "$(PROJECT_SCRIPT)"
+            sdkPackageVersion = "$(SDK_PACKAGE_VERSION)"
+            sdkFeed = "$(SDK_FEED)"
+            upstreamArtifacts = @("beep-installer-linux-validation")
+            evidenceRoots = [ordered]@{
+              deterministicPlan = "install-plan.json"
+              unsignedBuild = "unsigned"
+              releaseEvidence = "evidence"
+              signedBuild = "signed"
+              sdkPackage = "sdk"
+              sdkPublishDryRun = "sdk-publish-dry-run"
+              sdkPublish = "sdk-publish"
+            }
+            evidenceExists = [ordered]@{
+              deterministicPlan = (Test-Path "$(ARTIFACT_DIR)/install-plan.json")
+              unsignedBuild = (Test-Path "$(ARTIFACT_DIR)/unsigned")
+              releaseEvidence = (Test-Path "$(ARTIFACT_DIR)/evidence")
+              signedBuild = (Test-Path "$(ARTIFACT_DIR)/signed")
+              sdkPackage = (Test-Path "$(ARTIFACT_DIR)/sdk")
+              sdkPublishDryRun = (Test-Path "$(ARTIFACT_DIR)/sdk-publish-dry-run")
+              sdkPublish = (Test-Path "$(ARTIFACT_DIR)/sdk-publish")
+            }
+          }
+
+          $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath "$(ARTIFACT_DIR)/ci-evidence-manifest.json" -Encoding utf8
+        displayName: Finalize archived CI evidence manifest
+        condition: always()
+
+      - publish: $(ARTIFACT_DIR)
+        artifact: beep-installer-headless
+        displayName: Publish headless artifacts
+        condition: always()

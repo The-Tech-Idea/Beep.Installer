@@ -195,4 +195,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>الأخيرة</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>مركز التحديثات</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>هوية المشروع الموثوقة</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>مسار موجز التحديث الموقّع أو رابطه</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>مسار مفتاح الموجز العام بصيغة PEM</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>مسار المفتاح العام للتحديث التفاضلي بصيغة PEM</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>مجلد التطبيق المثبّت</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>الإصدار المثبّت</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>القناة الحالية</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>القناة المستهدفة</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>معرّف الجهاز للتوزيع التدريجي</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>مجلد التحديث التفاضلي المحلي (اختياري)</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>مسار سجل الاسترداد</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>حالة التحديث والتشخيص</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>أدخل الإصدار المثبّت والمفاتيح العامة الموثوقة. أغلق التطبيق المراد تحديثه قبل التطبيق.</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>التحقق من التحديثات</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>تطبيق التحديث</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>استرداد</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>التراجع</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>المفاتيح العامة (*.pem)|*.pem|كل الملفات (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>ملفات JSON (*.json)|*.json|كل الملفات (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>تعذّر تحديد المسار: {0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>طُلب الإلغاء. جارٍ انتظار نقطة توقف آمنة.</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0}: سيؤدي ذلك إلى تغيير ملفات التطبيق. أغلق التطبيق. هل تريد المتابعة؟</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>تأكيد الصيانة</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>جارٍ التحقق من التوقيع والسياسة والأهلية…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>جارٍ تنفيذ الصيانة…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>حدد مجلد تطبيق مثبّت موجود.</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>تم تطبيق التحديث. سجل الاسترداد: {0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>عالج أخطاء السياسة قبل الصيانة.</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>معاينة الاسترداد: {0}&#10;التثبيت: {1}&#10;الإصدار الناتج: {2}&#10;السجل: {3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>هل تريد متابعة الاسترداد؟ ستتم إعادة التحقق من الملفات الحالية قبل التغيير.</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>اكتمل {0}. {1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>أُلغيت العملية. تحقق مجددًا قبل التطبيق.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>فشلت الصيانة: {0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>التوقيع موثوق.</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>التوقيع غير موثوق.</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>لا يوجد قرار تحديث.</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>القرار: {0}</value></data>
 </root>

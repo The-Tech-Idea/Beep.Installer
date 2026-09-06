@@ -64,6 +64,46 @@ public class RollbackTests
         finally { try { Directory.Delete(root, recursive: true); } catch { } }
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Rotate_FailedMoveRestoresInstallationStageAndEntireBackupChain(int failedMove)
+    {
+        var root = Directory.CreateTempSubdirectory("beep-rotation-recovery-");
+        try
+        {
+            var install = Path.Combine(root.FullName, "app");
+            var stage = Path.Combine(root.FullName, "stage");
+            foreach (var (path, value) in new[]
+            {
+                (install, "current"), (stage, "new"), (install + ".bak1", "one"),
+                (install + ".bak2", "two"), (install + ".bak3", "three")
+            })
+            {
+                Directory.CreateDirectory(path);
+                File.WriteAllText(Path.Combine(path, "v.txt"), value);
+            }
+            var count = 0;
+            var result = RollbackManager.Rotate(install, stage, keep: 3, moveDirectory: (source, destination) =>
+            {
+                if (++count == failedMove) throw new IOException("Injected move failure.");
+                Directory.Move(source, destination);
+            });
+            result.Success.Should().BeFalse();
+            result.Error.Should().Contain("Injected move failure");
+            File.ReadAllText(Path.Combine(install, "v.txt")).Should().Be("current");
+            File.ReadAllText(Path.Combine(stage, "v.txt")).Should().Be("new");
+            File.ReadAllText(Path.Combine(install + ".bak1", "v.txt")).Should().Be("one");
+            File.ReadAllText(Path.Combine(install + ".bak2", "v.txt")).Should().Be("two");
+            File.ReadAllText(Path.Combine(install + ".bak3", "v.txt")).Should().Be("three");
+            Directory.GetDirectories(root.FullName).Should().HaveCount(5);
+        }
+        finally { root.Delete(true); }
+    }
+
     [Fact]
     public void Rollback_SwapsBak1_BackToCurrent()
     {
@@ -84,6 +124,45 @@ public class RollbackTests
             Directory.Exists(installRoot + ".swap").Should().BeFalse("swap temp must be cleaned up");
         }
         finally { try { Directory.Delete(root, recursive: true); } catch { } }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(0)]
+    public void Rollback_FailurePreservesBothVersionsAndExistingSwap(int failedMove)
+    {
+        var root = Directory.CreateTempSubdirectory("beep-swap-recovery-");
+        try
+        {
+            var install = Path.Combine(root.FullName, "app");
+            Directory.CreateDirectory(install);
+            Directory.CreateDirectory(install + ".bak1");
+            File.WriteAllText(Path.Combine(install, "v.txt"), "new");
+            File.WriteAllText(Path.Combine(install + ".bak1", "v.txt"), "previous");
+            if (failedMove == 0)
+            {
+                Directory.CreateDirectory(install + ".swap");
+                File.WriteAllText(Path.Combine(install + ".swap", "retained.txt"), "recovery data");
+            }
+            var count = 0;
+            var result = RollbackManager.Rollback(install, moveDirectory: (source, destination) =>
+            {
+                if (++count == failedMove) throw new IOException("Injected swap failure.");
+                Directory.Move(source, destination);
+            });
+            result.Success.Should().BeFalse();
+            File.ReadAllText(Path.Combine(install, "v.txt")).Should().Be("new");
+            File.ReadAllText(Path.Combine(install + ".bak1", "v.txt")).Should().Be("previous");
+            Directory.Exists(install + ".swap").Should().Be(failedMove == 0);
+            if (failedMove == 0)
+            {
+                count.Should().Be(0);
+                File.ReadAllText(Path.Combine(install + ".swap", "retained.txt")).Should().Be("recovery data");
+            }
+        }
+        finally { root.Delete(true); }
     }
 
     [Fact]

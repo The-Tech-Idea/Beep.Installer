@@ -4,6 +4,7 @@
 SchemaVersion=1.0
 ScriptName=Beep Installer
 AppName=Beep Installer
+AppId=5c848c86-975b-4b28-86db-5c912233603f
 AppVersion=1.0.0
 AppPublisher=The Tech Idea
 AppUpdateMode=optional

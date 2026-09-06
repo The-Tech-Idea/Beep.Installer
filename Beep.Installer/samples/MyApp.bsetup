@@ -3,7 +3,9 @@
 ;   Beep.Installer.exe /BUILD=samples\MyApp.bsetup /OUT=samples\build
 
 [Setup]
+SchemaVersion=1.0
 AppName=MyApp
+AppId=2aed0cb3-f695-4ca6-af44-7676df6f7b45
 AppVersion=1.0.0
 Publisher=The Tech Idea
 SourceDir=HelloApp

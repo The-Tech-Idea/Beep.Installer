@@ -195,4 +195,43 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>最近使った項目</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>更新センター</value></data>
+  <data name="Update_Identity" xml:space="preserve"><value>信頼されたプロジェクトの識別情報</value></data>
+  <data name="Update_Feed" xml:space="preserve"><value>署名済みフィードのパスまたは URL</value></data>
+  <data name="Update_FeedKey" xml:space="preserve"><value>フィード公開鍵の PEM パス</value></data>
+  <data name="Update_DeltaKey" xml:space="preserve"><value>差分更新公開鍵の PEM パス</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>インストール済みアプリのフォルダー</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>インストール済みバージョン</value></data>
+  <data name="Update_Current" xml:space="preserve"><value>現在のチャネル</value></data>
+  <data name="Update_Target" xml:space="preserve"><value>対象チャネル</value></data>
+  <data name="Update_Cohort" xml:space="preserve"><value>段階的配信用のデバイス識別子</value></data>
+  <data name="Update_Delta" xml:space="preserve"><value>ローカル差分フォルダー（省略可）</value></data>
+  <data name="Update_Journal" xml:space="preserve"><value>復旧ジャーナルのパス</value></data>
+  <data name="Update_Status" xml:space="preserve"><value>更新状態と診断</value></data>
+  <data name="Update_Instructions" xml:space="preserve"><value>インストール済みバージョンと信頼できる公開鍵を入力してください。更新の適用前に対象アプリを終了してください。</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>更新を確認</value></data>
+  <data name="Update_Apply" xml:space="preserve"><value>更新を適用</value></data>
+  <data name="Update_Recover" xml:space="preserve"><value>復旧</value></data>
+  <data name="Update_Rollback" xml:space="preserve"><value>ロールバック</value></data>
+  <data name="Update_Close" xml:space="preserve"><value>閉じる</value></data>
+  <data name="Update_KeyFilter" xml:space="preserve"><value>公開鍵 (*.pem)|*.pem|すべてのファイル (*.*)|*.*</value></data>
+  <data name="Update_JsonFilter" xml:space="preserve"><value>JSON ファイル (*.json)|*.json|すべてのファイル (*.*)|*.*</value></data>
+  <data name="Update_PathError" xml:space="preserve"><value>パスを選択できませんでした: {0}</value></data>
+  <data name="Update_Cancelling" xml:space="preserve"><value>キャンセルを要求しました。安全に停止できる状態を待っています。</value></data>
+  <data name="Update_ConfirmChanges" xml:space="preserve"><value>{0}: アプリのファイルを変更します。アプリを終了してください。続行しますか？</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>メンテナンスの確認</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>署名、ポリシー、適用条件を確認しています…</value></data>
+  <data name="Update_Running" xml:space="preserve"><value>メンテナンスを実行しています…</value></data>
+  <data name="Update_MissingInstall" xml:space="preserve"><value>インストール済みアプリの既存フォルダーを選択してください。</value></data>
+  <data name="Update_Applied" xml:space="preserve"><value>更新を適用しました。復旧ジャーナル: {0}</value></data>
+  <data name="Update_PolicyError" xml:space="preserve"><value>メンテナンス前にポリシーのエラーを解決してください。</value></data>
+  <data name="Update_Preview" xml:space="preserve"><value>復旧プレビュー: {0}&#10;インストール先: {1}&#10;復旧後のバージョン: {2}&#10;ジャーナル: {3}</value></data>
+  <data name="Update_ConfirmRecovery" xml:space="preserve"><value>復旧を続行しますか？変更前に現在のファイルを再検証します。</value></data>
+  <data name="Update_Completed" xml:space="preserve"><value>{0}が完了しました。{1}</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>操作をキャンセルしました。適用前に再確認してください。</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>メンテナンスに失敗しました: {0}</value></data>
+  <data name="Update_Trusted" xml:space="preserve"><value>署名は信頼されています。</value></data>
+  <data name="Update_Untrusted" xml:space="preserve"><value>署名は信頼されていません。</value></data>
+  <data name="Update_NoDecision" xml:space="preserve"><value>更新の判定はありません。</value></data>
+  <data name="Update_Decision" xml:space="preserve"><value>判定: {0}</value></data>
 </root>

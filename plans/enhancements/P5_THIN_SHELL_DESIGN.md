@@ -48,23 +48,22 @@ services.AddSingleton<IInstallerScriptSerializer, BsetupSerializer>();
 services.AddSingleton<IInstallerBuilder, InstallerBuilder>();
 services.AddSingleton<ISourceScanner, SourceScanner>();
 services.AddSingleton<IInstallerPublisher, ClickOncePublisher>();
-services.AddSingleton<InstallWizardGraphFactory>();
 services.AddTransient<PackageBuilderForm>();
 services.AddTransient<BeepModernInstallerForm>();
 using var provider = services.BuildServiceProvider();
 ```
 
-Runtime (installing) mode may skip `AddBeepForDesktop`'s heavier pieces if startup cost
-matters — measure first; a `AddBeepInstallerRuntime()` slim registration is the fallback.
+Runtime (installing) mode should use a slim `AddBeepInstallerRuntime()` registration if
+measurement shows desktop services add startup cost.
 
 ### 2.2 One wizard graph
 
-New `InstallWizardGraphFactory` (shell, ~80 lines) with:
+Core-owned `InstallWizardGraph` with:
 
-- `ISetupWizard BuildInstall(SetupContext ctx, InstallGraphOptions o)` — the 13-step chain
-  currently at `Program.cs:267-283`.
-- `BuildUninstall(...)` — `Program.cs:315-320`.
-- `BuildSelfTest(...)` — `Program.cs:346-352`.
+- `BuildInstall(...)` for silent and interactive install.
+- `BuildRepair(...)` for payload/resource convergence.
+- `BuildUninstall(...)` for provider-journal replay.
+- `BuildSelfTestInstall(...)` / `BuildSelfTestUninstall(...)` for lifecycle self-test.
 
 Step ids come from a `StepIds` constants class (kills the magic strings
 `"installer.prerequisites.check"` etc.). Longer term this can serialize to BeepDM's
@@ -95,7 +94,7 @@ N/A. Shell-internal.
 | Action | File | Lines | Risk |
 |--------|------|-------|------|
 | Modify | `Beep.Installer/Program.cs` (host + CliOptions + slim Dispatch) | ~-250/+180 | medium |
-| New | `Beep.Installer/Hosting/{ServiceRegistration,InstallWizardGraphFactory,StepIds,CliOptions}.cs` | ~260 | low |
+| Modify | Core-owned `Hosting/InstallWizardGraph.cs` + shell composition/CLI seams | ~260 | low |
 | Modify | `Forms/PackageBuilderForm.cs`, `Forms/BeepModernInstallerForm.cs` (ctor injection) | ~60 | medium |
 | Delete/Modify | `Engine/Diag.cs` → `Hosting/FileDmLoggerSink.cs` | ~40 | low |
 
@@ -107,9 +106,10 @@ N/A. Shell-internal.
 | Unknown CLI flag | silently ignored | usage printed + exit 64 |
 | Step failure | `Errors.Ok` flag check per call site | uniform: graph runner logs step id + `IErrorsInfo.Message`, rollback path unchanged |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-CLI surface identical (flags, exit codes 0/1/2/99). Add exit 64 for bad flags only.
+Keep the CLI surface intentionally modern and strict; remove stale aliases or duplicate graph
+paths when they conflict with the current installer contract.
 
 ## 7. Verification
 
@@ -124,16 +124,16 @@ dotnet test Beep.Installer.Tests
 
 | Risk | Mitigation |
 |------|------------|
-| `AddBeepForDesktop` startup cost in runtime-installer mode | measure; fall back to slim registration |
+| `AddBeepForDesktop` startup cost in runtime-installer mode | measure; use slim runtime registration |
 | DI changes touch every form ctor | forms resolved from provider only in Program.cs; child dialogs may take services via ctor progressively |
 
 ## 9. Out of scope
 
-UI redesign (P6), SetupDefinition JSON migration (follow-up), localization (P7).
+UI redesign (P6), SetupDefinition JSON consolidation (follow-up), localization (P7).
 
 ## 10. Sub-task execution order
 
 1. **5.A.1** `CliOptions` + slim `Dispatch`. Verify: CLI parity captures.
 2. **5.A.2** Composition root + registrations; forms resolved via provider. Verify: builder + wizard open.
-3. **5.B.1** `InstallWizardGraphFactory` + `StepIds`; delete 3 inline chains. Verify: `/S`, `/UNINSTALL`, `/SELFTEST` green.
+3. **5.B.1** Core-owned `InstallWizardGraph` + `StepIds`; delete inline chains. Verify: `/S`, `/UNINSTALL`, `/SELFTEST` green.
 4. **5.B.2** `IDMLogger` adoption; retire `Diag`. Verify: log file appears in both modes; grep Diag = 0.

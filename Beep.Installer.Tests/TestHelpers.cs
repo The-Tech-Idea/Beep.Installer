@@ -11,10 +11,8 @@ namespace Beep.Installer.Tests;
 internal static class TestHelpers
 {
     /// <summary>
-    /// Legacy no-op flags. These were intended to stop the pipeline publishing a
-    /// self-contained host, but the pipeline hardcodes <c>--self-contained true</c>, so they
-    /// never had that effect. Kept because many tests still call it; the actual isolation now
-    /// comes from <see cref="TestPipeline"/>.
+    /// Test defaults retained for concise test setup. Host-build isolation comes from
+    /// <see cref="TestPipeline"/>, which injects a test host builder.
     /// </summary>
     public static InstallProject UseTestDefaults(this InstallProject project)
     {

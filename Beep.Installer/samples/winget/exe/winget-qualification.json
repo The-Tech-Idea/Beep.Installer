@@ -1,0 +1,45 @@
+{
+  "commands": {
+    "install": "winget install --manifest \u003Cmanifest-directory\u003E --id TheTechIdea.ServiceApp --version 1.0.0 --silent --accept-package-agreements --accept-source-agreements",
+    "uninstall": "winget uninstall --id TheTechIdea.ServiceApp --silent --accept-source-agreements",
+    "upgrade": "winget upgrade --manifest \u003Cmanifest-directory\u003E --id TheTechIdea.ServiceApp --version 1.0.0 --silent --accept-package-agreements --accept-source-agreements",
+    "validate": "winget validate \u003Cmanifest-directory\u003E"
+  },
+  "defaultReport": "Qualification/winget-localmanifest-evidence.json",
+  "expectedExitCodes": {
+    "install": [
+      0,
+      3010
+    ],
+    "uninstall": [
+      0,
+      3010
+    ],
+    "upgrade": [
+      0,
+      3010
+    ],
+    "validate": [
+      0
+    ]
+  },
+  "installerType": "exe",
+  "installers": [
+    {
+      "architecture": "x64",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "signatureSha256": null,
+      "url": "https://downloads.example.test/serviceapp/1.0.0/ServiceAppSetup.exe"
+    }
+  ],
+  "manifestDirectory": "manifests/t/TheTechIdea/ServiceApp/1.0.0",
+  "packageDependencies": [],
+  "packageIdentifier": "TheTechIdea.ServiceApp",
+  "packageVersion": "1.0.0",
+  "releaseEvidence": [],
+  "schemaVersion": "1.0",
+  "scope": "machine",
+  "target": "wingetLocalManifest",
+  "validationScript": "Qualification/Test-WinGetLocalManifest.ps1",
+  "warnings": []
+}

@@ -1,0 +1,5 @@
+{
+  "plan": "Beep.Installer/samples/ServiceApp.bsetup",
+  "json": true,
+  "strict": true
+}

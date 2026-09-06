@@ -1,0 +1,15 @@
+{
+  "checkUpdateChannel": "https://updates.example.test/serviceapp/beep-update-channels.json",
+  "updateAppName": "ServiceApp",
+  "updateAppId": "70ff6133-02a0-451f-86ac-e1274af68f06",
+  "updatePublisher": "The Tech Idea",
+  "updateChannelInstalledVersion": "1.0.0",
+  "updateChannelCurrent": "stable",
+  "updateChannelTarget": "stable",
+  "updateChannelFeedTrustKey": "C:\\Deploy\\Keys\\serviceapp-feed-public.pem",
+  "updateState": "C:\\DeployState\\ServiceApp",
+  "updateCache": "C:\\DeployCache\\ServiceApp",
+  "updateCacheMaxBytes": 4294967296,
+  "updateCacheRetentionDays": 30,
+  "json": true
+}

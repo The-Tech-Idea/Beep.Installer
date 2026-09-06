@@ -153,10 +153,10 @@ D9 if it should be).
 | Sign/MSIX requested, tool missing | silent no-op with a buried warning | build **fails** listing every probed path |
 | Build cancelled | not possible | `OperationCanceledException` → `CleanupStage` removes partial output |
 
-## 6. Backward compatibility
+## 6. Dev-mode contract
 
-CLI flags, `.bsetup` format, and Setup.exe output layout (footer magic, `script.bsetup` name,
-payload naming) are unchanged, so already-shipped installers keep working.
+Keep one current CLI, `.bsetup`, and Setup.exe output layout. If a cleaner current contract is
+needed, update the serializer, builder, samples and tests together instead of carrying aliases.
 
 ## 7. Verification
 
