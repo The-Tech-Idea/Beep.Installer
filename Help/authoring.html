@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authoring (.bsetup) - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Authoring</span></nav>
+                <div class="page-header">
+                    <h1>Authoring (.bsetup)</h1>
+                    <p class="page-subtitle">The project format: a human-editable JSON document describing what to install and how the wizard behaves.</p>
+                </div>
+
+                <section class="section">
+                    <h2>The <code>.bsetup</code> file</h2>
+                    <p>A project is a <code>.bsetup</code> file — camelCase JSON that tolerates comments and trailing commas. It round-trips through <code>InstallerScriptSerializer</code> (a deliberate, explicit key mapping, not reflection) and is authored either by hand or in the Package Builder UI. Paths are resolved relative to the script, not the working directory.</p>
+                    <pre><code class="language-json">{
+  "ProjectName": "My App Installer",
+  "AppName": "MyApp",
+  "AppVersion": "1.2.0",
+  "AppPublisher": "The Tech Idea",
+  "SourceDir": "samples/HelloApp",
+  "DefaultDirName": "%ProgramFiles%/MyApp",
+  "PrivilegesRequired": "Admin",
+  "CreateUninstallEntry": true,
+  "SideBySide": false,
+  "AppUpdatesURL": "https://updates.example.com/stable/feed.json",
+  "AppUpdateMode": "Optional",
+  "Components": [ /* ... */ ]
+}</code></pre>
+                </section>
+
+                <section class="section">
+                    <h2>The <code>InstallProject</code> model</h2>
+                    <p><code>InstallProject</code> (an <code>INotifyPropertyChanged</code> graph in <code>Beep.Installer.Core/Model</code>) is the in-memory authoring model. Its main sections:</p>
+                    <table>
+                        <thead><tr><th>Section</th><th>Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td>Identity</td><td><code>AppName</code>, <code>AppVersion</code>, <code>AppPublisher</code>, <code>AppCopyright</code>, support URL/email, icon.</td></tr>
+                            <tr><td>Layout</td><td><code>DefaultDirName</code>, <code>PrivilegesRequired</code>, <code>Prefer64Bit</code>, <code>SideBySide</code>, <code>PayloadFolderName</code>.</td></tr>
+                            <tr><td><code>Components[]</code></td><td>Selectable features, each with <code>Files</code>, <code>Registry</code>, <code>Shortcuts</code>, <code>ComRegistrations</code>, <code>GacAssemblies</code>, and visibility <code>Conditions</code>.</td></tr>
+                            <tr><td>Prerequisites</td><td>OS/.NET/admin/disk-space checks and custom prerequisites with download URLs.</td></tr>
+                            <tr><td>Custom actions</td><td>Executables/scripts run at <code>BeforeInstall</code>/<code>AfterInstall</code>/<code>BeforeUninstall</code>/<code>AfterUninstall</code>.</td></tr>
+                            <tr><td>Branding</td><td>Welcome banner, colours, licence text, wizard pages.</td></tr>
+                            <tr><td>Build &amp; deploy</td><td>Output dir/name, compression, code-sign cert, output format, update feed URL/mode.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>Source scanning</h2>
+                    <p>When components carry no explicit file list, the build scans <code>SourceDir</code> (via <code>SourceScanner</code> + <code>GlobMatcher</code>), applying include/exclude globs. An include that names a conventionally build-only folder (e.g. <code>bin/**</code>) is treated as intent and wins over folder pruning; a pruned folder emits a warning rather than silently vanishing. A build that would ship an empty payload is a hard failure, not a silent success.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Custom wizard pages &amp; fields</h2>
+                    <p>Beyond the standard pages, a project can define custom wizard pages with input fields (text, choice, checkbox). <code>CustomPageManager</code> is the single implementation of field validation, value collection, and <code>{Custom:fieldId}</code> macro expansion, which feeds into custom actions and file/registry values at runtime.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="cli-reference.html"><i class="bi bi-arrow-left"></i> CLI Reference</a>
+                    <a href="build.html">Build Pipeline <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

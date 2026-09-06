@@ -67,6 +67,18 @@ public class SilentFailureGuardTests
                 .Select(x => $"{Path.GetFileName(file)}:{x.number}"))
             .ToList();
 
+<<<<<<< HEAD
+=======
+        // Known, tracked exemptions — listed rather than filtered out silently, so the debt
+        // stays visible:
+        //   IInstallerHostBuilder — blocks deliberately; BuildPipeline.Run is synchronous by
+        //     contract and always runs on a background thread.
+        // (The ClickOnce UpdateChecker/UpdateApplier sync-over-async pair was retired in P11.C —
+        //  superseded by the async-from-day-one BeepDM Updates domain — so those exemptions are gone.)
+        var exempt = new[] { "IInstallerHostBuilder.cs" };
+        offenders.RemoveAll(o => exempt.Any(e => o.StartsWith(e, StringComparison.Ordinal)));
+
+>>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da
         offenders.Should().BeEmpty(
             "sync-over-async risks deadlock; found:" + Environment.NewLine +
             string.Join(Environment.NewLine, offenders));

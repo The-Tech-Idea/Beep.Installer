@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Server - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Update Server</span></nav>
+                <div class="page-header">
+                    <h1>Update Server</h1>
+                    <p class="page-subtitle">An <strong>optional</strong> ASP.NET Core host that layers rollout, telemetry, gating, a publish API and an admin dashboard onto the same static feed — the client contract is unchanged.</p>
+                </div>
+
+                <section class="section">
+                    <h2>When to run it</h2>
+                    <p>You don't need it to ship updates — a static host is enough. Run <code>Beep.Installer.UpdateServer</code> only for what a static host can't do:</p>
+                    <table>
+                        <thead><tr><th>Capability</th><th>Needs a server?</th></tr></thead>
+                        <tbody>
+                            <tr><td>Ship updates, deltas, module updates, <code>Required</code> updates</td><td>No — static host</td></tr>
+                            <tr><td>Staged / percentage rollout (stable per-client cohorts)</td><td>Yes</td></tr>
+                            <tr><td>Telemetry &amp; active-version stats</td><td>Yes</td></tr>
+                            <tr><td>Token-gated (license) downloads</td><td>Yes</td></tr>
+                            <tr><td>Publish API + admin dashboard</td><td>Yes</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>Endpoints</h2>
+                    <table>
+                        <thead><tr><th>Method / Route</th><th>Auth</th><th>Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>GET /{channel}/feed.json?cid=…</code></td><td>public</td><td>The rollout-tailored feed for a client (cohort from <code>cid</code>).</td></tr>
+                            <tr><td><code>GET /artifacts/{channel}/{version}/{**path}</code></td><td>public / <code>?token=</code></td><td>Setup.exe, <code>_blobs/*</code>, manifest — token-gated when the channel requires it.</td></tr>
+                            <tr><td><code>POST /api/telemetry</code></td><td>public</td><td>Client reports an update event.</td></tr>
+                            <tr><td><code>POST /api/publish</code></td><td><code>X-Api-Key</code></td><td>Publish a version (multipart: <code>setup</code> + optional <code>payload</code> + fields) — runs <code>FeedPublisher</code>.</td></tr>
+                            <tr><td><code>POST /api/rollout</code></td><td><code>X-Api-Key</code></td><td><code>{channel,version,percent?,enabled?}</code>.</td></tr>
+                            <tr><td><code>POST /api/gate</code> · <code>/api/token</code></td><td><code>X-Api-Key</code></td><td>Toggle token-gated downloads; issue a download token.</td></tr>
+                            <tr><td><code>GET /api/channels</code> · <code>/api/stats</code></td><td><code>X-Api-Key</code></td><td>Admin reads (dashboard).</td></tr>
+                        </tbody>
+                    </table>
+                    <p>Staged rollout uses a deterministic per-<code>(client, version)</code> cohort bucket, so a client consistently is (or isn't) in a rollout and the cohort reshuffles per release. Active-version stats count only completed applies, not checks.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Run &amp; deploy</h2>
+                    <pre><code class="language-bash">dotnet publish Beep.Installer.UpdateServer -c Release -o /opt/beep-updates
+export UpdateServer__ApiKey="$(openssl rand -hex 24)"
+export UpdateServer__TokenSecret="$(openssl rand -hex 32)"
+export UpdateServer__StorageRoot="/var/lib/beep-updates"
+export ASPNETCORE_URLS="http://127.0.0.1:5080"
+/opt/beep-updates/Beep.Installer.UpdateServer</code></pre>
+                    <ul>
+                        <li>Terminate <strong>HTTPS</strong> at nginx/Caddy/IIS and proxy to Kestrel; raise the proxy body limit for large Setup.exe uploads.</li>
+                        <li>The <strong>admin dashboard is at <code>/</code></strong> — and admin is <em>locked until you change the default API key</em> (the server rejects <code>change-me</code>).</li>
+                        <li>File-backed, no database: <code>channel.json</code> per channel + <code>telemetry.jsonl</code>. Back up <code>StorageRoot</code> — it's the whole server.</li>
+                        <li>Front <code>/artifacts/*</code> with a CDN for large fleets (immutable, content-addressed).</li>
+                    </ul>
+                </section>
+
+                <section class="section">
+                    <h2>Publish from CI</h2>
+                    <pre><code class="language-bash">curl -X POST https://updates.example.com/api/publish \
+  -H "X-Api-Key: $KEY" \
+  -F channel=stable -F product=MyApp -F version=1.2.3 -F rolloutPercent=10 \
+  -F setup=@out/Setup-MyApp-1.2.3.exe \
+  -F payload=@out/payload.zip           # optional; enables deltas</code></pre>
+                    <p>The server runs the same <code>FeedPublisher</code> the installer uses (immutable versions, solid→loose blob expansion), then stages the version at 10% rollout. Bump it in the dashboard when confident.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="extensions.html"><i class="bi bi-arrow-left"></i> Extensions</a>
+                    <a href="index.html">Home <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

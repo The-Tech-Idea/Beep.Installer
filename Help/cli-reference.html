@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI Reference - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>CLI Reference</span></nav>
+                <div class="page-header">
+                    <h1>CLI Reference</h1>
+                    <p class="page-subtitle">Every verb <code>Beep.Installer.exe</code> understands. Verbs are dispatched in <code>Program.cs</code>; headless verbs run fully without a UI.</p>
+                </div>
+
+                <section class="section">
+                    <h2>Authoring &amp; build</h2>
+                    <table>
+                        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>/BUILD=&lt;project.bsetup&gt; [/OUT=dir]</code></td><td>Build the installer headlessly (Track A). <code>/FORMAT=msix|msixbundle|exe</code> selects Track C.</td></tr>
+                            <tr><td><code>/REQUIRESIGNED</code></td><td>CI gate — refuse to produce an unsigned build (exit 1).</td></tr>
+                            <tr><td><code>/VALIDATE=&lt;project.bsetup&gt;</code></td><td>Validate a project without building.</td></tr>
+                            <tr><td><code>/PREVIEW=&lt;project.bsetup&gt;</code></td><td>Print a project summary.</td></tr>
+                            <tr><td><code>/PUBLISH=&lt;project.bsetup&gt; [/OUT=dir] [/UPDATEURL=url] [/NOSIGN]</code></td><td>Publish as ClickOnce (Track B).</td></tr>
+                            <tr><td><code>/BUILD=&lt;p&gt; /PUBLISHFEED=&lt;dir&gt; [/FEEDURL=url] [/CHANNEL=x] [/MINVERSION=x.y.z] [/REPUBLISH]</code></td><td>Build then stage into a static update feed.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>Runtime (shipped installer)</h2>
+                    <table>
+                        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>/S</code> · <code>/SILENT</code> · <code>/VERYSILENT</code></td><td>Silent install. Inno Setup grammar, so Intune/SCCM/winget scripts work unchanged.</td></tr>
+                            <tr><td><code>/D=&lt;path&gt;</code></td><td>Override the install directory.</td></tr>
+                            <tr><td><code>/COMPONENTS=a,b</code></td><td>Select components for a silent install.</td></tr>
+                            <tr><td><code>/FORCE</code></td><td>Allow installing an older version over a newer one (downgrade).</td></tr>
+                            <tr><td><code>/NORESTART</code> · <code>/RESTARTEXITCODE=n</code></td><td>Suppress / override the reboot-required exit code (default <code>3010</code>).</td></tr>
+                            <tr><td><code>/UNINSTALL [/D=path]</code></td><td>Silent uninstall (used by Add/Remove Programs).</td></tr>
+                            <tr><td><code>/REPAIR [/D=path]</code></td><td>Restore missing or modified files from the payload.</td></tr>
+                            <tr><td><code>/SELFTEST</code></td><td>Install &rarr; verify &rarr; uninstall in <code>%TEMP%</code>; exit 0 on success.</td></tr>
+                            <tr><td><code>/LOG=&lt;path&gt;</code></td><td>Write the install log to a chosen file (default announced, recorded in ARP).</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>App self-update</h2>
+                    <table>
+                        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>/CHECKUPDATE [/FEED=url]</code></td><td>Report whether an app or module update is available.</td></tr>
+                            <tr><td><code>/UPDATE [/FEED=url] [/D=root]</code></td><td>Apply an available app update side-by-side.</td></tr>
+                        </tbody>
+                    </table>
+                    <h2>Exit codes</h2>
+                    <table>
+                        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>0</code></td><td>Success.</td></tr>
+                            <tr><td><code>3010</code></td><td>Success — a reboot is required (MSI convention; deployment tooling understands it).</td></tr>
+                            <tr><td><code>1</code></td><td>Failure.</td></tr>
+                            <tr><td><code>2</code></td><td>Bad input (missing/invalid script).</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div class="nav-links">
+                    <a href="architecture.html"><i class="bi bi-arrow-left"></i> Architecture</a>
+                    <a href="authoring.html">Authoring <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

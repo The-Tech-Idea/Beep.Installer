@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed &amp; Publishing - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>Feed &amp; Publishing</span></nav>
+                <div class="page-header">
+                    <h1>Update Feed &amp; Publishing</h1>
+                    <p class="page-subtitle">A static JSON feed + hash-verified artifacts over HTTPS. No server required to start (decision D10 = A).</p>
+                </div>
+
+                <section class="section">
+                    <h2><code>feed.json</code></h2>
+                    <pre><code class="language-json">{
+  "product": "MyApp", "channel": "stable",
+  "latest": {
+    "version": "1.2.3", "minSupportedVersion": "1.1.0",
+    "full":  { "url": "1.2.3/Setup-MyApp-1.2.3.exe", "sha256": "…" },
+    "delta": { "manifestUrl": "1.2.3/_payload-manifest.json", "blobBaseUrl": "1.2.3/_blobs/" }
+  },
+  "modules": [
+    { "id": "TheTechIdea.Beep.PostgresDriver", "version": "2.4.1", "sha256": "…", "required": false }
+  ]
+}</code></pre>
+                    <p>Every artifact carries a SHA-256 verified before use. <code>minSupportedVersion</code> forces a full install when the installed version is too old to delta from. <strong>Feed integrity (D11)</strong> for v1 is TLS + per-artifact SHA-256; signing the feed itself is deferred until a public-internet fleet exists.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Publish with <code>/PUBLISHFEED</code></h2>
+                    <p>The <code>FeedPublisher</code> builds then stages into a static feed: <code>&lt;feedDir&gt;/&lt;version&gt;/</code> holds the full <code>Setup.exe</code> (+ its hash) and, when the payload is solid, the loose content-addressed store (<code>_blobs/</code> + <code>_payload-manifest.json</code>) a delta updater consumes. <code>feed.json</code> is written atomically.</p>
+                    <pre><code class="language-bash">Beep.Installer.exe /BUILD=MyApp.bsetup /PUBLISHFEED=\\host\feed \
+    /FEEDURL=https://updates.example.com [/CHANNEL=stable] [/MINVERSION=1.1.0] [/REPUBLISH]</code></pre>
+                    <p><strong>Immutability is a hard rule:</strong> re-publishing an existing version fails without <code>/REPUBLISH</code>. New content ⇒ new version, always — the lesson of the stale-package cache incident.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Hosting (D10)</h2>
+                    <p>The client only ever sees URLs + hashes, so any static host works: GitHub Releases, S3/Azure Blob, an IIS/nginx static site, or a LAN folder share (the client's transport falls back to the filesystem). Moving folder → CDN → API later is a hosting change, not a client change. Add the optional <a href="update-server.html">update server</a> only when you need staged rollout, gated downloads, telemetry, or an admin dashboard.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Provisioning</h2>
+                    <p>The build stamps <code>update-settings.json</code> beside the app (from <code>AppUpdatesURL</code>/<code>AppUpdateMode</code>), which <code>AddBeepAppUpdates()</code> reads by default. For a side-by-side install, the install step also patches it with the runtime <code>InstallRoot</code>.</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="updates.html"><i class="bi bi-arrow-left"></i> Updates Overview</a>
+                    <a href="extensions.html">Extensions <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

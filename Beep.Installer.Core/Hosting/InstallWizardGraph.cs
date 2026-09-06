@@ -22,6 +22,7 @@ public static class StepIds
     public const string PayloadDownload = "installer.payload.download";
     public const string PayloadPrepare = "installer.payload.prepare";
     public const string FileCopy = "installer.files.copy";
+    public const string JunctionCreate = "installer.junction.create";
     public const string Shortcuts = "installer.shortcuts.create";
     public const string RegistryWrite = "installer.registry.write";
     public const string EnvironmentVariables = "installer.envvars.write";
@@ -55,10 +56,24 @@ public static class InstallWizardGraph
             .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, StepIds.DirectoryCreate))
             .AddStep(new Steps.PayloadDownloadStep(StepIds.CustomBeforeInstall))
             .AddStep(new Steps.PayloadPrepareStep(StepIds.PayloadDownload))
+<<<<<<< HEAD:Beep.Installer.Core/Hosting/InstallWizardGraph.cs
             .AddStep(new Steps.ResourceProviderStep(StepIds.PayloadPrepare))
             .AddStep(new SharedFileCountStep(StepIds.ResourceProviders))
             .AddStep(new GacInstallStep(StepIds.ResourceProviders))
             .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, StepIds.ResourceProviders))
+=======
+            .AddStep(new FileCopyStep(StepIds.PayloadPrepare))
+            .AddStep(new SharedFileCountStep(StepIds.FileCopy))
+            .AddStep(new ComServerRegistrationStep(StepIds.FileCopy))
+            .AddStep(new GacInstallStep(StepIds.FileCopy))
+            // Side-by-side layout: link <base>\current at the installed version before shortcuts,
+            // so shortcuts target current. A no-op (skipped) for a flat install.
+            .AddStep(new JunctionCreateStep(StepIds.FileCopy))
+            .AddStep(new ShortcutCreateStep(StepIds.JunctionCreate))
+            .AddStep(new RegistryWriteStep(StepIds.Shortcuts))
+            .AddStep(new EnvironmentVariableStep(StepIds.RegistryWrite))
+            .AddStep(new CustomActionStep(CustomActionTiming.AfterInstall, StepIds.EnvironmentVariables))
+>>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da:Beep.Installer/Hosting/InstallWizardGraph.cs
             .AddStep(new VerifyInstallStep(StepIds.CustomAfterInstall))
             // Last on purpose: the upgrade backup is only discarded once verification has
             // proven the new install complete. On failure this never runs and the host

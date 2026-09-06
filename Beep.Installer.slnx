@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path=".\Beep.Installer\Beep.Installer.csproj" />
-  <Project Path=".\Beep.Installer.Core\Beep.Installer.Core.csproj" />
-  <Project Path=".\Beep.Installer.Tests\Beep.Installer.Tests.csproj" />
+  <Project Path="Beep.Installer.Core/Beep.Installer.Core.csproj" />
+  <Project Path="Beep.Installer.Tests/Beep.Installer.Tests.csproj" />
+  <Project Path="Beep.Installer/Beep.Installer.csproj" />
+  <Project Path="Beep.Installer.Extensions.Winform/Beep.Installer.Extensions.Winform.csproj" />
+  <Project Path="Beep.Installer.Extensions.WPF/Beep.Installer.Extensions.WPF.csproj" />
+  <Project Path="Beep.Installer.UpdateServer/Beep.Installer.UpdateServer.csproj" />
 </Solution>

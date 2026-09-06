@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beep Installer — Update Server</title>
+  <style>
+    :root { --bg:#0f1216; --panel:#171c22; --line:#262d36; --text:#e6e9ee; --muted:#98a2b3; --accent:#4f8cff; --ok:#2fae66; --err:#e5484d; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:14px/1.5 system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:16px 24px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    h1 { font-size:16px; margin:0; margin-right:auto; }
+    h2 { font-size:14px; margin:0 0 12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+    main { padding:24px; display:grid; gap:20px; grid-template-columns:1fr 1fr; max-width:1200px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; }
+    .full { grid-column:1 / -1; }
+    input,select,textarea,button { font:inherit; color:var(--text); background:#0d1117; border:1px solid var(--line); border-radius:6px; padding:7px 9px; }
+    input[type=file]{ padding:5px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
+    button { background:var(--accent); border-color:var(--accent); color:#fff; cursor:pointer; }
+    button.ghost { background:transparent; color:var(--text); }
+    button:disabled { opacity:.5; cursor:default; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); font-size:13px; }
+    th { color:var(--muted); font-weight:600; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .pill { padding:2px 8px; border-radius:999px; font-size:12px; }
+    .on { background:rgba(47,174,102,.15); color:var(--ok); }
+    .off { background:rgba(229,72,77,.15); color:var(--err); }
+    .muted { color:var(--muted); }
+    #msg { margin-left:12px; font-size:13px; }
+    .w80 { width:80px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚀 Beep Installer — Update Server</h1>
+    <input id="apiKey" placeholder="X-Api-Key" style="width:220px" />
+    <button onclick="connect()">Connect</button>
+    <span id="msg" class="muted"></span>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Publish a version</h2>
+      <div class="row"><div style="flex:1"><label>Channel</label><input id="p_channel" value="stable" style="width:100%"/></div>
+        <div style="flex:1"><label>Product</label><input id="p_product" placeholder="MyApp" style="width:100%"/></div></div>
+      <div class="row"><div style="flex:1"><label>Version</label><input id="p_version" placeholder="1.2.3" style="width:100%"/></div>
+        <div style="flex:1"><label>Min supported</label><input id="p_min" placeholder="1.0.0" style="width:100%"/></div></div>
+      <label>Release notes URL</label><input id="p_notes" style="width:100%"/>
+      <div class="row"><div><label>Rollout %</label><input id="p_pct" class="w80" type="number" value="100" min="0" max="100"/></div>
+        <div><label>Republish</label><input id="p_republish" type="checkbox"/></div></div>
+      <label>Setup.exe (required)</label><input id="p_setup" type="file" style="width:100%"/>
+      <label>payload.zip (optional — enables deltas)</label><input id="p_payload" type="file" style="width:100%"/>
+      <div style="margin-top:12px"><button onclick="publish()">Publish</button></div>
+    </section>
+
+    <section class="panel">
+      <h2>Telemetry</h2>
+      <div id="stats" class="muted">Connect to load stats.</div>
+    </section>
+
+    <section class="panel full">
+      <h2>Channels &amp; versions</h2>
+      <div id="channels" class="muted">Connect to load channels.</div>
+    </section>
+  </main>
+
+  <script>
+    const key = () => document.getElementById('apiKey').value.trim();
+    const hdr = () => ({ 'X-Api-Key': key() });
+    const msg = (t, err) => { const m=document.getElementById('msg'); m.textContent=t; m.style.color = err ? 'var(--err)' : 'var(--muted)'; };
+
+    window.onload = () => { document.getElementById('apiKey').value = localStorage.getItem('beepUpdKey') || ''; };
+
+    async function connect() {
+      localStorage.setItem('beepUpdKey', key());
+      await Promise.all([loadChannels(), loadStats()]);
+    }
+
+    async function loadChannels() {
+      const r = await fetch('/api/channels', { headers: hdr() });
+      if (!r.ok) { msg('Auth failed — check the API key (and that it isn\'t the default).', true); return; }
+      msg('Connected.');
+      const channels = await r.json();
+      const el = document.getElementById('channels');
+      if (!channels.length) { el.innerHTML = '<span class="muted">No channels yet — publish a version.</span>'; return; }
+      el.innerHTML = channels.map(renderChannel).join('');
+    }
+
+    function renderChannel(c) {
+      const gate = c.requireDownloadToken;
+      const rows = (c.versions||[]).sort((a,b)=> (a.version<b.version?1:-1)).map(v => `
+        <tr>
+          <td><b>${v.version}</b></td>
+          <td><span class="pill ${v.enabled?'on':'off'}">${v.enabled?'enabled':'disabled'}</span></td>
+          <td>${v.hasDelta?'delta+full':'full'}</td>
+          <td><input class="w80" type="number" min="0" max="100" value="${v.rolloutPercent}" id="pct_${c.channel}_${v.version}"/></td>
+          <td class="row">
+            <button class="ghost" onclick="setRollout('${c.channel}','${v.version}')">Set %</button>
+            <button class="ghost" onclick="toggle('${c.channel}','${v.version}',${!v.enabled})">${v.enabled?'Disable':'Enable'}</button>
+            <button class="ghost" onclick="issueToken('${c.channel}','${v.version}')">Token</button>
+          </td>
+        </tr>`).join('');
+      return `<div style="margin-bottom:18px">
+        <div class="row" style="margin-bottom:6px">
+          <b>${c.product}</b> <span class="muted">/ ${c.channel}</span>
+          <span class="pill ${gate?'off':'on'}">${gate?'gated downloads':'open downloads'}</span>
+          <button class="ghost" onclick="setGate('${c.channel}',${!gate})">${gate?'Ungate':'Gate'}</button>
+        </div>
+        <table><thead><tr><th>Version</th><th>State</th><th>Kind</th><th>Rollout</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>
+      </div>`;
+    }
+
+    async function loadStats() {
+      const r = await fetch('/api/stats', { headers: hdr() });
+      if (!r.ok) return;
+      const s = await r.json();
+      const active = Object.entries(s.activeVersions||{}).map(([v,n])=>`${v}: <b>${n}</b>`).join(' &nbsp; ') || '—';
+      const recent = (s.recent||[]).slice(0,8).map(e=>`<tr><td>${new Date(e.at).toLocaleString()}</td><td>${e.clientId||'—'}</td><td>${e.toVersion}</td><td><span class="pill ${e.success?'on':'off'}">${e.eventType}</span></td></tr>`).join('');
+      document.getElementById('stats').innerHTML =
+        `<div class="row"><div>Total: <b>${s.totalEvents}</b></div><div style="color:var(--ok)">OK ${s.successes}</div><div style="color:var(--err)">FAIL ${s.failures}</div></div>
+         <div style="margin:10px 0"><span class="muted">Active versions:</span> ${active}</div>
+         <table><thead><tr><th>When</th><th>Client</th><th>To</th><th>Event</th></tr></thead><tbody>${recent}</tbody></table>`;
+    }
+
+    async function publish() {
+      const f = new FormData();
+      f.append('channel', val('p_channel')); f.append('product', val('p_product'));
+      f.append('version', val('p_version')); f.append('minSupported', val('p_min'));
+      f.append('releaseNotes', val('p_notes')); f.append('rolloutPercent', val('p_pct'));
+      f.append('republish', document.getElementById('p_republish').checked);
+      const setup = document.getElementById('p_setup').files[0];
+      if (!setup) { msg('Choose a Setup.exe to publish.', true); return; }
+      f.append('setup', setup);
+      const payload = document.getElementById('p_payload').files[0];
+      if (payload) f.append('payload', payload);
+      msg('Publishing…');
+      const r = await fetch('/api/publish', { method:'POST', headers: hdr(), body: f });
+      msg(r.ok ? 'Published.' : 'Publish failed: ' + await r.text(), !r.ok);
+      if (r.ok) loadChannels();
+    }
+
+    async function setRollout(channel, version) {
+      const percent = parseInt(document.getElementById(`pct_${channel}_${version}`).value, 10);
+      await post('/api/rollout', { channel, version, percent });
+    }
+    async function toggle(channel, version, enabled) { await post('/api/rollout', { channel, version, enabled }); }
+    async function setGate(channel, require) { await post('/api/gate', { channel, require }); }
+    async function issueToken(channel, version) {
+      const r = await fetch('/api/token', { method:'POST', headers:{...hdr(),'Content-Type':'application/json'}, body: JSON.stringify({ channel, version, ttlMinutes: 60 }) });
+      if (r.ok) { const { token } = await r.json(); prompt('Download token (append as ?token=…):', token); }
+    }
+
+    async function post(url, body) {
+      const r = await fetch(url, { method:'POST', headers:{...hdr(),'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      msg(r.ok ? 'Updated.' : 'Failed: ' + await r.text(), !r.ok);
+      if (r.ok) loadChannels();
+    }
+    const val = id => document.getElementById(id).value.trim();
+  </script>
+</body>
+</html>

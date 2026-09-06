@@ -325,6 +325,7 @@ namespace Beep.Installer.Models
             set => SetProperty(ref _appUpdateMode, value);
         }
 
+<<<<<<< HEAD
         private string _appUpdateChannel = "";
         public string AppUpdateChannel
         {
@@ -351,6 +352,20 @@ namespace Beep.Installer.Models
         {
             get => _appInstallerForceUpdateFromAnyVersion;
             set => SetProperty(ref _appInstallerForceUpdateFromAnyVersion, value);
+=======
+        private bool _sideBySide;
+        /// <summary>
+        /// When true the app installs into <c>&lt;dir&gt;\app-&lt;version&gt;\</c> with a
+        /// <c>&lt;dir&gt;\current</c> junction that shortcuts point at — so a later delta update
+        /// materializes the new version beside the old and flips the junction, never overwriting
+        /// the running files. Off by default (a plain flat install). Turn on for apps that
+        /// self-update via <c>TheTechIdea.Beep.Updates</c>.
+        /// </summary>
+        public bool SideBySide
+        {
+            get => _sideBySide;
+            set => SetProperty(ref _sideBySide, value);
+>>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da
         }
 
         private string _appCopyright = "";
