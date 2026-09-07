@@ -817,14 +817,34 @@ public class UpdateChannelFeedPackageServiceTests
         if (!accepted) result.Diagnostics.Should().Contain(d => d.Code == "BI1578");
     }
 
-    internal static void WriteInstalledJournal(string root, string name, string publisher, string version)
+    internal const string FixtureAppId = "a34321a2-680b-43a8-af88-c56d6afab012";
+
+    /// <param name="ownedFiles">
+    /// Install-relative paths this image owns via <c>file.copy</c>. Image updates refuse to add or
+    /// remove a payload file that no journal entry claims, so a fixture whose target gains a file
+    /// has to record that ownership.
+    /// </param>
+    internal static void WriteInstalledJournal(string root, string name, string publisher, string version,
+        string? appId = null, params string[] ownedFiles)
     {
-        new Beep.Installer.Extensibility.ResourceExecutionJournalStore(
-            Beep.Installer.Extensibility.ResourceExecutionJournalStore.DefaultPath(root, "a34321a2-680b-43a8-af88-c56d6afab012")).Save(new()
+        var identity = string.IsNullOrWhiteSpace(appId) ? FixtureAppId : appId!;
+        var journal = new Beep.Installer.Extensibility.ResourceExecutionJournal
         {
-            Metadata = new() { AppId = "a34321a2-680b-43a8-af88-c56d6afab012", ProductName = name, Publisher = publisher, ProductVersion = version,
+            Metadata = new() { AppId = identity, ProductName = name, Publisher = publisher, ProductVersion = version,
                 InstallScope = "user", AttemptId = "channel-fixture", PlanHash = new string('a', 64) }
-        });
+        };
+        foreach (var file in ownedFiles)
+        {
+            var operation = new Beep.Installer.Engine.CompiledInstallOperation
+            {
+                Id = "file.copy:" + file, Type = "file.copy",
+                Inputs = { ["destination"] = file }
+            };
+            journal.Entries.Add(new() { OperationId = operation.Id, OperationType = "file.copy",
+                Action = Beep.Installer.Extensibility.ResourceExecutionAction.Apply, Operation = operation });
+        }
+        new Beep.Installer.Extensibility.ResourceExecutionJournalStore(
+            Beep.Installer.Extensibility.ResourceExecutionJournalStore.DefaultPath(root, identity)).Save(journal);
     }
 
     private static InstallProject Project()

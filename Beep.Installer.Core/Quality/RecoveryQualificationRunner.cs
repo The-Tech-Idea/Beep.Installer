@@ -253,6 +253,9 @@ public sealed class RecoveryQualificationRunner
         {
             Metadata = new ResourceExecutionJournalMetadata
             {
+                // The journal is bound to the plan's AppId: ValidateMetadata checks it before the
+                // plan hash, so omitting it hides every later mismatch behind an identity error.
+                AppId = plan.AppId,
                 ProductName = plan.ProductName,
                 Publisher = plan.Publisher,
                 ProductVersion = plan.ProductVersion,

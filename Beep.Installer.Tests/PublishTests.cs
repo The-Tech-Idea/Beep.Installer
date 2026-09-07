@@ -50,8 +50,11 @@ project.UseTestDefaults();
             // Every Application\ payload file is *.deploy; manifest files are NOT renamed.
             var appDir = Path.Combine(publish, "Application");
             Directory.GetFiles(appDir, "*.deploy", SearchOption.AllDirectories).Should().HaveCount(3);
-            Directory.GetFiles(appDir, "PubApp.manifest", SearchOption.TopDirectoryOnly).Should().HaveCount(1);
-            Directory.GetFiles(publish, "PubApp.application", SearchOption.TopDirectoryOnly).Should().HaveCount(1);
+            // Manifests are named for the ClickOnce identity (Beep.<AppId>), not the product name:
+            // the identity has to stay stable across a rename, and unique between products.
+            var identity = Beep.Installer.Engine.ClickOnce.PublishStager.IdentityName(project.AppId);
+            Directory.GetFiles(appDir, identity + ".manifest", SearchOption.TopDirectoryOnly).Should().HaveCount(1);
+            Directory.GetFiles(publish, identity + ".application", SearchOption.TopDirectoryOnly).Should().HaveCount(1);
         }
         finally { try { Directory.Delete(dir, recursive: true); } catch { } }
     }

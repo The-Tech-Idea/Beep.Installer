@@ -701,10 +701,13 @@ public static class UpdateChannelFeedPackageService
         finally
         {
             // A backup is retained if restoration itself failed.
+            // Cleanup is best-effort: a scanner still holding one of these temp files must not
+            // turn a completed publish into a failure, nor mask the exception being rethrown.
+            // Whatever is left behind is staging litter, reclaimed by the next publish.
             foreach (var path in new[] { stagedFeed, stagedSignature })
-                try { File.Delete(path); } catch (IOException) { }
+                try { File.Delete(path); } catch (IOException) { /* leftover staged file, harmless */ }
             if (completed || !feedReplaced)
-                try { File.Delete(backupFeed); } catch (IOException) { }
+                try { File.Delete(backupFeed); } catch (IOException) { /* backup kept for the next run */ }
         }
     }
 

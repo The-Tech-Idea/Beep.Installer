@@ -10,6 +10,71 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-07
+
+**The tree did not build: merge commit `7d5287d` was committed with unresolved conflict markers.**
+The merge joined the local restructure (`526415c` — typed resource providers, compiled plans,
+execution journals, AppId-keyed identity) with the pushed Phase-11 branch (`82ba68d` — side-by-side
+install, `/PUBLISHFEED`, update server). Five files kept their `<<<<<<<`/`>>>>>>>` markers
+(`InstallWizardGraph`, `InstallContextBuilder` ×2, `InstallContextKeys`, `InstallProject`,
+`SilentFailureGuardTests`), so `Beep.Installer.Core` did not compile and the suite had not run since.
+
+**Conflicts resolved by keeping both sides**, not by picking one:
+
+- **`InstallWizardGraph`** — the provider architecture replaced `FileCopy`/`Com`/`Shortcut`/
+  `Registry`/`EnvironmentVariable` steps with one `ResourceProviderStep`, while the other side added
+  `JunctionCreateStep`. The junction now runs **after** the providers: it also stamps the runtime
+  install root into the shipped `update-settings.json`, which only exists once the payload is copied.
+- **`InstallContextBuilder`** — side-by-side path layout (`app-<version>` / `current` /
+  `InstallBaseDir` / `SideBySide`) *and* the provider keys (`InstallProject`, journal path). The
+  journal resolves against the versioned directory on install and through `current` on uninstall.
+- **`InstallProject`** — both property blocks (`AppUpdateChannel`/`AppInstaller*` **and**
+  `SideBySide`); the conflict had swallowed a closing brace.
+- **`SilentFailureGuardTests`** — kept the documented-exemption mechanism, corrected to reality: the
+  `IInstallerHostBuilder` exemption is stale (it no longer blocks) and `PackageInstallResourceProvider`
+  was **fixed** rather than exempted (a synchronous copy loop was blocking on `ReadAsync`). Only
+  `MageManifestTool` remains exempt.
+
+**Merge damage found beyond the markers** (git auto-merged these, semantically wrong):
+
+- `InstallerScriptSerializer` lost the `SideBySide` read/write, so the flag did not round-trip.
+  Restored, plus `ProjectCanonicalJsonExporter` + `ProjectScriptLinter` key lists and the two
+  regenerated canonical-JSON golden fixtures.
+- `Beep.Installer.UpdateServer` could not resolve `TheTechIdea.Beep.Updates`: Core marks its BeepDM
+  references `PrivateAssets="all"` (for SDK packaging), which also stops them flowing transitively.
+  Given the direct references the shell and Core already carry, for the same reason.
+
+**Test suite brought back to green: 38 failures → 0** (`1095 passed / 0 failed / 3 skipped`;
+total is 3 lower because one theory's obsolete scenarios were folded into the build-time test).
+Nearly every failure was the in-flight **AppId identity** work not yet carried into its fixtures —
+identity is now the authored `AppId`, never a display name:
+
+- Hand-built `InstallProject`/`CompiledInstallPlan` fixtures now carry an AppId (the runtime derives
+  the journal path and the registration key from it, and both refuse an empty GUID).
+- `RecoveryQualificationRunner` did not stamp `AppId` into journal metadata, so `ValidateMetadata`
+  failed on identity before it could report the plan-hash mismatch the scenario was testing.
+- `PublishTests` still expected ClickOnce manifests named for the product; they are named for the
+  identity (`Beep.<AppId>`) so a rename cannot repoint a deployment.
+- `InstallScopeTests` still treated a **renamed product** as a foreign journal. It is not — renames
+  do not change ownership — so that case now mismatches the AppId instead.
+- `EnterpriseProcessContractTests`: the fixture project needed an explicit `MsixIdentity`/
+  `MsixPublisher` (`/FORMATREADINESS` blocks MSIX without them), the custom-journal test needed to
+  record its AppId for teardown, and the delta CLI test needed `/SCRIPT=` so the package carries an
+  installed-image identity — plus journals recording ownership of the file the update adds.
+
+BeepDM `SetupWizardTests` **212/212** with its uncommitted `AppId`-keyed registration
+(`SOFTWARE\TheTechIdea\Installations\<guid>`) and `ConditionExpressionMode` changes.
+
+**Open decision — the ClickOnce `UpdateChecker`/`UpdateApplier` pair.** P11.C.2 deleted both with
+their tests; the restructure branch instead *rewrote* them to remove the blocking calls. The merge
+kept the rewritten production files but took the branch's deletion of their tests, so they are now
+zero-caller, untested code that this tracker already records as deleted. Left as-is deliberately —
+deleting them would override a deliberate rewrite. Decide: delete, or restore their tests.
+
+⚠️ Uncommitted, spanning the **BeepDM** and **Beep.Installer** repos.
+
+---
+
 ## Progress log — 2026-07-24
 
 **P11 started — Stage 11.A.1 (feed contracts + client) landed.** Decisions **D10** (hosting) and

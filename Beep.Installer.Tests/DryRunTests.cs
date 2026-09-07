@@ -46,6 +46,7 @@ public class DryRunTests : IDisposable
     {
         var project = new InstallProject
         {
+            AppId = "d47c8a19-2e64-4b0f-8351-6a9d0e4c7f22",
             AppName = "DryRunApp",
             AppVersion = "1.0.0",
             SourceDirectory = _sourceDir,

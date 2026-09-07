@@ -188,6 +188,13 @@ public class InstallerExtensionDiscoveryTests : IDisposable
         File.WriteAllText(destination, "preserved content");
         var failingPlan = new Beep.Installer.Engine.CompiledInstallPlan
         {
+            // Same identity as the compiled plan: this run must fail on the missing source file,
+            // not be rejected up front for belonging to another app.
+            AppId = plan.AppId,
+            ProductName = plan.ProductName,
+            ProductVersion = plan.ProductVersion,
+            Publisher = plan.Publisher,
+            InstallScope = plan.InstallScope,
             Operations = new()
             {
                 operation,

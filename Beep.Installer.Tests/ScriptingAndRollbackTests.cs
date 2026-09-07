@@ -84,6 +84,7 @@ project.UseTestDefaults();
 
         var config = new InstallProject
         {
+            AppId = "b18d4e05-77c2-4f3a-9a61-3d5e0c8b2a41",
             AppName = "MacroTest", AppVersion = "2.0.0", AppPublisher = "P",
             Components = new ObservableCollection<InstallComponent>()
         };
@@ -122,6 +123,7 @@ project.UseTestDefaults();
 
         var config = new InstallProject
         {
+            AppId = "b18d4e05-77c2-4f3a-9a61-3d5e0c8b2a42",
             AppName = "Rollback", AppVersion = "1.0.0",
             DefaultDirName = installDir,
             Components = new ObservableCollection<InstallComponent>

@@ -1,3 +1,4 @@
+using System.Linq;
 using Beep.Installer.Engine;
 using Beep.Installer.Quality;
 using FluentAssertions;
@@ -34,7 +35,10 @@ public sealed class RecoveryQualificationRunnerTests : IDisposable
             OutputDirectory = outDir
         });
 
-        report.Success.Should().BeTrue();
+        // Name the scenario that failed: a bare "expected True" says nothing about which of the
+        // eight recovery scenarios regressed.
+        report.Success.Should().BeTrue(string.Join("; ",
+            report.Scenarios.Where(s => !s.Success).Select(s => $"{s.Id}: {s.Message}")));
         report.ExitCode.Should().Be(0);
         report.ProductName.Should().Be("Service App");
         report.ProductVersion.Should().Be("2.3.4");

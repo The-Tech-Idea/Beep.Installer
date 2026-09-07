@@ -73,6 +73,7 @@ public class SharedFileCountTests : IDisposable
     {
         var config = new InstallProject
         {
+            AppId = "6f2a1c74-0b31-4a1e-9d55-1c0f4a2b8e10",
             Components = new ObservableCollection<InstallComponent>
             {
                 new() { Id = "c", Name = "C", Required = true, Selected = true,
@@ -98,6 +99,7 @@ public class SharedFileCountTests : IDisposable
 
         var config = new InstallProject
         {
+            AppId = "6f2a1c74-0b31-4a1e-9d55-1c0f4a2b8e11",
             AppName = "ProdA", AppVersion = "1.0.0",
             PrivilegesRequired = PrivilegeLevel.Lowest, // per-user → HKCU, no admin needed
             Components = new ObservableCollection<InstallComponent>

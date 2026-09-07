@@ -100,9 +100,12 @@ public class InstallScopeTests
     }
 
     [Theory]
-    [InlineData("OtherApp", "user")]
-    [InlineData("ScopeApp", "invalid")]
-    public void MaintenanceContexts_RejectInvalidScopeJournal(string product, string scope)
+    // Identity is the AppId and publisher, not the display name — a renamed product keeps its
+    // journal (ValidateMetadata: "display renames do not change ownership"), so the rejection
+    // cases are a journal written by a different app and one whose scope cannot be read.
+    [InlineData("11111111-2222-3333-4444-555555555555", "user")]
+    [InlineData("a34321a2-680b-43a8-af88-c56d6afab012", "invalid")]
+    public void MaintenanceContexts_RejectInvalidScopeJournal(string journalAppId, string scope)
     {
         var temp = System.IO.Directory.CreateTempSubdirectory("beep-scope-");
         try
@@ -110,7 +113,7 @@ public class InstallScopeTests
             var journalPath = System.IO.Path.Combine(temp.FullName, "custom-journal.json");
             new Beep.Installer.Extensibility.ResourceExecutionJournalStore(journalPath).Save(new()
             {
-                Metadata = new() { AppId = "a34321a2-680b-43a8-af88-c56d6afab012", ProductName = product, Publisher = "The Tech Idea", InstallScope = scope, InstallRoot = temp.FullName }
+                Metadata = new() { AppId = journalAppId, ProductName = "ScopeApp", Publisher = "The Tech Idea", InstallScope = scope, InstallRoot = temp.FullName }
             });
             var project = new InstallProject { AppId = "a34321a2-680b-43a8-af88-c56d6afab012", AppName = "ScopeApp" };
             Action repair = () => InstallContextBuilder.ForRepair(project, temp.FullName, journalPath: journalPath);

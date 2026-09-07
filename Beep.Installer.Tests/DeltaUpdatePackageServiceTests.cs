@@ -66,11 +66,12 @@ public sealed class DeltaUpdatePackageServiceTests : IDisposable
     }
 
     [Theory]
+    // Target-side variations (wrong publisher, wrong version, missing or foreign journal) are
+    // refused at build time and are covered by Build_ValidatesInstallationImagesBeforeWriting.
+    // What only Apply can catch is the installation drifting after the delta was signed, so these
+    // scenarios move the *current* install off the identity the delta was published against.
     [InlineData("current-publisher")]
     [InlineData("current-version")]
-    [InlineData("target-publisher")]
-    [InlineData("target-version")]
-    [InlineData("missing-target")]
     [InlineData("valid")]
     public void ApplyAtomically_BindsBothInstalledAndStagedIdentity(string scenario)
     {
@@ -79,15 +80,24 @@ public sealed class DeltaUpdatePackageServiceTests : IDisposable
         var delta = Path.Combine(_tempDir, "delta");
         Write(current, "app.txt", "old");
         Write(target, "app.txt", "new");
-        UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(current, "App",
-            scenario == "current-publisher" ? "Other" : "Publisher", scenario == "current-version" ? "9.0" : "1.0");
-        if (scenario != "missing-target") UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(target, "App",
-            scenario == "target-publisher" ? "Other" : "Publisher", scenario == "target-version" ? "9.0" : "2.0");
+        UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(current, "App", "Publisher", "1.0");
+        UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(target, "App", "Publisher", "2.0");
         var service = new DeltaUpdatePackageService();
+        // Expectations here are what make the package carry an installed-image contract at all;
+        // without one Apply has nothing to bind the live installation against.
         service.Build(new() { BaseDirectory = current, UpdatedDirectory = target, OutputDirectory = delta,
-            BaseVersion = "1.0", TargetVersion = "2.0" }).Success.Should().BeTrue();
+            BaseVersion = "1.0", TargetVersion = "2.0",
+            ExpectedAppId = UpdateChannelFeedPackageServiceTests.FixtureAppId,
+            ExpectedProductName = "App", ExpectedPublisher = "Publisher" }).Success.Should().BeTrue();
+
+        if (scenario != "valid")
+            UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(current, "App",
+                scenario == "current-publisher" ? "Other" : "Publisher",
+                scenario == "current-version" ? "9.0" : "1.0");
+
         var applied = service.ApplyAtomically(new() { DeltaDirectory = delta, CurrentInstallDirectory = current,
             StageDirectory = Path.Combine(_tempDir, "stage"), CurrentVersion = "1.0",
+            ExpectedAppId = UpdateChannelFeedPackageServiceTests.FixtureAppId,
             ExpectedProductName = "App", ExpectedPublisher = "Publisher" });
         applied.Success.Should().Be(scenario == "valid", applied.Error);
         File.ReadAllText(Path.Combine(current, "app.txt")).Should().Be(scenario == "valid" ? "new" : "old");

@@ -492,6 +492,7 @@ public class ResourceProviderSdkTests
         var executor = new ResourcePlanExecutor(registry);
         var plan = new CompiledInstallPlan
         {
+            AppId = "a34321a2-680b-43a8-af88-c56d6afab012",
             ProductName = "Runtime Host",
             ProductVersion = "1.0.0",
             InstallScope = "perMachine",

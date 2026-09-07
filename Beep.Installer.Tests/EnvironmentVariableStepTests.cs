@@ -38,6 +38,7 @@ public class EnvironmentVariableStepTests : IDisposable
 
     private InstallProject MakeProject(string value) => new()
     {
+        AppId = "3c9f6b20-51ad-4e88-b7c4-9f2e6a3d1b07",
         AppName = "EnvTest",
         AppVersion = "1.0.0",
         EnvironmentVariables = new ObservableCollection<EnvironmentVariableOp>

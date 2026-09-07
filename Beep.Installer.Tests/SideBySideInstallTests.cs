@@ -41,6 +41,7 @@ public class SideBySideInstallTests : IDisposable
 
     private static InstallProject Project(bool sxs) => new()
     {
+        AppId = "e0714b8d-9c35-42af-83d6-5b7e1a90c4f8",
         AppName = "MyApp",
         AppVersion = "1.2.0",
         SideBySide = sxs,

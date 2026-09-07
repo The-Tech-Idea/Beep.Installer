@@ -23,6 +23,7 @@ public class InstallContextBridgeTests
 {
     private static InstallProject MakeProject() => new()
     {
+        AppId = "9a5e2f13-4c78-4d90-ae62-08b1c7d34e56",
         AppName = "Contoso Suite",
         AppVersion = "2.3.4",
         AppPublisher = "Contoso Ltd",

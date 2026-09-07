@@ -27,6 +27,10 @@ public sealed class EnterpriseProcessContractTests : IDisposable
         var project = InstallerProjectFactory.CreateNew("Contract App", "1.2.3", "ACME", _sourceRoot);
         project.DefaultScope = InstallationScope.User;
         project.CreateUninstallEntry = false;
+        // Package identity is authored, never derived from display names — without these the
+        // MSIX format is "Blocked" and /FORMATREADINESS refuses to report the project releasable.
+        project.MsixIdentity = "ACME.ContractApp";
+        project.MsixPublisher = "CN=ACME";
         project.AppUpdateChannel = "stable";
         project.UpdateChannels.Add(new UpdateChannelDefinition
         {
@@ -314,6 +318,8 @@ public sealed class EnterpriseProcessContractTests : IDisposable
         var project = InstallerScriptSerializer.Load(_scriptPath).Item1!;
         project.AppName = _imageTestProduct;
         InstallerScriptSerializer.Save(project, _scriptPath);
+        // Journal discovery and registry cleanup both key off the AppId, not the display name.
+        _imageAppId = project.AppId;
         var install = Path.Combine(_root, "custom-install");
         var custom = Path.Combine(external ? _root : install, "recovery", "selected.json");
         Directory.CreateDirectory(Path.GetDirectoryName(custom)!);
@@ -780,9 +786,16 @@ public sealed class EnterpriseProcessContractTests : IDisposable
         Write(targetDir, "App.exe", "new");
         Write(targetDir, "keep.txt", "same");
         Write(targetDir, "added.txt", "added");
+        // Attaching the delta to a channel feed (BI1576) requires its installed-image identity to
+        // match the project it is published for, so both sides carry that project's journal.
+        var contract = InstallerScriptSerializer.Load(_scriptPath).Item1!;
+        UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(
+            baseDir, contract.AppName, contract.AppPublisher, "1.0.0", contract.AppId);
+        UpdateChannelFeedPackageServiceTests.WriteInstalledJournal(
+            targetDir, contract.AppName, contract.AppPublisher, "1.1.0", contract.AppId, "added.txt");
 
         var build = InstallerCliRunner.Run(
-            $"/DELTA=\"{deltaOut}\" /DELTABASE=\"{baseDir}\" /DELTATARGET=\"{targetDir}\" /DELTABASEVERSION=1.0.0 /DELTATARGETVERSION=1.1.0 /DELTASIGNKEY=\"{privateKeyPath}\"");
+            $"/SCRIPT=\"{_scriptPath}\" /DELTA=\"{deltaOut}\" /DELTABASE=\"{baseDir}\" /DELTATARGET=\"{targetDir}\" /DELTABASEVERSION=1.0.0 /DELTATARGETVERSION=1.1.0 /DELTASIGNKEY=\"{privateKeyPath}\"");
 
         build.ExitCode.Should().Be(0, build.StandardError + build.StandardOutput);
         build.StandardOutput.Should().Contain("Delta package");

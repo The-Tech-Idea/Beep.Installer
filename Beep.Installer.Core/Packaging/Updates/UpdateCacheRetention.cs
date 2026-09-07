@@ -28,7 +28,9 @@ internal static class UpdateCacheRetention
             if (File.Exists(markerPath))
             {
                 try { marker = JsonSerializer.Deserialize<Entry>(File.ReadAllText(markerPath)); }
-                catch (JsonException) { }
+                // A torn or hand-edited marker just means this entry has no recorded last-use;
+                // it is then sized from disk and aged out last. The cache is rebuildable.
+                catch (JsonException) { /* unreadable marker: fall back to on-disk size */ }
             }
             return (Path: path, Marker: marker, Bytes: Math.Max(Size(path), marker?.ReservedBytes ?? 0));
         }).ToList();
