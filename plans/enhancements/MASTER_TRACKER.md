@@ -65,37 +65,47 @@ identity is now the authored `AppId`, never a display name:
 BeepDM `SetupWizardTests` **212/212** with its uncommitted `AppId`-keyed registration
 (`SOFTWARE\TheTechIdea\Installations\<guid>`) and `ConditionExpressionMode` changes.
 
-**⚠️ The P5 design doc has drifted and should not be executed as written.** Two of its load-bearing
-claims are false against today's code, both found while attempting 5.A.2/5.B.2:
+**Phase 5 is closed: 5.A.2 and 5.B.2 both landed against BeepDM's real `Services/` surface.**
 
-- **`AddBeepForDesktop()` does not exist in BeepDM.** The doc says it and `AddSetupWizard()` "both
-  already exist in `Services/BeepServiceExtensions.Desktop.cs`". `AddSetupWizard()` does exist
-  (`SetUp/SetupWizardServiceExtensions.cs:28`); that file offers `AddBeepLoggingForDesktop` and
-  `AddBeepAuditForDesktop`, and `AddBeepForDesktop` appears only inside commented-out example code.
-- **"The shell wires everything by hand" is largely no longer true.** The doc cites `new
-  InstallerController()` and `new BuildPipeline()` as evidence of no DI; two hand-`new`s of engine
-  services remain in the whole shell (`InstallerController`, and `new SourceScanner()` inside it),
-  and Core already runs on interface seams — `IInstallerHostBuilder`, `IModulePackageService`,
-  `IDirectoryLink`, the resource-provider registry. 5.A.2's acceptance criterion ("zero `new` of
-  engine services in `Forms/`/`Pages/`") is nearly met by accident.
+A first pass at these read the P5 design doc literally and got 5.B.2 wrong, so the correction is
+worth recording. The doc names `AddBeepForDesktop()`, which does not exist in BeepDM — the actual
+entry points are `AddBeepServices()` (fluent `IBeepServiceBuilder`, `RegisterBeepinServiceCollection.cs`)
+and `AddBeepLogging()` (`BeepServiceExtensions.Logging.cs`). Chasing the missing name led to
+comparing `Diag` against `IDMLogger`, concluding that adopting Beep's logger would *lose*
+structure, and shipping a flat-string bridge. That conclusion was wrong. `Services/` carries a full
+telemetry pipeline — enrichers, redactors, samplers, rolling sinks, retention and budget
+enforcement — behind **`IBeepLog`**, whose `Log(level, category, message, properties, exception)`
+is *richer* than `Diag`, not poorer. `IDMLogger` is the legacy interface BeepDM is itself migrating
+off (`BeepLoggingOptions.ReplaceDMLogger` defaults to true).
 
-**5.B.2 — bridged rather than retired, deliberately.** `IDMLogger`'s surface is flat strings
-(`LogInfo(string)`, `LogWarning(string)`, …). `Diag` carries an operation/correlation scope, stable
-`BI0D…` event ids, a JSONL log, and a bounded in-memory ring that `DiagnosticsQualificationRunner`
-and the builder UI read. Rewriting the ~125 call sites onto `IDMLogger`, as the doc specifies,
-would throw all of that away — the doc predates `Diag` growing it.
+**5.B.2** now targets `IBeepLog`: `Diag.UseLog(IBeepLog)` forwards each entry with its structure
+intact — context becomes the category, the `BI0D…` event id and the operation/correlation scope
+travel as properties, and the original exception is passed rather than a rendered string. `IsEnabled`
+and `MinLevel` are honoured before the property bag is built. The local ring stays canonical, and a
+throwing host pipeline cannot break an install.
 
-What shipped instead is `Diag.UseLogger(IDMLogger)`, matching the existing `UseLogDirectory`
-handle: every entry is mirrored to the host's logger at the matching level, rendered through
-`DiagEntry.ToString()` so the event id, scope, context and exception survive the flattening. One
-call per entry, never two. A failing host logger cannot take the installer down, and the local ring
-stays canonical. The reason it is worth having: an app consuming
-`TheTechIdea.Beep.Installer.Sdk` currently gets installer diagnostics only in `%TEMP%`; one call at
-startup routes them wherever that app already logs. 7 `DiagLoggerBridgeTests`.
+**5.A.2** is a composition root (`Composition/InstallerServices.cs`) that registers the logging
+pipeline, resolves `InstallerController`/`PackageBuilderForm`, and routes `Diag` into the pipeline
+in `Main`. The payoff is not DI for its own sake — it is that the ~125 existing `Diag` call sites
+keep their shape and start getting **redaction, rolling, retention and a storage budget**. That is a
+security fix as much as a logging one: this process handles signing passwords, API keys and
+connection strings, and `Diag` previously appended them verbatim to a `%TEMP%` file nothing pruned.
+A test asserts a credential does not survive to disk *and* that the entry itself did.
 
-**Recommendation:** re-derive P5 from the code before doing 5.A.2. A composition root is still
-worth having, but it has to be written against BeepDM's actual registration surface, and its
-payoff is smaller than the doc assumes.
+Deliberately **not** registered: `AddBeepServices()`. It builds an `IBeepService` with a DMEEditor,
+datasource drivers and assembly discovery; the installer authors `.bsetup` files and copies
+payloads and uses none of it. Registering it to satisfy the doc would buy startup cost and an
+`%AppData%` footprint on end-user machines for nothing.
+
+One defect found only by running the exe, which no unit test would have caught: `TelemetryPipeline`
+implements **only** `IAsyncDisposable`, so `using var provider = …` throws
+`InvalidOperationException` from the container's synchronous `Dispose` — every CLI invocation would
+have ended in an unhandled exception (exit 82). `InstallerServices.Shutdown` flushes, then disposes
+through the thread pool so it cannot deadlock against a synchronization context left by
+`Application.Run`. `/VER`, `/?`, `/LISTTEMPLATES` and `/VALIDATE=` all verified exit 0 afterwards.
+
+Suite **1128/0/3** (6 `CompositionRootTests` + 10 `DiagLoggerBridgeTests`).
+
 
 **5.A.1 landed — and the hand-counted dispatch was hiding three live CLI bugs.** `Dispatch` was
 487 lines of `IndexOf(args, "/VERB=")` followed by `args[i][N..]` with `N` counted by eye, and
@@ -826,16 +836,16 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 4.M.1 | Gate: publish + ClickOnce + Msix + update suites green | ⬜ |
 | 4.M.2 | SOLID review | ⬜ |
 
-## Phase 5: Thin Shell — DI Composition Root ⬜ — P1
+## Phase 5: Thin Shell — DI Composition Root ✅ — P1
 
 > 📄 **[P5_THIN_SHELL_DESIGN.md](P5_THIN_SHELL_DESIGN.md)**
 
 | # | Task | Status |
 |---|------|--------|
 | 5.A.1 | `CliOptions` parser; `Dispatch` < 100 lines | ✅ (2026-09-07 — 487 → 13 lines; verb table also feeds `IsHeadlessCommand`; 3 live CLI bugs fixed) |
-| 5.A.2 | Composition root: `AddBeepForDesktop()` + `AddSetupWizard()` + Core registrations | ⬜ |
+| 5.A.2 | Composition root | ✅ (2026-09-07 — `Composition/InstallerServices.cs`; `AddBeepLogging()` + Core registrations. `AddBeepForDesktop()` does not exist; `AddBeepServices()` deliberately not registered, see log) |
 | 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
-| 5.B.2 | `IDMLogger` adoption; retire `Diag` | 🟡 bridged (`Diag.UseLogger`), **not** retired — retiring it would regress diagnostics, see log |
+| 5.B.2 | Structured-logging adoption | ✅ (2026-09-07 — `Diag.UseLog(IBeepLog)`; `IBeepLog`, not the legacy `IDMLogger`, and `Diag` is kept as the local ring, see log) |
 | 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ⬜ |
 | 5.M.2 | SOLID review | ⬜ |
 
@@ -954,7 +964,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2 | Runtime thinning + BeepDM upstream fixes | P1 | 🟡 started | [P2](P2_RUNTIME_THINNING_DESIGN.md) |
 | 3 | Authoring core extraction | P1 | ⬜ | [P3](P3_AUTHORING_CORE_DESIGN.md) |
 | 4 | Packaging consolidation | P2 | ⬜ | [P4](P4_PACKAGING_CLICKONCE_MSIX_DESIGN.md) |
-| 5 | Thin shell / DI | P1 | ⬜ | [P5](P5_THIN_SHELL_DESIGN.md) |
+| 5 | Thin shell / DI | P1 | ✅ | [P5](P5_THIN_SHELL_DESIGN.md) |
 | 6 | UI/UX overhaul | P1 | ⬜ | [P6](P6_UIUX_DESIGN.md) |
 | 7 | Localization / RTL / a11y | P2 | ⬜ | [P7](P7_I18N_A11Y_DESIGN.md) |
 | 8 | Security & reliability | P1 | ⬜ | [P8](P8_SECURITY_RELIABILITY_DESIGN.md) |

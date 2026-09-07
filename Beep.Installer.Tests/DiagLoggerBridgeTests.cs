@@ -1,59 +1,55 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Beep.Installer.Engine;
 using FluentAssertions;
-using TheTechIdea.Beep.Logger;
+using TheTechIdea.Beep.Services.Logging;
 using Xunit;
 
 namespace Beep.Installer.Tests;
 
 /// <summary>
-/// The Diag → IDMLogger bridge (5.B.2).
+/// The Diag → IBeepLog bridge (5.B.2).
 ///
-/// An application consuming <c>TheTechIdea.Beep.Installer.Sdk</c> gets installer diagnostics only
-/// in <c>%TEMP%</c>; one call at startup puts them wherever that application already logs. The
-/// bridge is deliberately not an adoption of IDMLogger at the call sites — IDMLogger takes flat
-/// strings, so doing that would discard the scope, event ids, JSONL log and in-memory ring that
-/// the diagnostics qualification runner reads.
+/// <c>IBeepLog</c> is the target rather than the legacy <c>IDMLogger</c>: its <c>Log</c> takes a
+/// level, a category, a property bag and the exception itself, so a diagnostic entry crosses into
+/// Beep's telemetry pipeline whole instead of being flattened into one string. BeepDM is moving the
+/// same way — <c>BeepLoggingOptions.ReplaceDMLogger</c> defaults to true.
 /// </summary>
 [Collection("Diagnostics")]
 public class DiagLoggerBridgeTests
 {
-    private sealed class RecordingLogger : IDMLogger
-    {
-        public List<(string Level, string Message)> Entries { get; } = new();
-        public Func<string, bool>? Throw { get; set; }
+    private sealed record Recorded(
+        BeepLogLevel Level,
+        string Category,
+        string Message,
+        IReadOnlyDictionary<string, object>? Properties,
+        Exception? Exception);
 
-        private void Record(string level, string message)
+    private sealed class RecordingLog : IBeepLog
+    {
+        public List<Recorded> Entries { get; } = new();
+        public bool IsEnabled { get; set; } = true;
+        public BeepLogLevel MinLevel { get; set; } = BeepLogLevel.Trace;
+        public bool ThrowOnLog { get; set; }
+
+        public void Log(BeepLogLevel level, string category, string message,
+            IReadOnlyDictionary<string, object>? properties = null, Exception? exception = null)
         {
-            if (Throw?.Invoke(level) == true) throw new InvalidOperationException("host logger is broken");
-            Entries.Add((level, message));
+            if (ThrowOnLog) throw new InvalidOperationException("host pipeline is broken");
+            Entries.Add(new Recorded(level, category, message, properties, exception));
         }
 
-        public void LogWarning(string warning) => Record("WARN", warning);
-        public void LogInfo(string info) => Record("INFO", info);
-        public void LogDebug(string message) => Record("DEBUG", message);
-        public void LogError(string error) => Record("ERROR", error);
-        public void LogCritical(string error) => Record("CRITICAL", error);
-        public void LogTrace(string message) => Record("TRACE", message);
-        public void WriteLog(string info) => Record("LOG", info);
-
-        public void LogWithContext(string message, object context) { }
-        public void LogStructured(string message, object properties) { }
-        public void StartLog() { }
-        public void StopLog() { }
-        public void PauseLog() { }
-        public void Flush() { }
-        public void ConfigureLogger(Action<object> configure) { }
-        public void AddLogFilter(Func<string, bool> filter) { }
-
-#pragma warning disable CS0067 // The bridge raises neither event.
-        public event EventHandler<string>? Onevent;
-        public event PropertyChangedEventHandler? PropertyChanged;
-#pragma warning restore CS0067
+        public void Trace(string message, object? properties = null) { }
+        public void Debug(string message, object? properties = null) { }
+        public void Info(string message, object? properties = null) { }
+        public void Warn(string message, object? properties = null) { }
+        public void Error(string message, Exception? ex = null, object? properties = null) { }
+        public void Critical(string message, Exception? ex = null, object? properties = null) { }
+        public Task FlushAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private static string NewDiagDirectory()
@@ -64,106 +60,155 @@ public class DiagLoggerBridgeTests
     }
 
     [Fact]
-    public void EachLevel_ReachesTheMatchingLoggerMethod()
+    public void EachLevel_MapsOntoTheBeepLogLevel()
     {
         using var logs = Diag.UseLogDirectory(NewDiagDirectory());
-        var logger = new RecordingLogger();
+        var log = new RecordingLog();
         Diag.Reset();
 
-        using (Diag.UseLogger(logger))
+        using (Diag.UseLog(log))
         {
             Diag.Warn("Ctx", "a warning");
             Diag.Info("Ctx", "some information");
             Diag.Debug("Ctx", "a debug note");
         }
 
-        logger.Entries.Select(e => e.Level).Should().Equal("WARN", "INFO", "DEBUG");
+        log.Entries.Select(e => e.Level).Should()
+            .Equal(BeepLogLevel.Warning, BeepLogLevel.Information, BeepLogLevel.Debug);
     }
 
     [Fact]
-    public void ForwardedLine_KeepsTheContextThatIDMLoggerCannotCarry()
+    public void ScopeAndEventId_TravelAsPropertiesNotAsAFlattenedString()
     {
         using var logs = Diag.UseLogDirectory(NewDiagDirectory());
-        var logger = new RecordingLogger();
+        var log = new RecordingLog();
         Diag.Reset();
 
-        using (Diag.UseLogger(logger))
+        using (Diag.UseLog(log))
         using (Diag.BeginScope("install", "corr-42"))
             Diag.Warn("Payload", "hash mismatch", eventId: "BI2499");
 
-        // IDMLogger takes a bare string, so the scope, event id and context have to survive inside it.
-        var line = logger.Entries.Should().ContainSingle().Subject.Message;
-        line.Should().Contain("BI2499").And.Contain("install/Payload").And.Contain("hash mismatch");
+        var entry = log.Entries.Should().ContainSingle().Subject;
+        entry.Category.Should().Be("Payload", "the diagnostic context is the log category");
+        entry.Message.Should().Be("hash mismatch", "the message stays a message, not a rendered line");
+        entry.Properties.Should().NotBeNull();
+        entry.Properties!["eventId"].Should().Be("BI2499");
+        entry.Properties["operation"].Should().Be("install");
+        entry.Properties["correlationId"].Should().Be("corr-42");
     }
 
     [Fact]
-    public void ExceptionDetail_SurvivesTheFlattening()
+    public void TheExceptionItself_IsHandedOver_NotItsToString()
     {
         using var logs = Diag.UseLogDirectory(NewDiagDirectory());
-        var logger = new RecordingLogger();
+        var log = new RecordingLog();
+        var failure = new IOException("file is locked");
         Diag.Reset();
 
-        using (Diag.UseLogger(logger))
-            Diag.Warn("Copy", "could not copy", new IOException("file is locked"));
+        using (Diag.UseLog(log))
+            Diag.Warn("Copy", "could not copy", failure);
 
-        logger.Entries.Should().ContainSingle().Which.Message.Should().Contain("file is locked");
+        log.Entries.Should().ContainSingle().Which.Exception.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public void ContextlessEntries_GetAStableCategory()
+    {
+        using var logs = Diag.UseLogDirectory(NewDiagDirectory());
+        var log = new RecordingLog();
+        Diag.Reset();
+
+        using (Diag.UseLog(log))
+            Diag.Info("", "no context supplied");
+
+        log.Entries.Should().ContainSingle().Which.Category.Should().Be("Installer");
+    }
+
+    [Fact]
+    public void NothingIsForwarded_WhenTheHostPipelineIsDisabled()
+    {
+        using var logs = Diag.UseLogDirectory(NewDiagDirectory());
+        var log = new RecordingLog { IsEnabled = false };
+        Diag.Reset();
+
+        using (Diag.UseLog(log))
+            Diag.Warn("Ctx", "dropped before the property bag is built");
+
+        log.Entries.Should().BeEmpty();
+        Diag.Recent.Should().ContainSingle(e => e.Context == "Ctx", "the local ring is unaffected");
+    }
+
+    [Fact]
+    public void EntriesBelowMinLevel_AreNotForwarded()
+    {
+        using var logs = Diag.UseLogDirectory(NewDiagDirectory());
+        var log = new RecordingLog { MinLevel = BeepLogLevel.Warning };
+        Diag.Reset();
+
+        using (Diag.UseLog(log))
+        {
+            Diag.Debug("Ctx", "below the floor");
+            Diag.Warn("Ctx", "at the floor");
+        }
+
+        log.Entries.Should().ContainSingle().Which.Level.Should().Be(BeepLogLevel.Warning);
     }
 
     [Fact]
     public void NothingIsForwarded_AfterTheHandleIsDisposed()
     {
         using var logs = Diag.UseLogDirectory(NewDiagDirectory());
-        var logger = new RecordingLogger();
+        var log = new RecordingLog();
         Diag.Reset();
 
-        using (Diag.UseLogger(logger))
+        using (Diag.UseLog(log))
             Diag.Info("Ctx", "inside");
         Diag.Info("Ctx", "outside");
 
-        logger.Entries.Should().ContainSingle().Which.Message.Should().Contain("inside");
+        log.Entries.Should().ContainSingle().Which.Message.Should().Be("inside");
     }
 
     [Fact]
-    public void NestedBridges_RestoreThePreviousLogger()
+    public void NestedBridges_RestoreThePreviousLog()
     {
         using var logs = Diag.UseLogDirectory(NewDiagDirectory());
-        var outer = new RecordingLogger();
-        var inner = new RecordingLogger();
+        var outer = new RecordingLog();
+        var inner = new RecordingLog();
         Diag.Reset();
 
-        using (Diag.UseLogger(outer))
+        using (Diag.UseLog(outer))
         {
-            using (Diag.UseLogger(inner))
+            using (Diag.UseLog(inner))
                 Diag.Info("Ctx", "to inner");
             Diag.Info("Ctx", "back to outer");
         }
 
-        inner.Entries.Should().ContainSingle().Which.Message.Should().Contain("to inner");
-        outer.Entries.Should().ContainSingle().Which.Message.Should().Contain("back to outer");
+        inner.Entries.Should().ContainSingle().Which.Message.Should().Be("to inner");
+        outer.Entries.Should().ContainSingle().Which.Message.Should().Be("back to outer");
     }
 
     [Fact]
-    public void ABrokenHostLogger_DoesNotBreakTheInstaller()
+    public void ABrokenHostPipeline_DoesNotBreakTheInstaller()
     {
         using var logs = Diag.UseLogDirectory(NewDiagDirectory());
-        var logger = new RecordingLogger { Throw = _ => true };
+        var log = new RecordingLog { ThrowOnLog = true };
         Diag.Reset();
 
         // Diag's contract is that logging never throws; bridging must not weaken it.
-        using (Diag.UseLogger(logger))
+        using (Diag.UseLog(log))
         {
-            var log = () => Diag.Warn("Ctx", "still recorded locally");
-            log.Should().NotThrow();
+            var write = () => Diag.Warn("Ctx", "still recorded locally");
+            write.Should().NotThrow();
         }
 
         Diag.Recent.Should().Contain(e => e.Message == "still recorded locally",
-            "the local ring is the canonical sink and must survive a failing host logger");
+            "the local ring is canonical and must survive a failing host pipeline");
     }
 
     [Fact]
-    public void UseLogger_RejectsNull()
+    public void UseLog_RejectsNull()
     {
-        var use = () => Diag.UseLogger(null!);
+        var use = () => Diag.UseLog(null!);
 
         use.Should().Throw<ArgumentNullException>();
     }

@@ -76,6 +76,13 @@ internal static partial class Program
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         }
 
+        // Composition root. Built here rather than inside Dispatch so that diagnostics are routed
+        // before any verb runs and drained after it returns — sinks batch, and a short headless run
+        // would otherwise lose the entries explaining why it failed.
+        var provider = Composition.InstallerServices.Build(args);
+        using var diagnostics = Composition.InstallerServices.RouteDiagnostics(provider);
+        Services = provider;
+
         try
         {
             return Dispatch(args);
@@ -110,7 +117,17 @@ internal static partial class Program
             }
             return 99;
         }
+        finally
+        {
+            Composition.InstallerServices.Shutdown(provider);
+        }
     }
+
+    /// <summary>
+    /// The composition root's provider, for the few call sites that resolve rather than construct.
+    /// Set once by <see cref="Main"/>; null under tests that call into the shell directly.
+    /// </summary>
+    internal static IServiceProvider? Services { get; private set; }
 
     /// <summary>
     /// Whether this invocation needs a console attached. Answered from the same verb table that

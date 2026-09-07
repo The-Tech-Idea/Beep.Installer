@@ -157,7 +157,11 @@ internal static partial class Program
             return 0;
         }
 
-        Application.Run(new PackageBuilderForm(new InstallerController(), args));
+        // Resolved from the composition root when there is one; constructed directly only when the
+        // shell is driven in-process by a test, which never goes through Main.
+        Application.Run(Services?.GetService(typeof(PackageBuilderForm)) is PackageBuilderForm form
+            ? form
+            : new PackageBuilderForm(new InstallerController(), args));
         return 0;
     }
 }

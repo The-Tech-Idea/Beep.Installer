@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
-using TheTechIdea.Beep.Logger;
+using TheTechIdea.Beep.Services.Logging;
 
 namespace Beep.Installer.Engine;
 
@@ -63,24 +63,26 @@ public static class Diag
     }
 
     /// <summary>
-    /// Mirrors every entry to a Beep <see cref="IDMLogger"/> until the returned handle is disposed.
+    /// Routes every entry into Beep's structured logging pipeline (<see cref="IBeepLog"/>) until
+    /// the returned handle is disposed.
     ///
-    /// This is a bridge, not a replacement. <c>IDMLogger</c> takes flat strings, so adopting it at
-    /// the ~125 call sites would discard the operation/correlation scope, the stable
-    /// <c>BI0D…</c> event ids, the JSONL log and the in-memory ring that
-    /// <c>DiagnosticsQualificationRunner</c> and the builder UI read. Entries are rendered through
-    /// <see cref="DiagEntry.ToString"/> so none of that context is lost on the way out.
+    /// <see cref="IBeepLog"/> is the right target rather than the legacy <c>IDMLogger</c>: its
+    /// <c>Log</c> takes a level, a category, a property bag and the exception itself, so a
+    /// <see cref="DiagEntry"/> crosses over whole — the stable <c>BI0D…</c> event id and the
+    /// operation/correlation scope travel as properties instead of being flattened into a string.
+    /// BeepDM is migrating the same way: <c>BeepLoggingOptions.ReplaceDMLogger</c> defaults to true.
     ///
-    /// The reason to want it: an application consuming <c>TheTechIdea.Beep.Installer.Sdk</c> gets
-    /// installer diagnostics only in <c>%TEMP%</c> today. One call at startup puts them wherever
-    /// the rest of that application already logs.
+    /// <see cref="Recent"/> stays the canonical local sink; this is an additional route, so an
+    /// application consuming <c>TheTechIdea.Beep.Installer.Sdk</c> sees installer diagnostics in
+    /// its own pipeline — enriched, redacted and retained by its own policy — rather than only in
+    /// a <c>%TEMP%</c> file.
     /// </summary>
-    public static IDisposable UseLogger(IDMLogger logger)
+    public static IDisposable UseLog(IBeepLog log)
     {
-        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(log);
 
         var prior = _logger.Value;
-        _logger.Value = new DiagLoggerBridge(logger, prior);
+        _logger.Value = new DiagLoggerBridge(log, prior);
         return new LoggerHandle(prior);
     }
 
@@ -110,30 +112,37 @@ public static class Diag
         try { File.AppendAllText(JsonLogPath, JsonSerializer.Serialize(entry, DiagJsonContext.Default.DiagEntry) + Environment.NewLine); }
         catch { /* diagnostics must never throw */ }
 
-        Forward(entry);
+        Forward(entry, ex);
     }
 
     /// <summary>
-    /// Mirrors one entry to the bridged logger at the matching level. One call per entry, never
-    /// two: <c>LogStructured</c> would double-emit on any implementation that also writes it, and
-    /// <see cref="DiagEntry.ToString"/> already carries the event id, scope, context and error.
+    /// Hands one entry to the bridged <see cref="IBeepLog"/> with its structure intact: the
+    /// context becomes the category, the event id and scope become properties, and the original
+    /// exception is passed rather than a rendered string.
     /// </summary>
-    private static void Forward(DiagEntry entry)
+    private static void Forward(DiagEntry entry, Exception? ex)
     {
-        var logger = _logger.Value?.Logger;
-        if (logger is null) return;
+        var log = _logger.Value?.Log;
+        if (log is null || !log.IsEnabled) return;
 
         try
         {
-            var line = entry.ToString();
-            switch (entry.Level)
+            var level = entry.Level switch
             {
-                case "WARN": logger.LogWarning(line); break;
-                case "DEBUG": logger.LogDebug(line); break;
-                default: logger.LogInfo(line); break;
-            }
+                "WARN" => BeepLogLevel.Warning,
+                "DEBUG" => BeepLogLevel.Debug,
+                _ => BeepLogLevel.Information
+            };
+            if (level < log.MinLevel) return;
+
+            var properties = new Dictionary<string, object> { ["eventId"] = entry.EventId };
+            if (!string.IsNullOrEmpty(entry.Operation)) properties["operation"] = entry.Operation;
+            if (!string.IsNullOrEmpty(entry.CorrelationId)) properties["correlationId"] = entry.CorrelationId;
+
+            log.Log(level, string.IsNullOrEmpty(entry.Context) ? "Installer" : entry.Context,
+                entry.Message, properties, ex);
         }
-        catch { /* a failing host logger must not take the installer down */ }
+        catch { /* a failing host pipeline must not take the installer down */ }
     }
 
     private static string StableEventId(string level, string context)
@@ -145,7 +154,7 @@ public static class Diag
 
     private sealed record DiagScope(string Operation, string CorrelationId, DiagScope? Prior);
     private sealed record DiagLogPaths(string LogPath, string JsonLogPath, DiagLogPaths? Prior);
-    private sealed record DiagLoggerBridge(IDMLogger Logger, DiagLoggerBridge? Prior);
+    private sealed record DiagLoggerBridge(IBeepLog Log, DiagLoggerBridge? Prior);
 
     private sealed class LoggerHandle : IDisposable
     {
