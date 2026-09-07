@@ -325,7 +325,6 @@ namespace Beep.Installer.Models
             set => SetProperty(ref _appUpdateMode, value);
         }
 
-<<<<<<< HEAD
         private string _appUpdateChannel = "";
         public string AppUpdateChannel
         {
@@ -352,7 +351,8 @@ namespace Beep.Installer.Models
         {
             get => _appInstallerForceUpdateFromAnyVersion;
             set => SetProperty(ref _appInstallerForceUpdateFromAnyVersion, value);
-=======
+        }
+
         private bool _sideBySide;
         /// <summary>
         /// When true the app installs into <c>&lt;dir&gt;\app-&lt;version&gt;\</c> with a
@@ -365,7 +365,6 @@ namespace Beep.Installer.Models
         {
             get => _sideBySide;
             set => SetProperty(ref _sideBySide, value);
->>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da
         }
 
         private string _appCopyright = "";

@@ -360,6 +360,7 @@ public static class InstallerScriptSerializer
         WriteKey(sb, "AppInstallerHoursBetweenUpdateChecks", project.AppInstallerHoursBetweenUpdateChecks.ToString(CultureInfo.InvariantCulture));
         WriteKey(sb, "AppInstallerShowPrompt", YesNo(project.AppInstallerShowPrompt));
         WriteKey(sb, "AppInstallerForceUpdateFromAnyVersion", YesNo(project.AppInstallerForceUpdateFromAnyVersion));
+        WriteKey(sb, "SideBySide", YesNo(project.SideBySide));
         WriteKey(sb, "AppCopyright", project.AppCopyright);
 
         // Source
@@ -764,6 +765,9 @@ public static class InstallerScriptSerializer
             case "appinstallerforceupdatefromanyversion":
             case "forceupdatefromanyversion":
                 project.AppInstallerForceUpdateFromAnyVersion = ParseBool(value);
+                break;
+            case "sidebyside":
+                project.SideBySide = ParseBool(value);
                 break;
             case "appcopyright":
             case "copyright":

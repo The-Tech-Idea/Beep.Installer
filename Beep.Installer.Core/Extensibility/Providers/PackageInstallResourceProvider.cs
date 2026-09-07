@@ -728,8 +728,11 @@ public sealed class PackageAcquisitionStore : IPackageAcquisitionStore
                     {
                         var buffer = new byte[81920];
                         int read;
-                        while ((read = input.ReadAsync(buffer.AsMemory(), cancellationToken).AsTask().GetAwaiter().GetResult()) > 0)
+                        // Synchronous copy on a synchronous path: blocking on ReadAsync here
+                        // would deadlock on any thread carrying a synchronization context.
+                        while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
                             if (read > maximumBytes - downloaded)
                                 throw new IOException("Remote package exceeds its download size limit.");
                             output.Write(buffer, 0, read);

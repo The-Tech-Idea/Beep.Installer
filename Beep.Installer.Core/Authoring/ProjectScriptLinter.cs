@@ -90,6 +90,7 @@ public static class ProjectScriptLinter
         "UpdateMode",
         "AppUpdateChannel",
         "UpdateChannel",
+        "SideBySide",
         "AppInstallerHoursBetweenUpdateChecks",
         "AppInstallerHours",
         "AppInstallerShowPrompt",

@@ -26,6 +26,7 @@ public static class ProjectCanonicalJsonExporter
         "AppUpdatesURL",
         "AppUpdateMode",
         "AppUpdateChannel",
+        "SideBySide",
         "AppCopyright",
         "SourceDirectory",
         "SourceIncludes",

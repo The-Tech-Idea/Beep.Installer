@@ -22,7 +22,6 @@ public static class InstallContextKeys
     /// <summary>The projected <c>InstallConfig</c>. Four steps hard-fail Validate() without it.</summary>
     public const string InstallConfig = "InstallConfig";
 
-<<<<<<< HEAD
     /// <summary>The first-class Beep Installer authoring project used by compiled-plan resource providers.</summary>
     public const string InstallProject = "InstallProject";
 
@@ -54,10 +53,11 @@ public static class InstallContextKeys
     /// <summary>Effective enterprise policy used by runtime resource providers.</summary>
     public const string ResourcePolicy = "ResourcePolicy";
 
-    /// <summary>Absolute install directory. Nothing derives this from InstallConfig.DefaultInstallPath.</summary>
-=======
-    /// <summary>Absolute install directory — where files are physically written. For a side-by-side install this is <c>&lt;base&gt;\app-&lt;version&gt;</c>.</summary>
->>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da
+    /// <summary>
+    /// Absolute install directory — where files are physically written; for a side-by-side
+    /// install that is <c>&lt;base&gt;\app-&lt;version&gt;</c>. Nothing derives this from
+    /// <c>InstallConfig.DefaultInstallPath</c>.
+    /// </summary>
     public const string InstallPath = "InstallPath";
 
     /// <summary>

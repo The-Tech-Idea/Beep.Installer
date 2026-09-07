@@ -23,6 +23,14 @@
     <!-- Reuse FeedPublisher/PayloadPackager + the Updates feed models so publish/serve/consume
          agree on shape. Core pulls the source DataManagementModels/Engine (Updates domain). -->
     <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
+    <!--
+      Core marks its BeepDM references PrivateAssets="all" so the packaged SDK carries them as
+      build output rather than as package dependencies. That also stops them flowing transitively,
+      so the Updates feed models (TheTechIdea.Beep.Updates) must be referenced directly here — the
+      same direct-reference rule the shell and Core already follow.
+    -->
+    <ProjectReference Include="..\..\BeepDM\DataManagementModelsStandard\DataManagementModels.csproj" />
+    <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
   </ItemGroup>
 
 </Project>

@@ -180,6 +180,7 @@
     }
   ],
   "showEula": true,
+  "sideBySide": false,
   "sidebarBackgroundColor": "#1E1E28",
   "sidebarTextColor": "#FFFFFF",
   "singleFile": true,

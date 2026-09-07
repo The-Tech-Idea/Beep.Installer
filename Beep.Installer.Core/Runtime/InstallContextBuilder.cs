@@ -49,13 +49,6 @@ public static class InstallContextBuilder
         var context = new SetupContext();
         var config = InstallConfigProjector.ToInstallConfig(project, payloadRoot);
 
-<<<<<<< HEAD
-        context.Properties[InstallContextKeys.InstallProject] = project;
-        context.Properties[InstallContextKeys.InstallConfig] = config;
-        context.Properties[InstallContextKeys.InstallPath] = installPath;
-        context.Properties[InstallContextKeys.ResourceExecutionJournalPath] =
-            ResourceExecutionJournalStore.ResolvePath(installPath, project.AppId, journalPath);
-=======
         // Side-by-side layout: the user chose <installPath> as the base, but files go into
         // <base>\app-<version> and shortcuts/launch point at <base>\current (a junction the
         // JunctionCreateStep flips). Flat installs leave every path equal to <installPath>, so
@@ -69,12 +62,16 @@ public static class InstallContextBuilder
             launchPath = System.IO.Path.Combine(baseDir, "current");
         }
 
+        context.Properties[InstallContextKeys.InstallProject] = project;
         context.Properties[InstallContextKeys.InstallConfig] = config;
         context.Properties[InstallContextKeys.InstallPath] = physicalPath;
         context.Properties[InstallContextKeys.LaunchPath] = launchPath;
         context.Properties[InstallContextKeys.InstallBaseDir] = baseDir;
         context.Properties[InstallContextKeys.SideBySide] = project.SideBySide;
->>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da
+        // The journal lives with the files it describes: the versioned directory for a
+        // side-by-side install, the install directory itself for a flat one.
+        context.Properties[InstallContextKeys.ResourceExecutionJournalPath] =
+            ResourceExecutionJournalStore.ResolvePath(physicalPath, project.AppId, journalPath);
 
         // Boxed value types — steps read these with TryGetValue + pattern match, because
         // TryGetProperty<T> is constrained to reference types.
@@ -158,12 +155,6 @@ public static class InstallContextBuilder
         context.Properties[InstallContextKeys.InstallProject] = project;
         context.Properties[InstallContextKeys.InstallConfig] =
             InstallConfigProjector.ToInstallConfig(project);
-<<<<<<< HEAD
-        context.Properties[InstallContextKeys.InstallPath] = installPath;
-        context.Properties[InstallContextKeys.ResourceExecutionJournalPath] =
-            ResourceExecutionJournalStore.ResolvePath(installPath, project.AppId, journalPath);
-=======
-
         // For a side-by-side install the manifest lives under <base>\current (the junction to the
         // live version); reading through it lets uninstall find the right files, and the base dir
         // is recorded so the whole side-by-side tree (app-* + current) is removed.
@@ -173,7 +164,8 @@ public static class InstallContextBuilder
         context.Properties[InstallContextKeys.LaunchPath] = manifestPath;
         context.Properties[InstallContextKeys.InstallBaseDir] = baseDir;
         context.Properties[InstallContextKeys.SideBySide] = project.SideBySide;
->>>>>>> 82ba68d112dacd6e63ec8da337aba79f4ac122da
+        context.Properties[InstallContextKeys.ResourceExecutionJournalPath] =
+            ResourceExecutionJournalStore.ResolvePath(manifestPath, project.AppId, journalPath);
         context.Properties[InstallContextKeys.PerUser] = perUser;
         context.Properties[InstallContextKeys.CustomActions] =
             new List<CustomAction>(project.CustomActions);
