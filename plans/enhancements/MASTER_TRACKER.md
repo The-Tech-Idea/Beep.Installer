@@ -118,6 +118,33 @@ Confirmed by reintroducing the old code: the never-exits test wedges for its ful
 stderr-flood test for its full 60s. Every test in `CustomActionTimeoutTests` bounds its own wait, so
 a regression fails the run rather than hanging it.
 
+**That hang was one of ten; the family is now swept.** Fixing it prompted an audit of every child
+process the installer launches, and each site had grown its own launch-and-wait with some part
+wrong:
+
+- **Read-before-wait**, which makes the timeout unreachable — `PrerequisiteCheckStep` (the
+  `dotnet --list-runtimes` probe *and* command detection, the first things any install runs) and
+  `InstallConditionEvaluator` (gates component conditions).
+- **Redirect and never drain**, so a chatty child fills the pipe buffer and blocks until the wait
+  expires, its output lost regardless — regsvr32, schtasks, certutil, and gacutil's stdout.
+- **`ExitCode` after a possibly-timed-out wait**, which throws `InvalidOperationException` on a live
+  process and surfaced as "install failed" rather than "timed out" — six sites.
+- **No kill on overrun.** `BootstrapperStep` left an *elevated* prerequisite installer running while
+  the install carried on around it.
+
+`InstallHelpers.RunProcess` now answers all of it once: drains whatever was actually redirected
+concurrently with the wait, bounds the wait, kills the process tree on overrun (reporting a failed
+kill rather than swallowing it), and returns `Started`/`TimedOut`/`ExitCode`/stdout/stderr/`Error`
+instead of throwing — steps decide what a failure means. No raw `Process.Start` or `WaitForExit`
+remains under BeepDM's `Installer/` outside the runner. 6 `RunProcessTests`.
+
+BeepDM `SetupWizardTests` **225/225**; installer suite **1151/0/3**.
+
+*Flake seen once:* `AuditTests.PerStep_Spans_AreEmitted` failed on one run of four, passes in
+isolation and passed three consecutive full runs afterwards. Unrelated to these changes (it does
+not launch a process), but a real intermittent worth chasing before CI meets it.
+
+
 **2.A.1 — the duplicate step id was a graph that could not be built.** `ComServerRegistrationStep`
 (writes the CLSID tree from `InstallConfig`, scope-aware) and `ComRegistrationStep` (shells out to
 regsvr32 against the loose `ComComponents` key) both answered to `installer.com.register`.
