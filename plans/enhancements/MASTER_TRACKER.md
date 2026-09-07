@@ -205,14 +205,25 @@ a customer machine.
 The digest deliberately is **not** written back into the shipped script: that script ships as a
 sidecar *inside* the archive, so an archive can never contain its own hash.
 
-**Known, and worth its own item: the payload archive is not byte-reproducible.** Two builds of
-identical input differ, for two identified reasons — `InstallerScriptSerializer.Save` stamps
-`ModifiedAt = DateTime.UtcNow` into `script.bsetup`, which ships inside the archive, and zip entries
-carry creation-time timestamps. It does not break pinning (a rebuild has to be re-uploaded and so
-re-pinned anyway) but it does mean a pin cannot be validated by rebuilding, and it undercuts the
-reproducibility the deterministic plan hash otherwise aims at. Normalising both would make payloads
-reproducible; not attempted here because it touches the packer that the delta blob store and
-signing evidence also depend on.
+**Payload archives are reproducible on request (`SOURCE_DATE_EPOCH`).** An earlier note here named
+the causes wrongly — it blamed `Save` stamping `ModifiedAt`, but the shipped script comes from
+`Write`, which never touches it. Measured instead of guessed, the archive varied for two reasons:
+every zip entry carried the moment it was written, and `version.txt` recorded the build time to the
+second.
+
+`BuildPipeline.SourceDateEpoch` fixes both, defaulting from the `SOURCE_DATE_EPOCH` environment
+variable so a CI job opts in without a flag. Unset, builds keep real timestamps — "when was this
+actually built" is worth more than reproducibility to someone building locally, which is why the
+convention is opt-in rather than a hardcoded epoch. An unparseable value is ignored, not fatal: it
+is a hint, not a build input. With it set, the same project rebuilds to the same `PayloadSha256`,
+so **a declared pin can now be verified by rebuilding** rather than taken on trust.
+
+Two of the three tests written for this initially failed against correct code, both times because
+the *test* varied something the build did not: first a fresh project per build (differing
+`CreatedAt`/`ModifiedAt`), then two different output directories. Which surfaced something worth
+its own look — **`OutputDir`, a build-machine absolute path, is serialized into the shipped
+`script.bsetup`.** `CLAUDE.md` states the rule it breaks: "a build-machine absolute path in a
+shipped config is a bug (this was the original P0 defect)."
 
 **Phase 5 is closed: 5.A.2 and 5.B.2 both landed against BeepDM's real `Services/` surface.**
 

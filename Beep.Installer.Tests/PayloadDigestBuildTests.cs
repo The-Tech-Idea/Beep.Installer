@@ -108,11 +108,10 @@ public sealed class PayloadDigestBuildTests : IDisposable
     [Fact]
     public void RebuildingChangesTheDigest_SoAStalePinIsAlwaysReported()
     {
-        // The archive is NOT byte-reproducible across builds. Two known causes: Save stamps
-        // ModifiedAt = UtcNow into script.bsetup, which ships as a sidecar inside the archive, and
-        // zip entries carry creation-time timestamps. That is tolerable for this workflow — a
-        // rebuild has to be re-uploaded anyway, so it has to be re-pinned — but it does mean the
-        // pin cannot be checked by rebuilding, and the warning has to name the new digest.
+        // By default the archive records when it was packed — zip entry timestamps and the build
+        // time in version.txt — so a rebuild changes the digest and the warning has to name the
+        // new one. Setting BuildPipeline.SourceDateEpoch (or SOURCE_DATE_EPOCH) stops that;
+        // ReproduciblePayloadTests covers it, and a pin then survives a rebuild.
         var first = Build(Project(p =>
         {
             p.PayloadSource = PayloadSourceType.Url;

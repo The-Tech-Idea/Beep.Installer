@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -216,6 +217,44 @@ public class BuildPipeline
     /// the intermediate layout.
     /// </summary>
     public bool KeepIntermediates { get; set; }
+
+    /// <summary>
+    /// Fixed build timestamp, making the payload archive byte-reproducible.
+    ///
+    /// Two things otherwise differ between builds of the same input: every zip entry carries the
+    /// moment it was written, and <c>version.txt</c> records the build time to the second. Set this
+    /// and both become functions of the input instead of the clock, so the same project produces
+    /// the same archive and therefore the same <c>PayloadSha256</c> — which is what lets a declared
+    /// pin be checked by rebuilding rather than taken on trust.
+    ///
+    /// Defaults from the <c>SOURCE_DATE_EPOCH</c> environment variable, the cross-ecosystem
+    /// convention, so a CI job opts in without a flag. Left unset, builds keep real timestamps and
+    /// <c>version.txt</c> keeps saying when it was actually built.
+    /// </summary>
+    public DateTimeOffset? SourceDateEpoch { get; set; } = ReadSourceDateEpoch();
+
+    /// <summary>
+    /// Reads SOURCE_DATE_EPOCH, which by convention is Unix seconds. An unparseable value is
+    /// ignored rather than failing the build: it is a reproducibility hint, not a build input.
+    /// </summary>
+    private static DateTimeOffset? ReadSourceDateEpoch()
+    {
+        var raw = Environment.GetEnvironmentVariable("SOURCE_DATE_EPOCH");
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+
+        if (long.TryParse(raw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds))
+        {
+            try { return DateTimeOffset.FromUnixTimeSeconds(seconds); }
+            catch (ArgumentOutOfRangeException) { /* out of range: ignore the hint */ }
+        }
+
+        if (DateTimeOffset.TryParse(raw.Trim(), CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+            return parsed;
+
+        Diag.Warn("BuildPipeline", $"SOURCE_DATE_EPOCH '{raw}' is not a Unix timestamp or date; ignoring it.");
+        return null;
+    }
     public CodeSigningService SigningService { get; set; } = new();
     public IMsixPackageService MsixPackageService { get; set; } = new DefaultMsixPackageService();
     public string? ExpectedSigningSubject { get; set; }
@@ -389,8 +428,10 @@ public class BuildPipeline
                 Beep.Installer.Extensibility.InstallerExtensionBundle.AddToArchive(zipPath, ExtensionDirectories, ExtensionPolicy, project.Resources.ToList());
             ThrowIfBuildCanceled();
 
-            // 8b) The archive is final here — sidecars and any extension bundle are in. Hash it now
-            // so a URL-hosted payload can be pinned, and write the digest beside it for upload.
+            // 8b) The archive is final here — sidecars and any extension bundle are in. Normalize
+            // its timestamps before hashing, so a reproducible build hashes reproducibly, then
+            // record the digest so a URL-hosted payload can be pinned.
+            NormalizeArchiveTimestamps(zipPath, result, log);
             result.PayloadSha256 = RecordPayloadDigest(zipPath, project, result, log);
             ThrowIfBuildCanceled();
 
@@ -631,10 +672,11 @@ public class BuildPipeline
         File.WriteAllText(runtimeScriptPath, scriptText);
         File.WriteAllText(setupScriptPath, scriptText);
 
+        var buildTimestamp = (SourceDateEpoch?.UtcDateTime) ?? DateTime.UtcNow;
         var versionInfo = $@"{project.AppName}
 Version {project.AppVersion}
 {project.AppPublisher}
-Built {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
+Built {buildTimestamp:yyyy-MM-dd HH:mm:ss} UTC
 Beep Installer v1.0.0
 ";
         File.WriteAllText(Path.Combine(outputDir, "version.txt"), versionInfo);
@@ -773,6 +815,29 @@ Beep Installer v1.0.0
                 $"built {digest}. Installs will refuse this payload until the declaration is updated.");
 
         return digest;
+    }
+
+    /// <summary>
+    /// Stamps every entry with the fixed epoch, so the archive stops recording when it was packed.
+    /// A no-op unless <see cref="SourceDateEpoch"/> is set. Best-effort: a build that produced a
+    /// good archive should not fail because its timestamps could not be normalised.
+    /// </summary>
+    private void NormalizeArchiveTimestamps(string zipPath, BuildResult result, List<string> log)
+    {
+        if (SourceDateEpoch is not { } epoch) return;
+
+        try
+        {
+            using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Update);
+            foreach (var entry in zip.Entries)
+                entry.LastWriteTime = epoch;
+            log.Add($"  ✓ payload timestamps normalized to {epoch:u}");
+        }
+        catch (Exception ex)
+        {
+            Diag.Warn("BuildPipeline", "payload timestamp normalization failed", ex);
+            result.Warnings.Add($"Payload timestamps could not be normalized, so this build is not reproducible: {ex.Message}");
+        }
     }
 
     private static void AddScriptSidecarsToZip(string outputDir, string zipPath)
