@@ -311,6 +311,14 @@ public static class InstallerScriptSerializer
     public sealed class ScriptOutputOptions
     {
         public string? SourceDirectoryOverride { get; set; }
+
+        /// <summary>
+        /// Replaces the <c>OutputDir</c> written to the script. The build passes <c>""</c>:
+        /// where an installer was built is a fact about the build machine, and a shipped
+        /// script has no use for it. Nothing reads it back at runtime — only the build does,
+        /// from the authored project, which keeps its own value.
+        /// </summary>
+        public string? OutputDirOverride { get; set; }
         public string? WizardImageFileOverride { get; set; }
         public string? SetupIconFileOverride { get; set; }
         public string? LicenseTextOverride { get; set; }
@@ -406,7 +414,7 @@ public static class InstallerScriptSerializer
 
         // Build pipeline
         WriteKey(sb, "OutputBaseFilename", Path.GetFileNameWithoutExtension(project.OutputBaseFilename));
-        WriteKey(sb, "OutputDir", project.OutputDir);
+        WriteKey(sb, "OutputDir", o?.OutputDirOverride ?? project.OutputDir);
         WriteKey(sb, "OutputFormat", OutputFormatToString(project.OutputFormat));
         WriteKey(sb, "ArchitecturesAllowed", ArchitectureToString(project.ArchitecturesAllowed));
         WriteKey(sb, "ArchitecturesInstallIn64BitMode", ArchitectureModeToString(project.ArchitecturesInstallIn64BitMode));

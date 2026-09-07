@@ -663,6 +663,9 @@ public class BuildPipeline
         }
         options.Prefer64BitOverride = project.ArchitecturesAllowed != Models.Architecture.X86;
         options.SourceDirectoryOverride = "";
+        // The shipped script must not carry where it was built. CLAUDE.md: "a build-machine
+        // absolute path in a shipped config is a bug (this was the original P0 defect)."
+        options.OutputDirOverride = "";
         if (project.CreateUninstallEntry)
             options.ExtraRegistryEntries = BuildUninstallRegistryEntries(project, outputFileName);
 

@@ -220,10 +220,19 @@ so **a declared pin can now be verified by rebuilding** rather than taken on tru
 
 Two of the three tests written for this initially failed against correct code, both times because
 the *test* varied something the build did not: first a fresh project per build (differing
-`CreatedAt`/`ModifiedAt`), then two different output directories. Which surfaced something worth
-its own look — **`OutputDir`, a build-machine absolute path, is serialized into the shipped
-`script.bsetup`.** `CLAUDE.md` states the rule it breaks: "a build-machine absolute path in a
-shipped config is a bug (this was the original P0 defect)."
+`CreatedAt`/`ModifiedAt`), then two different output directories. Which surfaced a real defect, since fixed:
+**`OutputDir`, a build-machine absolute path, was serialized into the shipped `script.bsetup`.**
+`CLAUDE.md` states the rule it broke: "a build-machine absolute path in a shipped config is a bug
+(this was the original P0 defect)." Payload sources are rebased and `SourceDir` is blanked, but
+`OutputDir` was written through verbatim, so every shipped installer disclosed a path from the
+machine that built it.
+
+The build now passes `OutputDirOverride = ""`, matching the existing `SourceDirectoryOverride`
+idiom; the key is simply omitted. Nothing reads it back at runtime — only the build does, from the
+authored project, which keeps its own value. An audit of a real shipped script found this was the
+only such leak. `ShippedScriptPathsTests` reads the script back **out of the payload archive**,
+which is where the runtime actually gets it, and fails if any drive-qualified path survives;
+verified to bite by disabling the override.
 
 **Phase 5 is closed: 5.A.2 and 5.B.2 both landed against BeepDM's real `Services/` surface.**
 
