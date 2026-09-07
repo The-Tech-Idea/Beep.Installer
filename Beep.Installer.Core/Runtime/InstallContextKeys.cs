@@ -112,6 +112,12 @@ public static class InstallContextKeys
     /// <summary>Remote payload URL; empty means the download step skips itself.</summary>
     public const string PayloadUrl = "PayloadUrl";
 
+    /// <summary>
+    /// Expected SHA-256 of the archive at <see cref="PayloadUrl"/>. Absent when the author
+    /// declared none, which the download step reports rather than silently trusting.
+    /// </summary>
+    public const string PayloadSha256 = "PayloadSha256";
+
     // ── Written by steps, read by later steps ──
 
     public const string InstalledFiles = "InstalledFiles";

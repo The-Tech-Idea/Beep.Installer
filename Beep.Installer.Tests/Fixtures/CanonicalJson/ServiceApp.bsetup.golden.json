@@ -251,6 +251,7 @@
   "outputFormat": "exe",
   "packages": [],
   "payloadFolderName": "payload",
+  "payloadSha256": "",
   "payloadSource": "local",
   "payloadUrl": "",
   "prefer64Bit": true,

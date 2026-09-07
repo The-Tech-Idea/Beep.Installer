@@ -63,6 +63,7 @@ public static class ProjectCanonicalJsonExporter
         "PayloadFolderName",
         "PayloadSource",
         "PayloadUrl",
+        "PayloadSha256",
         "CompressPayload",
         "Compression",
         "SolidCompression",

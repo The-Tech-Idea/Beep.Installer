@@ -414,6 +414,7 @@ public static class InstallerScriptSerializer
         WriteKey(sb, "PayloadFolderName", project.PayloadFolderName);
         WriteKey(sb, "PayloadSource", PayloadSourceToString(project.PayloadSource));
         WriteKey(sb, "PayloadUrl", project.PayloadUrl);
+        WriteKey(sb, "PayloadSha256", project.PayloadSha256);
 
         WriteKey(sb, "CompressPayload", YesNo(project.CompressPayload));
         WriteKey(sb, "Compression", CompressionToString(project.Compression));
@@ -895,6 +896,11 @@ public static class InstallerScriptSerializer
                 break;
             case "payloadurl":
                 project.PayloadUrl = value;
+                break;
+
+            case "payloadsha256":
+            case "payloadhash":
+                project.PayloadSha256 = value;
                 break;
 
             case "compresspayload":

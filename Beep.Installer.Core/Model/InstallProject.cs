@@ -633,6 +633,19 @@ namespace Beep.Installer.Models
             set => SetProperty(ref _payloadUrl, value);
         }
 
+        private string _payloadSha256 = "";
+        /// <summary>
+        /// Expected SHA-256 of the archive at <see cref="PayloadUrl"/>, as 64 hex characters.
+        /// Declaring it is what makes a remote payload trustworthy: without it the installer
+        /// extracts and runs whatever the URL returns, so a poisoned mirror, a hijacked CDN edge or
+        /// a plain-HTTP hop is enough to install arbitrary files. Verified before extraction.
+        /// </summary>
+        public string PayloadSha256
+        {
+            get => _payloadSha256;
+            set => SetProperty(ref _payloadSha256, (value ?? "").Trim());
+        }
+
         private bool _compressPayload = true;
         public bool CompressPayload
         {

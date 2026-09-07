@@ -141,6 +141,8 @@ public static class ProjectScriptLinter
         "PayloadFolderName",
         "PayloadSource",
         "PayloadUrl",
+        "PayloadSha256",
+        "PayloadHash",
         "CompressPayload",
         "Compression",
         "CompressionLevel",

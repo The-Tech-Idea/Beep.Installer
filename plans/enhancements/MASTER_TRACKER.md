@@ -65,6 +65,30 @@ identity is now the authored `AppId`, never a display name:
 BeepDM `SetupWizardTests` **212/212** with its uncommitted `AppId`-keyed registration
 (`SOFTWARE\TheTechIdea\Installations\<guid>`) and `ConditionExpressionMode` changes.
 
+**A remote payload was installed with no integrity check at all (2.C.2 / 8.A.3, runtime half).**
+`PayloadDownloadStep` fetched the archive named by `PayloadUrl` over HTTP and handed it straight to
+`PayloadPackager.ExtractZip`. Nothing verified it: a poisoned mirror, a hijacked CDN edge or a
+plain-HTTP hop was enough to install arbitrary files. The build-time policy that looked like it
+covered this (`RequireDeclaredPayloadHashes`, `SupplyChainSecurityScanner` BI9004) only scans local
+payload *files* at authoring time and never runs on the download path.
+
+Projects now declare `PayloadSha256`, which round-trips through `.bsetup`, the canonical JSON and
+the linter, and reaches the step as `InstallContextKeys.PayloadSha256`. The archive is checked
+while it is still an inert temp file — before extraction, not after — so a mismatch discards the
+download and installs nothing.
+
+An undeclared hash is **not** fatal: hard-failing would break every project already shipping a
+remote payload. It is recorded instead (`BI2610`), and the message says outright that nothing
+authenticates the bytes when the URL is plain HTTP. A mismatch is `BI2611` and fatal.
+
+Downloading is now behind `IPayloadFetcher` (`HttpPayloadFetcher` is the real one), matching the
+`IInstallerHostBuilder`/`IDirectoryLink` seams, so the 7 `PayloadIntegrityTests` — including
+"tampered archive is refused and nothing is extracted" — run with no socket, listener or firewall
+prompt. Suite **1135/0/3**.
+
+Still open on this thread: the *build* half of 8.A.3, stamping the produced archive's hash into the
+project automatically so authors do not have to compute it by hand.
+
 **Phase 5 is closed: 5.A.2 and 5.B.2 both landed against BeepDM's real `Services/` surface.**
 
 A first pass at these read the P5 design doc literally and got 5.B.2 wrong, so the correction is
@@ -793,7 +817,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2.B.2 | `SupportsRollback`/`RollbackAsync` on the mutating steps | 🟡 `EnvironmentVariableStep` done; registry writes now register with `RollbackManager`; file-copy/shortcut/COM steps ⬜ |
 | 2.B.3 | Honour `SetupOptions.DryRun` (file copy, registry, shortcuts, env vars, custom actions, file assoc) | ✅ |
 | 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ⬜ |
-| 2.C.2 | Payload SHA-256 verification before copy | ⬜ |
+| 2.C.2 | Payload SHA-256 verification before copy | ✅ (2026-09-07 — remote archive verified before extraction; `IPayloadFetcher` seam; 7 tests) |
 | 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ⬜ |
 | 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ⬜ |
 | 2.M.2 | SOLID review | ⬜ |

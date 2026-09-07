@@ -108,7 +108,11 @@ public static class InstallContextBuilder
         if (!string.IsNullOrWhiteSpace(project.SourceDirectory))
             context.Properties[InstallContextKeys.PayloadSearchBase] = project.SourceDirectory;
         if (project.PayloadSource == PayloadSourceType.Url && !string.IsNullOrWhiteSpace(project.PayloadUrl))
+        {
             context.Properties[InstallContextKeys.PayloadUrl] = project.PayloadUrl;
+            if (!string.IsNullOrWhiteSpace(project.PayloadSha256))
+                context.Properties[InstallContextKeys.PayloadSha256] = project.PayloadSha256;
+        }
 
         return context;
     }
