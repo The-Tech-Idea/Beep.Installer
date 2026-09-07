@@ -59,6 +59,18 @@ public static class InstallConfigProjector
             // registry, COM, shared-file and uninstall steps via InstallScope.
             Prefer64Bit = project.Prefer64Bit,
 
+            // ── Runtime-relevant authoring choices (D3) ──
+            // These also travel as context keys, which is what the steps read. Carrying them in
+            // the config too is what lets a shipped install-config.json describe its own
+            // installation — most concretely, ResolvePayloadRoot can find the payload without
+            // assuming the folder is called "payload".
+            SelfContained = project.SelfContained,
+            PayloadFolderName = string.IsNullOrWhiteSpace(project.PayloadFolderName)
+                ? "payload" : project.PayloadFolderName,
+            DefaultPerUser = project.DefaultScope == InstallationScope.User,
+            CreateRestorePoint = project.CreateRestorePoint,
+            CreateUninstallEntry = project.CreateUninstallEntry,
+
             // ── Presentation (carried so a shipped install-config.json is complete) ──
             LicenseText = project.LicenseText ?? "",
             BannerImagePath = project.WizardImageFile ?? "",

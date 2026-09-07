@@ -118,6 +118,37 @@ Confirmed by reintroducing the old code: the never-exits test wedges for its ful
 stderr-flood test for its full 60s. Every test in `CustomActionTimeoutTests` bounds its own wait, so
 a regression fails the run rather than hanging it.
 
+**2.C.3 / D3 — the shipped config can now describe its own installation.** `SelfContained`,
+`PayloadFolderName`, `DefaultPerUser`, `CreateRestorePoint` and `CreateUninstallEntry` travelled
+only as loose `SetupContext` keys, so nothing in a shipped `install-config.json` said where the
+payload lived, whether the app carried its own runtime, or which scope it was built for. All five
+are now projected into `InstallConfig` as decision D3 specified.
+
+The sharpest consequence was the one D3 called out: `ConfigManager.ResolvePayloadRoot` hardcoded
+the folder name `"payload"`, so **an installer built with any other payload folder could not
+resolve its own files from the config alone.** It now reads the authored name and falls back to the
+convention; a test builds a `bits/` payload and proves it is found.
+
+**`CreateRestorePoint` turned out to be a dead option.** `SystemRestoreStep` exists in BeepDM and
+calls `InstallHelpers.CreateSystemRestorePoint`, the builder offers the checkbox, and
+`InstallerProjectFactory` defaults it to **true** — but the step has *zero* references and is in no
+graph, so no install has ever taken a restore point. Same shape as the `SolidCompression` option
+that was collected and ignored. Its `CanSkip` also returned `false` unconditionally, which is part
+of why wiring it was never safe.
+
+Fixed as far as is safe: `CanSkip` now honours `InstallConfig.CreateRestorePoint`, so the step can
+be wired without firing on every install. **Wiring it into `InstallWizardGraph` is left as a
+decision** — restore points are slow, need elevation and System Protection, and the factory default
+is on, so adding it silently changes every install.
+
+**A recurring test flake fixed, and it was a real race.** `AuditTests.PerStep_Spans_AreEmitted`
+failed twice in six runs: `ActivityStarted` fires on whichever thread starts the activity and the
+listener attaches to a process-wide `ActivitySource`, so it also observed wizards run by test
+classes executing in parallel — and appending to a plain `List<string>` lost the very names being
+asserted on. Now a `ConcurrentQueue`; five consecutive clean runs.
+
+BeepDM `SetupWizardTests` **225/225**; installer suite **1158/0/3**.
+
 **That hang was one of ten; the family is now swept.** Fixing it prompted an audit of every child
 process the installer launches, and each site had grown its own launch-and-wait with some part
 wrong:
@@ -912,7 +943,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2.B.3 | Honour `SetupOptions.DryRun` (file copy, registry, shortcuts, env vars, custom actions, file assoc) | ✅ |
 | 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ⬜ |
 | 2.C.2 | Payload SHA-256 verification before copy | ✅ (2026-09-07 — remote archive verified before extraction; `IPayloadFetcher` seam; 7 tests) |
-| 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ⬜ |
+| 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ✅ (2026-09-07 — + `ResolvePayloadRoot` stops hardcoding "payload"; 7 tests) |
 | 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ⬜ |
 | 2.M.2 | SOLID review | ⬜ |
 
