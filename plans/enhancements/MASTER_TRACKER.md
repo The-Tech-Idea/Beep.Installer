@@ -86,6 +86,24 @@ Downloading is now behind `IPayloadFetcher` (`HttpPayloadFetcher` is the real on
 "tampered archive is refused and nothing is extracted" — run with no socket, listener or firewall
 prompt. Suite **1135/0/3**.
 
+**2.A.1 — the duplicate step id was a graph that could not be built.** `ComServerRegistrationStep`
+(writes the CLSID tree from `InstallConfig`, scope-aware) and `ComRegistrationStep` (shells out to
+regsvr32 against the loose `ComComponents` key) both answered to `installer.com.register`.
+`SetupWizardBuilder` keys steps by id and resolves `DependsOn` through it, so it *rejects* a graph
+holding both — any graph composing them would have failed outright rather than misbehaved. Nothing
+composes them today, which is exactly why it went unnoticed.
+
+Self-registration is the narrower, legacy mechanism, so it moved to
+`installer.com.selfregister`/`installer.com.selfunregister`. The registry-writing step keeps the
+established id: `UninstallStep` reverses that one and the installer's `StepIds` points at it.
+Renamed rather than deleted — BeepDM ships as a package, and removing a public type breaks
+consumers not visible from here.
+
+`StepIdUniquenessTests` reflects over every constructible step in the engine and asserts no two
+share an id, with a floor on how many the sweep must find so it cannot pass by discovering nothing.
+Confirmed to bite: reintroducing the collision fails 3 of its 4 tests. BeepDM `SetupWizardTests`
+**216/216**; installer suite unchanged at **1141/0/3**.
+
 **The build half (8.A.3) closed it.** Runtime verification is only worth as much as the pin the
 author declares, and hand-computing a SHA-256 after every build is exactly the step people skip.
 `BuildPipeline` now hashes the archive once it is final — sidecars and any extension bundle
@@ -827,7 +845,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | # | Task | Status |
 |---|------|--------|
 | 2.A.0 | **BeepDM `UninstallStep`: delete manifest before the empty-directory sweep** | ✅ (done early — it blocked the self-test) |
-| 2.A.1 | Rename duplicate `installer.com.register` StepId | ⬜ |
+| 2.A.1 | Rename duplicate `installer.com.register` StepId | ✅ (2026-09-07 — self-registration moved to `installer.com.selfregister`; reflection guard in BeepDM) |
 | 2.A.2 | **New** BeepDM `EnvironmentVariableStep` + uninstall reversal + 7 tests | ✅ |
 | 2.A.3 | ~~**New** BeepDM `UninstallEntryStep` (Add/Remove Programs)~~ | ✅ **not needed** — verified the installer already synthesizes the ARP registry entries via `BuildUninstallRegistryEntries`, which `RegistryWriteStep` writes. The R0 gap was real for BeepDM in isolation but the installer compensates; a dedicated step would duplicate working behaviour. |
 | 2.B.1 | Scope-awareness: shared `ShortcutPathResolver`, scope-aware file associations, rollback hive, registry rollback registration | ✅ |
