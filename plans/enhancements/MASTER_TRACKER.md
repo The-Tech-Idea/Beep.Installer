@@ -65,6 +65,27 @@ identity is now the authored `AppId`, never a display name:
 BeepDM `SetupWizardTests` **212/212** with its uncommitted `AppId`-keyed registration
 (`SOFTWARE\TheTechIdea\Installations\<guid>`) and `ConditionExpressionMode` changes.
 
+**CI actually gates the repo now (0.C.1), and D5 is settled as A — multi-repo checkout.** The
+workflow checked out one repository, so the relative `ProjectReference`s to `..\..\BeepDM\` and
+`..\..\Beep.Winform\` could not resolve, and it ran a filter of three test classes. Both jobs now
+check this repo into a subdirectory with its siblings beside it (`defaults.run.working-directory`
+keeps every step's paths unchanged), and the Windows job gained three things this session's
+breakage would have been caught by:
+
+- **`dotnet build Beep.Installer.slnx`** — the whole solution. `UpdateServer` and the two extension
+  libraries were in no CI path at all, which is why a broken reference there shipped.
+- **A source-binding assertion** — `DataManagementModels.dll` in the test output must be
+  byte-identical to one the BeepDM source build produced. A stale same-versioned package binding is
+  invisible at build time and only shows up as a runtime `TypeLoadException`; that was the original
+  P0 defect and nothing guarded against its return.
+- **The full suite** instead of three classes.
+
+Option B (consume BeepDM as NuGet packages) stays rejected for the reason `CLAUDE.md` already
+records: nearest-to-root resolution lets a same-versioned package beat the source project. Private
+siblings need a `SIBLING_REPOS_TOKEN` secret; the default token covers public ones. Unverified from
+here — the YAML parses, the step graph is right and the binding assertion was run against a real
+local build, but no GitHub Actions run has exercised it.
+
 **Open decision — the ClickOnce `UpdateChecker`/`UpdateApplier` pair.** P11.C.2 deleted both with
 their tests; the restructure branch instead *rewrote* them to remove the blocking calls. The merge
 kept the rewritten production files but took the branch's deletion of their tests, so they are now
@@ -667,7 +688,7 @@ context-key tests are not yet written.
 | 0.A.4 | Confirm startup no longer throws `TypeLoadException` | ✅ |
 | 0.B.1 | Fix the test-project compile errors | ✅ (211 tests now run) |
 | 0.B.2 | Add phase-referenced `Skip=` for step-dependent tests | ⬜ |
-| 0.C.1 | Point CI at real solution/test paths + sibling checkouts + source-binding assertion | ⬜ |
+| 0.C.1 | Point CI at real solution/test paths + sibling checkouts + source-binding assertion | ✅ (2026-09-07 — D5 settled as **A**, multi-repo checkout) |
 | 0.M.1 | Gate: builds, `/VER` runs, `dotnet test` executes | ✅ |
 
 ## Phase 1: Contract Bridge — Make It Actually Install ✅ — P0

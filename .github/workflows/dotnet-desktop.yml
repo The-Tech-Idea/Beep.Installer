@@ -7,6 +7,11 @@ on:
     branches: ["master", "main"]
   workflow_dispatch:
 
+# This repository does not build standalone: Beep.Installer.csproj and Beep.Installer.Core.csproj
+# reference ..\..\BeepDM\ and ..\..\Beep.Winform\ by relative path, and DataManagementModels must
+# bind to the *source* project rather than the same-versioned package (see CLAUDE.md). Every job
+# therefore checks this repository out into a subdirectory so its siblings can sit beside it, and
+# defaults its `run` steps into that subdirectory.
 env:
   DOTNET_VERSION: 10.0.x
   PROJECT_SCRIPT: Beep.Installer/samples/ServiceApp.bsetup
@@ -18,12 +23,26 @@ jobs:
   linux-schema-validation:
     name: Linux SDK schema validation
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Beep.Installer
 
     steps:
-      - name: Checkout
+      - name: Checkout Beep.Installer
         uses: actions/checkout@v4
         with:
+          path: Beep.Installer
           fetch-depth: 0
+
+      # Core project-references DataManagementModels/Engine, so the SDK consumer cannot restore
+      # without BeepDM beside this checkout. SIBLING_REPOS_TOKEN is only needed if BeepDM is
+      # private; the default token covers a public sibling.
+      - name: Checkout BeepDM
+        uses: actions/checkout@v4
+        with:
+          repository: The-Tech-Idea/BeepDM
+          path: BeepDM
+          token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
 
       - name: Install .NET
         uses: actions/setup-dotnet@v4
@@ -34,7 +53,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('Beep.Installer/**/*.csproj', 'BeepDM/**/*.csproj') }}
           restore-keys: ${{ runner.os }}-nuget-
 
       - name: Restore headless SDK consumer
@@ -89,18 +108,37 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: beep-installer-linux-validation
-          path: ${{ env.ARTIFACT_DIR }}/linux
+          path: Beep.Installer/${{ env.ARTIFACT_DIR }}/linux
 
   validate-plan-build:
     name: Validate, plan and build installer
     runs-on: windows-latest
     needs: linux-schema-validation
+    defaults:
+      run:
+        working-directory: Beep.Installer
 
     steps:
-      - name: Checkout
+      - name: Checkout Beep.Installer
         uses: actions/checkout@v4
         with:
+          path: Beep.Installer
           fetch-depth: 0
+
+      - name: Checkout BeepDM
+        uses: actions/checkout@v4
+        with:
+          repository: The-Tech-Idea/BeepDM
+          path: BeepDM
+          token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
+
+      # The WinForms shell references Beep.Winform.Controls and Vis.Modules by relative path.
+      - name: Checkout Beep.Winform
+        uses: actions/checkout@v4
+        with:
+          repository: The-Tech-Idea/Beep.Winform
+          path: Beep.Winform
+          token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
 
       - name: Install .NET
         uses: actions/setup-dotnet@v4
@@ -111,30 +149,56 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('Beep.Installer/**/*.csproj', 'BeepDM/**/*.csproj', 'Beep.Winform/**/*.csproj') }}
           restore-keys: ${{ runner.os }}-nuget-
 
-      - name: Restore
+      # The whole solution, not only the projects later steps happen to run. UpdateServer and the
+      # two extension libraries are reachable no other way, and a merge once shipped a broken
+      # reference that only UpdateServer would have caught.
+      - name: Build the solution
         shell: pwsh
-        run: dotnet restore Beep.Installer.Tests/Beep.Installer.Tests.csproj
+        run: dotnet build Beep.Installer.slnx --nologo --verbosity quiet
 
-      - name: Verify headless SDK parity
+      # If NuGet resolved the same-versioned TheTechIdea.Beep.DataManagementModels package instead
+      # of the source project, the app fails at runtime with TypeLoadException on newer BeepDM
+      # types — the original P0 defect, and invisible at build time. Assert the assembly the tests
+      # load is byte-identical to one the BeepDM source build just produced.
+      - name: Assert DataManagementModels bound to source, not a package
         shell: pwsh
-        run: dotnet test Beep.Installer.Tests/Beep.Installer.Tests.csproj --filter "HeadlessInstallerSdkTests|InstallPlanCompilerTests|ProjectSchemaServiceTests" --no-restore --nologo --verbosity quiet
+        run: |
+          $loaded = Get-ChildItem -Path "Beep.Installer.Tests/bin" -Filter DataManagementModels.dll -Recurse -File -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if ($null -eq $loaded) { throw "No DataManagementModels.dll in the test output; the build never bound it." }
+
+          $sourceBuilt = Get-ChildItem -Path "../BeepDM/DataManagementModelsStandard/bin" -Filter DataManagementModels.dll -Recurse -File -ErrorAction SilentlyContinue
+          if (-not $sourceBuilt) { throw "The BeepDM source build produced no DataManagementModels.dll; the sibling checkout did not build." }
+
+          $loadedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $loaded.FullName).Hash
+          $sourceHashes = $sourceBuilt | ForEach-Object { (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash }
+          if ($sourceHashes -notcontains $loadedHash) {
+            throw "DataManagementModels.dll in the test output matches no BeepDM source build output - a stale package won the reference. See the NU1605 note in CLAUDE.md."
+          }
+          Write-Host "DataManagementModels is source-bound ($loadedHash)."
+
+      # The full suite. A three-class filter is what let a merge with unresolved conflict markers
+      # sit on master with the tree unbuildable and 38 tests failing.
+      - name: Run the test suite
+        shell: pwsh
+        run: dotnet test Beep.Installer.Tests/Beep.Installer.Tests.csproj --no-build --nologo --verbosity quiet
 
       - name: Validate installer script
         shell: pwsh
-        run: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /VALIDATE="${env:PROJECT_SCRIPT}" /STRICT
+        run: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /VALIDATE="${env:PROJECT_SCRIPT}" /STRICT
 
       - name: Compile deterministic install plan
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "${env:ARTIFACT_DIR}" | Out-Null
-          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /PLAN="${env:PROJECT_SCRIPT}" /JSON /OUT="${env:ARTIFACT_DIR}/install-plan.json"
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /PLAN="${env:PROJECT_SCRIPT}" /JSON /OUT="${env:ARTIFACT_DIR}/install-plan.json"
 
       - name: Build unsigned development artifact
         shell: pwsh
-        run: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /BUILD="${env:PROJECT_SCRIPT}" /OUT="${env:ARTIFACT_DIR}/unsigned"
+        run: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /BUILD="${env:PROJECT_SCRIPT}" /OUT="${env:ARTIFACT_DIR}/unsigned"
 
       - name: Publish release evidence for development artifact
         shell: pwsh
@@ -144,7 +208,7 @@ jobs:
             throw "No installer executable was produced under ${env:ARTIFACT_DIR}/unsigned."
           }
 
-          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /EVIDENCE="${env:PROJECT_SCRIPT}" /INSTALLER="$($installer.FullName)" /OUT="${env:ARTIFACT_DIR}/evidence" /SOURCEREVISION="${env:GITHUB_SHA}"
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /EVIDENCE="${env:PROJECT_SCRIPT}" /INSTALLER="$($installer.FullName)" /OUT="${env:ARTIFACT_DIR}/evidence" /SOURCEREVISION="${env:GITHUB_SHA}"
 
       - name: Build signed release artifact when signing secrets are configured
         shell: pwsh
@@ -181,7 +245,7 @@ jobs:
             $args += "/TIMESTAMPOUTAGE=retry"
           }
 
-          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- $args
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- $args
 
       - name: Pack headless SDK package
         shell: pwsh
@@ -210,7 +274,7 @@ jobs:
             throw "No SDK package was produced under ${env:ARTIFACT_DIR}/sdk."
           }
 
-          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /PUBLISHSDK="$($package.FullName)" /SDKFEED="${env:SDK_FEED}" /DRYRUN /OUT="${env:ARTIFACT_DIR}/sdk-publish-dry-run"
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /PUBLISHSDK="$($package.FullName)" /SDKFEED="${env:SDK_FEED}" /DRYRUN /OUT="${env:ARTIFACT_DIR}/sdk-publish-dry-run"
 
       - name: Publish SDK package when NuGet secret is configured
         shell: pwsh
@@ -227,7 +291,7 @@ jobs:
             throw "No SDK package was produced under ${env:ARTIFACT_DIR}/sdk."
           }
 
-          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-restore -- /PUBLISHSDK="$($package.FullName)" /SDKFEED="${env:SDK_FEED}" /SDKAPIKEY=secret://env/NUGET_API_KEY /OUT="${env:ARTIFACT_DIR}/sdk-publish"
+          dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /PUBLISHSDK="$($package.FullName)" /SDKFEED="${env:SDK_FEED}" /SDKAPIKEY=secret://env/NUGET_API_KEY /OUT="${env:ARTIFACT_DIR}/sdk-publish"
 
       - name: Finalize archived CI evidence manifest
         if: always()
@@ -277,4 +341,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: beep-installer-headless
-          path: ${{ env.ARTIFACT_DIR }}
+          path: Beep.Installer/${{ env.ARTIFACT_DIR }}
