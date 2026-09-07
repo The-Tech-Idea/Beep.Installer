@@ -105,7 +105,7 @@
   "compression": "zip",
   "compressionLevel": "default",
   "configTransforms": [],
-  "createRestorePoint": true,
+  "createRestorePoint": false,
   "createUninstallEntry": true,
   "defaultDirName": "%ProgramFiles%\\MyApp",
   "defaultGroupName": "Beep Samples\\MyApp",

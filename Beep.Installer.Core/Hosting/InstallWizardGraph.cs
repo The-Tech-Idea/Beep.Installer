@@ -13,6 +13,7 @@ namespace Beep.Installer.Hosting;
 /// </summary>
 public static class StepIds
 {
+    public const string RestorePoint = "installer.restorepoint";
     public const string Prerequisites = "installer.prerequisites.check";
     public const string UpgradeDetect = "installer.upgrade.detect";
     public const string UpgradeCommit = "installer.upgrade.commit";
@@ -49,9 +50,14 @@ public static class InstallWizardGraph
         if (options != null) builder = builder.WithOptions(options);
 
         return new CoordinatedInstallerWizard(builder
+            // A restore point is only worth anything taken before the machine changes, so it goes
+            // ahead of upgrade detection, which already backs up an existing install. Skipped
+            // unless the project asked for one — the step was written but never wired in, so no
+            // install has ever taken one.
+            .AddStep(new SystemRestoreStep())
             // Upgrade detection runs before anything touches disk: it may refuse a downgrade
             // or back up the existing install.
-            .AddStep(new UpgradeStep())
+            .AddStep(new UpgradeStep(StepIds.RestorePoint))
             .AddStep(new DirectoryCreateStep(StepIds.UpgradeDetect))
             .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, StepIds.DirectoryCreate))
             .AddStep(new Steps.PayloadDownloadStep(StepIds.CustomBeforeInstall))

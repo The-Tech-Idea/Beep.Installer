@@ -55,7 +55,13 @@ public static class InstallerProjectFactory
             Compression = CompressionFormat.Zip,
             CompressionLevel = CompressionStrength.Default,
             CreateUninstallEntry = true,
-            CreateRestorePoint = true,
+
+            // Off by default, now that the step is actually in the install graph. It never was
+            // before, so no project has ever taken a restore point however this was authored —
+            // defaulting it on would silently add one to every install, and SRSetRestorePoint is
+            // slow, needs elevation, and needs System Protection enabled. Opt in when the product
+            // genuinely warrants it.
+            CreateRestorePoint = false,
         };
     }
 }

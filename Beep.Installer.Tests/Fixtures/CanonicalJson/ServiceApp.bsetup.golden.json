@@ -134,7 +134,7 @@
       "value": "https://api.example.test"
     }
   ],
-  "createRestorePoint": true,
+  "createRestorePoint": false,
   "createUninstallEntry": true,
   "defaultDirName": "%ProgramFiles%\\ServiceApp",
   "defaultGroupName": "Beep Samples\\ServiceApp",

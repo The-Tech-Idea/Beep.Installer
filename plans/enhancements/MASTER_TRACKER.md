@@ -118,6 +118,28 @@ Confirmed by reintroducing the old code: the never-exits test wedges for its ful
 stderr-flood test for its full 60s. Every test in `CustomActionTimeoutTests` bounds its own wait, so
 a regression fails the run rather than hanging it.
 
+**Restore points, and the ClickOnce updater, resolved (2026-09-07).**
+
+`SystemRestoreStep` is now in the install graph, ahead of upgrade detection — a restore point is
+only worth anything taken before the first change. Wiring alone was not enough: **the default had
+to move with it.** `InstallProject` defaulted `CreateRestorePoint` to `true` and
+`InstallerProjectFactory` set it again, so wiring the step made *every* install take a restore
+point. The full suite went from 1m45s to 15m attempting them. Both defaults are now off, which
+preserves observed behaviour exactly — the step was in no graph before, so no project has ever
+taken one — while making the option real when a product opts in. Canonical goldens regenerated.
+
+The ClickOnce `UpdateChecker`/`UpdateApplier` pair is **deleted** (302 lines), confirmed
+unreferenced anywhere in either repo. It was superseded by the async-from-day-one BeepDM `Updates`
+domain and this tracker had already recorded it as removed.
+
+**Open: the installer suite now runs 15m rather than 1m45s.** All 1170 tests pass, so this is a
+throughput regression, not a correctness one. It is *not* restore points (none were created —
+verified against `Get-ComputerRestorePoint` — and both defaults are off), and it is not
+`EnterpriseProcessContractTests`, which still finishes 47 tests in 67s. Suspect environmental:
+orphaned MSBuild/dotnet nodes left behind when test hosts were killed mid-run during the
+restore-point episode. `dotnet build-server shutdown` before timing again is the first thing to try.
+It would matter to CI, so it needs settling before the CI gate is relied on.
+
 **2.C.3 / D3 — the shipped config can now describe its own installation.** `SelfContained`,
 `PayloadFolderName`, `DefaultPerUser`, `CreateRestorePoint` and `CreateUninstallEntry` travelled
 only as loose `SetupContext` keys, so nothing in a shipped `install-config.json` said where the

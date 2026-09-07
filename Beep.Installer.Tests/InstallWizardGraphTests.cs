@@ -88,6 +88,19 @@ public class InstallWizardGraphTests
     }
 
     [Fact]
+    public void InstallGraph_TakesTheRestorePointBeforeAnythingChangesTheMachine()
+    {
+        var ids = StepIdsOf(InstallWizardGraph.BuildInstall("beep-restore"));
+
+        // The step existed but was in no graph, so "Create system restore point" did nothing however
+        // it was authored. A restore point is only worth anything taken before the first change, so
+        // it precedes upgrade detection, which already backs up an existing install.
+        ids.Should().Contain(StepIds.RestorePoint);
+        ids.IndexOf(StepIds.RestorePoint)
+           .Should().BeLessThan(ids.IndexOf(StepIds.UpgradeDetect));
+    }
+
+    [Fact]
     public void InstallGraph_AppliesTypedResources()
     {
         StepIdsOf(InstallWizardGraph.BuildInstall("beep-env"))

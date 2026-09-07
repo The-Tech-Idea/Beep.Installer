@@ -695,7 +695,13 @@ namespace Beep.Installer.Models
             set => SetProperty(ref _createUninstallEntry, value);
         }
 
-        private bool _createRestorePoint = true;
+        private bool _createRestorePoint;
+        /// <summary>
+        /// Take a Windows System Restore point before installing. Off by default: the step is now
+        /// wired into the install graph, and it never was before, so no project has ever taken one
+        /// however this was authored. Defaulting it on would silently add a restore point to every
+        /// install — SRSetRestorePoint is slow, needs elevation, and needs System Protection on.
+        /// </summary>
         public bool CreateRestorePoint
         {
             get => _createRestorePoint;
