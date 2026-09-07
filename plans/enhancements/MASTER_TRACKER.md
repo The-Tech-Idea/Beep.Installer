@@ -65,6 +65,38 @@ identity is now the authored `AppId`, never a display name:
 BeepDM `SetupWizardTests` **212/212** with its uncommitted `AppId`-keyed registration
 (`SOFTWARE\TheTechIdea\Installations\<guid>`) and `ConditionExpressionMode` changes.
 
+**⚠️ The P5 design doc has drifted and should not be executed as written.** Two of its load-bearing
+claims are false against today's code, both found while attempting 5.A.2/5.B.2:
+
+- **`AddBeepForDesktop()` does not exist in BeepDM.** The doc says it and `AddSetupWizard()` "both
+  already exist in `Services/BeepServiceExtensions.Desktop.cs`". `AddSetupWizard()` does exist
+  (`SetUp/SetupWizardServiceExtensions.cs:28`); that file offers `AddBeepLoggingForDesktop` and
+  `AddBeepAuditForDesktop`, and `AddBeepForDesktop` appears only inside commented-out example code.
+- **"The shell wires everything by hand" is largely no longer true.** The doc cites `new
+  InstallerController()` and `new BuildPipeline()` as evidence of no DI; two hand-`new`s of engine
+  services remain in the whole shell (`InstallerController`, and `new SourceScanner()` inside it),
+  and Core already runs on interface seams — `IInstallerHostBuilder`, `IModulePackageService`,
+  `IDirectoryLink`, the resource-provider registry. 5.A.2's acceptance criterion ("zero `new` of
+  engine services in `Forms/`/`Pages/`") is nearly met by accident.
+
+**5.B.2 — bridged rather than retired, deliberately.** `IDMLogger`'s surface is flat strings
+(`LogInfo(string)`, `LogWarning(string)`, …). `Diag` carries an operation/correlation scope, stable
+`BI0D…` event ids, a JSONL log, and a bounded in-memory ring that `DiagnosticsQualificationRunner`
+and the builder UI read. Rewriting the ~125 call sites onto `IDMLogger`, as the doc specifies,
+would throw all of that away — the doc predates `Diag` growing it.
+
+What shipped instead is `Diag.UseLogger(IDMLogger)`, matching the existing `UseLogDirectory`
+handle: every entry is mirrored to the host's logger at the matching level, rendered through
+`DiagEntry.ToString()` so the event id, scope, context and exception survive the flattening. One
+call per entry, never two. A failing host logger cannot take the installer down, and the local ring
+stays canonical. The reason it is worth having: an app consuming
+`TheTechIdea.Beep.Installer.Sdk` currently gets installer diagnostics only in `%TEMP%`; one call at
+startup routes them wherever that app already logs. 7 `DiagLoggerBridgeTests`.
+
+**Recommendation:** re-derive P5 from the code before doing 5.A.2. A composition root is still
+worth having, but it has to be written against BeepDM's actual registration surface, and its
+payoff is smaller than the doc assumes.
+
 **5.A.1 landed — and the hand-counted dispatch was hiding three live CLI bugs.** `Dispatch` was
 487 lines of `IndexOf(args, "/VERB=")` followed by `args[i][N..]` with `N` counted by eye, and
 `IsHeadlessCommand` was a second hand-kept copy of the same ~60 verbs deciding console attachment.
@@ -803,7 +835,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 5.A.1 | `CliOptions` parser; `Dispatch` < 100 lines | ✅ (2026-09-07 — 487 → 13 lines; verb table also feeds `IsHeadlessCommand`; 3 live CLI bugs fixed) |
 | 5.A.2 | Composition root: `AddBeepForDesktop()` + `AddSetupWizard()` + Core registrations | ⬜ |
 | 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
-| 5.B.2 | `IDMLogger` adoption; retire `Diag` | ⬜ |
+| 5.B.2 | `IDMLogger` adoption; retire `Diag` | 🟡 bridged (`Diag.UseLogger`), **not** retired — retiring it would regress diagnostics, see log |
 | 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ⬜ |
 | 5.M.2 | SOLID review | ⬜ |
 
