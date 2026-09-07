@@ -104,13 +104,19 @@ the step rather than quietly shipping a half-configured product, while optional 
 install continue. The gate sits ahead of the `DryRun` branch so neither path can execute anything.
 Wired into all three runtime paths (install, repair, uninstall) and documented in `/?`.
 
-BeepDM `SetupWizardTests` **216/216**; installer suite **1151/0/3**.
+BeepDM `SetupWizardTests` **219/219**; installer suite **1151/0/3**.
 
-*Observed while verifying:* one full-suite run hung for ~20 minutes and had to be killed, and a
-`--blame-hang-timeout` run reported 4 minutes of post-test inactivity before exiting. Plain runs
-before and after are clean, exit 0 in ~1m40s, and leave no lingering processes, so this is recorded
-rather than diagnosed — most likely a background timer from the telemetry pipeline the composition
-root now builds in-process during `CompositionRootTests`. Worth a look before it bites CI.
+*The intermittent test-run hang noted here turned out to be a production bug, since fixed.* It was
+not the telemetry pipeline: `CustomActionStep` read stdout to completion **before** waiting with a
+timeout, and `ReadToEnd` has no timeout of its own, so the `TimeoutMs`/300s guard beneath it was
+unreachable. An authored action that never exits blocked an install **indefinitely** — on a
+customer machine, mid-install — and one that filled the stderr buffer while the step sat on stdout
+deadlocked the pair outright. Both pipes are now drained concurrently with the timeout on the wait,
+the shape `MageManifestTool` already used; a timed-out action is killed with its process tree.
+
+Confirmed by reintroducing the old code: the never-exits test wedges for its full 20s bound and the
+stderr-flood test for its full 60s. Every test in `CustomActionTimeoutTests` bounds its own wait, so
+a regression fails the run rather than hanging it.
 
 **2.A.1 — the duplicate step id was a graph that could not be built.** `ComServerRegistrationStep`
 (writes the CLSID tree from `InstallConfig`, scope-aware) and `ComRegistrationStep` (shells out to
