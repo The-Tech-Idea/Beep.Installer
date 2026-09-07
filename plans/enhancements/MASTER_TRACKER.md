@@ -65,6 +65,28 @@ identity is now the authored `AppId`, never a display name:
 BeepDM `SetupWizardTests` **212/212** with its uncommitted `AppId`-keyed registration
 (`SOFTWARE\TheTechIdea\Installations\<guid>`) and `ConditionExpressionMode` changes.
 
+**5.A.1 landed — and the hand-counted dispatch was hiding three live CLI bugs.** `Dispatch` was
+487 lines of `IndexOf(args, "/VERB=")` followed by `args[i][N..]` with `N` counted by eye, and
+`IsHeadlessCommand` was a second hand-kept copy of the same ~60 verbs deciding console attachment.
+Both now read one ordered `CliVerb` table (`Cli/ProgramVerbs.cs`); `Dispatch` is 13 lines and
+values are sliced by the prefix itself in `CliOptions`.
+
+Auditing the offsets while building the table found that **`/PUBLISH=` (9 characters) was sliced as
+8** — every ClickOnce publish from the CLI received `"=<path>"` and failed to load its own project,
+so the documented verb had never worked. Inside `RunPublish`, `/OUT=` and `/UPDATEURL=` had the
+same defect for the same reason (`"OUT=".Length` against a `/OUT=` prefix), latent because nothing
+reached them. All three are fixed; `/PUBLISH=` now stages a real ClickOnce publish end to end
+(5 `.deploy` files, identity-named manifests, `publish.htm`, warnings only under `/NOSIGN`).
+
+Of the ~56 hand-counted slices, 51 became table entries and 5 remain; a scan confirms the rest are
+correct. `CliVerbTableTests` (17) assert over the verbs as data — value round-trip, token
+uniqueness, prefix shadowing, the precedence pairs that are behaviour (`/PUBLISHFEED=` ahead of
+`/BUILD=`, `/RECOVERDELTA=` ahead of `/ROLLBACKDELTA=`), and that only the two windowed tools are
+non-headless. Suite **1112/0/3**.
+
+Still open in Phase 5: **5.A.2** (DI composition root) and **5.B.2** (`IDMLogger`, retire `Diag` —
+still used across the shell and Core). `Program.cs` is 4,137 lines, down from 4,655.
+
 **CI actually gates the repo now (0.C.1), and D5 is settled as A — multi-repo checkout.** The
 workflow checked out one repository, so the relative `ProjectReference`s to `..\..\BeepDM\` and
 `..\..\Beep.Winform\` could not resolve, and it ran a filter of three test classes. Both jobs now
@@ -778,7 +800,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 
 | # | Task | Status |
 |---|------|--------|
-| 5.A.1 | `CliOptions` parser; `Dispatch` < 100 lines | ⬜ |
+| 5.A.1 | `CliOptions` parser; `Dispatch` < 100 lines | ✅ (2026-09-07 — 487 → 13 lines; verb table also feeds `IsHeadlessCommand`; 3 live CLI bugs fixed) |
 | 5.A.2 | Composition root: `AddBeepForDesktop()` + `AddSetupWizard()` + Core registrations | ⬜ |
 | 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
 | 5.B.2 | `IDMLogger` adoption; retire `Diag` | ⬜ |

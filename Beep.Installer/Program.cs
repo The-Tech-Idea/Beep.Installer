@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
+using Beep.Installer.Cli;
 using Beep.Installer.Models;
 using Beep.Installer.Engine;
 using Beep.Installer.Extensibility;
@@ -38,7 +39,7 @@ namespace Beep.Installer;
 /// The mode is determined at startup by inspecting command-line arguments
 /// and whether installer metadata exists beside or inside the executable.
 /// </summary>
-internal static class Program
+internal static partial class Program
 {
     [STAThread]
     public static int Main(string[] args)
@@ -111,559 +112,40 @@ internal static class Program
         }
     }
 
+    /// <summary>
+    /// Whether this invocation needs a console attached. Answered from the same verb table that
+    /// dispatches, so the two can no longer disagree: a verb cannot be dispatchable but
+    /// console-less, or attach a console and then never run.
+    /// </summary>
     private static bool IsHeadlessCommand(string[] args)
     {
-        return IsMatrixQualificationCommand(args)
-            || Has(args, "/?", "/H", "/HELP", "/VER")
-            || IndexOf(args, "/BUILD=") >= 0
-            || IndexOf(args, "/VALIDATE=") >= 0
-            || IndexOf(args, "/PLAN=") >= 0
-            || IndexOf(args, "/FORMATREADINESS=") >= 0
-            || Has(args, "/LISTTEMPLATES")
-            || IndexOf(args, "/EXPORTTEMPLATEPACKAGE=") >= 0
-            || IndexOf(args, "/VERIFYTEMPLATEPACKAGE=") >= 0
-            || IndexOf(args, "/QUALIFYSDK=") >= 0
-            || IndexOf(args, "/PUBLISHSDK=") >= 0
-            || IndexOf(args, "/QUALIFYPLAN=") >= 0
-            || IndexOf(args, "/PROPERTIES=") >= 0
-            || IndexOf(args, "/QUALIFYCLI=") >= 0
-            || IndexOf(args, "/QUALIFYCONFIG=") >= 0
-            || IndexOf(args, "/EXPORTCATALOG=") >= 0
-            || IndexOf(args, "/QUALIFYCATALOG=") >= 0
-            || IndexOf(args, "/UPDATECHANNELFEED=") >= 0
-            || IndexOf(args, "/VERIFYUPDATECHANNELFEED=") >= 0
-            || IndexOf(args, "/CHECKUPDATECHANNEL=") >= 0
-            || IndexOf(args, "/APPLYUPDATECHANNEL=") >= 0
-            || IndexOf(args, "/QUALIFYUPDATECHANNELFEED=") >= 0
-            || IndexOf(args, "/DELTA=") >= 0
-            || IndexOf(args, "/VERIFYDELTA=") >= 0
-            || IndexOf(args, "/QUALIFYDELTA=") >= 0
-            || IndexOf(args, "/APPLYDELTA=") >= 0
-            || IndexOf(args, "/ROLLBACKDELTA=") >= 0
-            || IndexOf(args, "/RECOVERDELTA=") >= 0
-            || IndexOf(args, "/LAYOUT=") >= 0
-            || IndexOf(args, "/VERIFYLAYOUT=") >= 0
-            || IndexOf(args, "/QUALIFYLAYOUT=") >= 0
-            || IndexOf(args, "/QUALIFYA11Y=") >= 0
-            || IndexOf(args, "/QUALIFYVM=") >= 0
-            || IndexOf(args, "/QUALIFYRELEASE=") >= 0
-            || IndexOf(args, "/QUALIFYSIGNING") >= 0
-            || IndexOf(args, "/QUALIFYUPGRADE=") >= 0
-            || IndexOf(args, "/QUALIFYRECOVERY=") >= 0
-            || IndexOf(args, "/QUALIFYSERVICES=") >= 0
-            || IndexOf(args, "/QUALIFYIIS=") >= 0
-            || IndexOf(args, "/QUALIFYSYSTEM=") >= 0
-            || IndexOf(args, "/QUALIFYDEPLOYMENTKIT=") >= 0
-            || IndexOf(args, "/DEPLOYMENTKIT=") >= 0
-            || IndexOf(args, "/MSI=") >= 0
-            || IndexOf(args, "/WINGET=") >= 0
-            || IndexOf(args, "/QUALIFYEVIDENCE=") >= 0
-            || IndexOf(args, "/EVIDENCE=") >= 0
-            || IndexOf(args, "/VERIFYEVIDENCE=") >= 0
-            || IndexOf(args, "/QUALIFYSECURITY=") >= 0
-            || IndexOf(args, "/SECURITYSCAN=") >= 0
-            || IndexOf(args, "/QUALIFYDIAGNOSTICS=") >= 0
-            || IndexOf(args, "/RECOVERY=") >= 0
-            || IndexOf(args, "/CANONICALIZE=") >= 0
-            || IndexOf(args, "/EXTENSIONEXPORT=") >= 0
-            || IndexOf(args, "/EXTENSIONTEMPLATE=") >= 0
-            || IndexOf(args, "/EXTENSIONCONFORMANCE=") >= 0
-            || IndexOf(args, "/QUALIFYEXTENSIONSDK=") >= 0
-            || IndexOf(args, "/EXTENSIONS=") >= 0
-            || IndexOf(args, "/PREVIEW=") >= 0
-            || IndexOf(args, "/PUBLISH=") >= 0
-            || IndexOf(args, "/PUBLISHFEED=") >= 0
-            || Has(args, "/S", "/SILENT", "/VERYSILENT")
-            || Has(args, "/UNINSTALL")
-            || Has(args, "/REPAIR")
-            || Has(args, "/CHECKUPDATE")
-            || Has(args, "/UPDATE")
-            || Has(args, "/SELFTEST");
+        if (IsMatrixQualificationCommand(args)) return true;
+
+        var options = new CliOptions(args);
+        foreach (var verb in Verbs)
+            if (verb.TryMatch(options, out _))
+                return verb.Headless;
+
+        return false;
     }
+
 
     // ── Dispatch ────────────────────────────────────────────────────────
 
     private static int Dispatch(string[] args)
     {
+        // The matrix runner reads its own switches and predates the verb table.
         if (IsMatrixQualificationCommand(args))
             return RunMsiMatrixQualificationRunner(args);
 
-        // CLI flags that override everything
-        if (Has(args, "/?", "/H", "/HELP"))
-        {
-            PrintUsage();
-            return 0;
-        }
-
-        if (Has(args, "/VER"))
-        {
-            Console.WriteLine($"Beep Installer v{AppInfo.Version}");
-            return 0;
-        }
-
-        if (Has(args, "/LISTTEMPLATES"))
-            return RunListTemplates(args);
-
-        // Silent install — used by the SHIPPED installer.
-        // /VERYSILENT and /SUPPRESSMSGBOXES are Inno Setup's grammar; accepting them means
-        // deployment scripts written for Inno (Intune/SCCM/winget) work unchanged.
-        if (Has(args, "/S", "/SILENT", "/VERYSILENT"))
-        {
-            var project = LoadRuntimeProject(args);
-            if (project == null) { Console.Error.WriteLine("No installer script was found in the executable."); return 2; }
-            return RunSilentInstall(project, args);
-        }
-
-        // Uninstall — used by Add/Remove Programs
-        if (Has(args, "/UNINSTALL"))
-        {
-            var project = LoadRuntimeProject(args);
-            return project == null ? 2 : RunUninstall(project, args);
-        }
-
-        // Repair — used by Add/Remove Programs "Modify" and directly
-        if (Has(args, "/REPAIR"))
-        {
-            var project = LoadRuntimeProject(args);
-            return project == null ? 2 : RunRepair(project, args);
-        }
-
-        // Self-test
-        if (Has(args, "/SELFTEST"))
-        {
-            return RunSelfTest();
-        }
-
-        // App self-update (Phase 11) — thin wrappers over the BeepDM IAppUpdateService.
-        if (Has(args, "/CHECKUPDATE")) return RunCheckUpdate(args);
-        if (Has(args, "/UPDATE")) return RunUpdate(args);
-
-        // Update-feed publish — build then stage into a static feed (Phase 11). Checked before
-        // /BUILD so that "/BUILD=<project> /PUBLISHFEED=<dir>" publishes rather than only building.
-        var publishFeedIdx = IndexOf(args, "/PUBLISHFEED=");
-        if (publishFeedIdx >= 0)
-        {
-            var feedDir = args[publishFeedIdx]["/PUBLISHFEED=".Length..];
-            return RunPublishFeed(feedDir, args);
-        }
-
-        // Headless build — used by CI pipelines
-        var buildIdx = IndexOf(args, "/BUILD=");
-        if (buildIdx >= 0)
-        {
-            var projectPath = args[buildIdx][7..];
-            return RunHeadlessBuild(projectPath, args);
-        }
-
-        // CLI validate — check a .bsetup script for errors
-        var validateIdx = IndexOf(args, "/VALIDATE=");
-        if (validateIdx >= 0)
-        {
-            var projectPath = args[validateIdx][10..];
-            return RunValidate(projectPath, args);
-        }
-
-        var canonicalizeIdx = IndexOf(args, "/CANONICALIZE=");
-        if (canonicalizeIdx >= 0)
-        {
-            var projectPath = args[canonicalizeIdx]["/CANONICALIZE=".Length..];
-            return RunCanonicalize(projectPath, args);
-        }
-
-        var planIdx = IndexOf(args, "/PLAN=");
-        if (planIdx >= 0)
-        {
-            var projectPath = args[planIdx][6..];
-            return RunPlan(projectPath, args);
-        }
-
-        var formatReadinessIdx = IndexOf(args, "/FORMATREADINESS=");
-        if (formatReadinessIdx >= 0)
-        {
-            var projectPath = args[formatReadinessIdx]["/FORMATREADINESS=".Length..];
-            return RunFormatReadiness(projectPath, args);
-        }
-
-        var exportTemplatePackageIdx = IndexOf(args, "/EXPORTTEMPLATEPACKAGE=");
-        if (exportTemplatePackageIdx >= 0)
-        {
-            var templateId = args[exportTemplatePackageIdx]["/EXPORTTEMPLATEPACKAGE=".Length..];
-            return RunExportTemplatePackage(templateId, args);
-        }
-
-        var verifyTemplatePackageIdx = IndexOf(args, "/VERIFYTEMPLATEPACKAGE=");
-        if (verifyTemplatePackageIdx >= 0)
-        {
-            var packageDirectory = args[verifyTemplatePackageIdx]["/VERIFYTEMPLATEPACKAGE=".Length..];
-            return RunVerifyTemplatePackage(packageDirectory, args);
-        }
-
-        var qualifySdkIdx = IndexOf(args, "/QUALIFYSDK=");
-        if (qualifySdkIdx >= 0)
-        {
-            var projectPath = args[qualifySdkIdx]["/QUALIFYSDK=".Length..];
-            return RunQualifyHeadlessSdk(projectPath, args);
-        }
-
-        var publishSdkIdx = IndexOf(args, "/PUBLISHSDK=");
-        if (publishSdkIdx >= 0)
-        {
-            var packagePath = args[publishSdkIdx]["/PUBLISHSDK=".Length..];
-            return RunPublishSdkPackage(packagePath, args);
-        }
-
-        var qualifyPlanIdx = IndexOf(args, "/QUALIFYPLAN=");
-        if (qualifyPlanIdx >= 0)
-        {
-            var projectPath = args[qualifyPlanIdx]["/QUALIFYPLAN=".Length..];
-            return RunQualifyCompiledPlan(projectPath, args);
-        }
-
-        var propertiesIdx = IndexOf(args, "/PROPERTIES=");
-        if (propertiesIdx >= 0)
-        {
-            var projectPath = args[propertiesIdx][12..];
-            return RunEnterpriseProperties(projectPath, args);
-        }
-
-        var qualifyCliIdx = IndexOf(args, "/QUALIFYCLI=");
-        if (qualifyCliIdx >= 0)
-        {
-            var projectPath = args[qualifyCliIdx]["/QUALIFYCLI=".Length..];
-            return RunQualifyEnterpriseCli(projectPath, args);
-        }
-
-        var qualifyConfigIdx = IndexOf(args, "/QUALIFYCONFIG=");
-        if (qualifyConfigIdx >= 0)
-        {
-            var projectPath = args[qualifyConfigIdx]["/QUALIFYCONFIG=".Length..];
-            return RunQualifyConfigTransforms(projectPath, args);
-        }
-
-        var exportCatalogIdx = IndexOf(args, "/EXPORTCATALOG=");
-        if (exportCatalogIdx >= 0)
-        {
-            var catalog = args[exportCatalogIdx]["/EXPORTCATALOG=".Length..];
-            return RunPrerequisiteCatalogExport(catalog, args);
-        }
-
-        var qualifyCatalogIdx = IndexOf(args, "/QUALIFYCATALOG=");
-        if (qualifyCatalogIdx >= 0)
-        {
-            var projectPath = args[qualifyCatalogIdx]["/QUALIFYCATALOG=".Length..];
-            return RunPrerequisiteCatalogQualification(projectPath, args);
-        }
-
-        var updateChannelFeedIdx = IndexOf(args, "/UPDATECHANNELFEED=");
-        if (updateChannelFeedIdx >= 0)
-        {
-            var projectPath = args[updateChannelFeedIdx]["/UPDATECHANNELFEED=".Length..];
-            return RunUpdateChannelFeedExport(projectPath, args);
-        }
-
-        var verifyUpdateChannelFeedIdx = IndexOf(args, "/VERIFYUPDATECHANNELFEED=");
-        var applyUpdateChannelFeed = ArgValue(args, "/APPLYUPDATECHANNEL=");
-        if (applyUpdateChannelFeed is not null)
-            return RunCheckUpdateChannel(applyUpdateChannelFeed, args, applyDelta: true);
-        var checkUpdateChannelFeed = ArgValue(args, "/CHECKUPDATECHANNEL=");
-        if (checkUpdateChannelFeed is not null)
-            return RunCheckUpdateChannel(checkUpdateChannelFeed, args);
-        if (verifyUpdateChannelFeedIdx >= 0)
-        {
-            var feedPath = args[verifyUpdateChannelFeedIdx]["/VERIFYUPDATECHANNELFEED=".Length..];
-            return RunVerifyUpdateChannelFeed(feedPath, args);
-        }
-
-        var qualifyUpdateChannelFeedIdx = IndexOf(args, "/QUALIFYUPDATECHANNELFEED=");
-        if (qualifyUpdateChannelFeedIdx >= 0)
-        {
-            var feedPath = args[qualifyUpdateChannelFeedIdx]["/QUALIFYUPDATECHANNELFEED=".Length..];
-            return RunQualifyUpdateChannelFeed(feedPath, args);
-        }
-
-        var deltaIdx = IndexOf(args, "/DELTA=");
-        if (deltaIdx >= 0)
-        {
-            var outputDirectory = args[deltaIdx]["/DELTA=".Length..];
-            return RunDeltaBuild(outputDirectory, args);
-        }
-
-        var verifyDeltaIdx = IndexOf(args, "/VERIFYDELTA=");
-        if (verifyDeltaIdx >= 0)
-        {
-            var deltaDirectory = args[verifyDeltaIdx]["/VERIFYDELTA=".Length..];
-            return RunDeltaVerify(deltaDirectory, args);
-        }
-
-        var qualifyDeltaIdx = IndexOf(args, "/QUALIFYDELTA=");
-        if (qualifyDeltaIdx >= 0)
-        {
-            var deltaDirectory = args[qualifyDeltaIdx]["/QUALIFYDELTA=".Length..];
-            return RunQualifyDelta(deltaDirectory, args);
-        }
-
-        var applyDeltaIdx = IndexOf(args, "/APPLYDELTA=");
-        if (applyDeltaIdx >= 0)
-        {
-            var deltaDirectory = args[applyDeltaIdx]["/APPLYDELTA=".Length..];
-            return RunDeltaApply(deltaDirectory, args);
-        }
-
-        var rollbackDeltaIdx = IndexOf(args, "/ROLLBACKDELTA=");
-        var recoveryJournal = ArgValue(args, "/RECOVERDELTA=");
-        if (recoveryJournal is not null)
-        {
-            var recovery = new DeltaUpdatePackageService().RecoverAtomicApply(new() { JournalPath = recoveryJournal }, IsDryRun(args));
-            if (!recovery.Success) Console.Error.WriteLine(recovery.Error);
-            if (Has(args, "/JSON"))
-                Console.WriteLine(JsonSerializer.Serialize(new { action = "recover-delta", dryRun = IsDryRun(args), result = recovery },
-                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
-            else if (recovery.Success)
-                Console.WriteLine($"Delta recovery {(IsDryRun(args) ? "preview" : "complete")}: {recovery.RecoveryState}. Journal: {recovery.JournalPath}");
-            return recovery.Success ? 0 : 1;
-        }
-        if (rollbackDeltaIdx >= 0)
-        {
-            var journalPath = args[rollbackDeltaIdx]["/ROLLBACKDELTA=".Length..];
-            return RunDeltaRollback(journalPath, args);
-        }
-
-        var layoutIdx = IndexOf(args, "/LAYOUT=");
-        if (layoutIdx >= 0)
-        {
-            var projectPath = args[layoutIdx][8..];
-            return RunOfflineLayout(projectPath, args);
-        }
-
-        var verifyLayoutIdx = IndexOf(args, "/VERIFYLAYOUT=");
-        if (verifyLayoutIdx >= 0)
-        {
-            var layoutPath = args[verifyLayoutIdx][14..];
-            return RunVerifyOfflineLayout(layoutPath, args);
-        }
-
-        var qualifyLayoutIdx = IndexOf(args, "/QUALIFYLAYOUT=");
-        if (qualifyLayoutIdx >= 0)
-        {
-            var layoutPath = args[qualifyLayoutIdx][15..];
-            return RunQualifyOfflineLayout(layoutPath, args);
-        }
-
-        var qualifyA11yIdx = IndexOf(args, "/QUALIFYA11Y=");
-        if (qualifyA11yIdx >= 0)
-        {
-            var sourceRoot = args[qualifyA11yIdx]["/QUALIFYA11Y=".Length..];
-            return RunQualifyAccessibilityLocalization(sourceRoot, args);
-        }
-
-        var qualifyVmIdx = IndexOf(args, "/QUALIFYVM=");
-        if (qualifyVmIdx >= 0)
-        {
-            var evidenceRoot = args[qualifyVmIdx]["/QUALIFYVM=".Length..];
-            return RunQualifyVmReadiness(evidenceRoot, args);
-        }
-
-        var qualifyReleaseIdx = IndexOf(args, "/QUALIFYRELEASE=");
-        if (qualifyReleaseIdx >= 0)
-        {
-            var evidenceRoot = args[qualifyReleaseIdx]["/QUALIFYRELEASE=".Length..];
-            return RunQualifyReleasePortfolio(evidenceRoot, args);
-        }
-
-        if (Has(args, "/QUALIFYSIGNING"))
-            return RunQualifySigning(args);
-
-        var qualifyUpgradeIdx = IndexOf(args, "/QUALIFYUPGRADE=");
-        if (qualifyUpgradeIdx >= 0)
-        {
-            var projectPath = args[qualifyUpgradeIdx]["/QUALIFYUPGRADE=".Length..];
-            return RunQualifyUpgrade(projectPath, args);
-        }
-
-        var qualifyRecoveryIdx = IndexOf(args, "/QUALIFYRECOVERY=");
-        if (qualifyRecoveryIdx >= 0)
-        {
-            var projectPath = args[qualifyRecoveryIdx]["/QUALIFYRECOVERY=".Length..];
-            return RunQualifyRecovery(projectPath, args);
-        }
-
-        var qualifyServicesIdx = IndexOf(args, "/QUALIFYSERVICES=");
-        if (qualifyServicesIdx >= 0)
-        {
-            var projectPath = args[qualifyServicesIdx]["/QUALIFYSERVICES=".Length..];
-            return RunQualifyServices(projectPath, args);
-        }
-
-        var qualifyIisIdx = IndexOf(args, "/QUALIFYIIS=");
-        if (qualifyIisIdx >= 0)
-        {
-            var projectPath = args[qualifyIisIdx]["/QUALIFYIIS=".Length..];
-            return RunQualifyIis(projectPath, args);
-        }
-
-        var qualifySystemIdx = IndexOf(args, "/QUALIFYSYSTEM=");
-        if (qualifySystemIdx >= 0)
-        {
-            var projectPath = args[qualifySystemIdx]["/QUALIFYSYSTEM=".Length..];
-            return RunQualifySystemResources(projectPath, args);
-        }
-
-        var qualifyDeploymentKitIdx = IndexOf(args, "/QUALIFYDEPLOYMENTKIT=");
-        if (qualifyDeploymentKitIdx >= 0)
-        {
-            var kitRoot = args[qualifyDeploymentKitIdx]["/QUALIFYDEPLOYMENTKIT=".Length..];
-            return RunDeploymentKitQualification(kitRoot, args);
-        }
-
-        var deploymentKitIdx = IndexOf(args, "/DEPLOYMENTKIT=");
-        if (deploymentKitIdx >= 0)
-        {
-            var projectPath = args[deploymentKitIdx][15..];
-            return RunDeploymentKit(projectPath, args);
-        }
-
-        var msiIdx = IndexOf(args, "/MSI=");
-        if (msiIdx >= 0)
-        {
-            var projectPath = args[msiIdx][5..];
-            return RunMsiExport(projectPath, args);
-        }
-
-        var wingetIdx = IndexOf(args, "/WINGET=");
-        if (wingetIdx >= 0)
-        {
-            var projectPath = args[wingetIdx][8..];
-            return RunWinGetExport(projectPath, args);
-        }
-
-        var qualifyEvidenceIdx = IndexOf(args, "/QUALIFYEVIDENCE=");
-        if (qualifyEvidenceIdx >= 0)
-        {
-            var projectPath = args[qualifyEvidenceIdx]["/QUALIFYEVIDENCE=".Length..];
-            return RunQualifyReleaseEvidence(projectPath, args);
-        }
-
-        var evidenceIdx = IndexOf(args, "/EVIDENCE=");
-        if (evidenceIdx >= 0)
-        {
-            var projectPath = args[evidenceIdx][10..];
-            return RunReleaseEvidence(projectPath, args);
-        }
-
-        var verifyEvidenceIdx = IndexOf(args, "/VERIFYEVIDENCE=");
-        if (verifyEvidenceIdx >= 0)
-        {
-            var projectPath = args[verifyEvidenceIdx][16..];
-            return RunVerifyReleaseEvidence(projectPath, args);
-        }
-
-        var qualifySecurityIdx = IndexOf(args, "/QUALIFYSECURITY=");
-        if (qualifySecurityIdx >= 0)
-        {
-            var projectPath = args[qualifySecurityIdx]["/QUALIFYSECURITY=".Length..];
-            return RunQualifySupplyChainSecurity(projectPath, args);
-        }
-
-        var securityIdx = IndexOf(args, "/SECURITYSCAN=");
-        if (securityIdx >= 0)
-        {
-            var projectPath = args[securityIdx][14..];
-            return RunSupplyChainScan(projectPath, args);
-        }
-
-        var qualifyDiagnosticsIdx = IndexOf(args, "/QUALIFYDIAGNOSTICS=");
-        if (qualifyDiagnosticsIdx >= 0)
-        {
-            var projectPath = args[qualifyDiagnosticsIdx]["/QUALIFYDIAGNOSTICS=".Length..];
-            return RunQualifyDiagnostics(projectPath, args);
-        }
-
-        var recoveryIdx = IndexOf(args, "/RECOVERY=");
-        if (recoveryIdx >= 0)
-        {
-            var projectPath = args[recoveryIdx][10..];
-            return RunRecovery(projectPath, args);
-        }
-
-        var extensionExportIdx = IndexOf(args, "/EXTENSIONEXPORT=");
-        if (extensionExportIdx >= 0)
-        {
-            var value = args[extensionExportIdx]["/EXTENSIONEXPORT=".Length..];
-            return RunExtensionExport(value, args);
-        }
-
-        var extensionsIdx = IndexOf(args, "/EXTENSIONS=");
-        if (extensionsIdx >= 0)
-        {
-            var value = args[extensionsIdx][12..];
-            return RunExtensionDiscovery(value, args);
-        }
-
-        var extensionTemplateIdx = IndexOf(args, "/EXTENSIONTEMPLATE=");
-        if (extensionTemplateIdx >= 0)
-        {
-            var value = args[extensionTemplateIdx][19..];
-            return RunExtensionTemplate(value, args);
-        }
-
-        var extensionConformanceIdx = IndexOf(args, "/EXTENSIONCONFORMANCE=");
-        if (extensionConformanceIdx >= 0)
-        {
-            var value = args[extensionConformanceIdx][22..];
-            return RunExtensionConformance(value, args);
-        }
-
-        var qualifyExtensionSdkIdx = IndexOf(args, "/QUALIFYEXTENSIONSDK=");
-        if (qualifyExtensionSdkIdx >= 0)
-        {
-            var value = args[qualifyExtensionSdkIdx]["/QUALIFYEXTENSIONSDK=".Length..];
-            return RunQualifyExtensionSdkCompatibility(value, args);
-        }
-
-        // CLI preview — render one wizard page to console
-        var previewIdx = IndexOf(args, "/PREVIEW=");
-        if (previewIdx >= 0)
-        {
-            var projectPath = args[previewIdx][9..];
-            return RunPreview(projectPath);
-        }
-
-        // ClickOnce publish — CI-friendly
-        var publishIdx = IndexOf(args, "/PUBLISH=");
-        if (publishIdx >= 0)
-        {
-            var projectPath = args[publishIdx]["PUBLISH=".Length..];
-            return RunPublish(projectPath, args);
-        }
-
-        // Standalone language manager tool
-        if (Has(args, "/UPDATEUI"))
-        {
-            var project = LoadRuntimeProject(args);
-            if (project is null) { ShowFatalMessage("Update center requires a project script (/SCRIPT=<path>)."); return 2; }
-            Application.Run(CreateUpdateCenter(project, args));
-            return 0;
-        }
-        if (Has(args, "/LANGMGR"))
-        {
-            Application.Run(new LanguageManagerForm());
-            return 0;
-        }
-
-        // Default: detect runtime mode or open the generator
-        if (IsRuntimeMode())
-        {
-            var project = LoadRuntimeProject(args);
-            if (project == null) { ShowFatalMessage("Installer script could not be parsed — the installer is corrupted."); return 2; }
-            Application.Run(new BeepModernInstallerForm(project));
-            return 0;
-        }
-
-        // Generator UI
-        var controller = new InstallerController();
-        Application.Run(new PackageBuilderForm(controller, args));
-        return 0;
+        var options = new CliOptions(args);
+        foreach (var verb in Verbs)
+            if (verb.TryMatch(options, out var value))
+                return verb.Handler(options, value);
+
+        return RunDefaultMode(args);
     }
+
 
     // ── Mode detection ──────────────────────────────────────────────────
 
@@ -3856,13 +3338,13 @@ internal static class Program
         var (project, err) = InstallerScriptSerializer.Load(projectPath);
         if (project == null) { Console.Error.WriteLine($"Error: {err}"); return 2; }
 
-        var outIdx = IndexOf(args, "/OUT=");
-        var publishDir = outIdx >= 0
-            ? args[outIdx]["OUT=".Length..]
-            : Path.Combine(Path.GetDirectoryName(Path.GetFullPath(projectPath)) ?? "", "publish");
+        // ArgValue slices by the prefix itself. Both of these used to count the characters by hand
+        // and drop the leading '/', so the publish directory and update URL each arrived with a
+        // stray '=' in front — invisible until /PUBLISH= itself started passing its path through.
+        var publishDir = ArgValue(args, "/OUT=")
+            ?? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(projectPath)) ?? "", "publish");
 
-        var urlIdx = IndexOf(args, "/UPDATEURL=");
-        var updateUrl = urlIdx >= 0 ? args[urlIdx]["UPDATEURL=".Length..] : project.AppUpdatesURL;
+        var updateUrl = ArgValue(args, "/UPDATEURL=") ?? project.AppUpdatesURL;
 
         var noSign = Has(args, "/NOSIGN");
 
