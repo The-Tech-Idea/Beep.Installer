@@ -88,6 +88,13 @@ public static class InstallContextKeys
     /// <summary>Custom actions filtered by timing by CustomActionStep.</summary>
     public const string CustomActions = "CustomActions";
 
+    /// <summary>
+    /// The deployer's decision about executing those custom actions, as a boxed bool. Absent
+    /// means nobody decided, which runs them. Mirrors
+    /// <c>TheTechIdea.Beep.Installer.Steps.CustomActionStep.AllowScriptCommandsKey</c>.
+    /// </summary>
+    public const string AllowScriptCommands = "AllowScriptCommands";
+
     /// <summary>Values backing the <c>{Custom:fieldId}</c> macros.</summary>
     public const string CustomValues = "CustomValues";
 

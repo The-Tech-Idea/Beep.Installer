@@ -86,6 +86,32 @@ Downloading is now behind `IPayloadFetcher` (`HttpPayloadFetcher` is the real on
 "tampered archive is refused and nothing is extracted" — run with no socket, listener or firewall
 prompt. Suite **1135/0/3**.
 
+**8.A.2 — a deployment can now refuse the scripts and still take the files.** `CustomActionStep`
+launches arbitrary executables during install, and the only way to stop it was not to run the
+installer at all. Framed accurately: these actions ship inside the same package the operator chose
+to run, so this is not an untrusted-code hole — it is deployer control. `ForbidCustomActions`
+already existed in the policy model but only ever affected MSI export; **nothing enforced it at
+install time**, which is the same shape of gap as the unverified payload.
+
+The decision is a small pure function (`ScriptCommandConsent.Decide`): `/ALLOWSCRIPTCMDS` wins,
+then `/NOSCRIPTCMDS`, then `policy.ForbidCustomActions`, otherwise *no decision*. An explicit allow
+outranking policy is deliberate — it is how a managed machine runs the one package whose actions
+are genuinely needed without editing the policy governing every other package.
+
+Silence stays silence: with no flag and no policy nothing is written to the context and actions run
+exactly as before. Refusal names every action that did not run; a refused **required** action fails
+the step rather than quietly shipping a half-configured product, while optional ones let the
+install continue. The gate sits ahead of the `DryRun` branch so neither path can execute anything.
+Wired into all three runtime paths (install, repair, uninstall) and documented in `/?`.
+
+BeepDM `SetupWizardTests` **216/216**; installer suite **1151/0/3**.
+
+*Observed while verifying:* one full-suite run hung for ~20 minutes and had to be killed, and a
+`--blame-hang-timeout` run reported 4 minutes of post-test inactivity before exiting. Plain runs
+before and after are clean, exit 0 in ~1m40s, and leave no lingering processes, so this is recorded
+rather than diagnosed — most likely a background timer from the telemetry pipeline the composition
+root now builds in-process during `CompositionRootTests`. Worth a look before it bites CI.
+
 **2.A.1 — the duplicate step id was a graph that could not be built.** `ComServerRegistrationStep`
 (writes the CLSID tree from `InstallConfig`, scope-aware) and `ComRegistrationStep` (shells out to
 regsvr32 against the loose `ComComponents` key) both answered to `installer.com.register`.
@@ -947,7 +973,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | # | Task | Status |
 |---|------|--------|
 | 8.A.1 | Secret store (`dpapi:`/`env:` refs); no plaintext signing password in `.bsetup` | ⬜ |
-| 8.A.2 | Script-command consent policy + `/ALLOWSCRIPTCMDS` | ⬜ |
+| 8.A.2 | Script-command consent policy + `/ALLOWSCRIPTCMDS` | ✅ (2026-09-07 — `/ALLOWSCRIPTCMDS` + `/NOSCRIPTCMDS`; makes `ForbidCustomActions` bite at install time; 10 tests) |
 | 8.A.3 | Payload hash record + verify (coordinates with 2.C.2) | ✅ (2026-09-07 — build records + `.sha256` sidecar + unpinned/stale warnings; 6 tests) |
 | 8.B.1 | Swallowed-exception sweep (Core **and** shell) + permanent source guards | ✅ |
 | 8.B.2 | Autosave snapshot fix + race stress test | ⬜ |

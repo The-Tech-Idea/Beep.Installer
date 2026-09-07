@@ -169,6 +169,21 @@ internal static partial class Program
     /// <summary>
     /// True if this executable is acting as a shipped installer.
     /// </summary>
+    /// <summary>
+    /// Records whether authored custom actions may run. Silence stays silence: with no flag and no
+    /// policy nothing is written, and the step behaves as it always has.
+    /// </summary>
+    private static void ApplyScriptCommandConsent(SetupContext context, Policy.InstallerPolicy? policy, string[] args)
+    {
+        var decision = Engine.ScriptCommandConsent.Decide(
+            Has(args, "/ALLOWSCRIPTCMDS"), Has(args, "/NOSCRIPTCMDS"), policy);
+        if (decision is null) return;
+
+        context.Properties[InstallContextKeys.AllowScriptCommands] = decision.Value;
+        if (!decision.Value)
+            Engine.Diag.Warn("Policy", "Authored custom actions are refused for this run.", eventId: "BI2620");
+    }
+
     private static bool IsRuntimeMode()
     {
         var exeDir = AppContext.BaseDirectory;
@@ -274,6 +289,7 @@ internal static partial class Program
         logger.Info("Install", $"{config.AppName} {config.AppVersion} → {installPath} (perUser={perUser})");
         var policyEvaluation = EvaluateProjectPolicy(project, args);
         context.Properties[InstallContextKeys.ResourcePolicy] = policyEvaluation.Policy;
+        ApplyScriptCommandConsent(context, policyEvaluation.Policy, args);
         if (policyEvaluation.Diagnostics.Count > 0)
             PrintDiagnostics("policy", policyEvaluation.Diagnostics);
         if (policyEvaluation.HasErrors)
@@ -384,6 +400,7 @@ internal static partial class Program
         ApplyBuiltInRuntimeProperties(context, repairRuntimeProperties);
         var policyEvaluation = EvaluateProjectPolicy(project, args);
         context.Properties[InstallContextKeys.ResourcePolicy] = policyEvaluation.Policy;
+        ApplyScriptCommandConsent(context, policyEvaluation.Policy, args);
         if (policyEvaluation.Diagnostics.Count > 0)
             PrintDiagnostics("policy", policyEvaluation.Diagnostics);
         if (policyEvaluation.HasErrors)
@@ -484,6 +501,7 @@ internal static partial class Program
         var wizard = Hosting.InstallWizardGraph.BuildUninstall();
         var policyEvaluation = EvaluateProjectPolicy(project, args);
         context.Properties[InstallContextKeys.ResourcePolicy] = policyEvaluation.Policy;
+        ApplyScriptCommandConsent(context, policyEvaluation.Policy, args);
         if (policyEvaluation.Diagnostics.Count > 0)
             PrintDiagnostics("policy", policyEvaluation.Diagnostics);
         if (policyEvaluation.HasErrors)
@@ -4101,6 +4119,8 @@ internal static partial class Program
         Console.WriteLine("  Beep.Installer.exe /S /DRYRUN            Compile/run checks without applying changes");
         Console.WriteLine("  Beep.Installer.exe /S /FORCE             Allow installing an older version over a newer one");
         Console.WriteLine("  Beep.Installer.exe /REPAIR [/D=<path>]   Restore missing or modified files (runtime mode)");
+        Console.WriteLine("  Beep.Installer.exe /S /NOSCRIPTCMDS      Install the files but refuse the authored custom actions");
+        Console.WriteLine("  Beep.Installer.exe /S /ALLOWSCRIPTCMDS   Permit custom actions that policy would otherwise refuse");
         Console.WriteLine("  Beep.Installer.exe /S /NORESTART         Report success (0) even when a reboot is pending");
         Console.WriteLine("  Beep.Installer.exe /S /RESTARTEXITCODE=n Override the reboot-required exit code (default 3010)");
         Console.WriteLine("  Beep.Installer.exe /UNINSTALL [/D=<path>] Silent uninstall (runtime mode)");
