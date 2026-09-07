@@ -86,8 +86,25 @@ Downloading is now behind `IPayloadFetcher` (`HttpPayloadFetcher` is the real on
 "tampered archive is refused and nothing is extracted" — run with no socket, listener or firewall
 prompt. Suite **1135/0/3**.
 
-Still open on this thread: the *build* half of 8.A.3, stamping the produced archive's hash into the
-project automatically so authors do not have to compute it by hand.
+**The build half (8.A.3) closed it.** Runtime verification is only worth as much as the pin the
+author declares, and hand-computing a SHA-256 after every build is exactly the step people skip.
+`BuildPipeline` now hashes the archive once it is final — sidecars and any extension bundle
+included — exposes it as `BuildResult.PayloadSha256`, logs it, and writes `<archive>.sha256`
+beside it for upload. A URL-hosted project with no pin is told the value to use; a stale pin is
+reported with both digests, so a wrong pin surfaces at build time rather than as a failed install on
+a customer machine.
+
+The digest deliberately is **not** written back into the shipped script: that script ships as a
+sidecar *inside* the archive, so an archive can never contain its own hash.
+
+**Known, and worth its own item: the payload archive is not byte-reproducible.** Two builds of
+identical input differ, for two identified reasons — `InstallerScriptSerializer.Save` stamps
+`ModifiedAt = DateTime.UtcNow` into `script.bsetup`, which ships inside the archive, and zip entries
+carry creation-time timestamps. It does not break pinning (a rebuild has to be re-uploaded and so
+re-pinned anyway) but it does mean a pin cannot be validated by rebuilding, and it undercuts the
+reproducibility the deterministic plan hash otherwise aims at. Normalising both would make payloads
+reproducible; not attempted here because it touches the packer that the delta blob store and
+signing evidence also depend on.
 
 **Phase 5 is closed: 5.A.2 and 5.B.2 both landed against BeepDM's real `Services/` surface.**
 
@@ -913,7 +930,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 |---|------|--------|
 | 8.A.1 | Secret store (`dpapi:`/`env:` refs); no plaintext signing password in `.bsetup` | ⬜ |
 | 8.A.2 | Script-command consent policy + `/ALLOWSCRIPTCMDS` | ⬜ |
-| 8.A.3 | Payload hash record + verify (coordinates with 2.C.2) | ⬜ |
+| 8.A.3 | Payload hash record + verify (coordinates with 2.C.2) | ✅ (2026-09-07 — build records + `.sha256` sidecar + unpinned/stale warnings; 6 tests) |
 | 8.B.1 | Swallowed-exception sweep (Core **and** shell) + permanent source guards | ✅ |
 | 8.B.2 | Autosave snapshot fix + race stress test | ⬜ |
 | 8.B.3 | Sync-over-async sweep | ⬜ |

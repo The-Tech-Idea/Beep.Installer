@@ -107,6 +107,14 @@ public class BuildPipeline
         public long OutputSizeBytes { get; set; }
         public int FileCount { get; set; }
         public long PayloadSizeBytes { get; set; }
+
+        /// <summary>
+        /// SHA-256 of the produced payload archive. A project that hosts its payload at a URL
+        /// has to declare this as <c>PayloadSha256</c> so the installer can verify what it
+        /// downloads; it is surfaced here, logged, and written beside the archive so the author
+        /// never has to compute it by hand.
+        /// </summary>
+        public string PayloadSha256 { get; set; } = "";
         public List<string> Steps { get; set; } = new();
         public List<string> Warnings { get; } = new();
         public List<string> Errors { get; } = new();
@@ -379,6 +387,11 @@ public class BuildPipeline
             AddScriptSidecarsToZip(outputDir, zipPath);
             if (project.Resources.Count > 0)
                 Beep.Installer.Extensibility.InstallerExtensionBundle.AddToArchive(zipPath, ExtensionDirectories, ExtensionPolicy, project.Resources.ToList());
+            ThrowIfBuildCanceled();
+
+            // 8b) The archive is final here — sidecars and any extension bundle are in. Hash it now
+            // so a URL-hosted payload can be pinned, and write the digest beside it for upload.
+            result.PayloadSha256 = RecordPayloadDigest(zipPath, project, result, log);
             ThrowIfBuildCanceled();
 
             // 9) Embed the zip into the EXE (append to the end of the PE)
@@ -715,6 +728,51 @@ Beep Installer v1.0.0
 
         ZipFile.CreateFromDirectory(srcDir, zipPath, level, includeBaseDirectory: true);
         return null;
+    }
+
+    /// <summary>
+    /// Computes the finished archive's SHA-256, writes it to <c>&lt;archive&gt;.sha256</c> and, for a
+    /// project that serves its payload from a URL, checks it against the declared
+    /// <c>PayloadSha256</c>.
+    ///
+    /// The digest cannot simply be written back into the shipped script: that script is itself a
+    /// sidecar inside this archive, so an archive can never contain its own hash. Surfacing the
+    /// value and flagging a missing or stale declaration is what closes the loop — a wrong pin is
+    /// caught here, at build time, instead of on a customer's machine at install time.
+    /// </summary>
+    private static string RecordPayloadDigest(string zipPath, Models.InstallProject project, BuildResult result, List<string> log)
+    {
+        string digest;
+        try
+        {
+            using var stream = File.OpenRead(zipPath);
+            digest = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream)).ToLowerInvariant();
+        }
+        catch (Exception ex)
+        {
+            Diag.Warn("BuildPipeline", "payload digest could not be computed", ex);
+            result.Warnings.Add($"Payload SHA-256 could not be computed: {ex.Message}");
+            return "";
+        }
+
+        try { File.WriteAllText(zipPath + ".sha256", digest + Environment.NewLine); }
+        catch (Exception ex) { Diag.Debug("BuildPipeline", "payload digest sidecar write failed", ex); }
+
+        log.Add($"  ✓ payload sha256 {digest}");
+
+        if (project.PayloadSource != Models.PayloadSourceType.Url)
+            return digest;
+
+        if (string.IsNullOrWhiteSpace(project.PayloadSha256))
+            result.Warnings.Add(
+                $"This project downloads its payload from {project.PayloadUrl}, but declares no PayloadSha256. " +
+                $"The installer cannot verify what it downloads. Set PayloadSha256 to {digest}.");
+        else if (!string.Equals(project.PayloadSha256.Trim(), digest, StringComparison.OrdinalIgnoreCase))
+            result.Warnings.Add(
+                $"PayloadSha256 does not match the payload just built. Declared {project.PayloadSha256.Trim()}, " +
+                $"built {digest}. Installs will refuse this payload until the declaration is updated.");
+
+        return digest;
     }
 
     private static void AddScriptSidecarsToZip(string outputDir, string zipPath)
