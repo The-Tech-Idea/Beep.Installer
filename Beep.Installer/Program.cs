@@ -951,6 +951,25 @@ internal static partial class Program
 
     // ── CLI project canonicalization ────────────────────────────────────
 
+    /// <summary>
+    /// A backup name that is not already taken. The timestamp alone is second-resolution, so a
+    /// scripted loop produces the same name twice and the copy fails.
+    /// </summary>
+    private static string NextAvailableBackupPath(string projectPath)
+    {
+        var stamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        var candidate = $"{projectPath}.{stamp}.bak";
+        if (!File.Exists(candidate)) return candidate;
+
+        for (var n = 2; n < 1000; n++)
+        {
+            candidate = $"{projectPath}.{stamp}-{n}.bak";
+            if (!File.Exists(candidate)) return candidate;
+        }
+
+        return $"{projectPath}.{stamp}-{Guid.NewGuid():N}.bak";
+    }
+
     private static int RunCanonicalize(string projectPath, string[] args)
     {
         var lintBefore = ProjectScriptLinter.LintFile(projectPath);
@@ -1007,8 +1026,20 @@ internal static partial class Program
             return 0;
         }
 
-        var backupPath = projectPath + "." + DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".bak";
-        File.Copy(projectPath, backupPath, overwrite: false);
+        // The stamp only has second resolution, so two canonicalize runs inside the same second
+        // collided on the backup name -- and File.Copy(overwrite: false) threw straight out of the
+        // verb, crashing the process with "Fatal error" instead of reporting anything. Scripted use
+        // (a canonicalize-then-verify loop, or a CI step) hits that immediately.
+        var backupPath = NextAvailableBackupPath(projectPath);
+        try
+        {
+            File.Copy(projectPath, backupPath, overwrite: false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"ERROR: could not back up '{projectPath}' before rewriting it: {ex.Message}");
+            return 1;
+        }
         var (ok, saveErr) = InstallerScriptSerializer.Save(project, projectPath);
         if (!ok)
         {

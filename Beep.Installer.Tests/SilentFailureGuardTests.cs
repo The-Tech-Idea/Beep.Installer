@@ -81,6 +81,37 @@ public class SilentFailureGuardTests
             string.Join(Environment.NewLine, offenders));
     }
 
+    /// <summary>
+    /// The same rule for the shell — and this is where it matters most.
+    ///
+    /// Core has no synchronization context, so a blocking wait there is merely wasteful. The
+    /// WinForms shell does: <c>GetAwaiter().GetResult()</c> on the UI thread deadlocks outright.
+    /// The gate covered Core only, which left the higher-risk half unguarded.
+    /// </summary>
+    [Fact]
+    public void Shell_DoesNotBlockOnAsync()
+    {
+        var offenders = SourceFiles("Beep.Installer")
+            .SelectMany(file => File.ReadAllLines(file)
+                .Select((line, i) => (line, number: i + 1))
+                .Where(x => x.line.Contains(".GetAwaiter().GetResult()"))
+                .Select(x => $"{Path.GetFileName(file)}:{x.number}"))
+            .ToList();
+
+        // Listed rather than pattern-filtered, so each one stays an argued decision:
+        //   Program.cs — the console verbs. Blocking is correct at a top-level entry point that
+        //     has no synchronization context to deadlock against, and the update checks that do it
+        //     carry a cancellation token so they cannot hang indefinitely.
+        //   InstallerServices.cs — Shutdown() deliberately hops to the thread pool before waiting,
+        //     precisely to avoid blocking on a captured context.
+        var exempt = new[] { "Program.cs", "InstallerServices.cs" };
+        offenders.RemoveAll(o => exempt.Any(e => o.StartsWith(e, StringComparison.Ordinal)));
+
+        offenders.Should().BeEmpty(
+            "sync-over-async on the UI thread deadlocks; found:" + Environment.NewLine +
+            string.Join(Environment.NewLine, offenders));
+    }
+
     private static string[] SourceFiles(string projectFolder)
     {
         var root = FindRepoSubdirectory(projectFolder);

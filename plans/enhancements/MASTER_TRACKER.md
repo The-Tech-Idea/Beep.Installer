@@ -10,6 +10,65 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-08 (gates run live)
+
+**The four 🟡 gates are now run, not inferred.** `scripts/run-gate-matrix.ps1` drives the shipped exe
+through the criteria 2.M.1 / 3.M.1 / 5.M.1 actually name, elevated, and writes
+`artifacts/gate-matrix/gate-matrix.json` as evidence. **14 cases, all passing, none skipped.**
+Per-machine cases report SKIPPED rather than PASSED when unelevated, so an unprivileged run cannot
+look like a clean sweep.
+
+Writing it found two things, which is the entire argument for running gates instead of reading test
+names:
+
+**A real defect — `/CANONICALIZE /WRITE` crashed when run twice in the same second.** The backup name
+is `‹script›.‹yyyyMMddHHmmss›.bak` and the copy used `overwrite: false`, so a second run inside the same
+second threw `IOException` straight out of the verb and killed the process with "Fatal error" — no
+message, no exit code anyone could act on. Any scripted canonicalize-then-verify loop or CI step hits
+it immediately. The name is now uniquified and a backup failure returns a clean error instead of
+unwinding.
+
+**My own harness was testing nothing, twice over.** The first version corrupted bytes "80% of the way
+into the file" and reported that a corrupted installer installed happily. It does not: the layout is
+`[host][payload][8-byte offset][16-byte BEEPINSTPAYLOAD.]`, the host is ~200 MB and the payload here
+was **1899 bytes**, so 80% lands deep inside the host and proves nothing. Reading the recorded offset
+and corrupting the payload itself, the installer refuses with exit 2 ("No installer script was found
+in the executable") and leaves nothing behind — correct. The harness also aborted on the first
+legitimate refusal, because Windows PowerShell turns native stderr into a terminating ErrorRecord
+under `ErrorActionPreference = Stop`; a refusal is a result here, not a script error.
+
+Both mistakes had the same shape as the one this session opened with: a check that looks green while
+exercising the wrong thing. Worth stating plainly rather than quietly fixing.
+
+| gate | live result |
+|---|---|
+| 2.M.1 | per-user install ✅ · per-machine install/uninstall ✅ · rollback on injected failure ✅ · corrupt-payload abort ✅ |
+| 3.M.1 | validate ✅ · deterministic canonical JSON ✅ · `/WRITE` repeatable ✅ · `/BUILD`→`/S`→`/UNINSTALL` ✅ |
+| 5.M.1 | `/SELFTEST` ✅ · usage lists the runtime verbs ✅ · missing script is non-zero ✅ |
+
+**8.M.1 — one criterion was genuinely missing, and I nearly duplicated the rest.** P8's
+verification list asks for "CI gates: grep `catch { }` and `GetAwaiter().GetResult()` → 0
+(allowlist file)". I started writing that guard and found `SilentFailureGuardTests` already
+implements it — empty catches in Core *and* the shell, blocking-on-async in Core — with better
+scoping than what I was building, so I deleted mine rather than ship a second copy.
+
+The real gap was narrower and more interesting: the blocking-on-async guard covered **Core only**.
+Core has no synchronization context, so a blocking wait there is merely wasteful; the WinForms
+shell does, and `GetAwaiter().GetResult()` on its UI thread deadlocks outright — the higher-risk
+half was the unguarded one. Added `Shell_DoesNotBlockOnAsync`, with `Program.cs` (console verbs,
+no context to deadlock against, and the update checks now carry a cancellation token) and
+`InstallerServices.cs` (`Shutdown()` deliberately hops to the thread pool before waiting) listed
+as argued exemptions rather than pattern-filtered away. Verified it bites by planting a blocking
+wait in the shell and watching it fail.
+
+8.M.1 stays 🟡 overall: the sweep gates are enforced now, but the policy matrix (3 modes ×
+interactive/silent) and the secret-normalization review that gate also names are not this harness’s
+to sign off.
+
+Suite **1246/0/3**.
+
+---
+
 ## Progress log — 2026-09-08 (stage decomposition + gate audit)
 
 **3.B.1 tail done — and the row overstated the work.** `Run()` was 255 lines, but it already
@@ -1400,7 +1459,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ✅ (`Authoring/SemanticVersion` delegates to BeepDM `SemVer`) |
 | 2.C.2 | Payload SHA-256 verification before copy | ✅ (2026-09-07 — remote archive verified before extraction; `IPayloadFetcher` seam; 7 tests) |
 | 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ✅ (2026-09-07 — + `ResolvePayloadRoot` stops hardcoding "payload"; 7 tests) |
-| 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | 🟡 all three criteria covered by named tests (see gate audit); a recorded live matrix run is what remains |
+| 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ✅ **run live, elevated** — `scripts/run-gate-matrix.ps1`, evidence in `artifacts/gate-matrix/` |
 | 2.M.2 | SOLID review | ⬜ |
 
 ## Phase 3: Authoring Core — Extract to `Beep.Installer.Core` ⬜ — P1
@@ -1421,7 +1480,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 3.B.5 | Fix runtime-script source rebasing for files in subdirectories | ✅ |
 | 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ✅ `/BUILD` now runs the schema validator too — validation was not a gate on the build at all |
 | 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ✅ only one pipeline exists (row was stale); the UI Cancel button was inert and is now wired end to end |
-| 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | 🟡 round-trip + cancel covered; the install cycle runs in CI via `/SELFTEST` |
+| 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | ✅ **run live** — deterministic canonical JSON, repeatable `/WRITE`, full install cycle; cancel unit-covered by `BuildCancellationTests` |
 | 3.M.2 | SOLID review | ⬜ |
 
 ## Phase 4: Packaging Consolidation (ClickOnce / MSIX / Signing) ⬜ — P2
@@ -1447,7 +1506,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 5.A.2 | Composition root | ✅ (2026-09-07 — `Composition/InstallerServices.cs`; `AddBeepLogging()` + Core registrations. `AddBeepForDesktop()` does not exist; `AddBeepServices()` deliberately not registered, see log) |
 | 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
 | 5.B.2 | Structured-logging adoption | ✅ (2026-09-07 — `Diag.UseLog(IBeepLog)`; `IBeepLog`, not the legacy `IDMLogger`, and `Diag` is kept as the local ring, see log) |
-| 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | 🟡 `CliVerbTableTests` covers verb parity; `/SELFTEST` runs in CI |
+| 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ✅ **run live** — `/SELFTEST`, usage parity and non-zero exit on a missing script |
 | 5.M.2 | SOLID review | ⬜ |
 
 ## Phase 6: UI/UX Overhaul ⬜ — P1
