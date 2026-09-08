@@ -207,6 +207,36 @@ and ShortcutCreateStep, and on the COM and shortcut resource providers), **2.C.1
 `WScript.Shell` COM; the only `powershell` left is a comment about the old approach), and **7.B.1**
 (reduced to 🟡 — the plumbing is done, placing the switcher control is a visual decision).
 
+**6.C.2 finished, and 7.A.2 with it.** Inline validation now marks the offending field with an
+`ErrorProvider` as the author types (debounced 400ms, because the validator walks the whole project
+and flagging a half-typed field is noise). It deliberately calls the *same* `ProjectSchemaService`
+the build now calls, so the builder cannot say a project is fine and have `/BUILD` reject it — the
+split 3.C.1 was about. Diagnostics already carried a `Setup.<Property>` path and the bound boxes
+were already named after their property, so the match needed no new plumbing.
+
+`ComponentConditionsDialog` took the whole component list and opened on the first one, so selecting
+a component and opening its conditions asked you to select it again — the exact flow P6 lists as the
+verification for 6.C.2. It now opens on the caller's selection, keeping the picker for switching.
+`ComponentFilesDialog` was already contextual.
+
+A further 79 builder strings were routed, bringing 7.A.2 to 144 across 11 forms. On the earlier
+question of colour-only status: checked, and there is none — the two validation labels already state
+“N error(s), M warning(s)” or “OK” in text, with colour as redundant reinforcement, and no grid
+encodes severity by colour. That part of 7.C.1 needed no change.
+
+**7.A.2 translation done.** The 142 routed strings are now translated into de, fr, es, pt, ja, zh
+and ar rather than carrying English placeholders — 242 keys per culture, no `Untranslated` markers
+left, terminology matched against the strings that were already localized (Abbrechen/Annuler/
+キャンセル/取消/إلغاء and so on). I had recorded this as needing a human; that was an unnecessary hedge for
+short UI labels.
+
+Two defects surfaced doing it. Routing `Text = "▲"` wrote the **escape sequence** into the resx,
+so the reorder buttons would have rendered the literal text `▲` instead of an arrow — glyphs are
+not prose and are back to plain literals. And `LocalizationTests` was not in the `"Language"`
+collection that `LanguageSwitchTests` uses, so the two raced on `LanguageManager`'s static culture;
+the full suite passed on timing alone and a filtered run exposed it. Both are in the same collection
+now.
+
 **Needs the user, not the model:**
 - `PendingFileRenameOperations` still holds 78 stale `beeprepair_*` pairs from earlier elevated test
   runs (harmless — they point at deleted temp dirs — but they are queued boot-time work). Clearing
@@ -1306,7 +1336,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 6.B.1 | `Ui/InstallerTheme` shared tokens; the 3 palettes now delegate to it | ✅ |
 | 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ (pages still use absolute coords — container re-layout ⬜) |
 | 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree + per-file sizing still sync ⬜) |
-| 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | 🟡 components grid now declares its columns; contextual dialogs + inline validation ⬜ |
+| 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ✅ declared columns; `ComponentConditionsDialog` opens on the selected component; per-field `ErrorProvider` driven by the same validator the build uses |
 | 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ✅ (also: `AllowComponentSelection`/`AllowPathChange` made live; 9 builder sections no longer show a closed project) |
 | 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
 | 6.M.2 | SOLID review | ⬜ |
@@ -1319,10 +1349,10 @@ that would relocate existing installations, so it is flagged for P2 instead.
 |---|------|--------|
 | 7.A.1 | Resx key parity (47 keys × 8 cultures) + parity test | ✅ |
 | 7.A.0 | **Fix the resource loader — translations were never loaded at runtime** | ✅ |
-| 7.A.2 | Route wizard-page headers/prompts through `LanguageManager` | 🟡 65 builder/dialog strings routed via `Lang.UiStrings`; `PackageBuilderForm` body strings and the 7 non-English resx still ⬜ |
+| 7.A.2 | Route wizard-page headers/prompts through `LanguageManager` | ✅ 142 strings across 11 forms routed via `Lang.UiStrings` **and translated into all 7 non-English cultures**; 242 keys per culture, zero `Untranslated` markers |
 | 7.B.1 | End-user language switcher + live `ReloadStrings()` | 🟡 `LanguageChanged` + `ReloadStrings` + two-way `RtlHelper.ApplyDirection` done; **placing the switcher control in the wizard chrome is a visual decision, still ⬜** |
 | 7.B.2 | Wire `RtlHelper` into the wizard | ✅ (manual Arabic visual pass still ⬜) |
-| 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-color status | 🟡 label-derived names + all 14 forms covered + lazily-added panels; non-colour status still ⬜ |
+| 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-colour status | ✅ label-derived names, all 14 forms covered incl. lazily-added panels, widened interactive set. Non-colour status **verified already satisfied** — the validation labels state “N error(s), M warning(s)”/“OK” in text and no grid encodes severity by colour |
 | 7.M.1 | Gate: Narrator walkthrough + Accessibility Insights + parity tests | ⬜ |
 | 7.M.2 | SOLID review | ⬜ |
 

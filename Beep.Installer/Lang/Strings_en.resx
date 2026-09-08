@@ -443,4 +443,235 @@
   <data name="Template_Updated" xml:space="preserve">
     <value>Updated</value>
   </data>
+  <data name="Builder_ApplyScript" xml:space="preserve">
+    <value>Apply Script</value>
+  </data>
+  <data name="Builder_AuthorSetupScriptsAndBuild" xml:space="preserve">
+    <value>Author setup scripts and build a self-contained Windows Setup.exe.</value>
+  </data>
+  <data name="Builder_BeepInstallerPackageBuilder" xml:space="preserve">
+    <value>Beep Installer Package Builder</value>
+  </data>
+  <data name="Builder_BuildAgain" xml:space="preserve">
+    <value>Build Again</value>
+  </data>
+  <data name="Builder_BuildSetupExe" xml:space="preserve">
+    <value>Build Setup.exe</value>
+  </data>
+  <data name="Builder_BuildWorkflow" xml:space="preserve">
+    <value>Build Workflow</value>
+  </data>
+  <data name="Builder_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Builder_Copied" xml:space="preserve">
+    <value>Copied!</value>
+  </data>
+  <data name="Builder_Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Builder_CopyAll" xml:space="preserve">
+    <value>Copy All</value>
+  </data>
+  <data name="Builder_CopyFailed" xml:space="preserve">
+    <value>Copy failed</value>
+  </data>
+  <data name="Builder_DragABsetupFileOnto" xml:space="preserve">
+    <value>Drag a .bsetup file onto this window to open it.</value>
+  </data>
+  <data name="Builder_Duplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="Builder_EXEPath" xml:space="preserve">
+    <value>EXE path:</value>
+  </data>
+  <data name="Builder_EditFiles" xml:space="preserve">
+    <value>Edit Files</value>
+  </data>
+  <data name="Builder_KeepThisGUIDUnchangedFor" xml:space="preserve">
+    <value>Keep this GUID unchanged for updates and renames. A different GUID identifies a different product.</value>
+  </data>
+  <data name="Builder_LastBuildResult" xml:space="preserve">
+    <value>Last Build Result</value>
+  </data>
+  <data name="Builder_NewInstallerScript" xml:space="preserve">
+    <value>New Installer Script</value>
+  </data>
+  <data name="Builder_NoBuildHasBeenRun" xml:space="preserve">
+    <value>No build has been run yet.</value>
+  </data>
+  <data name="Builder_OpenExistingScript" xml:space="preserve">
+    <value>Open Existing Script</value>
+  </data>
+  <data name="Builder_OpenFolder" xml:space="preserve">
+    <value>Open Folder</value>
+  </data>
+  <data name="Builder_RecentlyOpenedInstallerScripts" xml:space="preserve">
+    <value>Recently opened installer scripts</value>
+  </data>
+  <data name="Builder_RefreshFormatReadiness" xml:space="preserve">
+    <value>Refresh Format Readiness</value>
+  </data>
+  <data name="Builder_ReleaseReadinessPendingClickRefresh" xml:space="preserve">
+    <value>Release readiness: pending. Click Refresh Format Readiness to see EXE, MSI, MSIX, WinGet and Intune/ConfigMgr capability status.</value>
+  </data>
+  <data name="Builder_ReloadFromFields" xml:space="preserve">
+    <value>Reload From Fields</value>
+  </data>
+  <data name="Builder_Result" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="Builder_RunInstaller" xml:space="preserve">
+    <value>Run Installer</value>
+  </data>
+  <data name="Builder_SaveAs" xml:space="preserve">
+    <value>Save As…</value>
+  </data>
+  <data name="Builder_ScanSource" xml:space="preserve">
+    <value>Scan Source</value>
+  </data>
+  <data name="Builder_SearchSections" xml:space="preserve">
+    <value>Search sections…</value>
+  </data>
+  <data name="Builder_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="Builder_ValidationCenterIsReadyClick" xml:space="preserve">
+    <value>Validation Center is ready. Click Validate Project to see grouped schema, semantic and resource diagnostics.</value>
+  </data>
+  <data name="Field_AccentColor" xml:space="preserve">
+    <value>Accent color:</value>
+  </data>
+  <data name="Field_AllowComponentSelection" xml:space="preserve">
+    <value>Allow component selection:</value>
+  </data>
+  <data name="Field_AllowDowngradeForceUpdate" xml:space="preserve">
+    <value>Allow downgrade/force update</value>
+  </data>
+  <data name="Field_AllowNoIcons" xml:space="preserve">
+    <value>Allow no icons</value>
+  </data>
+  <data name="Field_AllowPathChange" xml:space="preserve">
+    <value>Allow path change:</value>
+  </data>
+  <data name="Field_AllowScopeSelection" xml:space="preserve">
+    <value>Allow scope selection</value>
+  </data>
+  <data name="Field_BannerImage" xml:space="preserve">
+    <value>Banner image:</value>
+  </data>
+  <data name="Field_CertificatePassword" xml:space="preserve">
+    <value>Certificate password:</value>
+  </data>
+  <data name="Field_CertificatePfx" xml:space="preserve">
+    <value>Certificate (.pfx):</value>
+  </data>
+  <data name="Field_CompressPayload" xml:space="preserve">
+    <value>Compress payload</value>
+  </data>
+  <data name="Field_CreateSystemRestorePoint" xml:space="preserve">
+    <value>Create system restore point</value>
+  </data>
+  <data name="Field_DefaultInstallPath" xml:space="preserve">
+    <value>Default install path:</value>
+  </data>
+  <data name="Field_LicenseFile" xml:space="preserve">
+    <value>License file:</value>
+  </data>
+  <data name="Field_MSIXIdentity" xml:space="preserve">
+    <value>MSIX identity:</value>
+  </data>
+  <data name="Field_MSIXPublisher" xml:space="preserve">
+    <value>MSIX publisher:</value>
+  </data>
+  <data name="Field_MainExecutable" xml:space="preserve">
+    <value>Main executable:</value>
+  </data>
+  <data name="Field_OutputDirectory" xml:space="preserve">
+    <value>Output directory:</value>
+  </data>
+  <data name="Field_PayloadFolder" xml:space="preserve">
+    <value>Payload folder:</value>
+  </data>
+  <data name="Field_PayloadURL" xml:space="preserve">
+    <value>Payload URL:</value>
+  </data>
+  <data name="Field_Prefer64Bit" xml:space="preserve">
+    <value>Prefer 64-bit</value>
+  </data>
+  <data name="Field_ProductIDAppId" xml:space="preserve">
+    <value>Product ID (AppId):</value>
+  </data>
+  <data name="Field_ProductName" xml:space="preserve">
+    <value>Product name:</value>
+  </data>
+  <data name="Field_PromptUsersBeforeUpdate" xml:space="preserve">
+    <value>Prompt users before update</value>
+  </data>
+  <data name="Field_Publisher" xml:space="preserve">
+    <value>Publisher:</value>
+  </data>
+  <data name="Field_PublisherURL" xml:space="preserve">
+    <value>Publisher URL:</value>
+  </data>
+  <data name="Field_RegisterUninstallEntry" xml:space="preserve">
+    <value>Register uninstall entry</value>
+  </data>
+  <data name="Field_ScriptName" xml:space="preserve">
+    <value>Script name:</value>
+  </data>
+  <data name="Field_SetupFileName" xml:space="preserve">
+    <value>Setup file name:</value>
+  </data>
+  <data name="Field_SetupIconIco" xml:space="preserve">
+    <value>Setup icon (.ico):</value>
+  </data>
+  <data name="Field_ShowDirOnReadyPage" xml:space="preserve">
+    <value>Show dir on ready page</value>
+  </data>
+  <data name="Field_ShowEULAPage" xml:space="preserve">
+    <value>Show EULA page:</value>
+  </data>
+  <data name="Field_SidebarBackground" xml:space="preserve">
+    <value>Sidebar background:</value>
+  </data>
+  <data name="Field_SidebarText" xml:space="preserve">
+    <value>Sidebar text:</value>
+  </data>
+  <data name="Field_SolidCompression" xml:space="preserve">
+    <value>Solid compression</value>
+  </data>
+  <data name="Field_StartMenuFolder" xml:space="preserve">
+    <value>Start menu folder:</value>
+  </data>
+  <data name="Field_SupportEmail" xml:space="preserve">
+    <value>Support email:</value>
+  </data>
+  <data name="Field_SupportURL" xml:space="preserve">
+    <value>Support URL:</value>
+  </data>
+  <data name="Field_TimestampURL" xml:space="preserve">
+    <value>Timestamp URL:</value>
+  </data>
+  <data name="Field_UpdateCheckHours" xml:space="preserve">
+    <value>Update check hours:</value>
+  </data>
+  <data name="Field_UpdateURL" xml:space="preserve">
+    <value>Update URL:</value>
+  </data>
+  <data name="Field_Version" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="Field_WelcomeTitle" xml:space="preserve">
+    <value>Welcome title:</value>
+  </data>
+  <data name="Field_WindowTitle" xml:space="preserve">
+    <value>Window title:</value>
+  </data>
+  <data name="Section_CodeSigning" xml:space="preserve">
+    <value>Code signing</value>
+  </data>
+  <data name="Section_OptionalPackageMetadata" xml:space="preserve">
+    <value>Optional package metadata</value>
+  </data>
 </root>

@@ -235,267 +235,433 @@
   <data name="Update_NoDecision" xml:space="preserve"><value>لا يوجد قرار تحديث.</value></data>
   <data name="Update_Decision" xml:space="preserve"><value>القرار: {0}</value></data>
   <data name="Actions_Arguments" xml:space="preserve">
-    <value>Arguments:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>الوسيطات:</value>
   </data>
   <data name="Actions_CustomActionsA11" xml:space="preserve">
-    <value>Custom Actions (A1.1)</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إجراءات مخصصة (A1.1)</value>
   </data>
   <data name="Actions_FailOnError" xml:space="preserve">
-    <value>Fail on error</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>الفشل عند حدوث خطأ</value>
   </data>
   <data name="Actions_Path" xml:space="preserve">
-    <value>Path:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>المسار:</value>
   </data>
   <data name="Actions_RequiredFailInstall" xml:space="preserve">
-    <value>Required (fail install)</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>مطلوب (إفشال التثبيت)</value>
   </data>
   <data name="Actions_TimeoutMs" xml:space="preserve">
-    <value>Timeout (ms):</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>المهلة (مللي ثانية):</value>
   </data>
   <data name="Actions_Timing" xml:space="preserve">
-    <value>Timing:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>التوقيت:</value>
   </data>
   <data name="Actions_WorkingDir" xml:space="preserve">
-    <value>Working dir:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>مجلد العمل:</value>
   </data>
   <data name="BuildError_Copied" xml:space="preserve">
-    <value>Copied!</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تم النسخ!</value>
   </data>
   <data name="BuildError_CopyToClipboard" xml:space="preserve">
-    <value>Copy to Clipboard</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>نسخ إلى الحافظة</value>
   </data>
   <data name="BuildError_SaveAs" xml:space="preserve">
-    <value>Save As…</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>حفظ باسم…</value>
   </data>
   <data name="BuildError_SelectAll" xml:space="preserve">
-    <value>Select All</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تحديد الكل</value>
   </data>
   <data name="BuildProgress_Cancelling" xml:space="preserve">
-    <value>Cancelling...</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>جارٍ الإلغاء…</value>
   </data>
   <data name="BuildResult_Copied" xml:space="preserve">
-    <value>Copied!</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تم النسخ!</value>
   </data>
   <data name="BuildResult_Copy" xml:space="preserve">
-    <value>Copy</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>نسخ</value>
   </data>
   <data name="BuildResult_CopyFailed" xml:space="preserve">
-    <value>Copy failed</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>فشل النسخ</value>
   </data>
   <data name="BuildResult_OpenFolder" xml:space="preserve">
-    <value>Open Folder</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>فتح المجلد</value>
   </data>
   <data name="BuildResult_RunInstaller" xml:space="preserve">
-    <value>Run Installer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تشغيل المثبّت</value>
   </data>
   <data name="BuildResult_SetupEXE" xml:space="preserve">
-    <value>Setup EXE:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>ملف التثبيت EXE:</value>
   </data>
   <data name="BuildResult_SetupScript" xml:space="preserve">
-    <value>Setup script:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>برنامج التثبيت النصي:</value>
   </data>
   <data name="Common_Add" xml:space="preserve">
-    <value>Add</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إضافة</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إلغاء</value>
   </data>
   <data name="Common_Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إغلاق</value>
   </data>
   <data name="Common_Component" xml:space="preserve">
-    <value>Component:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>المكوّن:</value>
   </data>
   <data name="Common_Create" xml:space="preserve">
-    <value>Create</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إنشاء</value>
   </data>
   <data name="Common_Description" xml:space="preserve">
-    <value>Description:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>الوصف:</value>
   </data>
   <data name="Common_OK" xml:space="preserve">
-    <value>OK</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>موافق</value>
   </data>
   <data name="Common_Order" xml:space="preserve">
-    <value>Order:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>الترتيب:</value>
   </data>
   <data name="Common_Remove" xml:space="preserve">
-    <value>Remove</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إزالة</value>
   </data>
   <data name="Common_Type" xml:space="preserve">
-    <value>Type:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>النوع:</value>
   </data>
   <data name="Common_Value" xml:space="preserve">
-    <value>Value:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>القيمة:</value>
   </data>
   <data name="Conditions_ComponentConditionBuilder" xml:space="preserve">
-    <value>Component Condition Builder</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>مُنشئ شروط المكوّنات</value>
   </data>
   <data name="Conditions_GroupExpression" xml:space="preserve">
-    <value>Group expression:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تعبير المجموعة:</value>
   </data>
   <data name="Conditions_NotesNGroupExpression" xml:space="preserve">
-    <value>Notes:
- • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.
- • Value holds the primary operand (registry path, file path, OS version, command, …).
- • Value2 is the expected value for RegistryValue and CommandReturns comparisons.
- • Operator is one of ==, =, !=, &gt;, &gt;=, &lt;, &lt;= (default '==').</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>ملاحظات:
+ • يحدد تعبير المجموعة طريقة دمج الصفوف: All = كل القواعد، Any = قاعدة واحدة على الأقل، Not = عكس المجموعة.
+ • تحتوي «القيمة» على المعامل الأساسي (مسار السجل، مسار الملف، إصدار النظام، الأمر، …).
+ • «القيمة2» هي القيمة المتوقعة في مقارنات RegistryValue و CommandReturns.
+ • المعامل هو أحد ==، =، !=، &gt;، &gt;=، &lt;، &lt;= (الافتراضي '==').</value>
   </data>
   <data name="Conditions_Operator" xml:space="preserve">
-    <value>Operator:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>المعامل:</value>
   </data>
   <data name="Conditions_Preview" xml:space="preserve">
-    <value>Preview:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>معاينة:</value>
   </data>
   <data name="Conditions_TestAll" xml:space="preserve">
-    <value>Test all</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>اختبار الكل</value>
   </data>
   <data name="Conditions_Value2" xml:space="preserve">
-    <value>Value2:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>القيمة2:</value>
   </data>
   <data name="Files_Destination" xml:space="preserve">
-    <value>Destination:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>الوجهة:</value>
   </data>
   <data name="Files_OverwriteExisting" xml:space="preserve">
-    <value>Overwrite existing</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>استبدال الملفات الموجودة</value>
   </data>
   <data name="Files_RemoveSelected" xml:space="preserve">
-    <value>Remove selected</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>إزالة المحدد</value>
   </data>
   <data name="Files_RequiredFile" xml:space="preserve">
-    <value>Required file</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>ملف مطلوب</value>
   </data>
   <data name="Files_SkipIfNewer" xml:space="preserve">
-    <value>Skip if newer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>التخطي إذا كان الملف أحدث</value>
   </data>
   <data name="Files_SourcePath" xml:space="preserve">
-    <value>Source path:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>مسار المصدر:</value>
   </data>
   <data name="Files_TipDragFilesOr" xml:space="preserve">
-    <value>Tip: drag files or folders from Explorer onto the list above</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تلميح: اسحب الملفات أو المجلدات من مستكشف الملفات إلى القائمة أعلاه.</value>
   </data>
   <data name="LangMgr_Dup" xml:space="preserve">
-    <value>📋 Dup</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📋 تكرار</value>
   </data>
   <data name="LangMgr_Export" xml:space="preserve">
-    <value>📤 Export</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📤 تصدير</value>
   </data>
   <data name="LangMgr_Import" xml:space="preserve">
-    <value>📥 Import</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📥 استيراد</value>
   </data>
   <data name="LangMgr_Key" xml:space="preserve">
-    <value>- Key</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>- المفتاح</value>
   </data>
   <data name="LangMgr_Language" xml:space="preserve">
-    <value>- Language</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>- اللغة</value>
   </data>
   <data name="LangMgr_LanguageManagerBeepInstaller" xml:space="preserve">
-    <value>Language Manager — Beep Installer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>مدير اللغات — Beep Installer</value>
   </data>
   <data name="LangMgr_LivePreviewSelectA" xml:space="preserve">
-    <value>Live Preview (select a key to see all translations):</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>معاينة مباشرة (حدد مفتاحًا لعرض جميع الترجمات):</value>
   </data>
   <data name="LangMgr_Ready" xml:space="preserve">
-    <value>Ready.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>جاهز.</value>
   </data>
   <data name="LangMgr_SaveAll" xml:space="preserve">
-    <value>💾 Save All</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>💾 حفظ الكل</value>
   </data>
   <data name="NewProject_NewInstallerScript" xml:space="preserve">
-    <value>New Installer Script</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>برنامج تثبيت نصي جديد</value>
   </data>
   <data name="NewProject_TheSourceDirectoryContains" xml:space="preserve">
-    <value>The source directory contains the files that will be installed (e.g. your app's bin/Release output).</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>يحتوي مجلد المصدر على الملفات التي سيتم تثبيتها (مثل مخرجات bin/Release لتطبيقك).</value>
   </data>
   <data name="Preview_PreviewModeNoFiles" xml:space="preserve">
-    <value>Preview mode — no files will be installed. Walk through the wizard to verify the end-user experience.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>وضع المعاينة — لن يتم تثبيت أي ملفات. تنقّل عبر المعالج للتحقق من تجربة المستخدم.</value>
   </data>
   <data name="Template_Apply" xml:space="preserve">
-    <value>Apply</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تطبيق</value>
   </data>
   <data name="Template_ApplyTemplateUpdate" xml:space="preserve">
-    <value>Apply Template Update</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تطبيق تحديث القالب</value>
   </data>
   <data name="Template_Current" xml:space="preserve">
-    <value>Current</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>الحالي</value>
   </data>
   <data name="Template_NoTemplatesAreAvailable" xml:space="preserve">
-    <value>No templates are available.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>لا توجد قوالب متاحة.</value>
   </data>
   <data name="Template_Path" xml:space="preserve">
-    <value>Path</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>المسار</value>
   </data>
   <data name="Template_Template" xml:space="preserve">
-    <value>Template:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>القالب:</value>
   </data>
   <data name="Template_TemplatePreviewFailed" xml:space="preserve">
-    <value>Template preview failed: </value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>فشلت معاينة القالب: </value>
   </data>
   <data name="Template_Updated" xml:space="preserve">
-    <value>Updated</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>تم التحديث</value>
+  </data>
+  <data name="Builder_ApplyScript" xml:space="preserve">
+    <value>تطبيق البرنامج النصي</value>
+  </data>
+  <data name="Builder_AuthorSetupScriptsAndBuild" xml:space="preserve">
+    <value>أنشئ برامج التثبيت النصية وابنِ ملف Setup.exe مستقلاً لنظام Windows.</value>
+  </data>
+  <data name="Builder_BeepInstallerPackageBuilder" xml:space="preserve">
+    <value>مُنشئ حزم Beep Installer</value>
+  </data>
+  <data name="Builder_BuildAgain" xml:space="preserve">
+    <value>إنشاء مرة أخرى</value>
+  </data>
+  <data name="Builder_BuildSetupExe" xml:space="preserve">
+    <value>إنشاء Setup.exe</value>
+  </data>
+  <data name="Builder_BuildWorkflow" xml:space="preserve">
+    <value>سير عمل الإنشاء</value>
+  </data>
+  <data name="Builder_Clear" xml:space="preserve">
+    <value>مسح</value>
+  </data>
+  <data name="Builder_Copied" xml:space="preserve">
+    <value>تم النسخ!</value>
+  </data>
+  <data name="Builder_Copy" xml:space="preserve">
+    <value>نسخ</value>
+  </data>
+  <data name="Builder_CopyAll" xml:space="preserve">
+    <value>نسخ الكل</value>
+  </data>
+  <data name="Builder_CopyFailed" xml:space="preserve">
+    <value>فشل النسخ</value>
+  </data>
+  <data name="Builder_DragABsetupFileOnto" xml:space="preserve">
+    <value>اسحب ملف ‎.bsetup‎ إلى هذه النافذة لفتحه.</value>
+  </data>
+  <data name="Builder_Duplicate" xml:space="preserve">
+    <value>تكرار</value>
+  </data>
+  <data name="Builder_EXEPath" xml:space="preserve">
+    <value>مسار ملف EXE:</value>
+  </data>
+  <data name="Builder_EditFiles" xml:space="preserve">
+    <value>تحرير الملفات</value>
+  </data>
+  <data name="Builder_KeepThisGUIDUnchangedFor" xml:space="preserve">
+    <value>أبقِ هذا المعرّف GUID دون تغيير عند التحديث وإعادة التسمية. المعرّف المختلف يدل على منتج مختلف.</value>
+  </data>
+  <data name="Builder_LastBuildResult" xml:space="preserve">
+    <value>نتيجة آخر إنشاء</value>
+  </data>
+  <data name="Builder_NewInstallerScript" xml:space="preserve">
+    <value>برنامج تثبيت نصي جديد</value>
+  </data>
+  <data name="Builder_NoBuildHasBeenRun" xml:space="preserve">
+    <value>لم يتم تنفيذ أي عملية إنشاء بعد.</value>
+  </data>
+  <data name="Builder_OpenExistingScript" xml:space="preserve">
+    <value>فتح برنامج نصي موجود</value>
+  </data>
+  <data name="Builder_OpenFolder" xml:space="preserve">
+    <value>فتح المجلد</value>
+  </data>
+  <data name="Builder_RecentlyOpenedInstallerScripts" xml:space="preserve">
+    <value>برامج التثبيت النصية المفتوحة مؤخرًا</value>
+  </data>
+  <data name="Builder_RefreshFormatReadiness" xml:space="preserve">
+    <value>تحديث جاهزية التنسيقات</value>
+  </data>
+  <data name="Builder_ReleaseReadinessPendingClickRefresh" xml:space="preserve">
+    <value>جاهزية الإصدار: قيد الانتظار. انقر على «تحديث جاهزية التنسيقات» لعرض حالة EXE وMSI وMSIX وWinGet وIntune/ConfigMgr.</value>
+  </data>
+  <data name="Builder_ReloadFromFields" xml:space="preserve">
+    <value>إعادة التحميل من الحقول</value>
+  </data>
+  <data name="Builder_Result" xml:space="preserve">
+    <value>النتيجة</value>
+  </data>
+  <data name="Builder_RunInstaller" xml:space="preserve">
+    <value>تشغيل المثبّت</value>
+  </data>
+  <data name="Builder_SaveAs" xml:space="preserve">
+    <value>حفظ باسم…</value>
+  </data>
+  <data name="Builder_ScanSource" xml:space="preserve">
+    <value>فحص المصدر</value>
+  </data>
+  <data name="Builder_SearchSections" xml:space="preserve">
+    <value>البحث في الأقسام…</value>
+  </data>
+  <data name="Builder_SelectAll" xml:space="preserve">
+    <value>تحديد الكل</value>
+  </data>
+  <data name="Builder_ValidationCenterIsReadyClick" xml:space="preserve">
+    <value>مركز التحقق جاهز. انقر على «التحقق من المشروع» لعرض تشخيصات المخطط والدلالات والموارد مجمّعة.</value>
+  </data>
+  <data name="Field_AccentColor" xml:space="preserve">
+    <value>لون التمييز:</value>
+  </data>
+  <data name="Field_AllowComponentSelection" xml:space="preserve">
+    <value>السماح باختيار المكوّنات:</value>
+  </data>
+  <data name="Field_AllowDowngradeForceUpdate" xml:space="preserve">
+    <value>السماح بالرجوع لإصدار أقدم/التحديث القسري</value>
+  </data>
+  <data name="Field_AllowNoIcons" xml:space="preserve">
+    <value>السماح بعدم إنشاء أيقونات</value>
+  </data>
+  <data name="Field_AllowPathChange" xml:space="preserve">
+    <value>السماح بتغيير المسار:</value>
+  </data>
+  <data name="Field_AllowScopeSelection" xml:space="preserve">
+    <value>السماح باختيار نطاق التثبيت</value>
+  </data>
+  <data name="Field_BannerImage" xml:space="preserve">
+    <value>صورة الشعار:</value>
+  </data>
+  <data name="Field_CertificatePassword" xml:space="preserve">
+    <value>كلمة مرور الشهادة:</value>
+  </data>
+  <data name="Field_CertificatePfx" xml:space="preserve">
+    <value>الشهادة (.pfx):</value>
+  </data>
+  <data name="Field_CompressPayload" xml:space="preserve">
+    <value>ضغط الحمولة</value>
+  </data>
+  <data name="Field_CreateSystemRestorePoint" xml:space="preserve">
+    <value>إنشاء نقطة استعادة للنظام</value>
+  </data>
+  <data name="Field_DefaultInstallPath" xml:space="preserve">
+    <value>مسار التثبيت الافتراضي:</value>
+  </data>
+  <data name="Field_LicenseFile" xml:space="preserve">
+    <value>ملف الترخيص:</value>
+  </data>
+  <data name="Field_MSIXIdentity" xml:space="preserve">
+    <value>هوية MSIX:</value>
+  </data>
+  <data name="Field_MSIXPublisher" xml:space="preserve">
+    <value>ناشر MSIX:</value>
+  </data>
+  <data name="Field_MainExecutable" xml:space="preserve">
+    <value>الملف التنفيذي الرئيسي:</value>
+  </data>
+  <data name="Field_OutputDirectory" xml:space="preserve">
+    <value>مجلد الإخراج:</value>
+  </data>
+  <data name="Field_PayloadFolder" xml:space="preserve">
+    <value>مجلد الحمولة:</value>
+  </data>
+  <data name="Field_PayloadURL" xml:space="preserve">
+    <value>عنوان URL للحمولة:</value>
+  </data>
+  <data name="Field_Prefer64Bit" xml:space="preserve">
+    <value>تفضيل 64 بت</value>
+  </data>
+  <data name="Field_ProductIDAppId" xml:space="preserve">
+    <value>معرّف المنتج (AppId):</value>
+  </data>
+  <data name="Field_ProductName" xml:space="preserve">
+    <value>اسم المنتج:</value>
+  </data>
+  <data name="Field_PromptUsersBeforeUpdate" xml:space="preserve">
+    <value>مطالبة المستخدمين قبل التحديث</value>
+  </data>
+  <data name="Field_Publisher" xml:space="preserve">
+    <value>الناشر:</value>
+  </data>
+  <data name="Field_PublisherURL" xml:space="preserve">
+    <value>عنوان URL للناشر:</value>
+  </data>
+  <data name="Field_RegisterUninstallEntry" xml:space="preserve">
+    <value>تسجيل إدخال إلغاء التثبيت</value>
+  </data>
+  <data name="Field_ScriptName" xml:space="preserve">
+    <value>اسم البرنامج النصي:</value>
+  </data>
+  <data name="Field_SetupFileName" xml:space="preserve">
+    <value>اسم ملف التثبيت:</value>
+  </data>
+  <data name="Field_SetupIconIco" xml:space="preserve">
+    <value>أيقونة التثبيت (.ico):</value>
+  </data>
+  <data name="Field_ShowDirOnReadyPage" xml:space="preserve">
+    <value>إظهار المجلد في صفحة التأكيد</value>
+  </data>
+  <data name="Field_ShowEULAPage" xml:space="preserve">
+    <value>إظهار صفحة اتفاقية الترخيص:</value>
+  </data>
+  <data name="Field_SidebarBackground" xml:space="preserve">
+    <value>خلفية الشريط الجانبي:</value>
+  </data>
+  <data name="Field_SidebarText" xml:space="preserve">
+    <value>نص الشريط الجانبي:</value>
+  </data>
+  <data name="Field_SolidCompression" xml:space="preserve">
+    <value>ضغط صلب</value>
+  </data>
+  <data name="Field_StartMenuFolder" xml:space="preserve">
+    <value>مجلد قائمة ابدأ:</value>
+  </data>
+  <data name="Field_SupportEmail" xml:space="preserve">
+    <value>بريد الدعم:</value>
+  </data>
+  <data name="Field_SupportURL" xml:space="preserve">
+    <value>عنوان URL للدعم:</value>
+  </data>
+  <data name="Field_TimestampURL" xml:space="preserve">
+    <value>عنوان URL للطابع الزمني:</value>
+  </data>
+  <data name="Field_UpdateCheckHours" xml:space="preserve">
+    <value>فترة التحقق من التحديثات (بالساعات):</value>
+  </data>
+  <data name="Field_UpdateURL" xml:space="preserve">
+    <value>عنوان URL للتحديث:</value>
+  </data>
+  <data name="Field_Version" xml:space="preserve">
+    <value>الإصدار:</value>
+  </data>
+  <data name="Field_WelcomeTitle" xml:space="preserve">
+    <value>عنوان الترحيب:</value>
+  </data>
+  <data name="Field_WindowTitle" xml:space="preserve">
+    <value>عنوان النافذة:</value>
+  </data>
+  <data name="Section_CodeSigning" xml:space="preserve">
+    <value>توقيع التعليمات البرمجية</value>
+  </data>
+  <data name="Section_OptionalPackageMetadata" xml:space="preserve">
+    <value>بيانات وصفية اختيارية للحزمة</value>
   </data>
 </root>

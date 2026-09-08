@@ -100,6 +100,24 @@ public class PackageBuilderForm : Form
     private BindingSource _registryBinding = null!;
     private CheckedListBox _wizardPagesList = null!;
     private bool _loadingWizardPages;
+
+    /// <summary>
+    /// Per-field authoring errors, shown beside the offending box (6.C.2).
+    ///
+    /// Until now the only way to discover that a project was invalid was to build it and read a
+    /// list of messages naming properties -- so the author fixed things in a dialog they had to
+    /// leave to find out. The diagnostics already carry a path like <c>Setup.AppVersion</c> and the
+    /// bound text boxes are already named after the property they edit, so the two can simply be
+    /// matched up.
+    /// </summary>
+    private readonly ErrorProvider _fieldErrors = new() { BlinkStyle = ErrorBlinkStyle.NeverBlink };
+
+    /// <summary>
+    /// Coalesces validation while the user is typing. Every keystroke raises PropertyChanged, and
+    /// the schema validator walks the whole project; revalidating per character would be wasted
+    /// work and would flag a field as invalid halfway through being filled in.
+    /// </summary>
+    private System.Windows.Forms.Timer? _inlineValidationTimer;
     private TextBox _scriptPreviewBox = null!;
     private TextBox _keyboardWalkthroughBox = null!;
     private TextBox _validationCenterBox = null!;
@@ -170,6 +188,90 @@ public class PackageBuilderForm : Form
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(InstallProject.SourceDirectory)) RefreshFileTree();
+        ScheduleInlineValidation();
+    }
+
+    /// <summary>Restarts the debounce; validation runs once the user pauses.</summary>
+    private void ScheduleInlineValidation()
+    {
+        if (IsDisposed || Disposing) return;
+
+        _inlineValidationTimer ??= CreateInlineValidationTimer();
+        _inlineValidationTimer.Stop();
+        _inlineValidationTimer.Start();
+    }
+
+    private System.Windows.Forms.Timer CreateInlineValidationTimer()
+    {
+        var timer = new System.Windows.Forms.Timer { Interval = 400 };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            ValidateFieldsInline();
+        };
+        // No designer container on this form, so the timer is disposed with the form explicitly.
+        Disposed += (_, _) => timer.Dispose();
+        return timer;
+    }
+
+    /// <summary>
+    /// Marks the bound fields the schema validator objects to.
+    ///
+    /// Deliberately the same validator the build runs, so the builder cannot tell the author a
+    /// project is fine and then have `/BUILD` reject it -- which is exactly the split that let a
+    /// project fail `/VALIDATE` and build anyway (3.C.1). Warnings are shown too, with their
+    /// severity in the text, because an ErrorProvider icon alone does not distinguish them.
+    /// </summary>
+    private void ValidateFieldsInline()
+    {
+        if (IsDisposed || Disposing || _activeContent is null || _activeContent.IsDisposed) return;
+
+        var byName = new Dictionary<string, Control>(StringComparer.Ordinal);
+        CollectNamedFields(_activeContent, byName);
+        if (byName.Count == 0) return;
+
+        foreach (var control in byName.Values)
+            _fieldErrors.SetError(control, "");
+
+        ProjectSchemaValidationResult validation;
+        try
+        {
+            validation = ProjectSchemaService.Validate(_project);
+        }
+        catch
+        {
+            // Inline feedback is a convenience; a validator fault must not take the builder down.
+            return;
+        }
+
+        var messages = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var diagnostic in validation.Diagnostics)
+        {
+            if (string.IsNullOrWhiteSpace(diagnostic.Path)) continue;
+
+            // "Setup.AppVersion" -> "AppVersion", which is what the bound control is named.
+            var property = diagnostic.Path[(diagnostic.Path.LastIndexOf('.') + 1)..];
+            if (!byName.ContainsKey(property)) continue;
+
+            var prefix = diagnostic.Severity == ProjectSchemaDiagnosticSeverity.Error ? "" : "Warning: ";
+            if (!messages.TryGetValue(property, out var list))
+                messages[property] = list = new List<string>();
+            list.Add(prefix + diagnostic.Message);
+        }
+
+        foreach (var (property, list) in messages)
+            _fieldErrors.SetError(byName[property], string.Join(Environment.NewLine, list));
+    }
+
+    /// <summary>Bound editors, which are named after the property they edit.</summary>
+    private static void CollectNamedFields(Control root, Dictionary<string, Control> into)
+    {
+        foreach (Control child in root.Controls)
+        {
+            if (!string.IsNullOrEmpty(child.Name) && child is TextBox or ComboBox or NumericUpDown)
+                into[child.Name] = child;
+            CollectNamedFields(child, into);
+        }
     }
 
     private void OnBuildProgress(object? sender, BuildPipeline.BuildProgress p)
@@ -182,7 +284,7 @@ public class PackageBuilderForm : Form
 
     private void InitializeUi()
     {
-        Text = "Beep Installer — Package Builder";
+        Text = L("Builder_BeepInstallerPackageBuilder", "Beep Installer — Package Builder");
         Size = new Size(1180, 760);
         MinimumSize = new Size(980, 640);
         StartPosition = FormStartPosition.CenterScreen;
@@ -192,7 +294,7 @@ public class PackageBuilderForm : Form
         Font = UiFont;
         BackColor = ShellBackColor;
 
-        _recentsBtn = new ToolStripDropDownButton(L("Builder_Recent", "Recent")) { ToolTipText = "Recently opened installer scripts" };
+        _recentsBtn = new ToolStripDropDownButton(L("Builder_Recent", "Recent")) { ToolTipText = L("Builder_RecentlyOpenedInstallerScripts", "Recently opened installer scripts") };
         _toolbar = new ToolStrip
         {
             ImageScalingSize = new Size(16, 16),
@@ -215,7 +317,7 @@ public class PackageBuilderForm : Form
         _navSearchBox = new TextBox
         {
             Dock = DockStyle.Top,
-            PlaceholderText = "Search sections…",
+            PlaceholderText = L("Builder_SearchSections", "Search sections…"),
             Margin = new Padding(8),
             AccessibleName = "Search authoring sections"
         };
@@ -379,6 +481,9 @@ public class PackageBuilderForm : Form
         }
         if (id == "script") RefreshScriptPreview();
         if (id == "build") PopulateWorkflowResult();
+
+        // Mark what is already wrong on arrival, rather than only after the next edit.
+        ValidateFieldsInline();
     }
 
     private Panel? GetOrCreate(ref Panel? field, Func<Panel> builder)
@@ -425,27 +530,27 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddBoundRow(layout, "Script name:",        proj, nameof(InstallProject.ProjectName));
-        AddBoundRow(layout, "Product name:",       proj, nameof(InstallProject.AppName));
-        AddBoundRow(layout, "Product ID (AppId):",  proj, nameof(InstallProject.AppId));
+        AddBoundRow(layout, L("Field_ScriptName", "Script name:"),        proj, nameof(InstallProject.ProjectName));
+        AddBoundRow(layout, L("Field_ProductName", "Product name:"),       proj, nameof(InstallProject.AppName));
+        AddBoundRow(layout, L("Field_ProductIDAppId", "Product ID (AppId):"),  proj, nameof(InstallProject.AppId));
         var identityHelp = new Label
         {
             AutoSize = true,
-            Text = "Keep this GUID unchanged for updates and renames. A different GUID identifies a different product.",
+            Text = L("Builder_KeepThisGUIDUnchangedFor", "Keep this GUID unchanged for updates and renames. A different GUID identifies a different product."),
             AccessibleName = "Product ID guidance",
             Margin = new Padding(3, 0, 3, 8)
         };
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.Controls.Add(identityHelp, 1, layout.RowCount++);
-        AddBoundRow(layout, "Version:",            proj, nameof(InstallProject.AppVersion));
-        AddBoundRow(layout, "Publisher:",          proj, nameof(InstallProject.AppPublisher));
-        AddBoundRow(layout, "Publisher URL:",      proj, nameof(InstallProject.AppPublisherURL));
-        AddBoundRow(layout, "Support URL:",        proj, nameof(InstallProject.AppSupportURL));
-        AddBoundRow(layout, "Support email:",      proj, nameof(InstallProject.AppSupportEmail));
-        AddBoundRow(layout, "Update URL:",         proj, nameof(InstallProject.AppUpdatesURL));
+        AddBoundRow(layout, L("Field_Version", "Version:"),            proj, nameof(InstallProject.AppVersion));
+        AddBoundRow(layout, L("Field_Publisher", "Publisher:"),          proj, nameof(InstallProject.AppPublisher));
+        AddBoundRow(layout, L("Field_PublisherURL", "Publisher URL:"),      proj, nameof(InstallProject.AppPublisherURL));
+        AddBoundRow(layout, L("Field_SupportURL", "Support URL:"),        proj, nameof(InstallProject.AppSupportURL));
+        AddBoundRow(layout, L("Field_SupportEmail", "Support email:"),      proj, nameof(InstallProject.AppSupportEmail));
+        AddBoundRow(layout, L("Field_UpdateURL", "Update URL:"),         proj, nameof(InstallProject.AppUpdatesURL));
         AddEnumRow<UpdateMode>(layout, "Update mode:",  proj, nameof(InstallProject.AppUpdateMode));
-        AddFileRow(layout, "Setup icon (.ico):",  proj, nameof(InstallProject.SetupIconFile), "*.ico");
-        AddFileRow(layout, "Banner image:",       proj, nameof(InstallProject.WizardImageFile), "*.png;*.jpg;*.bmp");
+        AddFileRow(layout, L("Field_SetupIconIco", "Setup icon (.ico):"),  proj, nameof(InstallProject.SetupIconFile), "*.ico");
+        AddFileRow(layout, L("Field_BannerImage", "Banner image:"),       proj, nameof(InstallProject.WizardImageFile), "*.png;*.jpg;*.bmp");
         p.Controls.Add(layout);
         return p;
     }
@@ -455,15 +560,15 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddFolderRow(layout, "Default install path:", proj, nameof(InstallProject.DefaultDirName));
-        AddBoundRow(layout, "Start menu folder:",    proj, nameof(InstallProject.DefaultGroupName));
+        AddFolderRow(layout, L("Field_DefaultInstallPath", "Default install path:"), proj, nameof(InstallProject.DefaultDirName));
+        AddBoundRow(layout, L("Field_StartMenuFolder", "Start menu folder:"),    proj, nameof(InstallProject.DefaultGroupName));
         AddEnumRow<InstallationType>(layout, "Install type:", proj, nameof(InstallProject.DefaultInstallType));
         AddEnumRow<PrivilegeLevel>(layout, "Privileges:", proj, nameof(InstallProject.PrivilegesRequired));
         AddEnumRow<InstallationScope>(layout, "Scope:", proj, nameof(InstallProject.DefaultScope));
-        AddCheckRow(layout, "Allow scope selection",  proj, nameof(InstallProject.AllowScopeSelection));
-        AddCheckRow(layout, "Prefer 64-bit",          proj, nameof(InstallProject.Prefer64Bit));
-        AddCheckRow(layout, "Allow no icons",         proj, nameof(InstallProject.AllowNoIcons));
-        AddCheckRow(layout, "Show dir on ready page", proj, nameof(InstallProject.AlwaysShowDirOnReadyPage));
+        AddCheckRow(layout, L("Field_AllowScopeSelection", "Allow scope selection"),  proj, nameof(InstallProject.AllowScopeSelection));
+        AddCheckRow(layout, L("Field_Prefer64Bit", "Prefer 64-bit"),          proj, nameof(InstallProject.Prefer64Bit));
+        AddCheckRow(layout, L("Field_AllowNoIcons", "Allow no icons"),         proj, nameof(InstallProject.AllowNoIcons));
+        AddCheckRow(layout, L("Field_ShowDirOnReadyPage", "Show dir on ready page"), proj, nameof(InstallProject.AlwaysShowDirOnReadyPage));
         p.Controls.Add(layout);
         return p;
     }
@@ -473,8 +578,8 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddFileRow(layout, "License file:", proj, nameof(InstallProject.LicenseFile), "*.rtf;*.txt;*.md");
-        AddCheckRow(layout, "Show EULA page:", proj, nameof(InstallProject.ShowEula));
+        AddFileRow(layout, L("Field_LicenseFile", "License file:"), proj, nameof(InstallProject.LicenseFile), "*.rtf;*.txt;*.md");
+        AddCheckRow(layout, L("Field_ShowEULAPage", "Show EULA page:"), proj, nameof(InstallProject.ShowEula));
         p.Controls.Add(layout);
 
         _licenseTextBox = new TextBox { Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 9) };
@@ -758,9 +863,12 @@ public class PackageBuilderForm : Form
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32, FlowDirection = FlowDirection.LeftToRight };
         var addBtn = new Button { Text = L("Btn_Add", "Add"), Width = 50 };
-        var editBtn = new Button { Text = "Edit Files", Width = 70 };
+        var editBtn = new Button { Text = L("Builder_EditFiles", "Edit Files"), Width = 70 };
         var removeBtn = new Button { Text = L("Btn_Remove", "Remove"), Width = 65 };
-        var scanBtn = new Button { Text = "Scan Source", Width = 90 };
+        var scanBtn = new Button { Text = L("Builder_ScanSource", "Scan Source"), Width = 90 };
+        // Glyphs, not prose: these stay literal. Routing them through the resource manager wrote
+        // the escape sequence itself into the .resx, so the buttons would have rendered the text
+        // "\u25B2" rather than an arrow.
         var upBtn = new Button { Text = "\u25B2", Width = 30 };
         var downBtn = new Button { Text = "\u25BC", Width = 30 };
         addBtn.Click += (_, _) => AddComponent();
@@ -1079,7 +1187,7 @@ public class PackageBuilderForm : Form
 
         var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 36, FlowDirection = FlowDirection.LeftToRight };
         var addBtn = new Button { Text = L("Btn_Add", "Add"), AutoSize = true };
-        var duplicateBtn = new Button { Text = "Duplicate", AutoSize = true };
+        var duplicateBtn = new Button { Text = L("Builder_Duplicate", "Duplicate"), AutoSize = true };
         var removeBtn = new Button { Text = L("Btn_Remove", "Remove"), AutoSize = true };
         addBtn.Click += (_, _) =>
         {
@@ -1168,14 +1276,14 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddBoundRow(layout, "Window title:",        proj, nameof(InstallProject.WindowTitle));
-        AddBoundRow(layout, "Welcome title:",       proj, nameof(InstallProject.WelcomeTitle));
+        AddBoundRow(layout, L("Field_WindowTitle", "Window title:"),        proj, nameof(InstallProject.WindowTitle));
+        AddBoundRow(layout, L("Field_WelcomeTitle", "Welcome title:"),       proj, nameof(InstallProject.WelcomeTitle));
         AddEnumRow<WizardTheme>(layout, "Theme:", proj, nameof(InstallProject.DefaultTheme));
-        AddBoundRow(layout, "Sidebar background:",  proj, nameof(InstallProject.SidebarBackgroundColor));
-        AddBoundRow(layout, "Sidebar text:",        proj, nameof(InstallProject.SidebarTextColor));
-        AddBoundRow(layout, "Accent color:",        proj, nameof(InstallProject.AccentColor));
-        AddCheckRow(layout, "Allow component selection:", proj, nameof(InstallProject.AllowComponentSelection));
-        AddCheckRow(layout, "Allow path change:",        proj, nameof(InstallProject.AllowPathChange));
+        AddBoundRow(layout, L("Field_SidebarBackground", "Sidebar background:"),  proj, nameof(InstallProject.SidebarBackgroundColor));
+        AddBoundRow(layout, L("Field_SidebarText", "Sidebar text:"),        proj, nameof(InstallProject.SidebarTextColor));
+        AddBoundRow(layout, L("Field_AccentColor", "Accent color:"),        proj, nameof(InstallProject.AccentColor));
+        AddCheckRow(layout, L("Field_AllowComponentSelection", "Allow component selection:"), proj, nameof(InstallProject.AllowComponentSelection));
+        AddCheckRow(layout, L("Field_AllowPathChange", "Allow path change:"),        proj, nameof(InstallProject.AllowPathChange));
         p.Controls.Add(layout);
         return p;
     }
@@ -1282,8 +1390,8 @@ public class PackageBuilderForm : Form
             BackColor = PanelBackColor,
             Padding = new Padding(0, 0, 0, 8),
         };
-        var applyBtn = new Button { Text = "Apply Script", Width = 110, Height = 30 };
-        var reloadBtn = new Button { Text = "Reload From Fields", Width = 140, Height = 30 };
+        var applyBtn = new Button { Text = L("Builder_ApplyScript", "Apply Script"), Width = 110, Height = 30 };
+        var reloadBtn = new Button { Text = L("Builder_ReloadFromFields", "Reload From Fields"), Width = 140, Height = 30 };
         var status = new Label
         {
             Name = "ScriptEditorStatus",
@@ -1349,13 +1457,13 @@ public class PackageBuilderForm : Form
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         header.Controls.Add(new Label
         {
-            Text = "Build Workflow",
+            Text = L("Builder_BuildWorkflow", "Build Workflow"),
             AutoSize = true,
             Font = SectionTitleFont,
             ForeColor = TextColor,
             Margin = new Padding(0, 0, 0, 4),
         }, 0, 0);
-        var buildNow = new Button { Text = "Build Setup.exe", AutoSize = true, Height = 34, Padding = new Padding(14, 0, 14, 0), Margin = new Padding(12, 0, 0, 0) };
+        var buildNow = new Button { Text = L("Builder_BuildSetupExe", "Build Setup.exe"), AutoSize = true, Height = 34, Padding = new Padding(14, 0, 14, 0), Margin = new Padding(12, 0, 0, 0) };
         StylePrimaryButton(buildNow);
         buildNow.Click += (_, _) => BuildInstaller();
         header.Controls.Add(buildNow, 1, 0);
@@ -1373,12 +1481,12 @@ public class PackageBuilderForm : Form
 
         var validationGroup = BuildWorkflowTextGroup("Validation Center", 190, out _validationCenterBox);
         _validationCenterBox.ReadOnly = true;
-        _validationCenterBox.Text = "Validation Center is ready. Click Validate Project to see grouped schema, semantic and resource diagnostics.";
+        _validationCenterBox.Text = L("Builder_ValidationCenterIsReadyClick", "Validation Center is ready. Click Validate Project to see grouped schema, semantic and resource diagnostics.");
         layout.Controls.Add(validationGroup, 0, layout.RowCount++);
 
         var capabilityGroup = BuildWorkflowTextGroup("Format Readiness", 190, out _formatCapabilityBox);
         _formatCapabilityBox.ReadOnly = true;
-        _formatCapabilityBox.Text = "Release readiness: pending. Click Refresh Format Readiness to see EXE, MSI, MSIX, WinGet and Intune/ConfigMgr capability status.";
+        _formatCapabilityBox.Text = L("Builder_ReleaseReadinessPendingClickRefresh", "Release readiness: pending. Click Refresh Format Readiness to see EXE, MSI, MSIX, WinGet and Intune/ConfigMgr capability status.");
         var capabilityActions = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -1386,7 +1494,7 @@ public class PackageBuilderForm : Form
             FlowDirection = FlowDirection.RightToLeft,
             Padding = new Padding(0, 0, 0, 6)
         };
-        var refreshCapability = new Button { Name = "RefreshFormatReadinessButton", Text = "Refresh Format Readiness", AutoSize = true, Height = 28, Padding = new Padding(12, 0, 12, 0) };
+        var refreshCapability = new Button { Name = "RefreshFormatReadinessButton", Text = L("Builder_RefreshFormatReadiness", "Refresh Format Readiness"), AutoSize = true, Height = 28, Padding = new Padding(12, 0, 12, 0) };
         refreshCapability.Click += (_, _) => RefreshFormatCapabilityReport();
         capabilityActions.Controls.Add(refreshCapability);
         capabilityGroup.Controls.Add(capabilityActions);
@@ -1453,7 +1561,7 @@ public class PackageBuilderForm : Form
     {
         var group = new GroupBox
         {
-            Text = "Result",
+            Text = L("Builder_Result", "Result"),
             Dock = DockStyle.Top,
             Height = 150,
             Font = UiFontBold,
@@ -1468,9 +1576,9 @@ public class PackageBuilderForm : Form
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var status = new Label { Name = "WorkflowResultStatus", Dock = DockStyle.Fill, Text = "No build has been run yet.", Font = UiFontBold, ForeColor = MutedTextColor, TextAlign = ContentAlignment.MiddleLeft };
+        var status = new Label { Name = "WorkflowResultStatus", Dock = DockStyle.Fill, Text = L("Builder_NoBuildHasBeenRun", "No build has been run yet."), Font = UiFontBold, ForeColor = MutedTextColor, TextAlign = ContentAlignment.MiddleLeft };
         var path = new TextBox { Name = "WorkflowResultPath", Dock = DockStyle.Fill, ReadOnly = true, BackColor = Color.FromArgb(248, 250, 252), Font = new Font("Consolas", 9) };
-        var copy = new Button { Name = "WorkflowCopyPathBtn", Text = "Copy", Width = 70, Enabled = false };
+        var copy = new Button { Name = "WorkflowCopyPathBtn", Text = L("Builder_Copy", "Copy"), Width = 70, Enabled = false };
         copy.Click += (_, _) => { if (!string.IsNullOrWhiteSpace(path.Text)) Clipboard.SetText(path.Text); };
         var details = new Label { Name = "WorkflowResultDetails", Dock = DockStyle.Fill, ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopLeft };
 
@@ -1489,12 +1597,12 @@ public class PackageBuilderForm : Form
         var p = NewSectionPanel();
         var layout = NewTwoColTable();
         var proj = _project;
-        AddFolderRow(layout, "Output directory:",      proj, nameof(InstallProject.OutputDir));
-        AddBoundRow(layout, "Setup file name:",       proj, nameof(InstallProject.OutputBaseFilename));
-        AddBoundRow(layout, "Main executable:",       proj, nameof(InstallProject.MainExecutable));
+        AddFolderRow(layout, L("Field_OutputDirectory", "Output directory:"),      proj, nameof(InstallProject.OutputDir));
+        AddBoundRow(layout, L("Field_SetupFileName", "Setup file name:"),       proj, nameof(InstallProject.OutputBaseFilename));
+        AddBoundRow(layout, L("Field_MainExecutable", "Main executable:"),       proj, nameof(InstallProject.MainExecutable));
         AddEnumRow<Architecture>(layout, "Target architecture:", proj, nameof(InstallProject.ArchitecturesAllowed));
-        AddCheckRow(layout, "Register uninstall entry", proj, nameof(InstallProject.CreateUninstallEntry));
-        AddCheckRow(layout, "Create system restore point", proj, nameof(InstallProject.CreateRestorePoint));
+        AddCheckRow(layout, L("Field_RegisterUninstallEntry", "Register uninstall entry"), proj, nameof(InstallProject.CreateUninstallEntry));
+        AddCheckRow(layout, L("Field_CreateSystemRestorePoint", "Create system restore point"), proj, nameof(InstallProject.CreateRestorePoint));
         p.Controls.Add(layout);
         return p;
     }
@@ -1504,13 +1612,13 @@ public class PackageBuilderForm : Form
         var p = NewSectionPanel();
         var layout = NewTwoColTable();
         var proj = _project;
-        AddBoundRow(layout, "Payload folder:",       proj, nameof(InstallProject.PayloadFolderName));
+        AddBoundRow(layout, L("Field_PayloadFolder", "Payload folder:"),       proj, nameof(InstallProject.PayloadFolderName));
         AddEnumRow<PayloadSourceType>(layout, "Payload source:", proj, nameof(InstallProject.PayloadSource));
-        AddBoundRow(layout, "Payload URL:",          proj, nameof(InstallProject.PayloadUrl));
-        AddCheckRow(layout, "Compress payload",       proj, nameof(InstallProject.CompressPayload));
+        AddBoundRow(layout, L("Field_PayloadURL", "Payload URL:"),          proj, nameof(InstallProject.PayloadUrl));
+        AddCheckRow(layout, L("Field_CompressPayload", "Compress payload"),       proj, nameof(InstallProject.CompressPayload));
         AddEnumRow<CompressionFormat>(layout, "Compression format:", proj, nameof(InstallProject.Compression));
         AddEnumRow<CompressionStrength>(layout, "Compression strength:", proj, nameof(InstallProject.CompressionLevel));
-        AddCheckRow(layout, "Solid compression",      proj, nameof(InstallProject.SolidCompression));
+        AddCheckRow(layout, L("Field_SolidCompression", "Solid compression"),      proj, nameof(InstallProject.SolidCompression));
         p.Controls.Add(layout);
         return p;
     }
@@ -1520,14 +1628,14 @@ public class PackageBuilderForm : Form
         var p = NewSectionPanel();
         var layout = NewTwoColTable();
         var proj = _project;
-        AddSectionRow(layout, "Code signing");
-        AddFileRow(layout, "Certificate (.pfx):", proj, nameof(InstallProject.CodeSignCertificatePath), "*.pfx");
-        AddBoundRow(layout, "Certificate password:", proj, nameof(InstallProject.CodeSignCertificatePassword));
-        AddBoundRow(layout, "Timestamp URL:", proj, nameof(InstallProject.CodeSignTimestampUrl));
-        AddSectionRow(layout, "Optional package metadata");
+        AddSectionRow(layout, L("Section_CodeSigning", "Code signing"));
+        AddFileRow(layout, L("Field_CertificatePfx", "Certificate (.pfx):"), proj, nameof(InstallProject.CodeSignCertificatePath), "*.pfx");
+        AddBoundRow(layout, L("Field_CertificatePassword", "Certificate password:"), proj, nameof(InstallProject.CodeSignCertificatePassword));
+        AddBoundRow(layout, L("Field_TimestampURL", "Timestamp URL:"), proj, nameof(InstallProject.CodeSignTimestampUrl));
+        AddSectionRow(layout, L("Section_OptionalPackageMetadata", "Optional package metadata"));
         AddEnumRow<InstallerOutputFormat>(layout, "Output format:", proj, nameof(InstallProject.OutputFormat));
-        AddBoundRow(layout, "MSIX identity:", proj, nameof(InstallProject.MsixIdentity));
-        AddBoundRow(layout, "MSIX publisher:", proj, nameof(InstallProject.MsixPublisher));
+        AddBoundRow(layout, L("Field_MSIXIdentity", "MSIX identity:"), proj, nameof(InstallProject.MsixIdentity));
+        AddBoundRow(layout, L("Field_MSIXPublisher", "MSIX publisher:"), proj, nameof(InstallProject.MsixPublisher));
         p.Controls.Add(layout);
         return p;
     }
@@ -1537,9 +1645,9 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddCheckRow(layout, "Compress payload",       proj, nameof(InstallProject.CompressPayload));
+        AddCheckRow(layout, L("Field_CompressPayload", "Compress payload"),       proj, nameof(InstallProject.CompressPayload));
         AddEnumRow<CompressionFormat>(layout, "Compression format:", proj, nameof(InstallProject.Compression));
-        AddCheckRow(layout, "Solid compression",      proj, nameof(InstallProject.SolidCompression));
+        AddCheckRow(layout, L("Field_SolidCompression", "Solid compression"),      proj, nameof(InstallProject.SolidCompression));
         AddEnumRow<CompressionStrength>(layout, "Compression strength:", proj, nameof(InstallProject.CompressionLevel));
         p.Controls.Add(layout);
         return p;
@@ -1550,9 +1658,9 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddFileRow(layout, "Certificate (.pfx):",    proj, nameof(InstallProject.CodeSignCertificatePath), "*.pfx");
-        AddBoundRow(layout, "Certificate password:",   proj, nameof(InstallProject.CodeSignCertificatePassword));
-        AddBoundRow(layout, "Timestamp URL:",          proj, nameof(InstallProject.CodeSignTimestampUrl));
+        AddFileRow(layout, L("Field_CertificatePfx", "Certificate (.pfx):"),    proj, nameof(InstallProject.CodeSignCertificatePath), "*.pfx");
+        AddBoundRow(layout, L("Field_CertificatePassword", "Certificate password:"),   proj, nameof(InstallProject.CodeSignCertificatePassword));
+        AddBoundRow(layout, L("Field_TimestampURL", "Timestamp URL:"),          proj, nameof(InstallProject.CodeSignTimestampUrl));
         p.Controls.Add(layout);
         return p;
     }
@@ -1562,13 +1670,13 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var layout = NewTwoColTable();
         var proj = _project;
-        AddBoundRow(layout, "MSIX identity:",    proj, nameof(InstallProject.MsixIdentity));
-        AddBoundRow(layout, "MSIX publisher:",   proj, nameof(InstallProject.MsixPublisher));
-        AddBoundRow(layout, "Update URL:",       proj, nameof(InstallProject.AppUpdatesURL));
+        AddBoundRow(layout, L("Field_MSIXIdentity", "MSIX identity:"),    proj, nameof(InstallProject.MsixIdentity));
+        AddBoundRow(layout, L("Field_MSIXPublisher", "MSIX publisher:"),   proj, nameof(InstallProject.MsixPublisher));
+        AddBoundRow(layout, L("Field_UpdateURL", "Update URL:"),       proj, nameof(InstallProject.AppUpdatesURL));
         AddEnumRow<UpdateMode>(layout, "Update mode:", proj, nameof(InstallProject.AppUpdateMode));
-        AddBoundRow(layout, "Update check hours:", proj, nameof(InstallProject.AppInstallerHoursBetweenUpdateChecks));
-        AddCheckRow(layout, "Prompt users before update", proj, nameof(InstallProject.AppInstallerShowPrompt));
-        AddCheckRow(layout, "Allow downgrade/force update", proj, nameof(InstallProject.AppInstallerForceUpdateFromAnyVersion));
+        AddBoundRow(layout, L("Field_UpdateCheckHours", "Update check hours:"), proj, nameof(InstallProject.AppInstallerHoursBetweenUpdateChecks));
+        AddCheckRow(layout, L("Field_PromptUsersBeforeUpdate", "Prompt users before update"), proj, nameof(InstallProject.AppInstallerShowPrompt));
+        AddCheckRow(layout, L("Field_AllowDowngradeForceUpdate", "Allow downgrade/force update"), proj, nameof(InstallProject.AppInstallerForceUpdateFromAnyVersion));
         p.Controls.Add(layout);
         return p;
     }
@@ -1583,9 +1691,9 @@ public class PackageBuilderForm : Form
             Height = 36,
             FlowDirection = FlowDirection.RightToLeft,
         };
-        var clearBtn = new Button { Text = "Clear", Width = 70, Height = 28 };
+        var clearBtn = new Button { Text = L("Builder_Clear", "Clear"), Width = 70, Height = 28 };
         clearBtn.Click += (_, _) => _buildLogBox?.Clear();
-        var saveBtn = new Button { Text = "Save As…", Width = 90, Height = 28 };
+        var saveBtn = new Button { Text = L("Builder_SaveAs", "Save As…"), Width = 90, Height = 28 };
         saveBtn.Click += (_, _) =>
         {
             if (_buildLogBox == null) return;
@@ -1594,14 +1702,14 @@ public class PackageBuilderForm : Form
             try { File.WriteAllText(dlg.FileName, _buildLogBox.Text); }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
-        var copyBtn = new Button { Text = "Copy All", Width = 90, Height = 28 };
+        var copyBtn = new Button { Text = L("Builder_CopyAll", "Copy All"), Width = 90, Height = 28 };
         copyBtn.Click += (_, _) =>
         {
             if (_buildLogBox == null) return;
-            try { Clipboard.SetText(_buildLogBox.Text); copyBtn.Text = "Copied!"; }
+            try { Clipboard.SetText(_buildLogBox.Text); copyBtn.Text = L("Builder_Copied", "Copied!"); }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Copy failed", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
-        var selectAllBtn = new Button { Text = "Select All", Width = 90, Height = 28 };
+        var selectAllBtn = new Button { Text = L("Builder_SelectAll", "Select All"), Width = 90, Height = 28 };
         selectAllBtn.Click += (_, _) => { _buildLogBox?.Focus(); _buildLogBox?.SelectAll(); };
         topBar.Controls.AddRange(new Control[] { clearBtn, saveBtn, copyBtn, selectAllBtn });
 
@@ -1628,7 +1736,7 @@ public class PackageBuilderForm : Form
         var p = new Panel { Dock = DockStyle.Fill, Padding = new Padding(16), AutoScroll = true, BackColor = Color.White };
         var titleLabel = new Label
         {
-            Text = "Last Build Result",
+            Text = L("Builder_LastBuildResult", "Last Build Result"),
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             Location = new Point(0, 0),
             AutoSize = true,
@@ -1636,7 +1744,7 @@ public class PackageBuilderForm : Form
         var statusBanner = new Label
         {
             Name = "StatusBanner",
-            Text = "No build has been run yet. Click Build to produce the Setup.exe.",
+            Text = L("Builder_NoBuildHasBeenRun", "No build has been run yet. Click Build to produce the Setup.exe."),
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             Location = new Point(0, 32),
             AutoSize = true,
@@ -1655,19 +1763,19 @@ public class PackageBuilderForm : Form
         pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        var pathLbl = new Label { Text = "EXE path:", Font = new Font("Segoe UI", 9, FontStyle.Bold), AutoSize = true, TextAlign = ContentAlignment.MiddleLeft };
+        var pathLbl = new Label { Text = L("Builder_EXEPath", "EXE path:"), Font = new Font("Segoe UI", 9, FontStyle.Bold), AutoSize = true, TextAlign = ContentAlignment.MiddleLeft };
         var pathBox = new TextBox { Name = "PathBox", Width = 400, ReadOnly = true, BackColor = Color.WhiteSmoke, Font = new Font("Consolas", 9) };
-        var copyBtn = new Button { Text = "Copy", Width = 70, Height = 26 };
+        var copyBtn = new Button { Text = L("Builder_Copy", "Copy"), Width = 70, Height = 26 };
         copyBtn.Name = "CopyPathBtn";
         copyBtn.Click += (_, _) =>
         {
             if (!string.IsNullOrEmpty(pathBox.Text))
             {
-                try { Clipboard.SetText(pathBox.Text); copyBtn.Text = "Copied!"; }
+                try { Clipboard.SetText(pathBox.Text); copyBtn.Text = L("Builder_Copied", "Copied!"); }
                 catch (Exception ex)
                 {
                     // Do not claim success when the clipboard was locked by another process.
-                    copyBtn.Text = "Copy failed";
+                    copyBtn.Text = L("Builder_CopyFailed", "Copy failed");
                     Engine.Diag.Warn("PackageBuilderForm", "clipboard copy failed", ex);
                 }
             }
@@ -1683,9 +1791,9 @@ public class PackageBuilderForm : Form
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             FlowDirection = FlowDirection.LeftToRight,
         };
-        var openFolderBtn = new Button { Text = "Open Folder", Width = 130, Height = 36, Name = "OpenFolderBtn" };
-        var runBtn = new Button { Text = "Run Installer", Width = 140, Height = 36, Name = "RunInstallerBtn" };
-        var buildAnotherBtn = new Button { Text = "Build Again", Width = 130, Height = 36, Name = "BuildAgainBtn" };
+        var openFolderBtn = new Button { Text = L("Builder_OpenFolder", "Open Folder"), Width = 130, Height = 36, Name = "OpenFolderBtn" };
+        var runBtn = new Button { Text = L("Builder_RunInstaller", "Run Installer"), Width = 140, Height = 36, Name = "RunInstallerBtn" };
+        var buildAnotherBtn = new Button { Text = L("Builder_BuildAgain", "Build Again"), Width = 130, Height = 36, Name = "BuildAgainBtn" };
         buildAnotherBtn.Click += (_, _) => BuildInstaller();
         actionPanel.Controls.AddRange(new Control[] { openFolderBtn, runBtn, buildAnotherBtn });
 
@@ -1710,7 +1818,7 @@ public class PackageBuilderForm : Form
 
         if (_lastBuildResult == null)
         {
-            statusBanner.Text = "No build has been run yet. Click Build to produce the Setup.exe.";
+            statusBanner.Text = L("Builder_NoBuildHasBeenRun", "No build has been run yet. Click Build to produce the Setup.exe.");
             statusBanner.ForeColor = Color.FromArgb(60, 60, 60);
             pathBox.Text = ""; pathLabel!.Text = ""; sizeLabel!.Text = ""; issueLabel!.Text = "";
             copyBtn!.Enabled = openBtn!.Enabled = runBtn!.Enabled = false;
@@ -1757,7 +1865,7 @@ public class PackageBuilderForm : Form
 
         if (_lastBuildResult == null)
         {
-            status.Text = "No build has been run yet.";
+            status.Text = L("Builder_NoBuildHasBeenRun", "No build has been run yet.");
             status.ForeColor = MutedTextColor;
             path.Text = "";
             details.Text = "";
@@ -2206,7 +2314,18 @@ public class PackageBuilderForm : Form
     }
 
     private void EditCustomActions() { using var dlg = new CustomActionsDialog(_project.CustomActions); if (dlg.ShowDialog(this) != DialogResult.OK) return; _project.MarkDirty(); }
-    private void EditComponentConditions() { using var dlg = new ComponentConditionsDialog(_project.Components); if (dlg.ShowDialog(this) != DialogResult.OK) return; _project.MarkDirty(); }
+    private void EditComponentConditions()
+    {
+        // Carry the grid selection into the dialog so the author does not have to find the same
+        // component a second time.
+        var selected = _componentsGrid?.SelectedRows.Count > 0
+            ? _componentsGrid.SelectedRows[0].DataBoundItem as InstallComponent
+            : null;
+
+        using var dlg = new ComponentConditionsDialog(_project.Components, selected);
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+        _project.MarkDirty();
+    }
 
     private void ShowHelp()
     {
@@ -2407,18 +2526,18 @@ public class PackageBuilderForm : Form
         center.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         center.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         center.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        center.Controls.Add(new Label { Text = "Beep Installer Package Builder", Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = TextColor, AutoSize = true, TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(0, 0, 0, 6) }, 0, 0);
-        center.Controls.Add(new Label { Text = "Author setup scripts and build a self-contained Windows Setup.exe.", Font = new Font("Segoe UI", 10), ForeColor = MutedTextColor, AutoSize = true, TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(0, 0, 0, 0) }, 0, 1);
-        var newBtn = new Button { Text = "New Installer Script", Size = new Size(220, 36), Margin = new Padding(0, 8, 0, 6) };
+        center.Controls.Add(new Label { Text = L("Builder_BeepInstallerPackageBuilder", "Beep Installer Package Builder"), Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = TextColor, AutoSize = true, TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(0, 0, 0, 6) }, 0, 0);
+        center.Controls.Add(new Label { Text = L("Builder_AuthorSetupScriptsAndBuild", "Author setup scripts and build a self-contained Windows Setup.exe."), Font = new Font("Segoe UI", 10), ForeColor = MutedTextColor, AutoSize = true, TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(0, 0, 0, 0) }, 0, 1);
+        var newBtn = new Button { Text = L("Builder_NewInstallerScript", "New Installer Script"), Size = new Size(220, 36), Margin = new Padding(0, 8, 0, 6) };
         StylePrimaryButton(newBtn);
         newBtn.Click += (_, _) => NewProject();
-        var openBtn = new Button { Text = "Open Existing Script", Size = new Size(220, 36), Margin = new Padding(0, 0, 0, 10) };
+        var openBtn = new Button { Text = L("Builder_OpenExistingScript", "Open Existing Script"), Size = new Size(220, 36), Margin = new Padding(0, 0, 0, 10) };
         StyleButton(openBtn);
         openBtn.Click += (_, _) => OpenProject();
         center.Controls.Add(new Panel { Height = 12 }, 0, 2);
         center.Controls.Add(newBtn, 0, 3);
         center.Controls.Add(openBtn, 0, 4);
-        var sub = new Label { Text = "Drag a .bsetup file onto this window to open it.", Font = UiFont, ForeColor = MutedTextColor, AutoSize = true, TextAlign = ContentAlignment.MiddleCenter };
+        var sub = new Label { Text = L("Builder_DragABsetupFileOnto", "Drag a .bsetup file onto this window to open it."), Font = UiFont, ForeColor = MutedTextColor, AutoSize = true, TextAlign = ContentAlignment.MiddleCenter };
         center.Controls.Add(sub, 0, 5);
         _welcomePanel.Controls.Add(center);
         center.Location = new Point((_welcomePanel.Width - center.Width) / 2, (_welcomePanel.Height - center.Height) / 2);

@@ -16,6 +16,11 @@ namespace Beep.Installer.Tests;
 /// culture resolves the shared keys so a missing translation surfaces here rather than as
 /// English text in a shipped installer.
 /// </summary>
+// Shares the "Language" collection with LanguageSwitchTests: both mutate LanguageManager's static
+// current culture, and xUnit runs different collections in parallel. Without this they race -- a
+// SetLanguage("ar") here would be undone by the other class mid-assertion, which is exactly how it
+// failed once the two were run together.
+[Collection("Language")]
 public class LocalizationTests
 {
     [Theory]

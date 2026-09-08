@@ -17,6 +17,7 @@ public class ComponentConditionsDialog : Form
 {
     private readonly System.Collections.Generic.List<InstallComponent> _components;
     private ComboBox _componentBox = null!;
+    private readonly InstallComponent? _initial;
     private ComboBox _expressionBox = null!;
     private DataGridView _grid = null!;
     private ComboBox _typeBox = null!;
@@ -32,9 +33,16 @@ public class ComponentConditionsDialog : Form
     private Label _validationLabel = null!;
     private BindingSource _binding = null!;
 
-    public ComponentConditionsDialog(System.Collections.IList components)
+    /// <param name="initial">
+    /// The component the user already selected in the builder. The dialog opens on it instead of
+    /// on the first in the list: selecting a component, opening its conditions and being asked to
+    /// select it again is the flow 6.C.2 calls out. The picker stays, so switching component
+    /// without closing still works.
+    /// </param>
+    public ComponentConditionsDialog(System.Collections.IList components, InstallComponent? initial = null)
     {
         _components = (components ?? new System.Collections.Generic.List<InstallComponent>()).Cast<InstallComponent>().ToList();
+        _initial = initial;
         _binding = new BindingSource();
         _binding.ListChanged += (_, _) => RefreshValidation();
 
@@ -95,7 +103,18 @@ public class ComponentConditionsDialog : Form
         buttons.Controls.Add(_cancelBtn);
         root.Controls.Add(buttons, 0, 3);
 
-        Load += (_, _) => { if (_componentBox.Items.Count > 0) _componentBox.SelectedIndex = 0; };
+        Load += (_, _) =>
+        {
+            if (_componentBox.Items.Count == 0) return;
+
+            // Open on the component the builder had selected; fall back to the first only when the
+            // caller had no selection (or it is not in this list).
+            var index = _initial is null ? -1 : _components.FindIndex(c => ReferenceEquals(c, _initial));
+            if (index < 0 && _initial is not null)
+                index = _components.FindIndex(c => string.Equals(c.Id, _initial.Id, StringComparison.Ordinal));
+
+            _componentBox.SelectedIndex = index >= 0 ? index : 0;
+        };
         Engine.Accessibility.Attach(this);
     }
 

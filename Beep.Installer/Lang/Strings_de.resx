@@ -235,267 +235,433 @@
   <data name="Update_NoDecision" xml:space="preserve"><value>Keine Update-Entscheidung.</value></data>
   <data name="Update_Decision" xml:space="preserve"><value>Entscheidung: {0}</value></data>
   <data name="Actions_Arguments" xml:space="preserve">
-    <value>Arguments:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Argumente:</value>
   </data>
   <data name="Actions_CustomActionsA11" xml:space="preserve">
-    <value>Custom Actions (A1.1)</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Benutzerdefinierte Aktionen (A1.1)</value>
   </data>
   <data name="Actions_FailOnError" xml:space="preserve">
-    <value>Fail on error</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Bei Fehler abbrechen</value>
   </data>
   <data name="Actions_Path" xml:space="preserve">
-    <value>Path:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Pfad:</value>
   </data>
   <data name="Actions_RequiredFailInstall" xml:space="preserve">
-    <value>Required (fail install)</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Erforderlich (Installation abbrechen)</value>
   </data>
   <data name="Actions_TimeoutMs" xml:space="preserve">
-    <value>Timeout (ms):</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Zeitlimit (ms):</value>
   </data>
   <data name="Actions_Timing" xml:space="preserve">
-    <value>Timing:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Zeitpunkt:</value>
   </data>
   <data name="Actions_WorkingDir" xml:space="preserve">
-    <value>Working dir:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Arbeitsverzeichnis:</value>
   </data>
   <data name="BuildError_Copied" xml:space="preserve">
-    <value>Copied!</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Kopiert!</value>
   </data>
   <data name="BuildError_CopyToClipboard" xml:space="preserve">
-    <value>Copy to Clipboard</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>In Zwischenablage kopieren</value>
   </data>
   <data name="BuildError_SaveAs" xml:space="preserve">
-    <value>Save As…</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Speichern unter…</value>
   </data>
   <data name="BuildError_SelectAll" xml:space="preserve">
-    <value>Select All</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Alles auswählen</value>
   </data>
   <data name="BuildProgress_Cancelling" xml:space="preserve">
-    <value>Cancelling...</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Wird abgebrochen…</value>
   </data>
   <data name="BuildResult_Copied" xml:space="preserve">
-    <value>Copied!</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Kopiert!</value>
   </data>
   <data name="BuildResult_Copy" xml:space="preserve">
-    <value>Copy</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Kopieren</value>
   </data>
   <data name="BuildResult_CopyFailed" xml:space="preserve">
-    <value>Copy failed</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Kopieren fehlgeschlagen</value>
   </data>
   <data name="BuildResult_OpenFolder" xml:space="preserve">
-    <value>Open Folder</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Ordner öffnen</value>
   </data>
   <data name="BuildResult_RunInstaller" xml:space="preserve">
-    <value>Run Installer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Installer ausführen</value>
   </data>
   <data name="BuildResult_SetupEXE" xml:space="preserve">
-    <value>Setup EXE:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Setup-EXE:</value>
   </data>
   <data name="BuildResult_SetupScript" xml:space="preserve">
-    <value>Setup script:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Setup-Skript:</value>
   </data>
   <data name="Common_Add" xml:space="preserve">
-    <value>Add</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Hinzufügen</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Abbrechen</value>
   </data>
   <data name="Common_Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Schließen</value>
   </data>
   <data name="Common_Component" xml:space="preserve">
-    <value>Component:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Komponente:</value>
   </data>
   <data name="Common_Create" xml:space="preserve">
-    <value>Create</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Erstellen</value>
   </data>
   <data name="Common_Description" xml:space="preserve">
-    <value>Description:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Beschreibung:</value>
   </data>
   <data name="Common_OK" xml:space="preserve">
     <value>OK</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
   </data>
   <data name="Common_Order" xml:space="preserve">
-    <value>Order:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Reihenfolge:</value>
   </data>
   <data name="Common_Remove" xml:space="preserve">
-    <value>Remove</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Entfernen</value>
   </data>
   <data name="Common_Type" xml:space="preserve">
-    <value>Type:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Typ:</value>
   </data>
   <data name="Common_Value" xml:space="preserve">
-    <value>Value:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Wert:</value>
   </data>
   <data name="Conditions_ComponentConditionBuilder" xml:space="preserve">
-    <value>Component Condition Builder</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Komponentenbedingungs-Editor</value>
   </data>
   <data name="Conditions_GroupExpression" xml:space="preserve">
-    <value>Group expression:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Gruppenausdruck:</value>
   </data>
   <data name="Conditions_NotesNGroupExpression" xml:space="preserve">
-    <value>Notes:
- • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.
- • Value holds the primary operand (registry path, file path, OS version, command, …).
- • Value2 is the expected value for RegistryValue and CommandReturns comparisons.
- • Operator is one of ==, =, !=, &gt;, &gt;=, &lt;, &lt;= (default '==').</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Hinweise:
+ • Der Gruppenausdruck steuert, wie alle Zeilen kombiniert werden: „All“ = jede Regel, „Any“ = mindestens eine Regel, „Not“ = Gruppe umkehren.
+ • „Wert“ enthält den primären Operanden (Registrierungspfad, Dateipfad, Betriebssystemversion, Befehl, …).
+ • „Wert2“ ist der erwartete Wert für Vergleiche vom Typ RegistryValue und CommandReturns.
+ • Der Operator ist einer von ==, =, !=, &gt;, &gt;=, &lt;, &lt;= (Standard '==').</value>
   </data>
   <data name="Conditions_Operator" xml:space="preserve">
     <value>Operator:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
   </data>
   <data name="Conditions_Preview" xml:space="preserve">
-    <value>Preview:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Vorschau:</value>
   </data>
   <data name="Conditions_TestAll" xml:space="preserve">
-    <value>Test all</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Alle testen</value>
   </data>
   <data name="Conditions_Value2" xml:space="preserve">
-    <value>Value2:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Wert2:</value>
   </data>
   <data name="Files_Destination" xml:space="preserve">
-    <value>Destination:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Ziel:</value>
   </data>
   <data name="Files_OverwriteExisting" xml:space="preserve">
-    <value>Overwrite existing</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Vorhandene überschreiben</value>
   </data>
   <data name="Files_RemoveSelected" xml:space="preserve">
-    <value>Remove selected</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Auswahl entfernen</value>
   </data>
   <data name="Files_RequiredFile" xml:space="preserve">
-    <value>Required file</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Erforderliche Datei</value>
   </data>
   <data name="Files_SkipIfNewer" xml:space="preserve">
-    <value>Skip if newer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Überspringen, wenn neuer</value>
   </data>
   <data name="Files_SourcePath" xml:space="preserve">
-    <value>Source path:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Quellpfad:</value>
   </data>
   <data name="Files_TipDragFilesOr" xml:space="preserve">
-    <value>Tip: drag files or folders from Explorer onto the list above</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Tipp: Ziehen Sie Dateien oder Ordner aus dem Explorer auf die Liste oben.</value>
   </data>
   <data name="LangMgr_Dup" xml:space="preserve">
-    <value>📋 Dup</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📋 Duplizieren</value>
   </data>
   <data name="LangMgr_Export" xml:space="preserve">
-    <value>📤 Export</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📤 Exportieren</value>
   </data>
   <data name="LangMgr_Import" xml:space="preserve">
-    <value>📥 Import</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📥 Importieren</value>
   </data>
   <data name="LangMgr_Key" xml:space="preserve">
-    <value>- Key</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>- Schlüssel</value>
   </data>
   <data name="LangMgr_Language" xml:space="preserve">
-    <value>- Language</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>- Sprache</value>
   </data>
   <data name="LangMgr_LanguageManagerBeepInstaller" xml:space="preserve">
-    <value>Language Manager — Beep Installer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Sprachverwaltung — Beep Installer</value>
   </data>
   <data name="LangMgr_LivePreviewSelectA" xml:space="preserve">
-    <value>Live Preview (select a key to see all translations):</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Live-Vorschau (Schlüssel auswählen, um alle Übersetzungen zu sehen):</value>
   </data>
   <data name="LangMgr_Ready" xml:space="preserve">
-    <value>Ready.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Bereit.</value>
   </data>
   <data name="LangMgr_SaveAll" xml:space="preserve">
-    <value>💾 Save All</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>💾 Alle speichern</value>
   </data>
   <data name="NewProject_NewInstallerScript" xml:space="preserve">
-    <value>New Installer Script</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Neues Installer-Skript</value>
   </data>
   <data name="NewProject_TheSourceDirectoryContains" xml:space="preserve">
-    <value>The source directory contains the files that will be installed (e.g. your app's bin/Release output).</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Das Quellverzeichnis enthält die Dateien, die installiert werden (z. B. die bin/Release-Ausgabe Ihrer Anwendung).</value>
   </data>
   <data name="Preview_PreviewModeNoFiles" xml:space="preserve">
-    <value>Preview mode — no files will be installed. Walk through the wizard to verify the end-user experience.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Vorschaumodus — es werden keine Dateien installiert. Gehen Sie den Assistenten durch, um die Benutzererfahrung zu prüfen.</value>
   </data>
   <data name="Template_Apply" xml:space="preserve">
-    <value>Apply</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Übernehmen</value>
   </data>
   <data name="Template_ApplyTemplateUpdate" xml:space="preserve">
-    <value>Apply Template Update</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Vorlagenupdate übernehmen</value>
   </data>
   <data name="Template_Current" xml:space="preserve">
-    <value>Current</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Aktuell</value>
   </data>
   <data name="Template_NoTemplatesAreAvailable" xml:space="preserve">
-    <value>No templates are available.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Es sind keine Vorlagen verfügbar.</value>
   </data>
   <data name="Template_Path" xml:space="preserve">
-    <value>Path</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Pfad</value>
   </data>
   <data name="Template_Template" xml:space="preserve">
-    <value>Template:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Vorlage:</value>
   </data>
   <data name="Template_TemplatePreviewFailed" xml:space="preserve">
-    <value>Template preview failed: </value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Vorlagenvorschau fehlgeschlagen: </value>
   </data>
   <data name="Template_Updated" xml:space="preserve">
-    <value>Updated</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>Aktualisiert</value>
+  </data>
+  <data name="Builder_ApplyScript" xml:space="preserve">
+    <value>Skript übernehmen</value>
+  </data>
+  <data name="Builder_AuthorSetupScriptsAndBuild" xml:space="preserve">
+    <value>Setup-Skripte erstellen und eine eigenständige Windows-Setup.exe erzeugen.</value>
+  </data>
+  <data name="Builder_BeepInstallerPackageBuilder" xml:space="preserve">
+    <value>Beep Installer Paket-Generator</value>
+  </data>
+  <data name="Builder_BuildAgain" xml:space="preserve">
+    <value>Erneut erstellen</value>
+  </data>
+  <data name="Builder_BuildSetupExe" xml:space="preserve">
+    <value>Setup.exe erstellen</value>
+  </data>
+  <data name="Builder_BuildWorkflow" xml:space="preserve">
+    <value>Build-Workflow</value>
+  </data>
+  <data name="Builder_Clear" xml:space="preserve">
+    <value>Leeren</value>
+  </data>
+  <data name="Builder_Copied" xml:space="preserve">
+    <value>Kopiert!</value>
+  </data>
+  <data name="Builder_Copy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="Builder_CopyAll" xml:space="preserve">
+    <value>Alles kopieren</value>
+  </data>
+  <data name="Builder_CopyFailed" xml:space="preserve">
+    <value>Kopieren fehlgeschlagen</value>
+  </data>
+  <data name="Builder_DragABsetupFileOnto" xml:space="preserve">
+    <value>Ziehen Sie eine .bsetup-Datei auf dieses Fenster, um sie zu öffnen.</value>
+  </data>
+  <data name="Builder_Duplicate" xml:space="preserve">
+    <value>Duplizieren</value>
+  </data>
+  <data name="Builder_EXEPath" xml:space="preserve">
+    <value>EXE-Pfad:</value>
+  </data>
+  <data name="Builder_EditFiles" xml:space="preserve">
+    <value>Dateien bearbeiten</value>
+  </data>
+  <data name="Builder_KeepThisGUIDUnchangedFor" xml:space="preserve">
+    <value>Lassen Sie diese GUID bei Updates und Umbenennungen unverändert. Eine andere GUID kennzeichnet ein anderes Produkt.</value>
+  </data>
+  <data name="Builder_LastBuildResult" xml:space="preserve">
+    <value>Letztes Build-Ergebnis</value>
+  </data>
+  <data name="Builder_NewInstallerScript" xml:space="preserve">
+    <value>Neues Installer-Skript</value>
+  </data>
+  <data name="Builder_NoBuildHasBeenRun" xml:space="preserve">
+    <value>Es wurde noch kein Build ausgeführt.</value>
+  </data>
+  <data name="Builder_OpenExistingScript" xml:space="preserve">
+    <value>Vorhandenes Skript öffnen</value>
+  </data>
+  <data name="Builder_OpenFolder" xml:space="preserve">
+    <value>Ordner öffnen</value>
+  </data>
+  <data name="Builder_RecentlyOpenedInstallerScripts" xml:space="preserve">
+    <value>Zuletzt geöffnete Installer-Skripte</value>
+  </data>
+  <data name="Builder_RefreshFormatReadiness" xml:space="preserve">
+    <value>Formatbereitschaft aktualisieren</value>
+  </data>
+  <data name="Builder_ReleaseReadinessPendingClickRefresh" xml:space="preserve">
+    <value>Release-Bereitschaft: ausstehend. Klicken Sie auf „Formatbereitschaft aktualisieren“, um den Status von EXE, MSI, MSIX, WinGet und Intune/ConfigMgr zu sehen.</value>
+  </data>
+  <data name="Builder_ReloadFromFields" xml:space="preserve">
+    <value>Aus Feldern neu laden</value>
+  </data>
+  <data name="Builder_Result" xml:space="preserve">
+    <value>Ergebnis</value>
+  </data>
+  <data name="Builder_RunInstaller" xml:space="preserve">
+    <value>Installer ausführen</value>
+  </data>
+  <data name="Builder_SaveAs" xml:space="preserve">
+    <value>Speichern unter…</value>
+  </data>
+  <data name="Builder_ScanSource" xml:space="preserve">
+    <value>Quelle prüfen</value>
+  </data>
+  <data name="Builder_SearchSections" xml:space="preserve">
+    <value>Abschnitte suchen…</value>
+  </data>
+  <data name="Builder_SelectAll" xml:space="preserve">
+    <value>Alles auswählen</value>
+  </data>
+  <data name="Builder_ValidationCenterIsReadyClick" xml:space="preserve">
+    <value>Das Validierungscenter ist bereit. Klicken Sie auf „Projekt prüfen“, um gruppierte Schema-, Semantik- und Ressourcendiagnosen zu sehen.</value>
+  </data>
+  <data name="Field_AccentColor" xml:space="preserve">
+    <value>Akzentfarbe:</value>
+  </data>
+  <data name="Field_AllowComponentSelection" xml:space="preserve">
+    <value>Komponentenauswahl zulassen:</value>
+  </data>
+  <data name="Field_AllowDowngradeForceUpdate" xml:space="preserve">
+    <value>Downgrade/erzwungenes Update zulassen</value>
+  </data>
+  <data name="Field_AllowNoIcons" xml:space="preserve">
+    <value>Verzicht auf Symbole zulassen</value>
+  </data>
+  <data name="Field_AllowPathChange" xml:space="preserve">
+    <value>Pfadänderung zulassen:</value>
+  </data>
+  <data name="Field_AllowScopeSelection" xml:space="preserve">
+    <value>Bereichsauswahl zulassen</value>
+  </data>
+  <data name="Field_BannerImage" xml:space="preserve">
+    <value>Bannerbild:</value>
+  </data>
+  <data name="Field_CertificatePassword" xml:space="preserve">
+    <value>Zertifikatkennwort:</value>
+  </data>
+  <data name="Field_CertificatePfx" xml:space="preserve">
+    <value>Zertifikat (.pfx):</value>
+  </data>
+  <data name="Field_CompressPayload" xml:space="preserve">
+    <value>Nutzdaten komprimieren</value>
+  </data>
+  <data name="Field_CreateSystemRestorePoint" xml:space="preserve">
+    <value>Systemwiederherstellungspunkt erstellen</value>
+  </data>
+  <data name="Field_DefaultInstallPath" xml:space="preserve">
+    <value>Standard-Installationspfad:</value>
+  </data>
+  <data name="Field_LicenseFile" xml:space="preserve">
+    <value>Lizenzdatei:</value>
+  </data>
+  <data name="Field_MSIXIdentity" xml:space="preserve">
+    <value>MSIX-Identität:</value>
+  </data>
+  <data name="Field_MSIXPublisher" xml:space="preserve">
+    <value>MSIX-Herausgeber:</value>
+  </data>
+  <data name="Field_MainExecutable" xml:space="preserve">
+    <value>Hauptanwendung:</value>
+  </data>
+  <data name="Field_OutputDirectory" xml:space="preserve">
+    <value>Ausgabeverzeichnis:</value>
+  </data>
+  <data name="Field_PayloadFolder" xml:space="preserve">
+    <value>Nutzdatenordner:</value>
+  </data>
+  <data name="Field_PayloadURL" xml:space="preserve">
+    <value>Nutzdaten-URL:</value>
+  </data>
+  <data name="Field_Prefer64Bit" xml:space="preserve">
+    <value>64-Bit bevorzugen</value>
+  </data>
+  <data name="Field_ProductIDAppId" xml:space="preserve">
+    <value>Produkt-ID (AppId):</value>
+  </data>
+  <data name="Field_ProductName" xml:space="preserve">
+    <value>Produktname:</value>
+  </data>
+  <data name="Field_PromptUsersBeforeUpdate" xml:space="preserve">
+    <value>Benutzer vor dem Update fragen</value>
+  </data>
+  <data name="Field_Publisher" xml:space="preserve">
+    <value>Herausgeber:</value>
+  </data>
+  <data name="Field_PublisherURL" xml:space="preserve">
+    <value>Herausgeber-URL:</value>
+  </data>
+  <data name="Field_RegisterUninstallEntry" xml:space="preserve">
+    <value>Deinstallationseintrag registrieren</value>
+  </data>
+  <data name="Field_ScriptName" xml:space="preserve">
+    <value>Skriptname:</value>
+  </data>
+  <data name="Field_SetupFileName" xml:space="preserve">
+    <value>Setup-Dateiname:</value>
+  </data>
+  <data name="Field_SetupIconIco" xml:space="preserve">
+    <value>Setup-Symbol (.ico):</value>
+  </data>
+  <data name="Field_ShowDirOnReadyPage" xml:space="preserve">
+    <value>Verzeichnis auf der Bereit-Seite anzeigen</value>
+  </data>
+  <data name="Field_ShowEULAPage" xml:space="preserve">
+    <value>EULA-Seite anzeigen:</value>
+  </data>
+  <data name="Field_SidebarBackground" xml:space="preserve">
+    <value>Seitenleisten-Hintergrund:</value>
+  </data>
+  <data name="Field_SidebarText" xml:space="preserve">
+    <value>Seitenleisten-Text:</value>
+  </data>
+  <data name="Field_SolidCompression" xml:space="preserve">
+    <value>Solide Komprimierung</value>
+  </data>
+  <data name="Field_StartMenuFolder" xml:space="preserve">
+    <value>Startmenü-Ordner:</value>
+  </data>
+  <data name="Field_SupportEmail" xml:space="preserve">
+    <value>Support-E-Mail:</value>
+  </data>
+  <data name="Field_SupportURL" xml:space="preserve">
+    <value>Support-URL:</value>
+  </data>
+  <data name="Field_TimestampURL" xml:space="preserve">
+    <value>Zeitstempel-URL:</value>
+  </data>
+  <data name="Field_UpdateCheckHours" xml:space="preserve">
+    <value>Update-Prüfintervall (Stunden):</value>
+  </data>
+  <data name="Field_UpdateURL" xml:space="preserve">
+    <value>Update-URL:</value>
+  </data>
+  <data name="Field_Version" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="Field_WelcomeTitle" xml:space="preserve">
+    <value>Willkommenstitel:</value>
+  </data>
+  <data name="Field_WindowTitle" xml:space="preserve">
+    <value>Fenstertitel:</value>
+  </data>
+  <data name="Section_CodeSigning" xml:space="preserve">
+    <value>Codesignatur</value>
+  </data>
+  <data name="Section_OptionalPackageMetadata" xml:space="preserve">
+    <value>Optionale Paketmetadaten</value>
   </data>
 </root>

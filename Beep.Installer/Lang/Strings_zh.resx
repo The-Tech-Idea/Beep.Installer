@@ -235,267 +235,433 @@
   <data name="Update_NoDecision" xml:space="preserve"><value>无更新决定。</value></data>
   <data name="Update_Decision" xml:space="preserve"><value>决定：{0}</value></data>
   <data name="Actions_Arguments" xml:space="preserve">
-    <value>Arguments:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>参数:</value>
   </data>
   <data name="Actions_CustomActionsA11" xml:space="preserve">
-    <value>Custom Actions (A1.1)</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>自定义操作 (A1.1)</value>
   </data>
   <data name="Actions_FailOnError" xml:space="preserve">
-    <value>Fail on error</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>出错时失败</value>
   </data>
   <data name="Actions_Path" xml:space="preserve">
-    <value>Path:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>路径:</value>
   </data>
   <data name="Actions_RequiredFailInstall" xml:space="preserve">
-    <value>Required (fail install)</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>必需（失败则中止安装）</value>
   </data>
   <data name="Actions_TimeoutMs" xml:space="preserve">
-    <value>Timeout (ms):</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>超时 (毫秒):</value>
   </data>
   <data name="Actions_Timing" xml:space="preserve">
-    <value>Timing:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>时机:</value>
   </data>
   <data name="Actions_WorkingDir" xml:space="preserve">
-    <value>Working dir:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>工作目录:</value>
   </data>
   <data name="BuildError_Copied" xml:space="preserve">
-    <value>Copied!</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>已复制！</value>
   </data>
   <data name="BuildError_CopyToClipboard" xml:space="preserve">
-    <value>Copy to Clipboard</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>复制到剪贴板</value>
   </data>
   <data name="BuildError_SaveAs" xml:space="preserve">
-    <value>Save As…</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>另存为…</value>
   </data>
   <data name="BuildError_SelectAll" xml:space="preserve">
-    <value>Select All</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>全选</value>
   </data>
   <data name="BuildProgress_Cancelling" xml:space="preserve">
-    <value>Cancelling...</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>正在取消…</value>
   </data>
   <data name="BuildResult_Copied" xml:space="preserve">
-    <value>Copied!</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>已复制！</value>
   </data>
   <data name="BuildResult_Copy" xml:space="preserve">
-    <value>Copy</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>复制</value>
   </data>
   <data name="BuildResult_CopyFailed" xml:space="preserve">
-    <value>Copy failed</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>复制失败</value>
   </data>
   <data name="BuildResult_OpenFolder" xml:space="preserve">
-    <value>Open Folder</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>打开文件夹</value>
   </data>
   <data name="BuildResult_RunInstaller" xml:space="preserve">
-    <value>Run Installer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>运行安装程序</value>
   </data>
   <data name="BuildResult_SetupEXE" xml:space="preserve">
-    <value>Setup EXE:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>安装程序 EXE:</value>
   </data>
   <data name="BuildResult_SetupScript" xml:space="preserve">
-    <value>Setup script:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>安装脚本:</value>
   </data>
   <data name="Common_Add" xml:space="preserve">
-    <value>Add</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>添加</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>取消</value>
   </data>
   <data name="Common_Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>关闭</value>
   </data>
   <data name="Common_Component" xml:space="preserve">
-    <value>Component:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>组件:</value>
   </data>
   <data name="Common_Create" xml:space="preserve">
-    <value>Create</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>创建</value>
   </data>
   <data name="Common_Description" xml:space="preserve">
-    <value>Description:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>说明:</value>
   </data>
   <data name="Common_OK" xml:space="preserve">
-    <value>OK</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>确定</value>
   </data>
   <data name="Common_Order" xml:space="preserve">
-    <value>Order:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>顺序:</value>
   </data>
   <data name="Common_Remove" xml:space="preserve">
-    <value>Remove</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>移除</value>
   </data>
   <data name="Common_Type" xml:space="preserve">
-    <value>Type:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>类型:</value>
   </data>
   <data name="Common_Value" xml:space="preserve">
-    <value>Value:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>值:</value>
   </data>
   <data name="Conditions_ComponentConditionBuilder" xml:space="preserve">
-    <value>Component Condition Builder</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>组件条件生成器</value>
   </data>
   <data name="Conditions_GroupExpression" xml:space="preserve">
-    <value>Group expression:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>分组表达式:</value>
   </data>
   <data name="Conditions_NotesNGroupExpression" xml:space="preserve">
-    <value>Notes:
- • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.
- • Value holds the primary operand (registry path, file path, OS version, command, …).
- • Value2 is the expected value for RegistryValue and CommandReturns comparisons.
- • Operator is one of ==, =, !=, &gt;, &gt;=, &lt;, &lt;= (default '==').</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>说明:
+ • 分组表达式决定各行的组合方式: All = 全部规则, Any = 至少一条规则, Not = 反转该组。
+ • “值”保存主操作数（注册表路径、文件路径、操作系统版本、命令等）。
+ • “值2”是 RegistryValue 和 CommandReturns 比较的期望值。
+ • 运算符可为 ==、=、!=、&gt;、&gt;=、&lt;、&lt;= 之一（默认 '=='）。</value>
   </data>
   <data name="Conditions_Operator" xml:space="preserve">
-    <value>Operator:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>运算符:</value>
   </data>
   <data name="Conditions_Preview" xml:space="preserve">
-    <value>Preview:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>预览:</value>
   </data>
   <data name="Conditions_TestAll" xml:space="preserve">
-    <value>Test all</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>全部测试</value>
   </data>
   <data name="Conditions_Value2" xml:space="preserve">
-    <value>Value2:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>值2:</value>
   </data>
   <data name="Files_Destination" xml:space="preserve">
-    <value>Destination:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>目标:</value>
   </data>
   <data name="Files_OverwriteExisting" xml:space="preserve">
-    <value>Overwrite existing</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>覆盖现有文件</value>
   </data>
   <data name="Files_RemoveSelected" xml:space="preserve">
-    <value>Remove selected</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>移除所选项</value>
   </data>
   <data name="Files_RequiredFile" xml:space="preserve">
-    <value>Required file</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>必需文件</value>
   </data>
   <data name="Files_SkipIfNewer" xml:space="preserve">
-    <value>Skip if newer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>如果更新则跳过</value>
   </data>
   <data name="Files_SourcePath" xml:space="preserve">
-    <value>Source path:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>源路径:</value>
   </data>
   <data name="Files_TipDragFilesOr" xml:space="preserve">
-    <value>Tip: drag files or folders from Explorer onto the list above</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>提示: 可从资源管理器将文件或文件夹拖到上面的列表中。</value>
   </data>
   <data name="LangMgr_Dup" xml:space="preserve">
-    <value>📋 Dup</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📋 复制副本</value>
   </data>
   <data name="LangMgr_Export" xml:space="preserve">
-    <value>📤 Export</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📤 导出</value>
   </data>
   <data name="LangMgr_Import" xml:space="preserve">
-    <value>📥 Import</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>📥 导入</value>
   </data>
   <data name="LangMgr_Key" xml:space="preserve">
-    <value>- Key</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>- 键</value>
   </data>
   <data name="LangMgr_Language" xml:space="preserve">
-    <value>- Language</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>- 语言</value>
   </data>
   <data name="LangMgr_LanguageManagerBeepInstaller" xml:space="preserve">
-    <value>Language Manager — Beep Installer</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>语言管理器 — Beep Installer</value>
   </data>
   <data name="LangMgr_LivePreviewSelectA" xml:space="preserve">
-    <value>Live Preview (select a key to see all translations):</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>实时预览（选择一个键以查看所有翻译）:</value>
   </data>
   <data name="LangMgr_Ready" xml:space="preserve">
-    <value>Ready.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>就绪。</value>
   </data>
   <data name="LangMgr_SaveAll" xml:space="preserve">
-    <value>💾 Save All</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>💾 全部保存</value>
   </data>
   <data name="NewProject_NewInstallerScript" xml:space="preserve">
-    <value>New Installer Script</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>新建安装脚本</value>
   </data>
   <data name="NewProject_TheSourceDirectoryContains" xml:space="preserve">
-    <value>The source directory contains the files that will be installed (e.g. your app's bin/Release output).</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>源目录包含将被安装的文件（例如应用的 bin/Release 输出）。</value>
   </data>
   <data name="Preview_PreviewModeNoFiles" xml:space="preserve">
-    <value>Preview mode — no files will be installed. Walk through the wizard to verify the end-user experience.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>预览模式 — 不会安装任何文件。可浏览向导以检查最终用户体验。</value>
   </data>
   <data name="Template_Apply" xml:space="preserve">
-    <value>Apply</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>应用</value>
   </data>
   <data name="Template_ApplyTemplateUpdate" xml:space="preserve">
-    <value>Apply Template Update</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>应用模板更新</value>
   </data>
   <data name="Template_Current" xml:space="preserve">
-    <value>Current</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>当前</value>
   </data>
   <data name="Template_NoTemplatesAreAvailable" xml:space="preserve">
-    <value>No templates are available.</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>没有可用的模板。</value>
   </data>
   <data name="Template_Path" xml:space="preserve">
-    <value>Path</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>路径</value>
   </data>
   <data name="Template_Template" xml:space="preserve">
-    <value>Template:</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>模板:</value>
   </data>
   <data name="Template_TemplatePreviewFailed" xml:space="preserve">
-    <value>Template preview failed: </value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>模板预览失败: </value>
   </data>
   <data name="Template_Updated" xml:space="preserve">
-    <value>Updated</value>
-    <comment>Untranslated: English placeholder so every culture keeps the same key set.</comment>
+    <value>已更新</value>
+  </data>
+  <data name="Builder_ApplyScript" xml:space="preserve">
+    <value>应用脚本</value>
+  </data>
+  <data name="Builder_AuthorSetupScriptsAndBuild" xml:space="preserve">
+    <value>编写安装脚本并生成独立的 Windows Setup.exe。</value>
+  </data>
+  <data name="Builder_BeepInstallerPackageBuilder" xml:space="preserve">
+    <value>Beep Installer 包生成器</value>
+  </data>
+  <data name="Builder_BuildAgain" xml:space="preserve">
+    <value>重新生成</value>
+  </data>
+  <data name="Builder_BuildSetupExe" xml:space="preserve">
+    <value>生成 Setup.exe</value>
+  </data>
+  <data name="Builder_BuildWorkflow" xml:space="preserve">
+    <value>生成工作流</value>
+  </data>
+  <data name="Builder_Clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="Builder_Copied" xml:space="preserve">
+    <value>已复制！</value>
+  </data>
+  <data name="Builder_Copy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="Builder_CopyAll" xml:space="preserve">
+    <value>复制全部</value>
+  </data>
+  <data name="Builder_CopyFailed" xml:space="preserve">
+    <value>复制失败</value>
+  </data>
+  <data name="Builder_DragABsetupFileOnto" xml:space="preserve">
+    <value>将 .bsetup 文件拖到此窗口即可打开。</value>
+  </data>
+  <data name="Builder_Duplicate" xml:space="preserve">
+    <value>复制副本</value>
+  </data>
+  <data name="Builder_EXEPath" xml:space="preserve">
+    <value>EXE 路径:</value>
+  </data>
+  <data name="Builder_EditFiles" xml:space="preserve">
+    <value>编辑文件</value>
+  </data>
+  <data name="Builder_KeepThisGUIDUnchangedFor" xml:space="preserve">
+    <value>更新和重命名时请保持此 GUID 不变。不同的 GUID 表示不同的产品。</value>
+  </data>
+  <data name="Builder_LastBuildResult" xml:space="preserve">
+    <value>上次生成结果</value>
+  </data>
+  <data name="Builder_NewInstallerScript" xml:space="preserve">
+    <value>新建安装脚本</value>
+  </data>
+  <data name="Builder_NoBuildHasBeenRun" xml:space="preserve">
+    <value>尚未执行任何生成。</value>
+  </data>
+  <data name="Builder_OpenExistingScript" xml:space="preserve">
+    <value>打开现有脚本</value>
+  </data>
+  <data name="Builder_OpenFolder" xml:space="preserve">
+    <value>打开文件夹</value>
+  </data>
+  <data name="Builder_RecentlyOpenedInstallerScripts" xml:space="preserve">
+    <value>最近打开的安装脚本</value>
+  </data>
+  <data name="Builder_RefreshFormatReadiness" xml:space="preserve">
+    <value>刷新格式就绪状态</value>
+  </data>
+  <data name="Builder_ReleaseReadinessPendingClickRefresh" xml:space="preserve">
+    <value>发布就绪状态：待定。单击“刷新格式就绪状态”可查看 EXE、MSI、MSIX、WinGet 和 Intune/ConfigMgr 的支持情况。</value>
+  </data>
+  <data name="Builder_ReloadFromFields" xml:space="preserve">
+    <value>从字段重新加载</value>
+  </data>
+  <data name="Builder_Result" xml:space="preserve">
+    <value>结果</value>
+  </data>
+  <data name="Builder_RunInstaller" xml:space="preserve">
+    <value>运行安装程序</value>
+  </data>
+  <data name="Builder_SaveAs" xml:space="preserve">
+    <value>另存为…</value>
+  </data>
+  <data name="Builder_ScanSource" xml:space="preserve">
+    <value>扫描源</value>
+  </data>
+  <data name="Builder_SearchSections" xml:space="preserve">
+    <value>搜索分区…</value>
+  </data>
+  <data name="Builder_SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="Builder_ValidationCenterIsReadyClick" xml:space="preserve">
+    <value>验证中心已就绪。单击“验证项目”可查看分组的架构、语义和资源诊断信息。</value>
+  </data>
+  <data name="Field_AccentColor" xml:space="preserve">
+    <value>强调色:</value>
+  </data>
+  <data name="Field_AllowComponentSelection" xml:space="preserve">
+    <value>允许选择组件:</value>
+  </data>
+  <data name="Field_AllowDowngradeForceUpdate" xml:space="preserve">
+    <value>允许降级/强制更新</value>
+  </data>
+  <data name="Field_AllowNoIcons" xml:space="preserve">
+    <value>允许不创建图标</value>
+  </data>
+  <data name="Field_AllowPathChange" xml:space="preserve">
+    <value>允许更改路径:</value>
+  </data>
+  <data name="Field_AllowScopeSelection" xml:space="preserve">
+    <value>允许选择安装范围</value>
+  </data>
+  <data name="Field_BannerImage" xml:space="preserve">
+    <value>横幅图像:</value>
+  </data>
+  <data name="Field_CertificatePassword" xml:space="preserve">
+    <value>证书密码:</value>
+  </data>
+  <data name="Field_CertificatePfx" xml:space="preserve">
+    <value>证书 (.pfx):</value>
+  </data>
+  <data name="Field_CompressPayload" xml:space="preserve">
+    <value>压缩负载</value>
+  </data>
+  <data name="Field_CreateSystemRestorePoint" xml:space="preserve">
+    <value>创建系统还原点</value>
+  </data>
+  <data name="Field_DefaultInstallPath" xml:space="preserve">
+    <value>默认安装路径:</value>
+  </data>
+  <data name="Field_LicenseFile" xml:space="preserve">
+    <value>许可证文件:</value>
+  </data>
+  <data name="Field_MSIXIdentity" xml:space="preserve">
+    <value>MSIX 标识:</value>
+  </data>
+  <data name="Field_MSIXPublisher" xml:space="preserve">
+    <value>MSIX 发布者:</value>
+  </data>
+  <data name="Field_MainExecutable" xml:space="preserve">
+    <value>主可执行文件:</value>
+  </data>
+  <data name="Field_OutputDirectory" xml:space="preserve">
+    <value>输出目录:</value>
+  </data>
+  <data name="Field_PayloadFolder" xml:space="preserve">
+    <value>负载文件夹:</value>
+  </data>
+  <data name="Field_PayloadURL" xml:space="preserve">
+    <value>负载 URL:</value>
+  </data>
+  <data name="Field_Prefer64Bit" xml:space="preserve">
+    <value>优先使用 64 位</value>
+  </data>
+  <data name="Field_ProductIDAppId" xml:space="preserve">
+    <value>产品 ID (AppId):</value>
+  </data>
+  <data name="Field_ProductName" xml:space="preserve">
+    <value>产品名称:</value>
+  </data>
+  <data name="Field_PromptUsersBeforeUpdate" xml:space="preserve">
+    <value>更新前提示用户</value>
+  </data>
+  <data name="Field_Publisher" xml:space="preserve">
+    <value>发布者:</value>
+  </data>
+  <data name="Field_PublisherURL" xml:space="preserve">
+    <value>发布者 URL:</value>
+  </data>
+  <data name="Field_RegisterUninstallEntry" xml:space="preserve">
+    <value>注册卸载项</value>
+  </data>
+  <data name="Field_ScriptName" xml:space="preserve">
+    <value>脚本名称:</value>
+  </data>
+  <data name="Field_SetupFileName" xml:space="preserve">
+    <value>安装文件名:</value>
+  </data>
+  <data name="Field_SetupIconIco" xml:space="preserve">
+    <value>安装程序图标 (.ico):</value>
+  </data>
+  <data name="Field_ShowDirOnReadyPage" xml:space="preserve">
+    <value>在确认页显示目录</value>
+  </data>
+  <data name="Field_ShowEULAPage" xml:space="preserve">
+    <value>显示最终用户许可协议页:</value>
+  </data>
+  <data name="Field_SidebarBackground" xml:space="preserve">
+    <value>侧栏背景:</value>
+  </data>
+  <data name="Field_SidebarText" xml:space="preserve">
+    <value>侧栏文本:</value>
+  </data>
+  <data name="Field_SolidCompression" xml:space="preserve">
+    <value>固实压缩</value>
+  </data>
+  <data name="Field_StartMenuFolder" xml:space="preserve">
+    <value>开始菜单文件夹:</value>
+  </data>
+  <data name="Field_SupportEmail" xml:space="preserve">
+    <value>支持电子邮件:</value>
+  </data>
+  <data name="Field_SupportURL" xml:space="preserve">
+    <value>支持 URL:</value>
+  </data>
+  <data name="Field_TimestampURL" xml:space="preserve">
+    <value>时间戳 URL:</value>
+  </data>
+  <data name="Field_UpdateCheckHours" xml:space="preserve">
+    <value>更新检查间隔（小时）:</value>
+  </data>
+  <data name="Field_UpdateURL" xml:space="preserve">
+    <value>更新 URL:</value>
+  </data>
+  <data name="Field_Version" xml:space="preserve">
+    <value>版本:</value>
+  </data>
+  <data name="Field_WelcomeTitle" xml:space="preserve">
+    <value>欢迎页标题:</value>
+  </data>
+  <data name="Field_WindowTitle" xml:space="preserve">
+    <value>窗口标题:</value>
+  </data>
+  <data name="Section_CodeSigning" xml:space="preserve">
+    <value>代码签名</value>
+  </data>
+  <data name="Section_OptionalPackageMetadata" xml:space="preserve">
+    <value>可选包元数据</value>
   </data>
 </root>
