@@ -9,6 +9,7 @@ using Beep.Installer.Models;
 using Beep.Installer.Steps;
 using FluentAssertions;
 using TheTechIdea.Beep.Addin;
+using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Installer;
 using TheTechIdea.Beep.SetUp;
 using Xunit;
@@ -86,6 +87,34 @@ public sealed class PayloadIntegrityTests : IDisposable
     private static SetupContext ContextFor(InstallProject project, string installPath)
         => InstallContextBuilder.ForInstall(project, installPath, perUser: true);
 
+
+    /// <summary>Collects the event ids Diag emits while it is installed.</summary>
+    private sealed class CapturingLog : TheTechIdea.Beep.Services.Logging.IBeepLog
+    {
+        private readonly System.Collections.Concurrent.ConcurrentQueue<string> _events = new();
+        public System.Collections.Generic.IReadOnlyCollection<string> Events => _events.ToArray();
+
+        public bool IsEnabled => true;
+        public TheTechIdea.Beep.Services.Logging.BeepLogLevel MinLevel
+            => TheTechIdea.Beep.Services.Logging.BeepLogLevel.Trace;
+
+        public void Log(TheTechIdea.Beep.Services.Logging.BeepLogLevel level, string category, string message,
+            System.Collections.Generic.IReadOnlyDictionary<string, object>? properties = null, Exception? exception = null)
+        {
+            if (properties is not null && properties.TryGetValue("eventId", out var id) && id is string text)
+                _events.Enqueue(text);
+        }
+
+        public void Trace(string message, object? properties = null) { }
+        public void Debug(string message, object? properties = null) { }
+        public void Info(string message, object? properties = null) { }
+        public void Warn(string message, object? properties = null) { }
+        public void Error(string message, Exception? ex = null, object? properties = null) { }
+        public void Critical(string message, Exception? ex = null, object? properties = null) { }
+        public System.Threading.Tasks.Task FlushAsync(System.Threading.CancellationToken cancellationToken = default)
+            => System.Threading.Tasks.Task.CompletedTask;
+    }
+
     [Fact]
     public void DeclaredHash_ReachesTheStepThroughTheContext()
     {
@@ -142,13 +171,16 @@ public sealed class PayloadIntegrityTests : IDisposable
         // gap is recorded rather than enforced.
         var (archive, _) = PublishArchive("unverified payload");
         var context = ContextFor(Project(PayloadUrl, ""), Path.Combine(_root, "install"));
-        Diag.Reset();
 
-        var result = new PayloadDownloadStep(fetcher: new StubFetcher(archive)).Execute(context);
+        // Captured through a scoped log rather than Diag.Recent: that ring is process-wide and
+        // bounded, so under a parallel run other tests can evict the entry before it is read.
+        var log = new CapturingLog();
+        IErrorsInfo result;
+        using (Diag.UseLog(log))
+            result = new PayloadDownloadStep(fetcher: new StubFetcher(archive)).Execute(context);
 
         result.Flag.Should().Be(TheTechIdea.Beep.ConfigUtil.Errors.Ok, result.Message);
-        Diag.Recent.Should().Contain(e => e.EventId == "BI2610" && e.Level == "WARN",
-            "an unverifiable payload has to leave a trace");
+        log.Events.Should().Contain("BI2610", "an unverifiable payload has to leave a trace");
     }
 
     [Fact]

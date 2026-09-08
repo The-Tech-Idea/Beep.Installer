@@ -66,10 +66,10 @@ public sealed class InstallerExtensionManifestValidator
 
     private void ValidateVersions(InstallerExtensionManifest manifest, InstallerExtensionValidationResult result)
     {
-        if (!TryParseVersion(manifest.Version, out _))
+        if (!Engine.SemanticVersion.TryParse(manifest.Version, out _))
             result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI4010", "Extension.Version", $"Extension Version '{manifest.Version}' is not a valid semantic version.");
 
-        if (!TryParseVersion(EngineVersion, out var engine))
+        if (!Engine.SemanticVersion.TryParse(EngineVersion, out var engine))
         {
             result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI4011", "Engine.Version", $"Engine version '{EngineVersion}' is not valid.");
             return;
@@ -78,7 +78,7 @@ public sealed class InstallerExtensionManifestValidator
         var minimumEngineVersion = manifest.MinimumEngineVersion ?? "1.0.0";
         if (!string.IsNullOrWhiteSpace(minimumEngineVersion))
         {
-            if (!TryParseVersion(minimumEngineVersion, out var min))
+            if (!Engine.SemanticVersion.TryParse(minimumEngineVersion, out var min))
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI4012", "Extension.MinimumEngineVersion", $"MinimumEngineVersion '{manifest.MinimumEngineVersion}' is not valid.");
             else if (engine < min)
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI4013", "Extension.MinimumEngineVersion", $"Extension requires engine {manifest.MinimumEngineVersion} or newer.");
@@ -86,7 +86,7 @@ public sealed class InstallerExtensionManifestValidator
 
         if (!string.IsNullOrWhiteSpace(manifest.MaximumEngineVersion))
         {
-            if (!TryParseVersion(manifest.MaximumEngineVersion, out var max))
+            if (!Engine.SemanticVersion.TryParse(manifest.MaximumEngineVersion, out var max))
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI4014", "Extension.MaximumEngineVersion", $"MaximumEngineVersion '{manifest.MaximumEngineVersion}' is not valid.");
             else if (engine > max)
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI4015", "Extension.MaximumEngineVersion", $"Extension supports engine {manifest.MaximumEngineVersion} or older.");
@@ -176,13 +176,4 @@ public sealed class InstallerExtensionManifestValidator
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
-    private static bool TryParseVersion(string value, out Version version)
-    {
-        version = new Version(0, 0, 0);
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-
-        var normalized = value.Split('-', '+')[0];
-        return Version.TryParse(normalized, out version!);
-    }
 }

@@ -249,27 +249,71 @@ public class InstallerController : INotifyPropertyChanged
 
     // ── Auto-save ──
 
+    /// <summary>Serialises one autosave at a time; a slow write must not overlap the next tick.</summary>
+    private int _autoSaveInFlight;
+
     private void StartAutoSave()
     {
-        _autoSaveTimer = new System.Threading.Timer(_ =>
-        {
-            if (!_project.IsDirty) return;
-            try
-            {
-                var path = AutoSave.AutoSavePath(_filePath);
-                var dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
-                InstallerScriptSerializer.Save(_project, path);
-            }
-            catch (Exception ex)
-            {
-                // Autosave exists so a crash does not lose the user's work. Failing silently
-                // means they believe they are covered when they are not — record it so the
-                // failure is at least discoverable.
-                Diag.Warn("AutoSave", "periodic autosave failed — crash recovery is unavailable", ex);
-            }
-        }, null, (int)AutoSave.Interval.TotalMilliseconds, (int)AutoSave.Interval.TotalMilliseconds);
+        _autoSaveTimer = new System.Threading.Timer(_ => WriteAutoSaveSnapshot(),
+            null, (int)AutoSave.Interval.TotalMilliseconds, (int)AutoSave.Interval.TotalMilliseconds);
     }
+
+    /// <summary>
+    /// Writes the crash-recovery snapshot. Internal so the race can actually be tested.
+    ///
+    /// Three things this has to get right, none of which it used to:
+    ///
+    /// The timer runs on a thread-pool thread while the user edits on the UI thread, and the
+    /// serializer walks the project's ObservableCollections. Doing that against the live object
+    /// throws "collection was modified" mid-write, or worse writes a torn snapshot that looks
+    /// valid. The text is now produced under the same lock the editing path takes.
+    ///
+    /// It called <c>Save</c>, which stamps <c>ModifiedAt</c> on the project — through
+    /// <c>SetProperty</c>, which sets <c>IsDirty</c>. Autosaving therefore dirtied the very project
+    /// it was snapshotting, so a saved document reported unsaved changes 30 seconds later and
+    /// prompted on close. It now serialises without touching the project at all.
+    ///
+    /// The write went straight to the autosave path, so a crash during it left a truncated file
+    /// that <c>IsRecoveryAvailable</c> would happily offer as recovered work. It is now atomic.
+    /// </summary>
+    internal void WriteAutoSaveSnapshot()
+    {
+        if (!_project.IsDirty) return;
+
+        // A tick that arrives while the previous one is still writing is dropped, not queued: the
+        // next tick captures newer state anyway.
+        if (Interlocked.Exchange(ref _autoSaveInFlight, 1) == 1) return;
+        try
+        {
+            string text;
+            lock (_autoSaveLock)
+                text = InstallerScriptSerializer.Write(_project);
+
+            var path = AutoSave.AutoSavePath(_filePath);
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+            AtomicFileWriter.WriteAllText(path, text);
+        }
+        catch (Exception ex)
+        {
+            // Autosave exists so a crash does not lose the user's work. Failing silently
+            // means they believe they are covered when they are not — record it so the
+            // failure is at least discoverable.
+            Diag.Warn("AutoSave", "periodic autosave failed — crash recovery is unavailable", ex, "BI2640");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _autoSaveInFlight, 0);
+        }
+    }
+
+    /// <summary>
+    /// Taken while the snapshot is serialised and by any edit that restructures the project, so a
+    /// snapshot never walks a collection mid-mutation.
+    /// </summary>
+    internal object AutoSaveLock => _autoSaveLock;
+
+    private readonly object _autoSaveLock = new();
 
     public void StopAutoSave()
     {

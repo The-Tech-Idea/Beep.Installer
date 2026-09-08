@@ -788,11 +788,11 @@ public static class ProjectSchemaService
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI1352", $"{path}.PackageId", $"Duplicate deployment supersedence PackageId '{rule.PackageId}'.");
 
             if (!string.IsNullOrWhiteSpace(rule.MinimumVersion)
-                && !TryParseVersion(rule.MinimumVersion, out _))
+                && !Engine.SemanticVersion.TryParse(rule.MinimumVersion, out _))
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI1353", $"{path}.MinimumVersion", $"MinimumVersion '{rule.MinimumVersion}' is not a valid version.");
 
             if (!string.IsNullOrWhiteSpace(rule.MaximumVersion)
-                && !TryParseVersion(rule.MaximumVersion, out _))
+                && !Engine.SemanticVersion.TryParse(rule.MaximumVersion, out _))
                 result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI1354", $"{path}.MaximumVersion", $"MaximumVersion '{rule.MaximumVersion}' is not a valid version.");
         }
     }
@@ -950,18 +950,6 @@ public static class ProjectSchemaService
                || value.Equals("Free", StringComparison.OrdinalIgnoreCase)
                || value.Equals("Both", StringComparison.OrdinalIgnoreCase)
                || value.Equals("Neutral", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool TryParseVersion(string value, out Version version)
-    {
-        version = new Version(0, 0, 0);
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-        var normalized = value.Split('-', 2)[0];
-        var parts = normalized.Split('.', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1)
-            normalized += ".0";
-        return Version.TryParse(normalized, out version!);
     }
 
     private static string FirstNonEmpty(params string?[] values)
