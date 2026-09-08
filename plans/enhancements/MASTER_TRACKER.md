@@ -10,6 +10,54 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-08 (stage decomposition + gate audit)
+
+**3.B.1 tail done — and the row overstated the work.** `Run()` was 255 lines, but it already
+delegated to fifteen extracted helpers (`StagePayload`, `WriteRuntimeScript`, `CopyBrandingAssets`,
+`BuildInstallerExe`, `CompressZip`, `SignExe`, `PackageMsix`, `CleanupIntermediates`, …). What had
+never been decomposed was the *orchestration around them*: each stage mixed its helper call with its
+own `Report(…)`, log line and cancellation check, so the shape of a build was only visible by reading
+two hundred lines top to bottom.
+
+`Run()`'s body is now a twenty-line list of named stages against a `BuildRun` context that carries
+the shared locals — output directory, output file name, exe path, zip path — rather than a parameter
+list that would grow with every stage. Cancellation checks stayed exactly where they were, between
+stages and inside the helpers that already had them. Verified mechanically as well as by the suite:
+all fifteen helper call sites are present at identical counts before and after.
+
+Two ordering comments were worth preserving verbatim because they encode real constraints, and both
+moved into the stage that owns them: the single-file host must stay **uncompressed** (the compressed
+.NET single-file appends its own bundle and footer, and our payload after that footer corrupts the
+host), and archive timestamps must be normalized **after** the sidecars and extension bundle are in
+and **before** hashing, or a reproducible build does not hash reproducibly.
+
+**Gate audit — the M.1 rows were understating reality, like the phase rows before them.** Checked
+each against named tests and CI jobs rather than against the marker:
+
+- **1.M.1** → ✅. `/SELFTEST` and `/VALIDATE` were already recorded as passing; the sole blocker was
+  "full `/S` E2E", and the `/SELFTEST` job added for 9.B.2 now runs exactly that in CI, twice.
+- **2.M.1** → 🟡. All three criteria have named coverage: per-user/per-machine
+  (`InstallScopeTests` — authored scope independent of elevation, both-scope maintenance discovery,
+  LocalAppData resolution), failure-injection rollback (`RollbackTests` plus the resource-provider
+  rollback tests), corrupt-payload abort (`OfflineLayoutBuilderTests.Verify_RejectsTamperedOfflineBlob`,
+  the policy tamper tests, and the `BI2611` payload-hash mismatch guard).
+- **3.M.1** → 🟡. Round-trip and cancel are covered (`InstallerScriptSerializerTests`,
+  `BuildCancellationTests`); `/BUILD`→`/S`→`/UNINSTALL` is the CI `/SELFTEST` job.
+- **4.M.1** → ✅. `PublishTests`, `ClickOnceTests`, `MsixPackagerTests` and
+  `DeltaUpdatePackageServiceTests` all exist and are green in the 1245.
+- **5.M.1** → 🟡. `CliVerbTableTests` covers verb parity; the runtime verbs run in CI.
+- **8.M.1** → 🟡. Five security suites green (`CodeSigningServiceTests`, `InstallerPolicyTests`,
+  `MsiPolicyCliTests`, `SigningQualificationRunnerTests`, `SupplyChainSecurityScannerTests`).
+
+The 🟡 rows are **not** missing coverage — the criteria are tested. What they lack is a recorded live
+matrix run, which is the thing a gate is actually for. Distinguishing "untested" from "tested but not
+signed off" is the point of the audit; marking them ✅ on the strength of unit coverage would repeat
+the mistake that had 3010 "unit-covered" while the shipping installer could never produce it.
+
+Suite **1245/0/3, unchanged by the refactor**.
+
+---
+
 ## Progress log — 2026-09-08 (open code work)
 
 **3.C.2 — the old `BuildPipeline` was already gone; the real gap was that a build could not be
@@ -1325,7 +1373,7 @@ context-key tests are not yet written.
 | 1.B.2 | Delete `RuntimeProjectContext`; route the UI install path through the builder | ✅ |
 | 1.B.3 | Drop `InstallationTypeEx`/`UpdateModeEx` duplicate enums | ✅ |
 | 1.C.1 | Single `PerUser` decision (`InstallScopeResolver.IsPerUser`); emit `install-config.json` at build | ✅ |
-| 1.M.1 | **Gate: `/SELFTEST` passes ✅, `/VALIDATE` round-trips ✅** | 🟡 full `/S` E2E still blocked on the P3 publish timeout |
+| 1.M.1 | **Gate: `/SELFTEST` passes ✅, `/VALIDATE` round-trips ✅** | ✅ the `/S` E2E blocker is closed — CI runs `/SELFTEST` (install→verify→uninstall) against the built artifact, twice |
 | 1.M.2 | SOLID review | ⬜ |
 
 **P1 notes.** 10 new tests in `InstallContextBridgeTests` assert the projection and — critically —
@@ -1352,7 +1400,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ✅ (`Authoring/SemanticVersion` delegates to BeepDM `SemVer`) |
 | 2.C.2 | Payload SHA-256 verification before copy | ✅ (2026-09-07 — remote archive verified before extraction; `IPayloadFetcher` seam; 7 tests) |
 | 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ✅ (2026-09-07 — + `ResolvePayloadRoot` stops hardcoding "payload"; 7 tests) |
-| 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ⬜ |
+| 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | 🟡 all three criteria covered by named tests (see gate audit); a recorded live matrix run is what remains |
 | 2.M.2 | SOLID review | ⬜ |
 
 ## Phase 3: Authoring Core — Extract to `Beep.Installer.Core` ⬜ — P1
@@ -1365,7 +1413,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 3.A.2 | Move `InstallProject`/`CustomWizardPage` + projector/context builder | ✅ |
 | 3.A.3 | Move the `.bsetup` serializer | ✅ (still one class — the partial split is cosmetic and outstanding) |
 | 3.A.4 | Move scanner, factory, templates, MRU, autosave | ✅ (sweep verified: all 10 remaining catches deliberate and commented; `Diag.UseLog(IBeepLog)` already bridges to the structured pipeline) |
-| 3.B.1 | Move `BuildPipeline` + payload/host builders | ✅ (stage decomposition ⬜ — 255 lines / 15 stages, deliberately deferred, see 2026-09-08 open-code-work log) |
+| 3.B.1 | Move `BuildPipeline` + payload/host builders | ✅ `Run()` is now a 20-line list of named stages over a `BuildRun` context; all 15 helper call sites verified identical before/after |
 | 4.A.2–4.A.4 | Move Msix, Signing, ClickOnce, Publisher into Core/Packaging | ✅ (async update check + `IInstallerPublisher` interface ⬜) |
 | 3.B.2 | Publish seam (`IInstallerHostBuilder`) + configurable timeout + `KeepIntermediates` | ✅ **unblocked 29 tests** |
 | 3.B.3 | Wire sign + MSIX for real (no silent stubs) | ✅ |
@@ -1373,7 +1421,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 3.B.5 | Fix runtime-script source rebasing for files in subdirectories | ✅ |
 | 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ✅ `/BUILD` now runs the schema validator too — validation was not a gate on the build at all |
 | 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ✅ only one pipeline exists (row was stale); the UI Cancel button was inert and is now wired end to end |
-| 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | ⬜ |
+| 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | 🟡 round-trip + cancel covered; the install cycle runs in CI via `/SELFTEST` |
 | 3.M.2 | SOLID review | ⬜ |
 
 ## Phase 4: Packaging Consolidation (ClickOnce / MSIX / Signing) ⬜ — P2
@@ -1386,7 +1434,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 4.A.3 | Move ClickOnce; rename `RollbackManager`→`VersionBackupRotator`; async update check/apply | ✅ (async already correct where it matters; the CLI check calls were unbounded and are now cancellable) |
 | 4.A.4 | `ClickOncePublisher : IInstallerPublisher`; rewire `/PUBLISH`; delete `Engine/ClickOnce` | ✅ |
 | 4.B.1 | Replace PowerShell shortcut shelling with COM | ✅ |
-| 4.M.1 | Gate: publish + ClickOnce + Msix + update suites green | ⬜ |
+| 4.M.1 | Gate: publish + ClickOnce + Msix + update suites green | ✅ all four suites present and green |
 | 4.M.2 | SOLID review | ⬜ |
 
 ## Phase 5: Thin Shell — DI Composition Root ✅ — P1
@@ -1399,7 +1447,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 5.A.2 | Composition root | ✅ (2026-09-07 — `Composition/InstallerServices.cs`; `AddBeepLogging()` + Core registrations. `AddBeepForDesktop()` does not exist; `AddBeepServices()` deliberately not registered, see log) |
 | 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
 | 5.B.2 | Structured-logging adoption | ✅ (2026-09-07 — `Diag.UseLog(IBeepLog)`; `IBeepLog`, not the legacy `IDMLogger`, and `Diag` is kept as the local ring, see log) |
-| 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ⬜ |
+| 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | 🟡 `CliVerbTableTests` covers verb parity; `/SELFTEST` runs in CI |
 | 5.M.2 | SOLID review | ⬜ |
 
 ## Phase 6: UI/UX Overhaul ⬜ — P1
@@ -1446,7 +1494,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 8.B.1 | Swallowed-exception sweep (Core **and** shell) + permanent source guards | ✅ |
 | 8.B.2 | Autosave snapshot fix + race stress test | ✅ (`WriteAutoSaveSnapshot` + `AutoSaveRaceTests`) |
 | 8.B.3 | Sync-over-async sweep | ✅ (16 sites reviewed; 2 real — `SdkPackagePublisher` adopted `InstallHelpers.RunProcess`, `MageManifestTool` drain bounded) |
-| 8.M.1 | Gate: security test matrix + full suite | ⬜ |
+| 8.M.1 | Gate: security test matrix + full suite | 🟡 five security suites green; a recorded matrix run remains |
 | 8.M.2 | SOLID review | ⬜ |
 
 ## Phase 9: Test Consolidation & Regression 🟡 — P0 gate

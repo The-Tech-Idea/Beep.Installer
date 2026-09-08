@@ -294,200 +294,47 @@ public class BuildPipeline
 
         try
         {
+            var run = new BuildRun(project, result);
+
             ThrowIfBuildCanceled();
-            outputDir = Path.GetFullPath(ResolveOutputDirectory(project));
-            ThrowIfBuildCanceled();
-            if (cleanOutput && Directory.Exists(outputDir))
-                try { Directory.Delete(outputDir, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", "clean-output delete failed", ex); }
-            Directory.CreateDirectory(outputDir);
-            log.Add($"[1/11] Output: {outputDir}");
+            PrepareOutputDirectory(run, cleanOutput);
+            outputDir = run.OutputDir;
             ThrowIfBuildCanceled();
 
-            // 1) If nothing has been scanned yet, scan the source directory. Only
-            //    Components[].Files are staged, so without this a project that was never
-            //    scanned (a fresh .bsetup, or any headless /BUILD) silently produces an
-            //    installer with an empty payload. Auto-discovery is off: the author already
-            //    chose the source directory, so a build must not quietly retarget it.
-            //    This runs BEFORE validation so we validate what will actually be built.
-            if (!project.Components.Any(c => c.Files is { Count: > 0 })
-                && !string.IsNullOrWhiteSpace(project.SourceDirectory)
-                && Directory.Exists(project.SourceDirectory))
-            {
-                var scan = new SourceScanner().ScanAndApply(
-                    project, project.SourceDirectory,
-                    new SourceScanner.Options { AutoDiscoverBuildOutput = false });
-
-                log.Add($"  ✓ scanned source directory: {scan.FileCount} files");
-                foreach (var w in scan.Warnings) result.Warnings.Add(w);
-            }
+            ScanSourceIfNothingStaged(run);
             ThrowIfBuildCanceled();
 
-            // 2) Validate
-            Report(2, "Validating project…");
-            ValidateProject(project, result);
-            if (result.Errors.Count > 0) { result.Success = false; return result; }
-            ThrowIfBuildCanceled();
-            var outputFileName = EnsureExeFileName(project.OutputBaseFilename, project);
-            var exePath = Path.Combine(outputDir, outputFileName);
-            if (!TryEnsureOutputFileAvailable(exePath, out var lockError))
-            {
-                result.Errors.Add(lockError);
-                result.Success = false;
-                return result;
-            }
-            log.Add("  ✓ Project valid");
-
-            // 1b) Provision self-update: stamp update-settings.json into the payload so it installs
-            //     beside the app and AddBeepAppUpdates() can read the authored feed (Phase 11).
-            StampUpdateSettings(project, outputDir, result, log);
-
-            // 2) Stage payload
-            Report(8, "Staging payload…");
-            var stageResult = StagePayload(project, outputDir, result);
-            if (result.Errors.Count > 0) { result.Success = false; return result; }
-            ThrowIfBuildCanceled();
-            result.FileCount = stageResult.FileCount;
-            result.PayloadSizeBytes = stageResult.TotalBytes;
-            log.Add($"  ✓ {stageResult.FileCount} files, {stageResult.TotalBytes / 1024.0 / 1024.0:F1} MB");
-
-            // 3) Write runtime script
-            Report(20, "Writing runtime script…");
-            ThrowIfBuildCanceled();
-            result.SetupScriptPath = WriteRuntimeScript(project, outputDir, outputFileName, result);
-            log.Add($"  ✓ {Path.GetFileName(result.SetupScriptPath)}");
+            if (!ValidateAndReserveOutput(run)) return result;
             ThrowIfBuildCanceled();
 
-            // 3b) Emit the runtime install contract beside the script. The shipped installer
-            //     builds its own InstallConfig from the .bsetup, but writing it here makes the
-            //     output inspectable and readable by ConfigManager.Load.
-            WriteInstallConfig(project, outputDir, result);
+            StampUpdateSettings(project, run.OutputDir, result, run.Log);
 
-            // 4) Copy branding assets
-            Report(28, "Copying branding assets…");
-            ThrowIfBuildCanceled();
-            CopyBrandingAssets(project, outputDir, result);
-            log.Add("  ✓ banner.png, setup.ico");
-
-            // 5) Build self-contained single-file installer EXE
-            //    CRITICAL: uncompressed single-file (no EnableCompressionInSingleFile).
-            //    The compressed .NET single-file adds its own bundle+footer to the PE.
-            //    Appending our payload after that footer corrupts the .NET host.
-            Report(40, "Building installer EXE…");
-            ThrowIfBuildCanceled();
-            var publishDir = Path.Combine(outputDir, "_publish");
-            try
-            {
-                if (!BuildInstallerExe(project, outputDir, publishDir, outputFileName, result))
-                {
-                    ThrowIfBuildCanceled();
-                    return BuildFailure(result, sw, log);
-                }
-            }
-            finally
-            {
-                try { if (Directory.Exists(publishDir)) Directory.Delete(publishDir, recursive: true); } catch (Exception ex) { Diag.Debug("BuildPipeline", "publish-dir cleanup failed", ex); }
-            }
-            log.Add($"  ✓ {outputFileName} ({new FileInfo(Path.Combine(outputDir, outputFileName)).Length / 1024.0 / 1024.0:F1} MB)");
+            if (!StagePayloadStage(run)) return result;
             ThrowIfBuildCanceled();
 
-            // 6) Embed icon into the EXE (Win32 UpdateResource)
-            Report(50, "Embedding icon…");
-            ThrowIfBuildCanceled();
-            if (!string.IsNullOrWhiteSpace(project.SetupIconFile) && File.Exists(project.SetupIconFile))
-            {
-                var iconPath = Path.Combine(outputDir, "setup.ico");
-                File.Copy(project.SetupIconFile, iconPath, overwrite: true);
-                if (TryEmbedIcon(Path.Combine(outputDir, outputFileName), iconPath, out var iconErr))
-                    log.Add("  ✓ icon embedded");
-                else
-                { result.Warnings.Add($"Icon embedding: {iconErr}"); log.Add($"  WARN: icon embed: {iconErr}"); }
-            }
-
-            // 7) Compress payload into a single zip
-            Report(60, "Compressing payload…");
-            ThrowIfBuildCanceled();
-            var zipPath = Path.Combine(outputDir, project.PayloadFolderName + ".zip");
-            var solidStats = CompressZip(Path.Combine(outputDir, project.PayloadFolderName), zipPath,
-                                         project.SolidCompression,
-                                         MapCompressionLevel(project.CompressionLevel));
-            if (solidStats != null)
-            {
-                var (files, blobs, originalBytes, storedBytes) = solidStats.Value;
-                var saved = originalBytes - storedBytes;
-                result.Warnings.Add(
-                    $"Solid payload: {files} files deduplicated to {blobs} unique blobs " +
-                    $"({saved / 1024.0 / 1024.0:F1} MB saved before compression).");
-            }
-            result.PayloadPath = zipPath;
-            log.Add($"  ✓ {Path.GetFileName(zipPath)} ({new FileInfo(zipPath).Length / 1024.0 / 1024.0:F1} MB)");
+            WriteScriptAndContract(run);
             ThrowIfBuildCanceled();
 
-            // 8) Append script sidecars to the zip
-            AddScriptSidecarsToZip(outputDir, zipPath);
-            if (project.Resources.Count > 0)
-                Beep.Installer.Extensibility.InstallerExtensionBundle.AddToArchive(zipPath, ExtensionDirectories, ExtensionPolicy, project.Resources.ToList());
+            CopyBranding(run);
+
+            if (!BuildInstallerHost(run)) return BuildFailure(result, sw, run.Log);
             ThrowIfBuildCanceled();
 
-            // 8b) The archive is final here — sidecars and any extension bundle are in. Normalize
-            // its timestamps before hashing, so a reproducible build hashes reproducibly, then
-            // record the digest so a URL-hosted payload can be pinned.
-            NormalizeArchiveTimestamps(zipPath, result, log);
-            result.PayloadSha256 = RecordPayloadDigest(zipPath, project, result, log);
+            EmbedIcon(run);
+
+            CompressPayload(run);
             ThrowIfBuildCanceled();
 
-            // 9) Embed the zip into the EXE (append to the end of the PE)
-            Report(75, "Embedding payload into EXE…");
-            ThrowIfBuildCanceled();
-            EmbedPayloadIntoExe(exePath, zipPath);
-            log.Add("  ✓ payload embedded");
+            SealArchive(run);
             ThrowIfBuildCanceled();
 
-            // 10) (Optional) code-sign + (optional) MSIX
-            if (project.HasCodeSigningCertificate)
-            {
-                Report(85, "Code signing…");
-                ThrowIfBuildCanceled();
-                SignExe(exePath, project, result, log);
-            }
-            else
-            {
-                // Signed-by-default posture: an unsigned installer triggers Windows
-                // SmartScreen's "unrecognized app" interstitial on end-user machines, which
-                // most users read as "this is malware". Say so at build time, prominently.
-                result.Warnings.Add(
-                    "This installer is NOT code-signed. Windows SmartScreen will warn users " +
-                    "before running it. Configure PFX signing or a Windows certificate-store selector, or use " +
-                    "/REQUIRESIGNED in CI to make unsigned builds fail.");
-                log.Add("  WARN: not code-signed (SmartScreen will warn end users)");
-            }
-
-            if (project.OutputFormat is InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)
-            {
-                Report(90, "Packaging MSIX…");
-                ThrowIfBuildCanceled();
-                PackageMsix(project, outputDir, result, log);
-            }
-
-            // 11) Final cleanup
-            Report(98, "Cleaning intermediates…");
+            EmbedPayload(run);
             ThrowIfBuildCanceled();
-            var finalExe = result.OutputFile = exePath;
-            result.OutputSizeBytes = new FileInfo(finalExe).Length;
 
-            if (result.Errors.Count == 0 && !KeepIntermediates)
-            {
-                CleanupIntermediates(outputDir, finalExe, result.SetupScriptPath, result.MsixPackagePath, result.AppInstallerPath, result.MsixCapabilityReportPath, log);
-            }
-            else
-            {
-                log.Add("  (leaving intermediate output files in place)");
-            }
+            SignIfConfigured(run);
+            PackageMsixIfRequested(run);
 
-            sw.Stop();
-            result.Elapsed = sw.Elapsed;
-            result.Success = result.Errors.Count == 0;
-            Report(100, result.Success ? "Build complete." : "Build completed with errors.");
-            log.Add($"[11/11] {(result.Success ? "Build succeeded" : "Build failed")} in {result.Elapsed.TotalSeconds:F1}s");
+            FinalizeBuild(run, sw);
         }
         catch (OperationCanceledException)
         {
@@ -534,6 +381,296 @@ public class BuildPipeline
     // ─────────────────────────────────────────────────────────────────────
     //  Step implementations (all in this class)
     // ─────────────────────────────────────────────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Build stages
+    //
+    //  Run() used to carry all of this inline: fifteen numbered comment blocks, each mixing a call
+    //  to an already-extracted helper with its own progress report, log line and cancellation
+    //  check. The helpers were decomposed; the orchestration around them was not, so the shape of a
+    //  build was only visible by reading 200 lines. Run() is now the list of stages, and each stage
+    //  owns its own glue.
+    //
+    //  The stages share state through BuildRun rather than a parameter list that would grow with
+    //  every one of them. Cancellation stays where it was — between stages, and inside the helpers
+    //  that already checked.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>What one build accumulates as it runs. Not shared between builds.</summary>
+    private sealed class BuildRun
+    {
+        public BuildRun(InstallProject project, BuildResult result)
+        {
+            Project = project;
+            Result = result;
+        }
+
+        public InstallProject Project { get; }
+        public BuildResult Result { get; }
+        public List<string> Log => Result.Steps;
+
+        public string OutputDir { get; set; } = "";
+        public string OutputFileName { get; set; } = "";
+        public string ExePath { get; set; } = "";
+        public string ZipPath { get; set; } = "";
+    }
+
+    private void PrepareOutputDirectory(BuildRun run, bool cleanOutput)
+    {
+        run.OutputDir = Path.GetFullPath(ResolveOutputDirectory(run.Project));
+        ThrowIfBuildCanceled();
+
+        if (cleanOutput && Directory.Exists(run.OutputDir))
+        {
+            try { Directory.Delete(run.OutputDir, recursive: true); }
+            catch (Exception ex) { Diag.Debug("BuildPipeline", "clean-output delete failed", ex); }
+        }
+
+        Directory.CreateDirectory(run.OutputDir);
+        run.Log.Add($"[1/11] Output: {run.OutputDir}");
+    }
+
+    /// <summary>
+    /// Only <c>Components[].Files</c> are staged, so a project that was never scanned — a fresh
+    /// <c>.bsetup</c>, or any headless <c>/BUILD</c> — would otherwise produce an installer with an
+    /// empty payload. Auto-discovery stays off: the author already chose the source directory and a
+    /// build must not quietly retarget it. Runs before validation so we validate what will be built.
+    /// </summary>
+    private void ScanSourceIfNothingStaged(BuildRun run)
+    {
+        var project = run.Project;
+        if (project.Components.Any(c => c.Files is { Count: > 0 })) return;
+        if (string.IsNullOrWhiteSpace(project.SourceDirectory) || !Directory.Exists(project.SourceDirectory)) return;
+
+        var scan = new SourceScanner().ScanAndApply(
+            project, project.SourceDirectory,
+            new SourceScanner.Options { AutoDiscoverBuildOutput = false });
+
+        run.Log.Add($"  ✓ scanned source directory: {scan.FileCount} files");
+        foreach (var warning in scan.Warnings) run.Result.Warnings.Add(warning);
+    }
+
+    /// <summary>Validates, then reserves the output file. False means the build cannot proceed.</summary>
+    private bool ValidateAndReserveOutput(BuildRun run)
+    {
+        Report(2, "Validating project…");
+        ValidateProject(run.Project, run.Result);
+        if (run.Result.Errors.Count > 0) { run.Result.Success = false; return false; }
+
+        ThrowIfBuildCanceled();
+
+        run.OutputFileName = EnsureExeFileName(run.Project.OutputBaseFilename, run.Project);
+        run.ExePath = Path.Combine(run.OutputDir, run.OutputFileName);
+        if (!TryEnsureOutputFileAvailable(run.ExePath, out var lockError))
+        {
+            run.Result.Errors.Add(lockError);
+            run.Result.Success = false;
+            return false;
+        }
+
+        run.Log.Add("  ✓ Project valid");
+        return true;
+    }
+
+    private bool StagePayloadStage(BuildRun run)
+    {
+        Report(8, "Staging payload…");
+        var staged = StagePayload(run.Project, run.OutputDir, run.Result);
+        if (run.Result.Errors.Count > 0) { run.Result.Success = false; return false; }
+
+        run.Result.FileCount = staged.FileCount;
+        run.Result.PayloadSizeBytes = staged.TotalBytes;
+        run.Log.Add($"  ✓ {staged.FileCount} files, {staged.TotalBytes / 1024.0 / 1024.0:F1} MB");
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the runtime script, then the install contract beside it. The shipped installer builds
+    /// its own <c>InstallConfig</c> from the <c>.bsetup</c>; writing it here makes the output
+    /// inspectable and readable by <c>ConfigManager.Load</c>.
+    /// </summary>
+    private void WriteScriptAndContract(BuildRun run)
+    {
+        Report(20, "Writing runtime script…");
+        ThrowIfBuildCanceled();
+        run.Result.SetupScriptPath = WriteRuntimeScript(run.Project, run.OutputDir, run.OutputFileName, run.Result);
+        run.Log.Add($"  ✓ {Path.GetFileName(run.Result.SetupScriptPath)}");
+        ThrowIfBuildCanceled();
+
+        WriteInstallConfig(run.Project, run.OutputDir, run.Result);
+    }
+
+    private void CopyBranding(BuildRun run)
+    {
+        Report(28, "Copying branding assets…");
+        ThrowIfBuildCanceled();
+        CopyBrandingAssets(run.Project, run.OutputDir, run.Result);
+        run.Log.Add("  ✓ banner.png, setup.ico");
+    }
+
+    /// <summary>
+    /// Builds the self-contained single-file host.
+    ///
+    /// CRITICAL: uncompressed single-file (no <c>EnableCompressionInSingleFile</c>). The compressed
+    /// .NET single-file adds its own bundle and footer to the PE, and appending our payload after
+    /// that footer corrupts the host.
+    /// </summary>
+    private bool BuildInstallerHost(BuildRun run)
+    {
+        Report(40, "Building installer EXE…");
+        ThrowIfBuildCanceled();
+
+        var publishDir = Path.Combine(run.OutputDir, "_publish");
+        try
+        {
+            if (!BuildInstallerExe(run.Project, run.OutputDir, publishDir, run.OutputFileName, run.Result))
+            {
+                ThrowIfBuildCanceled();
+                return false;
+            }
+        }
+        finally
+        {
+            try { if (Directory.Exists(publishDir)) Directory.Delete(publishDir, recursive: true); }
+            catch (Exception ex) { Diag.Debug("BuildPipeline", "publish-dir cleanup failed", ex); }
+        }
+
+        var built = new FileInfo(Path.Combine(run.OutputDir, run.OutputFileName));
+        run.Log.Add($"  ✓ {run.OutputFileName} ({built.Length / 1024.0 / 1024.0:F1} MB)");
+        return true;
+    }
+
+    private void EmbedIcon(BuildRun run)
+    {
+        Report(50, "Embedding icon…");
+        ThrowIfBuildCanceled();
+
+        var project = run.Project;
+        if (string.IsNullOrWhiteSpace(project.SetupIconFile) || !File.Exists(project.SetupIconFile)) return;
+
+        var iconPath = Path.Combine(run.OutputDir, "setup.ico");
+        File.Copy(project.SetupIconFile, iconPath, overwrite: true);
+
+        if (TryEmbedIcon(Path.Combine(run.OutputDir, run.OutputFileName), iconPath, out var iconErr))
+        {
+            run.Log.Add("  ✓ icon embedded");
+        }
+        else
+        {
+            run.Result.Warnings.Add($"Icon embedding: {iconErr}");
+            run.Log.Add($"  WARN: icon embed: {iconErr}");
+        }
+    }
+
+    private void CompressPayload(BuildRun run)
+    {
+        Report(60, "Compressing payload…");
+        ThrowIfBuildCanceled();
+
+        var project = run.Project;
+        run.ZipPath = Path.Combine(run.OutputDir, project.PayloadFolderName + ".zip");
+        var solidStats = CompressZip(
+            Path.Combine(run.OutputDir, project.PayloadFolderName), run.ZipPath,
+            project.SolidCompression, MapCompressionLevel(project.CompressionLevel));
+
+        if (solidStats != null)
+        {
+            var (files, blobs, originalBytes, storedBytes) = solidStats.Value;
+            var saved = originalBytes - storedBytes;
+            run.Result.Warnings.Add(
+                $"Solid payload: {files} files deduplicated to {blobs} unique blobs " +
+                $"({saved / 1024.0 / 1024.0:F1} MB saved before compression).");
+        }
+
+        run.Result.PayloadPath = run.ZipPath;
+        run.Log.Add($"  ✓ {Path.GetFileName(run.ZipPath)} ({new FileInfo(run.ZipPath).Length / 1024.0 / 1024.0:F1} MB)");
+    }
+
+    /// <summary>
+    /// Adds the sidecars and any extension bundle, then finalizes the archive.
+    ///
+    /// Order matters: the archive is complete only once the sidecars and bundle are in, so its
+    /// timestamps are normalized *after* that and before hashing — otherwise a reproducible build
+    /// would not hash reproducibly.
+    /// </summary>
+    private void SealArchive(BuildRun run)
+    {
+        AddScriptSidecarsToZip(run.OutputDir, run.ZipPath);
+
+        if (run.Project.Resources.Count > 0)
+        {
+            Beep.Installer.Extensibility.InstallerExtensionBundle.AddToArchive(
+                run.ZipPath, ExtensionDirectories, ExtensionPolicy, run.Project.Resources.ToList());
+        }
+
+        ThrowIfBuildCanceled();
+
+        NormalizeArchiveTimestamps(run.ZipPath, run.Result, run.Log);
+        run.Result.PayloadSha256 = RecordPayloadDigest(run.ZipPath, run.Project, run.Result, run.Log);
+    }
+
+    private void EmbedPayload(BuildRun run)
+    {
+        Report(75, "Embedding payload into EXE…");
+        ThrowIfBuildCanceled();
+        EmbedPayloadIntoExe(run.ExePath, run.ZipPath);
+        run.Log.Add("  ✓ payload embedded");
+    }
+
+    private void SignIfConfigured(BuildRun run)
+    {
+        if (run.Project.HasCodeSigningCertificate)
+        {
+            Report(85, "Code signing…");
+            ThrowIfBuildCanceled();
+            SignExe(run.ExePath, run.Project, run.Result, run.Log);
+            return;
+        }
+
+        // Signed-by-default posture: an unsigned installer triggers Windows SmartScreen's
+        // "unrecognized app" interstitial on end-user machines, which most users read as
+        // "this is malware". Say so at build time, prominently.
+        run.Result.Warnings.Add(
+            "This installer is NOT code-signed. Windows SmartScreen will warn users " +
+            "before running it. Configure PFX signing or a Windows certificate-store selector, or use " +
+            "/REQUIRESIGNED in CI to make unsigned builds fail.");
+        run.Log.Add("  WARN: not code-signed (SmartScreen will warn end users)");
+    }
+
+    private void PackageMsixIfRequested(BuildRun run)
+    {
+        if (run.Project.OutputFormat is not (InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)) return;
+
+        Report(90, "Packaging MSIX…");
+        ThrowIfBuildCanceled();
+        PackageMsix(run.Project, run.OutputDir, run.Result, run.Log);
+    }
+
+    private void FinalizeBuild(BuildRun run, Stopwatch sw)
+    {
+        Report(98, "Cleaning intermediates…");
+        ThrowIfBuildCanceled();
+
+        var result = run.Result;
+        var finalExe = result.OutputFile = run.ExePath;
+        result.OutputSizeBytes = new FileInfo(finalExe).Length;
+
+        if (result.Errors.Count == 0 && !KeepIntermediates)
+        {
+            CleanupIntermediates(run.OutputDir, finalExe, result.SetupScriptPath,
+                result.MsixPackagePath, result.AppInstallerPath, result.MsixCapabilityReportPath, run.Log);
+        }
+        else
+        {
+            run.Log.Add("  (leaving intermediate output files in place)");
+        }
+
+        sw.Stop();
+        result.Elapsed = sw.Elapsed;
+        result.Success = result.Errors.Count == 0;
+        Report(100, result.Success ? "Build complete." : "Build completed with errors.");
+        run.Log.Add($"[11/11] {(result.Success ? "Build succeeded" : "Build failed")} in {result.Elapsed.TotalSeconds:F1}s");
+    }
 
     private void ValidateProject(InstallProject project, BuildResult result)
     {
