@@ -22,7 +22,7 @@ public class ClickOnceTests
         {
             var project = Beep.Installer.Engine.InstallerProjectFactory.CreateNew("Original", "1.0.0", "ACME", payload);
             project.MainExecutable = exe;
-            var publisher = new Beep.Installer.Engine.Publisher();
+            var publisher = new Beep.Installer.Engine.ClickOncePublisher();
             var first = publisher.Publish(project, publish.FullName, sign: false);
             first.Success.Should().BeTrue(string.Join("; ", first.Errors));
             var identity = XDocument.Load(first.DeploymentManifest).Root!.Element(Asm + "assemblyIdentity")!.ToString();

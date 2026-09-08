@@ -94,7 +94,7 @@ project.UseTestDefaults();
             // Note: CodeSignCertificatePath left empty.
 
         var publish = Path.Combine(src, "publish");
-        var r = new Publisher().Publish(project, publish, updateUrl: null, sign: false);
+        var r = new ClickOncePublisher().Publish(project, publish, updateUrl: null, sign: false);
 
         r.Success.Should().BeTrue();
         r.Warnings.Should().Contain(w => w.Contains("unsigned"));

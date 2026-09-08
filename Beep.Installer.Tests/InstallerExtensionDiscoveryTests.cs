@@ -665,15 +665,21 @@ public class InstallerExtensionDiscoveryTests : IDisposable
 
         File.WriteAllText(Path.Combine(projectDir, "Provider.cs"), source);
 
-        using var process = Process.Start(new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = "build SampleProvider.csproj --nologo --verbosity quiet",
+            Arguments = "build SampleProvider.csproj --nologo --verbosity quiet -nodeReuse:false",
             WorkingDirectory = projectDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
-        }) ?? throw new InvalidOperationException("dotnet build could not be started.");
+        };
+        // See ExtensionSdkCompatibilityQualificationRunnerTests: the -nodeReuse:false switch is what
+        // stops reused MSBuild nodes outliving the build and accumulating across the suite.
+        startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("dotnet build could not be started.");
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(120_000))

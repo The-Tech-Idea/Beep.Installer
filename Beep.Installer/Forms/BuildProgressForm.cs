@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -59,7 +60,7 @@ public class BuildProgressForm : Form
         };
         _cancelBtn = new Button
         {
-            Text = "Cancel",
+            Text = L("Common_Cancel", "Cancel"),
             Location = new Point(330, 100),
             Size = new Size(80, 28),
         };
@@ -68,10 +69,11 @@ public class BuildProgressForm : Form
             _cancelled = true;
             _cts?.Cancel();
             _cancelBtn.Enabled = false;
-            _cancelBtn.Text = "Cancelling...";
+            _cancelBtn.Text = L("BuildProgress_Cancelling", "Cancelling...");
         };
 
         Controls.AddRange(new Control[] { titleLabel, _statusLabel, _bar, _cancelBtn });
+        Engine.Accessibility.Attach(this);
     }
 
     public void UpdateProgress(int percent, string message)

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Resources;
 using System.Xml.Linq;
 using Beep.Installer.Lang;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -29,7 +30,7 @@ public class LanguageManagerForm : Form
 
     public LanguageManagerForm()
     {
-        Text = "Language Manager — Beep Installer";
+        Text = L("LangMgr_LanguageManagerBeepInstaller", "Language Manager — Beep Installer");
         Size = new Size(1000, 680);
         StartPosition = FormStartPosition.CenterScreen;
         // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
@@ -38,6 +39,7 @@ public class LanguageManagerForm : Form
         InitializeUI();
         LoadAllLanguages();
         ShowLanguage("en");
+        Engine.Accessibility.Attach(this);
     }
 
     private void InitializeUI()
@@ -48,28 +50,28 @@ public class LanguageManagerForm : Form
         _langSelector = new ComboBox { Location = new Point(8, 8), Size = new Size(150, 24), DropDownStyle = ComboBoxStyle.DropDownList };
         _langSelector.SelectedIndexChanged += (_, _) => ShowLanguage(_langSelector.SelectedItem?.ToString() ?? "en");
 
-        _addLangBtn = new Button { Text = "+ Language", Location = new Point(165, 7), Size = new Size(95, 26) };
+        _addLangBtn = new Button { Text = L("LangMgr_Language", "+ Language"), Location = new Point(165, 7), Size = new Size(95, 26) };
         _addLangBtn.Click += (_, _) => AddLanguage();
 
-        _removeLangBtn = new Button { Text = "- Language", Location = new Point(265, 7), Size = new Size(95, 26) };
+        _removeLangBtn = new Button { Text = L("LangMgr_Language", "- Language"), Location = new Point(265, 7), Size = new Size(95, 26) };
         _removeLangBtn.Click += (_, _) => RemoveLanguage();
 
-        var dupBtn = new Button { Text = "📋 Dup", Location = new Point(365, 7), Size = new Size(55, 26) };
+        var dupBtn = new Button { Text = L("LangMgr_Dup", "📋 Dup"), Location = new Point(365, 7), Size = new Size(55, 26) };
         dupBtn.Click += (_, _) => DuplicateLanguage();
 
-        _addKeyBtn = new Button { Text = "+ Key", Location = new Point(425, 7), Size = new Size(70, 26) };
+        _addKeyBtn = new Button { Text = L("LangMgr_Key", "+ Key"), Location = new Point(425, 7), Size = new Size(70, 26) };
         _addKeyBtn.Click += (_, _) => AddKey();
 
-        _removeKeyBtn = new Button { Text = "- Key", Location = new Point(500, 7), Size = new Size(70, 26) };
+        _removeKeyBtn = new Button { Text = L("LangMgr_Key", "- Key"), Location = new Point(500, 7), Size = new Size(70, 26) };
         _removeKeyBtn.Click += (_, _) => RemoveKey();
 
-        _saveBtn = new Button { Text = "💾 Save All", Location = new Point(580, 7), Size = new Size(85, 26), BackColor = Color.FromArgb(41, 98, 255), ForeColor = Color.White };
+        _saveBtn = new Button { Text = L("LangMgr_SaveAll", "💾 Save All"), Location = new Point(580, 7), Size = new Size(85, 26), BackColor = Color.FromArgb(41, 98, 255), ForeColor = Color.White };
         _saveBtn.Click += (_, _) => SaveAllLanguages();
 
-        _exportBtn = new Button { Text = "📤 Export", Location = new Point(675, 7), Size = new Size(75, 26) };
+        _exportBtn = new Button { Text = L("LangMgr_Export", "📤 Export"), Location = new Point(675, 7), Size = new Size(75, 26) };
         _exportBtn.Click += (_, _) => ExportToCsv();
 
-        _importBtn = new Button { Text = "📥 Import", Location = new Point(755, 7), Size = new Size(75, 26) };
+        _importBtn = new Button { Text = L("LangMgr_Import", "📥 Import"), Location = new Point(755, 7), Size = new Size(75, 26) };
         _importBtn.Click += (_, _) => ImportFromCsv();
 
         toolbar.Controls.AddRange(new Control[] { _langSelector, _addLangBtn, _removeLangBtn, _addKeyBtn, _removeKeyBtn, _saveBtn, _exportBtn, _importBtn });
@@ -96,7 +98,7 @@ public class LanguageManagerForm : Form
 
         var previewLabel = new Label
         {
-            Text = "Live Preview (select a key to see all translations):",
+            Text = L("LangMgr_LivePreviewSelectA", "Live Preview (select a key to see all translations):"),
             Dock = DockStyle.Top, Height = 20, Font = new Font("Segoe UI", 8, FontStyle.Bold),
             BackColor = Color.FromArgb(250, 250, 250)
         };
@@ -107,7 +109,7 @@ public class LanguageManagerForm : Form
         _statusLabel = new Label
         {
             Dock = DockStyle.Bottom, Height = 22,
-            Text = "Ready.",
+            Text = L("LangMgr_Ready", "Ready."),
             BackColor = Color.FromArgb(230, 230, 230), TextAlign = ContentAlignment.MiddleLeft
         };
 

@@ -87,6 +87,7 @@ public sealed class DotnetPublishHostBuilder : IInstallerHostBuilder
             var csprojDir = Path.GetDirectoryName(csprojPath)!;
             var publishArgs = $"publish \"{csprojPath}\" -c Release -r {request.RuntimeIdentifier} " +
                               $"--self-contained true " +
+                              $"-nodeReuse:false " +
                               $"-p:PublishSingleFile=true " +
                               $"-p:PublishReadyToRun={(request.ReadyToRun ? "true" : "false")} " +
                               $"-o \"{request.PublishDir}\"";
@@ -99,6 +100,19 @@ public sealed class DotnetPublishHostBuilder : IInstallerHostBuilder
                 CreateNoWindow = true,
                 WorkingDirectory = csprojDir,
             };
+
+            // MSBuild worker nodes outlive the build by design so the next one can reuse them warm.
+            // For a tool that shells out once to produce an installer that is just a process pile
+            // left on the user's machine -- a full worker set, a few hundred MB each, for 15 minutes
+            // -- and the nodes also inherit the redirected stdout/stderr handles below, so the pipes
+            // can stay open after dotnet itself has exited.
+            //
+            // The switch is what does the work, not the environment variable: the .NET CLI passes
+            // an explicit /nodeReuse:true when it invokes MSBuild, and an explicit switch beats
+            // MSBUILDDISABLENODEREUSE. Measured: env var alone leaves a full node set behind even
+            // 45 seconds after the build; with the switch, zero. The variable is set as well because
+            // it does cover any nested msbuild.exe that the build starts for itself.
+            psi.Environment["MSBUILDDISABLENODEREUSE"] = "1";
 
             using var process = Process.Start(psi);
             if (process == null)

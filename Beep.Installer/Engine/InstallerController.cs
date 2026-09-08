@@ -206,7 +206,7 @@ public class InstallerController : INotifyPropertyChanged
 
     public PublishResult Publish(string outputDir, string? updateUrl = null, bool sign = true)
     {
-        var publisher = new Publisher
+        var publisher = new ClickOncePublisher
         {
             Progress = new Progress<(int, string)>(p =>
                 BuildProgressChanged?.Invoke(this, new BuildPipeline.BuildProgress(p.Item1, p.Item2)))

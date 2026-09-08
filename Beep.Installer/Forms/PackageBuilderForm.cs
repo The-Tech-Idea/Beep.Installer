@@ -123,6 +123,7 @@ public class PackageBuilderForm : Form
         BindController();
         BindProject();
         UpdateTitle();
+        Engine.Accessibility.Attach(this);
     }
 
     private void BindController()
@@ -491,6 +492,28 @@ public class PackageBuilderForm : Form
     //  Direct WinForms DataBindings.Add helpers
     // ═══════════════════════════════════════════
 
+    /// <summary>A bound, editable text column. Declared width rather than reflected order.</summary>
+    private static DataGridViewTextBoxColumn TextColumn(string property, string header, int fillWeight)
+        => new()
+        {
+            DataPropertyName = property,
+            HeaderText = header,
+            Name = property,
+            FillWeight = fillWeight,
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+        };
+
+    /// <summary>A bound checkbox column, for the booleans a text cell would render as "True".</summary>
+    private static DataGridViewCheckBoxColumn CheckColumn(string property, string header, int fillWeight)
+        => new()
+        {
+            DataPropertyName = property,
+            HeaderText = header,
+            Name = property,
+            FillWeight = fillWeight,
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+        };
+
     private static TableLayoutPanel NewTwoColTable()
     {
         var t = new TableLayoutPanel
@@ -708,29 +731,27 @@ public class PackageBuilderForm : Form
         var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 340 };
 
         _componentsBinding = new BindingSource { DataSource = _project.Components };
+        // Columns are declared, not reflected. AutoGenerateColumns produced one column per public
+        // property of InstallComponent -- including nine List<T> members that render as
+        // "ObservableCollection`1" and cannot be edited in a cell -- which were then hidden again
+        // from a ListChanged handler. That meant the junk columns were visible until the list next
+        // changed (on a freshly opened project, indefinitely), and every property added to the model
+        // silently appeared in the grid until someone remembered to extend the hide list. It is the
+        // same hand-maintained-list drift that left nine builder sections uninvalidated.
         _componentsGrid = new DataGridView
         {
             Dock = DockStyle.Fill,
+            AutoGenerateColumns = false,
             DataSource = _componentsBinding,
-            AutoGenerateColumns = true,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         };
-        // After auto-generation, hide the raw Files collection column (it shows
-        // "ObservableCollection`1" text and can't be edited usefully in a grid cell).
-        // Also rename the count column to be clear.
-        _componentsBinding.ListChanged += (_, _) =>
-        {
-            HideComponentColumn("Files");
-            HideComponentColumn("Conditions");
-            HideComponentColumn("Includes");
-            HideComponentColumn("ConflictsWith");
-            HideComponentColumn("DependsOn");
-            HideComponentColumn("Registry");
-            HideComponentColumn("Shortcuts");
-            HideComponentColumn("ComRegistrations");
-            HideComponentColumn("GacAssemblies");
-        };
+        _componentsGrid.Columns.AddRange(
+            TextColumn(nameof(InstallComponent.Id), L("Grid_Id", "Id"), fillWeight: 18),
+            TextColumn(nameof(InstallComponent.Name), L("Grid_Name", "Name"), fillWeight: 30),
+            TextColumn(nameof(InstallComponent.Description), L("Grid_Description", "Description"), fillWeight: 34),
+            CheckColumn(nameof(InstallComponent.Required), L("Grid_Required", "Required"), fillWeight: 9),
+            CheckColumn(nameof(InstallComponent.Selected), L("Grid_Selected", "Selected"), fillWeight: 9));
 
         _componentProps = new PropertyGrid { Dock = DockStyle.Fill, HelpVisible = false };
         _componentProps.DataBindings.Add("SelectedObject", _componentsBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
@@ -757,13 +778,6 @@ public class PackageBuilderForm : Form
         split.Panel2.Controls.Add(_componentProps);
         p.Controls.Add(split);
         return p;
-    }
-
-    private void HideComponentColumn(string name)
-    {
-        var column = _componentsGrid.Columns[name];
-        if (column != null)
-            column.Visible = false;
     }
 
     private Panel BuildPrerequisitesSection()

@@ -53,13 +53,13 @@ public sealed class DeltaUpdateAtomicApplyOptions
     public string CurrentVersion { get; init; } = "";
     public bool RequireSignature { get; init; }
     public List<string> TrustedPublicKeys { get; init; } = new();
-    public int BackupRetention { get; init; } = RollbackManager.DefaultKeep;
+    public int BackupRetention { get; init; } = VersionBackupRotator.DefaultKeep;
 }
 
 public sealed class DeltaUpdateRollbackOptions
 {
     public string JournalPath { get; init; } = "";
-    public int BackupRetention { get; init; } = RollbackManager.DefaultKeep;
+    public int BackupRetention { get; init; } = VersionBackupRotator.DefaultKeep;
 }
 
 public sealed class DeltaUpdatePackageResult
@@ -583,7 +583,7 @@ public sealed class DeltaUpdatePackageService
         };
         WriteJournal(journalPath, checkpoint);
 
-        var rotate = RollbackManager.Rotate(installRoot, stageRoot, options.BackupRetention);
+        var rotate = VersionBackupRotator.Rotate(installRoot, stageRoot, options.BackupRetention);
         if (!rotate.Success)
         {
             WriteJournal(journalPath, checkpoint with
@@ -745,7 +745,7 @@ public sealed class DeltaUpdatePackageService
         var registrationError = journal.InstalledImage?.ReconcileRegistration(install, journal.TargetVersion, dryRun: true) ?? "";
         if (registrationError.Length > 0) return Fail(registrationError);
 
-        var rollback = RollbackManager.Rollback(install, options.BackupRetention);
+        var rollback = VersionBackupRotator.Rollback(install, options.BackupRetention);
         if (!rollback.Success)
             return Fail(rollback.Error ?? "Delta rollback failed.");
 

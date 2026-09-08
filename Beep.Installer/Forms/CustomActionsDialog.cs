@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using Beep.Installer.Models;
 using TheTechIdea.Beep.Installer.Steps;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -37,7 +38,7 @@ public class CustomActionsDialog : Form
         _actions = new BindingList<CustomAction>();
         foreach (CustomAction a in actions) _actions.Add(a);
 
-        Text = "Custom Actions (A1.1)";
+        Text = L("Actions_CustomActionsA11", "Custom Actions (A1.1)");
         Size = new Size(900, 560);
         StartPosition = FormStartPosition.CenterParent;
         // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
@@ -57,6 +58,7 @@ public class CustomActionsDialog : Form
         _binding.CurrentChanged += (_, _) => BindEditorToCurrent();
 
         Load += (_, _) => ValidateAll();
+        Engine.Accessibility.Attach(this);
     }
 
     private Control BuildListPanel()
@@ -86,9 +88,9 @@ public class CustomActionsDialog : Form
         buttonRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
         buttonRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
         buttonRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        _addBtn = new Button { Text = "Add", Dock = DockStyle.Fill };
-        _removeBtn = new Button { Text = "Remove", Dock = DockStyle.Fill };
-        _okBtn = new Button { Text = "OK", Dock = DockStyle.Fill, DialogResult = DialogResult.None };
+        _addBtn = new Button { Text = L("Common_Add", "Add"), Dock = DockStyle.Fill };
+        _removeBtn = new Button { Text = L("Common_Remove", "Remove"), Dock = DockStyle.Fill };
+        _okBtn = new Button { Text = L("Common_OK", "OK"), Dock = DockStyle.Fill, DialogResult = DialogResult.None };
         _addBtn.Click += (_, _) => OnAdd();
         _removeBtn.Click += (_, _) => OnRemove();
         _okBtn.Click += (_, _) => OnOk();
@@ -109,25 +111,25 @@ public class CustomActionsDialog : Form
 
         int row = 0;
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Path:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Actions_Path", "Path:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _pathBox = new TextBox { Dock = DockStyle.Fill };
         _pathBox.DataBindings.Add("Text", _binding, nameof(CustomAction.Path), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_pathBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Arguments:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Actions_Arguments", "Arguments:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _argsBox = new TextBox { Dock = DockStyle.Fill };
         _argsBox.DataBindings.Add("Text", _binding, nameof(CustomAction.Arguments), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_argsBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Working dir:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Actions_WorkingDir", "Working dir:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _workDirBox = new TextBox { Dock = DockStyle.Fill };
         _workDirBox.DataBindings.Add("Text", _binding, nameof(CustomAction.WorkingDirectory), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_workDirBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Timing:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Actions_Timing", "Timing:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _timingBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         _timingBox.Items.AddRange(new object[] {
             CustomActionTiming.BeforeInstall, CustomActionTiming.AfterInstall,
@@ -136,29 +138,29 @@ public class CustomActionsDialog : Form
         layout.Controls.Add(_timingBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Order:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Common_Order", "Order:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _orderBox = new NumericUpDown { Dock = DockStyle.Fill, Minimum = int.MinValue, Maximum = int.MaxValue };
         _orderBox.DataBindings.Add("Value", _binding, nameof(CustomAction.Order), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_orderBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Timeout (ms):", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Actions_TimeoutMs", "Timeout (ms):"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _timeoutBox = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0, Maximum = int.MaxValue };
         _timeoutBox.DataBindings.Add("Value", _binding, nameof(CustomAction.TimeoutMs), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_timeoutBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         var flagsRow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
-        _requiredCheck = new CheckBox { Text = "Required (fail install)", AutoSize = true };
+        _requiredCheck = new CheckBox { Text = L("Actions_RequiredFailInstall", "Required (fail install)"), AutoSize = true };
         _requiredCheck.DataBindings.Add("Checked", _binding, nameof(CustomAction.Required), true, DataSourceUpdateMode.OnPropertyChanged);
-        _failOnErrorCheck = new CheckBox { Text = "Fail on error", AutoSize = true, Checked = true, Margin = new Padding(12, 3, 0, 0) };
+        _failOnErrorCheck = new CheckBox { Text = L("Actions_FailOnError", "Fail on error"), AutoSize = true, Checked = true, Margin = new Padding(12, 3, 0, 0) };
         _failOnErrorCheck.DataBindings.Add("Checked", _binding, nameof(CustomAction.FailOnError), true, DataSourceUpdateMode.OnPropertyChanged);
         flagsRow.Controls.Add(_requiredCheck);
         flagsRow.Controls.Add(_failOnErrorCheck);
         layout.Controls.Add(flagsRow, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
-        layout.Controls.Add(new Label { Text = "Description:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Top }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Common_Description", "Description:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Top }, 0, row);
         _descriptionBox = new TextBox { Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Vertical };
         _descriptionBox.DataBindings.Add("Text", _binding, nameof(CustomAction.Description), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_descriptionBox, 1, row++);
@@ -176,8 +178,8 @@ public class CustomActionsDialog : Form
         _actions.ListChanged += (_, _) => ValidateAll();
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 200, FlowDirection = FlowDirection.RightToLeft };
-        _cancelBtn = new Button { Text = "Cancel", Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
-        var closeBtn = new Button { Text = "OK", Width = 90, Height = 28 };
+        _cancelBtn = new Button { Text = L("Common_Cancel", "Cancel"), Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
+        var closeBtn = new Button { Text = L("Common_OK", "OK"), Width = 90, Height = 28 };
         closeBtn.Click += (_, _) => OnOk();
         buttons.Controls.Add(closeBtn);
         buttons.Controls.Add(_cancelBtn);

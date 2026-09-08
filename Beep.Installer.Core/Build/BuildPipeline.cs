@@ -547,6 +547,28 @@ public class BuildPipeline
             result.Warnings.Add("No source directory set — the payload will be empty.");
         else if (!Directory.Exists(project.SourceDirectory))
             result.Warnings.Add($"Source directory does not exist: {project.SourceDirectory}");
+
+        // The build used to stop here, with five rules of its own, while `/VALIDATE` ran the far
+        // more thorough ProjectSchemaService -- and the two never met. A project that `/VALIDATE`
+        // rejected could still be built by `/BUILD`, so validation was not actually a gate on
+        // anything. (HeadlessInstallerSdk.Validate already concatenated both results, which is the
+        // tell: they are complementary, not redundant.)
+        //
+        // Non-strict on purpose. Strict adds authoring-policy rules that belong to an explicit
+        // `/VALIDATE --strict`, not to every build; what matters here is that a project the schema
+        // calls broken cannot silently produce an installer.
+        var schema = ProjectSchemaService.Validate(project);
+        foreach (var diagnostic in schema.Diagnostics)
+        {
+            var message = string.IsNullOrWhiteSpace(diagnostic.Path)
+                ? $"{diagnostic.Code}: {diagnostic.Message}"
+                : $"{diagnostic.Code} ({diagnostic.Path}): {diagnostic.Message}";
+
+            if (diagnostic.Severity == ProjectSchemaDiagnosticSeverity.Error)
+                result.Errors.Add(message);
+            else
+                result.Warnings.Add(message);
+        }
     }
 
     /// <summary>

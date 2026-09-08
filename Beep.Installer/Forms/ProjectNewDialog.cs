@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -28,7 +29,7 @@ public class ProjectNewDialog : Form
 
     public ProjectNewDialog()
     {
-        Text = "New Installer Script";
+        Text = L("NewProject_NewInstallerScript", "New Installer Script");
         Size = new Size(520, 320);
         StartPosition = FormStartPosition.CenterParent;
         // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
@@ -84,7 +85,7 @@ public class ProjectNewDialog : Form
 
         var hint = new Label
         {
-            Text = "The source directory contains the files that will be installed (e.g. your app's bin/Release output).",
+            Text = L("NewProject_TheSourceDirectoryContains", "The source directory contains the files that will be installed (e.g. your app's bin/Release output)."),
             Dock = DockStyle.Fill, ForeColor = SystemColors.GrayText, Height = 40
         };
         layout.SetColumnSpan(hint, 3);
@@ -92,8 +93,8 @@ public class ProjectNewDialog : Form
         r++;
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Height = 36 };
-        _okBtn = new Button { Text = "Create", Width = 90, Height = 28, DialogResult = DialogResult.OK };
-        _cancelBtn = new Button { Text = "Cancel", Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
+        _okBtn = new Button { Text = L("Common_Create", "Create"), Width = 90, Height = 28, DialogResult = DialogResult.OK };
+        _cancelBtn = new Button { Text = L("Common_Cancel", "Cancel"), Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
         buttons.Controls.AddRange(new Control[] { _okBtn, _cancelBtn });
         layout.SetColumnSpan(buttons, 3);
         layout.Controls.Add(buttons, 0, r);
@@ -101,6 +102,7 @@ public class ProjectNewDialog : Form
         AcceptButton = _okBtn;
         CancelButton = _cancelBtn;
         Controls.Add(layout);
+        Engine.Accessibility.Attach(this);
     }
 
     private static Label MakeLabel(string text) =>

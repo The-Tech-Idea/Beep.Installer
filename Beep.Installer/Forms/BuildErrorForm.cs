@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -115,21 +116,21 @@ public class BuildErrorForm : Form
         };
         var closeBtn = new Button
         {
-            Text = "Close",
+            Text = L("Common_Close", "Close"),
             Width = 100,
             Height = 36,
             DialogResult = DialogResult.Cancel,
         };
         var saveBtn = new Button
         {
-            Text = "Save As…",
+            Text = L("BuildError_SaveAs", "Save As…"),
             Width = 110,
             Height = 36,
         };
         saveBtn.Click += (_, _) => SaveLogToFile(detailBox.Text);
         var copyBtn = new Button
         {
-            Text = "Copy to Clipboard",
+            Text = L("BuildError_CopyToClipboard", "Copy to Clipboard"),
             Width = 140,
             Height = 36,
             BackColor = Color.FromArgb(41, 98, 255),
@@ -142,7 +143,7 @@ public class BuildErrorForm : Form
             {
                 Clipboard.SetText(detailBox.Text);
                 copyClicked = true;
-                copyBtn.Text = "Copied!";
+                copyBtn.Text = L("BuildError_Copied", "Copied!");
                 copyBtn.BackColor = Color.FromArgb(46, 160, 67);
             }
             catch (Exception ex)
@@ -152,7 +153,7 @@ public class BuildErrorForm : Form
         };
         var selectAllBtn = new Button
         {
-            Text = "Select All",
+            Text = L("BuildError_SelectAll", "Select All"),
             Width = 100,
             Height = 36,
         };
@@ -180,6 +181,7 @@ public class BuildErrorForm : Form
             detailBox.Focus();
             detailBox.SelectAll();
         };
+        Engine.Accessibility.Attach(this);
     }
 
     private void SaveLogToFile(string text)

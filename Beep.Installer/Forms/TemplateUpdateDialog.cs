@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -26,7 +27,7 @@ public sealed class TemplateUpdateDialog : Form
     {
         _previewFactory = previewFactory ?? throw new ArgumentNullException(nameof(previewFactory));
 
-        Text = "Apply Template Update";
+        Text = L("Template_ApplyTemplateUpdate", "Apply Template Update");
         Size = new Size(980, 620);
         MinimumSize = new Size(760, 460);
         StartPosition = FormStartPosition.CenterParent;
@@ -51,7 +52,7 @@ public sealed class TemplateUpdateDialog : Form
         var selector = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        selector.Controls.Add(new Label { Text = "Template:", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        selector.Controls.Add(new Label { Text = L("Template_Template", "Template:"), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         _templateBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var template in templates.OrderBy(t => t.Category).ThenBy(t => t.Name))
             _templateBox.Items.Add(template);
@@ -78,14 +79,14 @@ public sealed class TemplateUpdateDialog : Form
             RowHeadersVisible = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         };
-        _diffGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Path", DataPropertyName = nameof(ProjectTemplateDiffEntry.Path), FillWeight = 36 });
-        _diffGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Current", DataPropertyName = nameof(ProjectTemplateDiffEntry.CurrentValue), FillWeight = 32 });
-        _diffGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Updated", DataPropertyName = nameof(ProjectTemplateDiffEntry.UpdatedValue), FillWeight = 32 });
+        _diffGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L("Template_Path", "Path"), DataPropertyName = nameof(ProjectTemplateDiffEntry.Path), FillWeight = 36 });
+        _diffGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L("Template_Current", "Current"), DataPropertyName = nameof(ProjectTemplateDiffEntry.CurrentValue), FillWeight = 32 });
+        _diffGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L("Template_Updated", "Updated"), DataPropertyName = nameof(ProjectTemplateDiffEntry.UpdatedValue), FillWeight = 32 });
         root.Controls.Add(_diffGrid, 0, 2);
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-        _applyButton = new Button { Text = "Apply", Width = 96, Height = 28, DialogResult = DialogResult.OK };
-        var cancelButton = new Button { Text = "Cancel", Width = 96, Height = 28, DialogResult = DialogResult.Cancel };
+        _applyButton = new Button { Text = L("Template_Apply", "Apply"), Width = 96, Height = 28, DialogResult = DialogResult.OK };
+        var cancelButton = new Button { Text = L("Common_Cancel", "Cancel"), Width = 96, Height = 28, DialogResult = DialogResult.Cancel };
         buttons.Controls.Add(_applyButton);
         buttons.Controls.Add(cancelButton);
         root.Controls.Add(buttons, 0, 3);
@@ -100,6 +101,7 @@ public sealed class TemplateUpdateDialog : Form
             else
                 RefreshPreview();
         };
+        Engine.Accessibility.Attach(this);
     }
 
     private void RefreshPreview()
@@ -107,7 +109,7 @@ public sealed class TemplateUpdateDialog : Form
         if (_templateBox.SelectedItem is not ProjectTemplate template)
         {
             _preview = null;
-            _summaryLabel.Text = "No templates are available.";
+            _summaryLabel.Text = L("Template_NoTemplatesAreAvailable", "No templates are available.");
             _diffGrid.DataSource = Array.Empty<ProjectTemplateDiffEntry>();
             _applyButton.Enabled = false;
             return;
@@ -126,7 +128,7 @@ public sealed class TemplateUpdateDialog : Form
         catch (Exception ex)
         {
             _preview = null;
-            _summaryLabel.Text = "Template preview failed: " + ex.Message;
+            _summaryLabel.Text = L("Template_TemplatePreviewFailed", "Template preview failed: ") + ex.Message;
             _diffGrid.DataSource = Array.Empty<ProjectTemplateDiffEntry>();
             _applyButton.Enabled = false;
         }

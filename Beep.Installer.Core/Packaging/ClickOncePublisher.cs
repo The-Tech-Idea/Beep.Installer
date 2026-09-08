@@ -12,11 +12,19 @@ namespace Beep.Installer.Engine;
 /// Orchestrates a ClickOnce publish (Track B2.1): stages the payload into a publish folder via
 /// <see cref="PublishStager"/>, then best-effort signs the manifests with <c>signtool</c> when a
 /// certificate is configured (unsigned → warning, not failure).
+///
+/// Called <c>Publisher</c> until now. The codebase also has an MSIX packager and a feed publisher,
+/// so the bare name claimed a generality this class does not have — everything it emits is a
+/// ClickOnce application/deployment manifest pair.
 /// </summary>
-public class Publisher
+public class ClickOncePublisher : IInstallerPublisher
 {
+    /// <inheritdoc />
+    public string Kind => "clickonce";
+
     public IProgress<(int percent, string message)>? Progress { get; set; }
 
+    /// <inheritdoc />
     public PublishResult Publish(InstallProject project, string publishDir, string? updateUrl = null, bool sign = true)
     {
         var result = new PublishResult();

@@ -130,7 +130,13 @@ public sealed class HeadlessSdkQualificationRunner
             build.StandardOutput,
             build.StandardError));
 
-        var validate = RunDotnet(consumerDirectory, "run", "--project", consumerProjectPath, "--no-build", "--", "validate", projectPath);
+        // Run the consumer's built assembly directly rather than via `dotnet run`. `dotnet run`
+        // re-evaluates the project through MSBuild even with --no-build, which spawns a full set of
+        // worker nodes that outlive the call, and it will not accept -nodeReuse:false to stop them
+        // ("Unknown command", exit 2). Invoking the DLL skips MSBuild entirely -- no nodes, and a
+        // faster call -- while exercising exactly the same packaged-SDK code path.
+        var consumerAssembly = FindConsumerAssembly(consumerDirectory, consumerProjectPath);
+        var validate = RunDotnet(consumerDirectory, consumerAssembly, "validate", projectPath);
         scenarios.Add(Scenario(
             "external-consumer-validate",
             "The packaged SDK validates a real installer project from a separate app.",
@@ -140,7 +146,7 @@ public sealed class HeadlessSdkQualificationRunner
             validate.StandardOutput,
             validate.StandardError));
 
-        var plan = RunDotnet(consumerDirectory, "run", "--project", consumerProjectPath, "--no-build", "--", "plan", projectPath);
+        var plan = RunDotnet(consumerDirectory, consumerAssembly, "plan", projectPath);
         scenarios.Add(Scenario(
             "external-consumer-plan",
             "The packaged SDK compiles a deterministic plan from a separate app.",
@@ -342,6 +348,10 @@ public sealed class HeadlessSdkQualificationRunner
     /// </summary>
     private static readonly TimeSpan DotnetTimeout = TimeSpan.FromMinutes(10);
 
+    /// <summary>Verbs that drive MSBuild and therefore accept (and need) <c>-nodeReuse:false</c>.</summary>
+    private static readonly HashSet<string> MsBuildDrivenVerbs =
+        new(StringComparer.OrdinalIgnoreCase) { "build", "pack", "restore", "publish", "msbuild" };
+
     private static ProcessRunResult RunDotnet(string workingDirectory, params string[] arguments)
     {
         var start = new ProcessStartInfo("dotnet")
@@ -358,11 +368,22 @@ public sealed class HeadlessSdkQualificationRunner
         // `dotnet` itself has exited, so reading it to the end waits on processes that are under no
         // obligation to leave. That is not hypothetical: it hung the whole test suite indefinitely,
         // with `dotnet` gone and orphaned MSBuild nodes holding the write end.
+        //
+        // The environment variable alone does not do it. The .NET CLI passes an explicit
+        // /nodeReuse:true when it invokes MSBuild, and an explicit switch wins -- measured, a full
+        // node set survives the build regardless of the variable. The switch is added below, for
+        // the MSBuild-driven verbs only: `dotnet run` would treat it as an argument to the app.
         start.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         start.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
 
         foreach (var argument in arguments)
             start.ArgumentList.Add(argument);
+
+        // Only the MSBuild-driven verbs. `dotnet run` rejects the switch outright -- it reports
+        // "Unknown command: -nodereuse:false" and exits 2 -- so the consumer is invoked through its
+        // built DLL instead of `dotnet run`, which avoids MSBuild (and its nodes) altogether.
+        if (arguments.Length > 0 && MsBuildDrivenVerbs.Contains(arguments[0]))
+            start.ArgumentList.Add("-nodeReuse:false");
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start dotnet.");
 
@@ -396,6 +417,27 @@ public sealed class HeadlessSdkQualificationRunner
         }
 
         return new ProcessRunResult(process.ExitCode, stdoutTask.Result, stderrTask.Result);
+    }
+
+    /// <summary>
+    /// The consumer's built entry assembly. The build above uses the default configuration, but the
+    /// path is searched rather than assumed so a different TFM or configuration does not silently
+    /// fall back to "no output" and fail the scenario for the wrong reason.
+    /// </summary>
+    private static string FindConsumerAssembly(string consumerDirectory, string consumerProjectPath)
+    {
+        var name = Path.GetFileNameWithoutExtension(consumerProjectPath) + ".dll";
+        var bin = Path.Combine(consumerDirectory, "bin");
+        if (Directory.Exists(bin))
+        {
+            var match = Directory.EnumerateFiles(bin, name, SearchOption.AllDirectories)
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault();
+            if (match != null) return match;
+        }
+
+        // Let the run fail with dotnet's own "file not found" rather than inventing a message.
+        return Path.Combine(consumerDirectory, "bin", "Debug", name);
     }
 
     /// <summary>Whatever a read task produced, or a note that it never finished.</summary>

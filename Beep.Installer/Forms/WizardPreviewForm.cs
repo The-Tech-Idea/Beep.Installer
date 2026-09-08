@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Beep.Installer.Models;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -28,7 +29,7 @@ public class WizardPreviewForm : Form
 
         var hint = new Label
         {
-            Text = "Preview mode — no files will be installed. Walk through the wizard to verify the end-user experience.",
+            Text = L("Preview_PreviewModeNoFiles", "Preview mode — no files will be installed. Walk through the wizard to verify the end-user experience."),
             Dock = DockStyle.Top, Height = 28, TextAlign = ContentAlignment.MiddleLeft,
             BackColor = SystemColors.Info, ForeColor = SystemColors.InfoText, Padding = new Padding(8, 0, 0, 0)
         };
@@ -48,6 +49,7 @@ public class WizardPreviewForm : Form
                     catch (Exception ex) { Engine.Diag.Debug("WizardPreviewForm", "preview form dispose failed", ex); }
                 }
         };
+        Engine.Accessibility.Attach(this);
     }
 
     private TabPage BuildStyleTab(string title, Form hosted)

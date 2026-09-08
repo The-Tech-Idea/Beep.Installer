@@ -817,11 +817,21 @@ internal static partial class Program
         return settings;
     }
 
+    /// <summary>
+    /// How long a feed query may take before the CLI gives up. Generous enough for a slow link,
+    /// short enough that a scheduled check does not hang a deployment job indefinitely.
+    /// </summary>
+    private static readonly TimeSpan UpdateNetworkTimeout = TimeSpan.FromMinutes(2);
+
     /// <summary><c>/CHECKUPDATE [/FEED=url]</c> — report whether an app update (or stale module) is available.</summary>
     private static int RunCheckUpdate(string[] args)
     {
         var svc = new TheTechIdea.Beep.Updates.AppUpdateService(BuildUpdateSettings(args));
-        var check = svc.CheckAsync().GetAwaiter().GetResult();
+        // Blocking is correct here -- a console verb has no SynchronizationContext to deadlock
+        // against -- but it was unbounded, so an unreachable or hanging feed wedged the command with
+        // no output and no way out but Ctrl-C. Deployment tooling runs this on a schedule.
+        using var checkCts = new CancellationTokenSource(UpdateNetworkTimeout);
+        var check = svc.CheckAsync(checkCts.Token).GetAwaiter().GetResult();
         if (!check.Succeeded) { Console.Error.WriteLine($"Update check failed: {check.Error}"); return 1; }
 
         Console.WriteLine($"Installed : {check.CurrentVersion}");
@@ -838,7 +848,8 @@ internal static partial class Program
     private static int RunUpdate(string[] args)
     {
         var svc = new TheTechIdea.Beep.Updates.AppUpdateService(BuildUpdateSettings(args));
-        var check = svc.CheckAsync().GetAwaiter().GetResult();
+        using var checkCts = new CancellationTokenSource(UpdateNetworkTimeout);
+        var check = svc.CheckAsync(checkCts.Token).GetAwaiter().GetResult();
         if (!check.Succeeded) { Console.Error.WriteLine($"Update check failed: {check.Error}"); return 1; }
         if (!check.AnyUpdateAvailable) { Console.WriteLine("Already up to date."); return 0; }
 
@@ -847,6 +858,8 @@ internal static partial class Program
 
         if (check.AppUpdateAvailable)
         {
+            // Deliberately not on a timer: this downloads and swaps a live install, and abandoning
+            // it part-way is worse than a slow link. Progress is reported, so it is not silent.
             var result = svc.ApplyAppUpdateAsync(check, progress).GetAwaiter().GetResult();
             Console.WriteLine(result.Message);
             if (result.Flag != TheTechIdea.Beep.ConfigUtil.Errors.Ok) rc = 1;
@@ -3386,7 +3399,9 @@ internal static partial class Program
         var progress = new Progress<(int percent, string message)>(p =>
             Console.WriteLine($"  [{p.percent,3}%] {p.message}"));
 
-        var publisher = new Engine.Publisher { Progress = progress };
+        // Declared through the interface so /PUBLISH depends on the publish contract rather than
+        // on the ClickOnce implementation that happens to satisfy it today.
+        Engine.IInstallerPublisher publisher = new Engine.ClickOncePublisher { Progress = progress };
         var result = publisher.Publish(project, publishDir, updateUrl, sign: !noSign);
 
         Console.WriteLine();

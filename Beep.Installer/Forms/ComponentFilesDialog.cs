@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows.Forms;
 using TheTechIdea.Beep.Installer;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -58,14 +59,14 @@ public class ComponentFilesDialog : Form
         };
 
         var topButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        _removeBtn = new Button { Text = "Remove selected" };
+        _removeBtn = new Button { Text = L("Files_RemoveSelected", "Remove selected") };
         _removeBtn.Click += (_, _) =>
         {
             if (_binding.Current is FileCopyOperation f) _files.Remove(f);
         };
         var dropHint = new Label
         {
-            Text = "Tip: drag files or folders from Explorer onto the list above",
+            Text = L("Files_TipDragFilesOr", "Tip: drag files or folders from Explorer onto the list above"),
             AutoSize = true,
             ForeColor = SystemColors.GrayText,
             Padding = new Padding(4, 6, 0, 0)
@@ -81,7 +82,7 @@ public class ComponentFilesDialog : Form
         editor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40));
 
         int r = 0;
-        editor.Controls.Add(new Label { Text = "Source path:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, r);
+        editor.Controls.Add(new Label { Text = L("Files_SourcePath", "Source path:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, r);
         _sourceBox = new TextBox { Dock = DockStyle.Fill };
         _sourceBox.DataBindings.Add("Text", _binding, nameof(FileCopyOperation.SourcePath), true, DataSourceUpdateMode.OnPropertyChanged);
         var browseBtn = new Button { Text = "…", Dock = DockStyle.Fill };
@@ -94,31 +95,31 @@ public class ComponentFilesDialog : Form
         editor.Controls.Add(browseBtn, 2, r);
         r++;
 
-        editor.Controls.Add(new Label { Text = "Destination:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, r);
+        editor.Controls.Add(new Label { Text = L("Files_Destination", "Destination:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, r);
         _destBox = new TextBox { Dock = DockStyle.Fill };
         _destBox.DataBindings.Add("Text", _binding, nameof(FileCopyOperation.DestinationPath), true, DataSourceUpdateMode.OnPropertyChanged);
         editor.SetColumnSpan(_destBox, 2);
         editor.Controls.Add(_destBox, 1, r);
         r++;
 
-        editor.Controls.Add(new Label { Text = "Description:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, r);
+        editor.Controls.Add(new Label { Text = L("Common_Description", "Description:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, r);
         _descriptionBox = new TextBox { Dock = DockStyle.Fill };
         _descriptionBox.DataBindings.Add("Text", _binding, nameof(FileCopyOperation.Description), true, DataSourceUpdateMode.OnPropertyChanged);
         editor.SetColumnSpan(_descriptionBox, 2);
         editor.Controls.Add(_descriptionBox, 1, r);
         r++;
 
-        _overwriteCheck = new CheckBox { Text = "Overwrite existing", Dock = DockStyle.Fill, Checked = true };
+        _overwriteCheck = new CheckBox { Text = L("Files_OverwriteExisting", "Overwrite existing"), Dock = DockStyle.Fill, Checked = true };
         _overwriteCheck.DataBindings.Add("Checked", _binding, nameof(FileCopyOperation.Overwrite), true, DataSourceUpdateMode.OnPropertyChanged);
         editor.SetColumnSpan(_overwriteCheck, 2); editor.Controls.Add(_overwriteCheck, 1, r); r++;
-        _skipIfNewerCheck = new CheckBox { Text = "Skip if newer", Dock = DockStyle.Fill };
+        _skipIfNewerCheck = new CheckBox { Text = L("Files_SkipIfNewer", "Skip if newer"), Dock = DockStyle.Fill };
         _skipIfNewerCheck.DataBindings.Add("Checked", _binding, nameof(FileCopyOperation.SkipIfNewer), true, DataSourceUpdateMode.OnPropertyChanged);
         editor.SetColumnSpan(_skipIfNewerCheck, 2); editor.Controls.Add(_skipIfNewerCheck, 1, r); r++;
-        _requiredCheck = new CheckBox { Text = "Required file", Dock = DockStyle.Fill, Checked = true };
+        _requiredCheck = new CheckBox { Text = L("Files_RequiredFile", "Required file"), Dock = DockStyle.Fill, Checked = true };
         _requiredCheck.DataBindings.Add("Checked", _binding, nameof(FileCopyOperation.IsRequired), true, DataSourceUpdateMode.OnPropertyChanged);
         editor.SetColumnSpan(_requiredCheck, 2); editor.Controls.Add(_requiredCheck, 1, r); r++;
 
-        _addBtn = new Button { Text = "Add" };
+        _addBtn = new Button { Text = L("Common_Add", "Add") };
         _addBtn.Click += (_, _) => AddFromEditor();
         var btnRow = new FlowLayoutPanel { Dock = DockStyle.Fill, Height = 32 };
         btnRow.Controls.Add(_addBtn);
@@ -132,8 +133,8 @@ public class ComponentFilesDialog : Form
         split.Panel2.Controls.Add(editor);
 
         var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 36, FlowDirection = FlowDirection.RightToLeft };
-        _okBtn = new Button { Text = "OK", Width = 90, Height = 28, DialogResult = DialogResult.OK };
-        _cancelBtn = new Button { Text = "Cancel", Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
+        _okBtn = new Button { Text = L("Common_OK", "OK"), Width = 90, Height = 28, DialogResult = DialogResult.OK };
+        _cancelBtn = new Button { Text = L("Common_Cancel", "Cancel"), Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
         bottom.Controls.AddRange(new Control[] { _okBtn, _cancelBtn });
         _okBtn.Click += (_, _) => { DialogResult = DialogResult.OK; Close(); };
         _cancelBtn.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
@@ -141,6 +142,7 @@ public class ComponentFilesDialog : Form
         Controls.Add(split);
         Controls.Add(bottom);
         UpdateSize();
+        Engine.Accessibility.Attach(this);
     }
 
     private void AddFromEditor()

@@ -10,6 +10,108 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-08 (bucket 2)
+
+**3.C.1 — validation was not a gate on anything.** `/VALIDATE` ran `ProjectSchemaService` (strict);
+`/BUILD` ran five rules of its own inside `BuildPipeline` and **never called the schema validator at
+all**. A project `/VALIDATE` rejected could still be built into an installer. `HeadlessInstallerSdk.
+Validate` already concatenated both results, which is the tell that they are complementary rather
+than duplicate. `ValidateProject` now runs the schema pass — the one place `Validate()` and `Run()`
+already share — mapping schema errors to build errors and warnings to warnings. Non-strict on
+purpose: the strict-only authoring rules belong to an explicit `/VALIDATE --strict`, not to every
+build. Suite stayed green, so nothing was relying on the old leniency.
+
+**4.A.3 / 4.A.4 — two names that told you nothing.** `RollbackManager` meant two unrelated things:
+BeepDM's instance class that undoes a failed install's file operations, and a static ClickOnce class
+that rotates `.bak1…bakN` version backups. Both were in scope in the same files, one used as `new
+RollbackManager()` and the other statically. The ClickOnce one is now `VersionBackupRotator`.
+Likewise `Publisher` — the codebase also has an MSIX packager and a feed publisher, and everything
+this class emits is a ClickOnce manifest pair, so it is `ClickOncePublisher` and implements the new
+`IInstallerPublisher`. `/PUBLISH` is declared against the interface.
+
+The remaining half of 4.A.3, "async update check/apply", was already satisfied where it matters:
+`AppUpdateService` is async, `UpdateCenterForm` correctly does `await Task.Run(...)`, and the CLI
+verbs block at the top level where there is no SynchronizationContext to deadlock against. What was
+actually wrong is that the CLI calls were **unbounded** — an unreachable feed hung `/CHECKUPDATE`
+with no output. Both check calls now carry a 2-minute `CancellationToken`. The *apply* is
+deliberately left unbounded: it downloads and swaps a live install, and abandoning that on a
+wall-clock timer is worse than a slow link.
+
+**8.B.3 — sync-over-async sweep.** Sixteen sites; twelve were false positives (a tuple member named
+`Result`, and `.Result` on tasks already known complete). Two were real:
+`SdkPackagePublisher.RunDotnet` was a fourth hand-rolled process runner with unbounded
+`WaitForExit()` **and** unbounded `Task.WaitAll` while running `dotnet pack` — the identical hang
+that wedged the qualification runner. It now goes through BeepDM's `InstallHelpers.RunProcess`,
+which is what 2.C.1 asked for. `MageManifestTool` had a bounded wait but an unbounded drain after
+it; now bounded.
+
+**7.C.1 — a screen reader could not name anything the builder edits.** Two separate defects.
+`ApplyAutoNames` derived the name from `Control.Text`, which is right for a button (its Text *is*
+its caption) and exactly wrong for a field: a text box is captioned by a neighbouring `Label`, and
+its own Text is the user's data — naming from it would announce the value and change on every
+keystroke. So all 54 builder fields were announced as a bare "edit". Names now come from the
+captioning label, found by `TableLayoutPanel` row (how the builder lays fields out) with a geometric
+fallback. Second, only **1 of 14 forms** ran the pass at all, and the builder creates every section
+lazily, long after construction — so a one-shot pass would have missed the fields anyway. New
+`Accessibility.Attach` runs on load *and* on `ControlAdded`, and all 14 forms call it.
+`IsInteractive` also gained `CheckedListBox` (the `[WizardPages]` list is one, so it had neither a
+name nor a tab stop), `DateTimePicker`, `TrackBar`, `ListView` and `DataGridView`. 13 tests.
+
+**7.A.2 — the switcher translated the installer but not the tool that authors it.** The builder had
+a private `L` helper and the twelve dialogs had nothing. A shared `Lang.UiStrings.L` now exists and
+65 strings across 10 forms route through it, with the English text kept inline as the fallback so
+behaviour is identical until a translation lands. I first added the keys to `Strings_en.resx` only, reasoning that English
+placeholders elsewhere would disguise what is untranslated. **The suite corrected me**:
+`LocalizationTests.EveryCulture_ExposesTheSameKeySet` enforces exact key parity across all eight
+cultures, and it exists precisely because drift once caused silent mid-wizard fallback. Parity is
+the contract here, so all eight now carry the 65 keys; the seven non-English ones hold the English
+text with a `<comment>` marking it untranslated, which keeps the invariant and still leaves a
+machine-findable list for a translator. Operators (`==`), placeholders (`…`) and sample defaults
+(`MyApplication`, `1.0.0`) were left alone — they are not prose.
+
+**6.C.2 — the components grid built itself by reflection.** `AutoGenerateColumns = true` produced a
+column for every public property of `InstallComponent`, including nine `List<T>` members that render
+as `ObservableCollection\`1` and cannot be edited in a cell; those were then hidden again from a
+`ListChanged` handler. So the junk columns were visible until the list next changed — on a freshly
+opened project, indefinitely — and any property added to the model appeared in the grid until
+someone remembered to extend the hide list. Exactly the hand-maintained-list drift that left nine
+builder sections uninvalidated. Columns are declared now, with headers, widths and checkbox columns
+for the booleans; `HideComponentColumn` is gone.
+
+**9.A.1 was already solved and 9.B.2 genuinely was not.** The workflow checks the sibling repos out
+beside this one and pins `DataManagementModels` to source — that *is* the cross-repo CI strategy,
+and it even asserts the binding. What was missing is that **nothing in CI ever ran a built
+installer**. `/SELFTEST` (install → verify → uninstall in `%TEMP%`) now runs against the freshly
+built artifact, and runs a second time over the resulting machine state, because an installer that
+only works on a clean box is a common and invisible defect. Exit 3010 is accepted as success.
+
+**The MSBuild node leak, root-caused properly.** Earlier in the session I claimed
+`MSBUILDDISABLENODEREUSE=1` fixed this; it does not, and the measurement that suggested otherwise
+was a no-op incremental build that spawned no nodes at all. The .NET CLI passes an explicit
+`/nodeReuse:true` when it invokes MSBuild and a command-line switch beats the environment variable —
+visible on the surviving nodes' own command lines. `-nodeReuse:false` is the knob: measured, zero
+nodes versus a full set still alive 45 seconds later. Applied at all four spawn sites. `dotnet run`
+is the exception — it rejects the switch outright ("Unknown command", exit 2) — so the SDK
+qualification now invokes the consumer's built DLL directly, which skips MSBuild altogether and is
+faster besides. Note for anyone iterating here: this is a **shipped** defect too, not just a test
+annoyance — `DotnetPublishHostBuilder` runs `dotnet publish` on every installer build, so the tool
+left a process pile on its users' machines.
+
+**Not fully closed.** A full suite run went from 15 nodes / 1.6 GB to roughly 6–7 / 0.5–0.7 GB, but
+not to zero, and the remaining source is **not yet identified** — it survives with the switch applied
+at every site I found and with `dotnet run` eliminated. Isolating `HeadlessSdkQualificationRunnerTests`
+still leaves ~7. Worth finishing with a logged inventory of every child `dotnet` invocation during a
+run rather than more inference; the parallelism cap below is what actually stopped the out-of-memory
+kills, so this is now hygiene rather than a blocker.
+
+**Also:** `xunit.runner.json` caps `maxParallelThreads` at 4. The project set no parallelism, so
+xUnit ran one collection per core — 16 here — and a good many of them spawn a real process. Two
+full-suite runs were killed for memory on a developer box also running an IDE and a browser.
+
+Suite **1237/0/3**.
+
+---
+
 ## Progress log — 2026-09-08 (later)
 
 **10.M.1 closed live, and it found a real defect. 6.C.3 closed.**
@@ -85,6 +187,25 @@ now disabled for these child invocations (`MSBUILDDISABLENODEREUSE=1`), which re
 both waits are bounded at 10 minutes with a process-tree kill, which turns any remaining wedge into a
 failed scenario instead of a suite that never finishes. `HeadlessSdkQualificationRunnerTests` now
 completes in 21s.
+
+**The suite could exhaust the machine.** The test project set no xUnit parallelism, so collections
+ran one per core — 16 on this box — and a good many of them spawn a real process: the shipped
+installer exe, or a whole `dotnet pack/restore/build/run` chain in the SDK qualification. Peak usage
+got the run killed for memory twice on a developer machine also running an IDE and a browser. Added
+`xunit.runner.json` with `maxParallelThreads: 4`, which bounds it without making the ~1200 cheap
+tests serial. Note that MSBuild node reuse compounds this: nodes survive a build by design (15-minute
+idle default, hundreds of MB each), so repeated builds stack up. `MSBUILDDISABLENODEREUSE=1` is worth
+setting for anyone iterating here.
+
+**The status table was asserting two contradictory things.** Phase 3 had corrected rows appended
+*above* the original ones rather than replacing them, so 3.A.2/3.A.3/3.A.4/3.B.1 appeared as both ✅
+and ⬜; Phase 4 then repeated 4.A.2–4.A.4 as ⬜ although the Phase 3 table recorded the move as done.
+Stale duplicates removed. Rows finished earlier in this session but never flipped are now corrected
+against the code, not against the log: **2.B.2** (rollback verified present on BeepDM’s FileCopyStep
+and ShortcutCreateStep, and on the COM and shortcut resource providers), **2.C.1**
+(`Authoring/SemanticVersion` delegates to BeepDM `SemVer`), **4.B.1** (`Shortcut.cs` uses
+`WScript.Shell` COM; the only `powershell` left is a comment about the old approach), and **7.B.1**
+(reduced to 🟡 — the plumbing is done, placing the switcher control is a visual decision).
 
 **Needs the user, not the model:**
 - `PendingFileRenameOperations` still holds 78 stale `beeprepair_*` pairs from earlier elevated test
@@ -1118,9 +1239,9 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2.A.2 | **New** BeepDM `EnvironmentVariableStep` + uninstall reversal + 7 tests | ✅ |
 | 2.A.3 | ~~**New** BeepDM `UninstallEntryStep` (Add/Remove Programs)~~ | ✅ **not needed** — verified the installer already synthesizes the ARP registry entries via `BuildUninstallRegistryEntries`, which `RegistryWriteStep` writes. The R0 gap was real for BeepDM in isolation but the installer compensates; a dedicated step would duplicate working behaviour. |
 | 2.B.1 | Scope-awareness: shared `ShortcutPathResolver`, scope-aware file associations, rollback hive, registry rollback registration | ✅ |
-| 2.B.2 | `SupportsRollback`/`RollbackAsync` on the mutating steps | 🟡 `EnvironmentVariableStep` done; registry writes now register with `RollbackManager`; file-copy/shortcut/COM steps ⬜ |
+| 2.B.2 | `SupportsRollback`/`RollbackAsync` on the mutating steps | ✅ (file-copy and shortcut steps in BeepDM; COM + shortcut via the typed resource providers) |
 | 2.B.3 | Honour `SetupOptions.DryRun` (file copy, registry, shortcuts, env vars, custom actions, file assoc) | ✅ |
-| 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ⬜ |
+| 2.C.1 | Delete installer-side runtime duplicates; adopt `InstallHelpers`/`SemVer` | ✅ (`Authoring/SemanticVersion` delegates to BeepDM `SemVer`) |
 | 2.C.2 | Payload SHA-256 verification before copy | ✅ (2026-09-07 — remote archive verified before extraction; `IPayloadFetcher` seam; 7 tests) |
 | 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ✅ (2026-09-07 — + `ResolvePayloadRoot` stops hardcoding "payload"; 7 tests) |
 | 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ⬜ |
@@ -1138,15 +1259,11 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 3.A.4 | Move scanner, factory, templates, MRU, autosave | ✅ (logger injection + swallowed-catch sweep ⬜) |
 | 3.B.1 | Move `BuildPipeline` + payload/host builders | ✅ (stage decomposition ⬜) |
 | 4.A.2–4.A.4 | Move Msix, Signing, ClickOnce, Publisher into Core/Packaging | ✅ (async update check + `IInstallerPublisher` interface ⬜) |
-| 3.A.2 | Move `InstallProject`/`CustomWizardPage` + projector/context builder/`CustomPageManager` | ⬜ |
-| 3.A.3 | Move serializer → `BsetupSerializer` partials behind the interface | ⬜ |
-| 3.A.4 | Move scanner/factory/templates/MRU/autosave; inject logger; fix swallowed catches | ⬜ |
-| 3.B.1 | `InstallerBuilder` + pure stages; parity vs old pipeline | ⬜ |
 | 3.B.2 | Publish seam (`IInstallerHostBuilder`) + configurable timeout + `KeepIntermediates` | ✅ **unblocked 29 tests** |
 | 3.B.3 | Wire sign + MSIX for real (no silent stubs) | ✅ |
 | 3.B.4 | Wire `SolidCompression` + `CompressionLevel` (were collected then ignored) | ✅ |
 | 3.B.5 | Fix runtime-script source rebasing for files in subdirectories | ✅ |
-| 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ⬜ |
+| 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ✅ `/BUILD` now runs the schema validator too — validation was not a gate on the build at all |
 | 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ⬜ |
 | 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | ⬜ |
 | 3.M.2 | SOLID review | ⬜ |
@@ -1157,10 +1274,10 @@ that would relocate existing installations, so it is flagged for P2 instead.
 
 | # | Task | Status |
 |---|------|--------|
-| 4.A.2 | Move Msix + Signing into Core/Packaging on the shared `ToolLocator` | ⬜ |
-| 4.A.3 | Move ClickOnce; rename `RollbackManager`→`VersionBackupRotator`; async update check/apply | ⬜ |
-| 4.A.4 | `ClickOncePublisher : IInstallerPublisher`; rewire `/PUBLISH`; delete `Engine/ClickOnce` | ⬜ |
-| 4.B.1 | Replace PowerShell shortcut shelling with COM | ⬜ |
+| 4.A.2 | Move Msix + Signing into Core/Packaging on the shared `ToolLocator` | ✅ (recorded in the Phase 3 table; the move landed there) |
+| 4.A.3 | Move ClickOnce; rename `RollbackManager`→`VersionBackupRotator`; async update check/apply | ✅ (async already correct where it matters; the CLI check calls were unbounded and are now cancellable) |
+| 4.A.4 | `ClickOncePublisher : IInstallerPublisher`; rewire `/PUBLISH`; delete `Engine/ClickOnce` | ✅ |
+| 4.B.1 | Replace PowerShell shortcut shelling with COM | ✅ |
 | 4.M.1 | Gate: publish + ClickOnce + Msix + update suites green | ⬜ |
 | 4.M.2 | SOLID review | ⬜ |
 
@@ -1189,7 +1306,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 6.B.1 | `Ui/InstallerTheme` shared tokens; the 3 palettes now delegate to it | ✅ |
 | 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ (pages still use absolute coords — container re-layout ⬜) |
 | 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree + per-file sizing still sync ⬜) |
-| 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ⬜ |
+| 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | 🟡 components grid now declares its columns; contextual dialogs + inline validation ⬜ |
 | 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ✅ (also: `AllowComponentSelection`/`AllowPathChange` made live; 9 builder sections no longer show a closed project) |
 | 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
 | 6.M.2 | SOLID review | ⬜ |
@@ -1202,10 +1319,10 @@ that would relocate existing installations, so it is flagged for P2 instead.
 |---|------|--------|
 | 7.A.1 | Resx key parity (47 keys × 8 cultures) + parity test | ✅ |
 | 7.A.0 | **Fix the resource loader — translations were never loaded at runtime** | ✅ |
-| 7.A.2 | Route wizard-page headers/prompts through `LanguageManager` | 🟡 pages with existing keys done; builder + dialogs still English-only |
-| 7.B.1 | End-user language switcher + live `ReloadStrings()` | ⬜ |
+| 7.A.2 | Route wizard-page headers/prompts through `LanguageManager` | 🟡 65 builder/dialog strings routed via `Lang.UiStrings`; `PackageBuilderForm` body strings and the 7 non-English resx still ⬜ |
+| 7.B.1 | End-user language switcher + live `ReloadStrings()` | 🟡 `LanguageChanged` + `ReloadStrings` + two-way `RtlHelper.ApplyDirection` done; **placing the switcher control in the wizard chrome is a visual decision, still ⬜** |
 | 7.B.2 | Wire `RtlHelper` into the wizard | ✅ (manual Arabic visual pass still ⬜) |
-| 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-color status | ⬜ |
+| 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-color status | 🟡 label-derived names + all 14 forms covered + lazily-added panels; non-colour status still ⬜ |
 | 7.M.1 | Gate: Narrator walkthrough + Accessibility Insights + parity tests | ⬜ |
 | 7.M.2 | SOLID review | ⬜ |
 
@@ -1215,12 +1332,12 @@ that would relocate existing installations, so it is flagged for P2 instead.
 
 | # | Task | Status |
 |---|------|--------|
-| 8.A.1 | Secret store (`dpapi:`/`env:` refs); no plaintext signing password in `.bsetup` | ⬜ |
+| 8.A.1 | Secret store (`dpapi:`/`env:` refs); no plaintext signing password in `.bsetup` | ✅ (`Packaging/Signing/SecretReferences`) |
 | 8.A.2 | Script-command consent policy + `/ALLOWSCRIPTCMDS` | ✅ (2026-09-07 — `/ALLOWSCRIPTCMDS` + `/NOSCRIPTCMDS`; makes `ForbidCustomActions` bite at install time; 10 tests) |
 | 8.A.3 | Payload hash record + verify (coordinates with 2.C.2) | ✅ (2026-09-07 — build records + `.sha256` sidecar + unpinned/stale warnings; 6 tests) |
 | 8.B.1 | Swallowed-exception sweep (Core **and** shell) + permanent source guards | ✅ |
-| 8.B.2 | Autosave snapshot fix + race stress test | ⬜ |
-| 8.B.3 | Sync-over-async sweep | ⬜ |
+| 8.B.2 | Autosave snapshot fix + race stress test | ✅ (`WriteAutoSaveSnapshot` + `AutoSaveRaceTests`) |
+| 8.B.3 | Sync-over-async sweep | ✅ (16 sites reviewed; 2 real — `SdkPackagePublisher` adopted `InstallHelpers.RunProcess`, `MageManifestTool` drain bounded) |
 | 8.M.1 | Gate: security test matrix + full suite | ⬜ |
 | 8.M.2 | SOLID review | ⬜ |
 
@@ -1231,10 +1348,10 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | # | Task | Status |
 |---|------|--------|
 | 9.A.0 | Restore test-project compilation (moved from P0) | ✅ 211 run / 172 pass |
-| 9.A.1 | D5 spike: CI strategy for cross-repo references | ⬜ |
+| 9.A.1 | D5 spike: CI strategy for cross-repo references | ✅ (workflow checks siblings out beside the repo and asserts the source binding) |
 | 9.A.2 | (continuous) per-phase test moves + golden/parity suites | ⬜ |
 | 9.B.1 | Redistribute suites per map; total ≥ 211 green; zero unexplained skips | ⬜ |
-| 9.B.2 | CI smoke: `/SELFTEST` + build→install→uninstall E2E | ⬜ |
+| 9.B.2 | CI smoke: `/SELFTEST` + build→install→uninstall E2E | ✅ (`/SELFTEST` against the built artifact, run twice so a second-install regression fails CI) |
 | 9.B.3 | Final manual matrix (DPI/Narrator/RTL) + SOLID rows recorded | ⬜ |
 
 ## Phase 10: Commercial-Grade Installer Parity ⬜ — P1

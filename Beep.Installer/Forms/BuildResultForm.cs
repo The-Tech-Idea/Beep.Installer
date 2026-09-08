@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -75,7 +76,7 @@ public class BuildResultForm : Form
         fileRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         var fileLabel = new Label
         {
-            Text = "Setup EXE:",
+            Text = L("BuildResult_SetupEXE", "Setup EXE:"),
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -89,7 +90,7 @@ public class BuildResultForm : Form
         };
         var copyBtn = new Button
         {
-            Text = "Copy",
+            Text = L("BuildResult_Copy", "Copy"),
             Width = 70,
             Height = 28,
         };
@@ -98,13 +99,13 @@ public class BuildResultForm : Form
             try
             {
                 Clipboard.SetText(result.OutputFile);
-                copyBtn.Text = "Copied!";
+                copyBtn.Text = L("BuildResult_Copied", "Copied!");
             }
             catch (Exception ex)
             {
                 // The clipboard can be locked by another process. Saying "Copied!" regardless
                 // told the user their paste would work when it would not.
-                copyBtn.Text = "Copy failed";
+                copyBtn.Text = L("BuildResult_CopyFailed", "Copy failed");
                 Beep.Installer.Engine.Diag.Warn("BuildResultForm", "clipboard copy failed", ex);
             }
         };
@@ -132,7 +133,7 @@ public class BuildResultForm : Form
         setupRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         setupRow.Controls.Add(new Label
         {
-            Text = "Setup script:",
+            Text = L("BuildResult_SetupScript", "Setup script:"),
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -220,14 +221,14 @@ public class BuildResultForm : Form
         };
         var closeBtn = new Button
         {
-            Text = "Close",
+            Text = L("Common_Close", "Close"),
             Width = 100,
             Height = 36,
             DialogResult = DialogResult.Cancel,
         };
         var runBtn = new Button
         {
-            Text = "Run Installer",
+            Text = L("BuildResult_RunInstaller", "Run Installer"),
             Width = 130,
             Height = 36,
             Enabled = result.Success && File.Exists(result.OutputFile),
@@ -239,7 +240,7 @@ public class BuildResultForm : Form
         };
         var openFolderBtn = new Button
         {
-            Text = "Open Folder",
+            Text = L("BuildResult_OpenFolder", "Open Folder"),
             Width = 120,
             Height = 36,
             Enabled = !string.IsNullOrEmpty(result.OutputFile) && File.Exists(result.OutputFile),
@@ -260,6 +261,7 @@ public class BuildResultForm : Form
 
         AcceptButton = closeBtn;
         CancelButton = closeBtn;
+        Engine.Accessibility.Attach(this);
     }
 
     private static string FormatSize(long bytes)

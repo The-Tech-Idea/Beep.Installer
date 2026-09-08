@@ -142,18 +142,45 @@ public sealed class SdkPackagePublisher
         foreach (var argument in invocation.Arguments)
             start.ArgumentList.Add(argument);
 
-        using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start dotnet.");
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
-        process.WaitForExit();
-        Task.WaitAll(stdout, stderr);
+        // MSBuild-driven verbs leave a full set of worker nodes running unless told not to, and
+        // those nodes inherit the redirected handles below -- which is how the identical code in
+        // HeadlessSdkQualificationRunner used to hang forever with dotnet already exited.
+        if (invocation.Arguments.Count > 0 && MsBuildDrivenVerbs.Contains(invocation.Arguments[0]))
+            start.ArgumentList.Add("-nodeReuse:false");
+        start.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+
+        // This used to be a fourth hand-rolled process runner: unbounded WaitForExit, unbounded
+        // Task.WaitAll, ExitCode read unconditionally. BeepDM's InstallHelpers.RunProcess is the
+        // one that gets all of it right -- concurrent drain, bounded wait, process-tree kill on
+        // overrun, and never a thrown exception -- so use it rather than grow another variant.
+        var run = TheTechIdea.Beep.Installer.InstallHelpers.RunProcess(start, (int)PublishTimeout.TotalMilliseconds);
+
+        if (!run.Started)
+            return new SdkPackagePublishToolResult { ExitCode = -1, StandardError = run.Error };
+
+        if (run.TimedOut)
+            return new SdkPackagePublishToolResult
+            {
+                ExitCode = -1,
+                StandardOutput = run.StandardOutput,
+                StandardError = $"'{invocation.CommandLine}' did not finish within " +
+                                $"{PublishTimeout.TotalMinutes:0} minutes and was terminated."
+            };
+
         return new SdkPackagePublishToolResult
         {
-            ExitCode = process.ExitCode,
-            StandardOutput = stdout.Result,
-            StandardError = stderr.Result
+            ExitCode = run.ExitCode,
+            StandardOutput = run.StandardOutput,
+            StandardError = run.StandardError
         };
     }
+
+    /// <summary>A pack or a push against a cold cache is slow; this is a wedge backstop, not a budget.</summary>
+    private static readonly TimeSpan PublishTimeout = TimeSpan.FromMinutes(10);
+
+    /// <summary>Verbs that drive MSBuild and therefore accept (and need) <c>-nodeReuse:false</c>.</summary>
+    private static readonly HashSet<string> MsBuildDrivenVerbs =
+        new(StringComparer.OrdinalIgnoreCase) { "build", "pack", "restore", "publish", "msbuild" };
 
     private static SdkPackagePublishResult Complete(
         string packagePath,

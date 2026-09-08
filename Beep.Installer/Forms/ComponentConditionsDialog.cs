@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
 using TheTechIdea.Beep.Installer;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
 
@@ -37,7 +38,7 @@ public class ComponentConditionsDialog : Form
         _binding = new BindingSource();
         _binding.ListChanged += (_, _) => RefreshValidation();
 
-        Text = "Component Condition Builder";
+        Text = L("Conditions_ComponentConditionBuilder", "Component Condition Builder");
         Size = new Size(1040, 640);
         StartPosition = FormStartPosition.CenterParent;
         // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
@@ -58,12 +59,12 @@ public class ComponentConditionsDialog : Form
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
-        selector.Controls.Add(new Label { Text = "Component:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+        selector.Controls.Add(new Label { Text = L("Common_Component", "Component:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
         _componentBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var c in _components) _componentBox.Items.Add(c.Id + " — " + c.Name);
         _componentBox.SelectedIndexChanged += (_, _) => Rebind();
         selector.Controls.Add(_componentBox, 1, 0);
-        selector.Controls.Add(new Label { Text = "Group expression:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 2, 0);
+        selector.Controls.Add(new Label { Text = L("Conditions_GroupExpression", "Group expression:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 2, 0);
         _expressionBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var mode in Enum.GetValues(typeof(ConditionExpressionMode)))
             _expressionBox.Items.Add(mode);
@@ -87,14 +88,15 @@ public class ComponentConditionsDialog : Form
         root.Controls.Add(_validationLabel, 0, 2);
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-        _okBtn = new Button { Text = "OK", Width = 90, Height = 28 };
+        _okBtn = new Button { Text = L("Common_OK", "OK"), Width = 90, Height = 28 };
         _okBtn.Click += (_, _) => OnOk();
-        _cancelBtn = new Button { Text = "Cancel", Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
+        _cancelBtn = new Button { Text = L("Common_Cancel", "Cancel"), Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
         buttons.Controls.Add(_okBtn);
         buttons.Controls.Add(_cancelBtn);
         root.Controls.Add(buttons, 0, 3);
 
         Load += (_, _) => { if (_componentBox.Items.Count > 0) _componentBox.SelectedIndex = 0; };
+        Engine.Accessibility.Attach(this);
     }
 
     private Control BuildListPanel()
@@ -117,12 +119,12 @@ public class ComponentConditionsDialog : Form
         var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6 };
         for (var i = 0; i < 6; i++)
             row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
-        _addBtn = new Button { Text = "Add", Dock = DockStyle.Fill };
+        _addBtn = new Button { Text = L("Common_Add", "Add"), Dock = DockStyle.Fill };
         var x64Btn = new Button { Text = "x64 rule", Dock = DockStyle.Fill };
         var adminBtn = new Button { Text = "Admin rule", Dock = DockStyle.Fill };
         var fileBtn = new Button { Text = "File rule", Dock = DockStyle.Fill };
-        _removeBtn = new Button { Text = "Remove", Dock = DockStyle.Fill };
-        _testBtn = new Button { Text = "Test all", Dock = DockStyle.Fill };
+        _removeBtn = new Button { Text = L("Common_Remove", "Remove"), Dock = DockStyle.Fill };
+        _testBtn = new Button { Text = L("Conditions_TestAll", "Test all"), Dock = DockStyle.Fill };
         _addBtn.Click += (_, _) => OnAdd();
         x64Btn.Click += (_, _) => AddCondition(ConditionType.Architecture, "x64");
         adminBtn.Click += (_, _) => AddCondition(ConditionType.IsAdmin);
@@ -147,7 +149,7 @@ public class ComponentConditionsDialog : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         int row = 0;
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Type:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Common_Type", "Type:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _typeBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var t in Enum.GetValues(typeof(ConditionType))) _typeBox.Items.Add(t);
         _typeBox.DataBindings.Add("SelectedItem", _binding, nameof(InstallCondition.Type), true, DataSourceUpdateMode.OnPropertyChanged);
@@ -155,25 +157,25 @@ public class ComponentConditionsDialog : Form
         layout.Controls.Add(_typeBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Value:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Common_Value", "Value:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _valueBox = new TextBox { Dock = DockStyle.Fill };
         _valueBox.DataBindings.Add("Text", _binding, nameof(InstallCondition.Value), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_valueBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Operator:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Conditions_Operator", "Operator:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _operatorBox = new TextBox { Dock = DockStyle.Fill, Text = "==" };
         _operatorBox.DataBindings.Add("Text", _binding, nameof(InstallCondition.Operator), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_operatorBox, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = "Value2:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Conditions_Value2", "Value2:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _value2Box = new TextBox { Dock = DockStyle.Fill };
         _value2Box.DataBindings.Add("Text", _binding, nameof(InstallCondition.Value2), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_value2Box, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150));
-        layout.Controls.Add(new Label { Text = "Preview:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(new Label { Text = L("Conditions_Preview", "Preview:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
         _previewBox = new TextBox
         {
             Dock = DockStyle.Fill,
@@ -187,7 +189,7 @@ public class ComponentConditionsDialog : Form
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         var notes = new Label
         {
-            Text = "Notes:\n • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.\n • Value holds the primary operand (registry path, file path, OS version, command, …).\n • Value2 is the expected value for RegistryValue and CommandReturns comparisons.\n • Operator is one of ==, =, !=, >, >=, <, <= (default '==').",
+            Text = L("Conditions_NotesNGroupExpression", "Notes:\n • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.\n • Value holds the primary operand (registry path, file path, OS version, command, …).\n • Value2 is the expected value for RegistryValue and CommandReturns comparisons.\n • Operator is one of ==, =, !=, >, >=, <, <= (default '==')."),
             Dock = DockStyle.Fill,
             ForeColor = Color.Gray
         };

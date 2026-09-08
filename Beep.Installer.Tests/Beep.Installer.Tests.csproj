@@ -22,4 +22,16 @@
     <ProjectReference Include="..\Beep.Installer\Beep.Installer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--
+      Caps how many test collections run at once. xUnit defaults to one per core; on a 16-core
+      machine that started up to 16 collections in parallel, and a good many of them spawn a real
+      process - the shipped installer exe, or a whole dotnet pack/restore/build/run chain in the
+      SDK qualification. The suite could take several GB and get killed for memory on a developer
+      box that was also running an IDE and a browser. Four keeps it comfortably bounded without
+      making the ~1200 cheap tests serial.
+    -->
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

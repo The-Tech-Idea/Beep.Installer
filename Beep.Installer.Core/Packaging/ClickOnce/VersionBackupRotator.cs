@@ -17,8 +17,14 @@ public class RollbackResult
 /// <c>.bak2</c>, ... <c>.bakN</c>. After <see cref="Rotate"/> the current install is the
 /// freshly-applied one; <see cref="Rollback"/> swaps <c>.bak1</c> back to current and demotes
 /// the previous current into <c>.bak1</c>. Pure filesystem renames so it is unit-testable.
+///
+/// Named <c>RollbackManager</c> until now, which collided with BeepDM's
+/// <see cref="TheTechIdea.Beep.Installer.RollbackManager"/> -- an unrelated instance class that
+/// undoes a failed install's file operations. Both were in scope in the same files, one used as
+/// <c>new RollbackManager()</c> and the other statically, so the name told you nothing about which
+/// you were looking at. This one rotates version backups; that is what it is called now.
 /// </summary>
-public static class RollbackManager
+public static class VersionBackupRotator
 {
     /// <summary>Default number of backup versions to retain.</summary>
     public const int DefaultKeep = 3;
@@ -65,14 +71,14 @@ public static class RollbackManager
                 try { Directory.Delete(retired, recursive: true); }
                 catch (Exception cleanupError)
                 {
-                    Diag.Warn("RollbackManager", $"Update committed; retired backup retained at {retired}.", cleanupError);
+                    Diag.Warn("VersionBackupRotator", $"Update committed; retired backup retained at {retired}.", cleanupError);
                 }
             }
         }
         catch (Exception ex)
         {
             r.Error = ex.Message + moves.Restore();
-            Diag.Warn("RollbackManager", "rotate failed", ex);
+            Diag.Warn("VersionBackupRotator", "rotate failed", ex);
         }
         return r;
     }
@@ -109,7 +115,7 @@ public static class RollbackManager
         catch (Exception ex)
         {
             r.Error = ex.Message + moves.Restore();
-            Diag.Warn("RollbackManager", "rollback failed", ex);
+            Diag.Warn("VersionBackupRotator", "rollback failed", ex);
         }
         return r;
     }

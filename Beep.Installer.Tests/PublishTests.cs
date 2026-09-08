@@ -37,7 +37,7 @@ project.UseTestDefaults();
         var publish = Path.Combine(dir, "publish");
         try
         {
-            var r = new Publisher().Publish(project, publish, updateUrl: null, sign: false);
+            var r = new ClickOncePublisher().Publish(project, publish, updateUrl: null, sign: false);
 
             r.Success.Should().BeTrue(string.Join("; ", r.Errors));
             r.PublishDir.Should().Be(publish);
@@ -71,7 +71,7 @@ project.UseTestDefaults();
             Directory.CreateDirectory(Path.Combine(project.SourceDirectory, "deep"));
             File.WriteAllBytes(Path.Combine(project.SourceDirectory, "deep", "Nope.exe"), new byte[] { 8 });
 
-            var r = new Publisher().Publish(project, Path.Combine(dir, "publish"), null, sign: false);
+            var r = new ClickOncePublisher().Publish(project, Path.Combine(dir, "publish"), null, sign: false);
             r.Success.Should().BeTrue();
 
             // The chosen entry point should be one of the top-level exes (not deep/Nope.exe).
@@ -90,7 +90,7 @@ project.UseTestDefaults();
         var project = InstallerProjectFactory.CreateNew("NoSrc", "1.0.0", "P", "");
         project.SourceDirectory = Path.Combine(Path.GetTempPath(), "does_not_exist_" + Guid.NewGuid().ToString("N"));
 
-        var r = new Publisher().Publish(project, Path.Combine(Path.GetTempPath(), "p"), null, sign: false);
+        var r = new ClickOncePublisher().Publish(project, Path.Combine(Path.GetTempPath(), "p"), null, sign: false);
 
         r.Success.Should().BeFalse();
         r.Errors.Should().Contain(e => e.Contains("Source directory not found"));
@@ -105,7 +105,7 @@ project.UseTestDefaults();
         var dir = MakeProject("signwarn", out var project);
         try
         {
-            var r = new Publisher().Publish(project, Path.Combine(dir, "publish"), null, sign: true);
+            var r = new ClickOncePublisher().Publish(project, Path.Combine(dir, "publish"), null, sign: true);
             r.Success.Should().BeTrue();
             r.Signed.Should().BeFalse();
             // Warning text varies by environment ("Manifests left unsigned…" is the canonical one),

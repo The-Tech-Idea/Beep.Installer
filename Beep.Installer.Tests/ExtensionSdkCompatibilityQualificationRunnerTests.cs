@@ -131,18 +131,31 @@ public sealed class ExtensionSdkCompatibilityQualificationRunnerTests : IDisposa
             }
             """);
 
-        var process = Process.Start(new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = "build CompatibilityProvider.csproj --nologo --verbosity quiet",
+            Arguments = "build CompatibilityProvider.csproj --nologo --verbosity quiet -nodeReuse:false",
             WorkingDirectory = projectDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
-        }) ?? throw new InvalidOperationException("dotnet build could not be started.");
+        };
+        // -nodeReuse:false on the command line is what actually stops the build leaving a full set
+        // of MSBuild worker nodes running for 15 minutes at a few hundred MB each; the .NET CLI
+        // passes an explicit /nodeReuse:true, which overrides the environment variable. Across a
+        // suite that spawns several of these it was enough to get the run killed for memory.
+        startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("dotnet build could not be started.");
+
+        // Start draining before waiting. Reading only after WaitForExit deadlocks the moment the
+        // build writes more than the pipe buffer holds, because nothing is emptying it.
+        var buildOutput = process.StandardOutput.ReadToEndAsync();
+        var buildError = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
         if (process.ExitCode != 0)
-            throw new InvalidOperationException(process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd());
+            throw new InvalidOperationException(buildOutput.Result + buildError.Result);
 
         var builtAssembly = Path.Combine(projectDir, "bin", "Debug", "net10.0", "CompatibilityProvider.dll");
         var extensionAssembly = Path.Combine(extensionDir, "CompatibilityProvider.dll");

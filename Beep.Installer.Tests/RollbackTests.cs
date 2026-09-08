@@ -23,7 +23,7 @@ public class RollbackTests
             Directory.CreateDirectory(stageRoot);
             File.WriteAllText(Path.Combine(stageRoot, "version.txt"), "v2");
 
-            var r = RollbackManager.Rotate(installRoot, stageRoot, keep: 3);
+            var r = VersionBackupRotator.Rotate(installRoot, stageRoot, keep: 3);
 
             r.Success.Should().BeTrue(r.Error);
             File.ReadAllText(Path.Combine(installRoot, "version.txt")).Should().Be("v2");
@@ -49,7 +49,7 @@ public class RollbackTests
             Directory.CreateDirectory(installRoot + ".bak2"); File.WriteAllText(Path.Combine(installRoot + ".bak2", "v.txt"), "v2");
             Directory.CreateDirectory(stageRoot); File.WriteAllText(Path.Combine(stageRoot, "v.txt"), "new");
 
-            var r = RollbackManager.Rotate(installRoot, stageRoot, keep: 3);
+            var r = VersionBackupRotator.Rotate(installRoot, stageRoot, keep: 3);
 
             r.Success.Should().BeTrue(r.Error);
             // After rotation with keep=3: .bak1=current, .bak2=v1, .bak3=v2. v2 (oldest) was at .bak2
@@ -87,7 +87,7 @@ public class RollbackTests
                 File.WriteAllText(Path.Combine(path, "v.txt"), value);
             }
             var count = 0;
-            var result = RollbackManager.Rotate(install, stage, keep: 3, moveDirectory: (source, destination) =>
+            var result = VersionBackupRotator.Rotate(install, stage, keep: 3, moveDirectory: (source, destination) =>
             {
                 if (++count == failedMove) throw new IOException("Injected move failure.");
                 Directory.Move(source, destination);
@@ -116,7 +116,7 @@ public class RollbackTests
             Directory.CreateDirectory(installRoot + ".bak1");
             File.WriteAllText(Path.Combine(installRoot + ".bak1", "v.txt"), "prev");
 
-            var r = RollbackManager.Rollback(installRoot);
+            var r = VersionBackupRotator.Rollback(installRoot);
 
             r.Success.Should().BeTrue(r.Error);
             File.ReadAllText(Path.Combine(installRoot, "v.txt")).Should().Be("prev", "the previous version is now current");
@@ -147,7 +147,7 @@ public class RollbackTests
                 File.WriteAllText(Path.Combine(install + ".swap", "retained.txt"), "recovery data");
             }
             var count = 0;
-            var result = RollbackManager.Rollback(install, moveDirectory: (source, destination) =>
+            var result = VersionBackupRotator.Rollback(install, moveDirectory: (source, destination) =>
             {
                 if (++count == failedMove) throw new IOException("Injected swap failure.");
                 Directory.Move(source, destination);
@@ -175,7 +175,7 @@ public class RollbackTests
             Directory.CreateDirectory(installRoot);
             File.WriteAllText(Path.Combine(installRoot, "v.txt"), "only");
 
-            var r = RollbackManager.Rollback(installRoot);
+            var r = VersionBackupRotator.Rollback(installRoot);
 
             r.Success.Should().BeFalse();
             r.Error.Should().Contain("No backup");

@@ -44,7 +44,11 @@ internal static class MageManifestTool
                 process.WaitForExit();
                 return (false, "Native ClickOnce manifest operation timed out.");
             }
-            Task.WhenAll(stdout, stderr).GetAwaiter().GetResult();
+            // The wait above is bounded but this drain was not. A child that exits while something
+            // it spawned still holds the write end of the pipe leaves this blocking for good --
+            // the same shape of hang that wedged the qualification runner.
+            if (!Task.WaitAll(new Task[] { stdout, stderr }, TimeSpan.FromSeconds(30)))
+                return (false, "Native ClickOnce manifest tool exited but its output pipes stayed open.");
             // Mage 4.8 can return exit code zero for malformed/invalid signatures.
             // Require its affirmative operation result; unknown/localized output fails closed.
             var output = stdout.Result.Trim();

@@ -200,6 +200,46 @@ jobs:
         shell: pwsh
         run: dotnet run --project Beep.Installer/Beep.Installer.csproj --no-build -- /BUILD="${env:PROJECT_SCRIPT}" /OUT="${env:ARTIFACT_DIR}/unsigned"
 
+      # 9.B.2 -- the suite exercises the pieces, but nothing in CI ever ran a built installer
+      # end to end. /SELFTEST installs into %TEMP%, verifies the result and uninstalls, so a
+      # regression that only shows up in a real install (a payload rebased wrong, a step ordering
+      # change, a locked-file path) fails the build instead of shipping.
+      - name: Self-test the built installer (install -> verify -> uninstall)
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem "${env:ARTIFACT_DIR}/unsigned" -Filter *.exe -File |
+                       Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if ($null -eq $installer) {
+            throw "No installer executable was produced under ${env:ARTIFACT_DIR}/unsigned."
+          }
+
+          Write-Host "Self-testing $($installer.FullName)"
+          & $installer.FullName /SELFTEST
+          $code = $LASTEXITCODE
+
+          # 3010 is "succeeded, reboot required" -- a legitimate success on a machine where a
+          # payload file was in use. Anything else is a failure.
+          if ($code -eq 0) {
+            Write-Host "Self-test passed."
+          } elseif ($code -eq 3010) {
+            Write-Host "Self-test passed; a reboot is pending (exit 3010)."
+          } else {
+            throw "Self-test failed with exit code $code."
+          }
+
+      # A second pass over the same machine state: an installer that only works on a clean box is
+      # a real and common defect, and this is where an upgrade/repair path regression surfaces.
+      - name: Self-test again over the previous install
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem "${env:ARTIFACT_DIR}/unsigned" -Filter *.exe -File |
+                       Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          & $installer.FullName /SELFTEST
+          $code = $LASTEXITCODE
+          if ($code -ne 0 -and $code -ne 3010) {
+            throw "Repeat self-test failed with exit code $code (a first run is not enough)."
+          }
+
       - name: Publish release evidence for development artifact
         shell: pwsh
         run: |
