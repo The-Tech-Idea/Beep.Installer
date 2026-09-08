@@ -10,6 +10,92 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-08 (later)
+
+**10.M.1 closed live, and it found a real defect. 6.C.3 closed.**
+
+**10.M.1 — the locked-file/3010 gate now passes against a running installer, and did not at first.**
+`scripts/verify-locked-file-3010.ps1` builds a per-user project, installs it, holds an installed file
+open with `FileShare.None`, and re-installs. The first elevated run exited **1**, with:
+
+> `Installation failed: Failed to checkpoint typed resource journal: The process cannot access the
+> file '...\data.txt' because it is being used by another process.`
+
+Three separate defects, none of which the unit tests could see:
+
+1. **The locked-file handling was unreachable in a shipping installer.** `InstallWizardGraph` routes
+   file copies through `ResourceProviderStep` → `FileCopyResourceProvider`; BeepDM's `FileCopyStep`,
+   which has had careful `MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT)` handling all along, is not in the
+   graph. The provider had none, so **a locked file could never produce 3010** — the exact thing
+   `ExitCodes.ForInstallResult` was unit-tested for. The tests passed; the product did not do it.
+2. **`FileCopyResourceProvider.Apply` threw past its own contract.** The pre-copy backup —
+   `File.Copy(destination, backupPath)` — sat *outside* the `try`. It reads the destination, so it
+   fails for exactly the reason the copy would, and the `IOException` escaped `Apply`, escaped
+   `ResourcePlanExecutor`, and unwound the whole install.
+3. **The error blamed the wrong component.** `ResourceProviderStep`'s catch wraps the entire
+   execution but its message named the journal, so every provider fault surfaced as a journal
+   failure. That is why the real cause was invisible in the output.
+
+Fixed: backup moved inside the `try`; locked destinations staged beside the target (a deferred
+`MoveFileEx` cannot rename across volumes, and `%TEMP%` often is one) and scheduled for the next
+reboot when elevated, or refused with an actionable message when not; `ResourceProviderResultCode.RebootRequired`
+plumbed through `ResourcePlanExecutor` (it was already returned by `PackageInstallResourceProvider`
+and silently dropped — no rollback registration, no flag, nothing) to `context.Properties["RebootRequired"]`;
+`Verify` skipped for a reboot-pending operation, which would otherwise compare the superseded file
+against the new source and fail an install that is fine. An `IsInUse` probe keeps a read-only file or
+a full disk from being answered with a reboot.
+
+Verified live: exit **3010**, and `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\
+PendingFileRenameOperations` holds the staged→destination pair. Removing the fix fails the new test.
+
+**The suite was leaking reboot-time operations onto the dev machine.** `RepairAndExitCodeTests`
+schedules a *real* `MoveFileEx` when run elevated and never unscheduled it — 78 stale `beeprepair_*`
+pairs had accumulated in `PendingFileRenameOperations`, each a file operation Windows would attempt
+at next boot. The fixture now removes only the pairs naming its own temp root and writes the rest
+back untouched; an elevated run is now registry-neutral. **The 78 historic entries are still there**
+— clearing them needs a write to that key which this session was not permitted to make. See below.
+
+**6.C.3 — dead UI.** Three authoring options were saveable, reloadable and completely inert:
+
+- `EnabledWizardPages` had a Package Builder checklist that hard-checked all ten boxes, never read
+  the project, and answered a click by marking the document dirty. `BeepModernInstallerForm.BuildPages`
+  built every page unconditionally. New `WizardPageIds` gives the three layers one vocabulary (with
+  aliases, since a `.bsetup` is hand-edited); the checklist is now its editor and `BuildPages` gates
+  on it. An empty list still means "every page", so existing scripts are unchanged — the serializer
+  only emits `[WizardPages]` when the collection is non-empty. `Progress` and `Complete` are
+  structural and survive being unchecked. The `LicensePage` hookup indexed `_pages[1]`; with Welcome
+  now suppressible it finds the page instead.
+- `AllowComponentSelection` and `AllowPathChange` — bound to checkboxes, serialized, read by nothing.
+  They now veto their own page, and the veto wins over an explicit checklist entry.
+
+**Nine builder sections showed a closed project's data.** `InvalidateAllContent` was a hand-written
+assignment chain that had fallen behind the fields it covers: certificates, COM registrations, config
+transforms, driver packages, firewall rules, both IIS sections, scheduled tasks and web-deploy
+packages were never dropped on project change. Each panel data-binds to the collections of the
+project it was built for, so they kept displaying the previous project **and wrote edits back to it**.
+The list is now derived from the fields themselves, so a new section cannot be missed, and the
+on-screen section is rebuilt after invalidation instead of being left blank.
+
+**The suite could hang forever, and did.** A full run wedged with zero CPU for 15+ minutes.
+`HeadlessSdkQualificationRunner.RunDotnet` called `process.WaitForExit()` and `Task.WaitAll(stdout,
+stderr)` with **no timeout on either**. MSBuild keeps worker nodes alive for reuse after a build and
+those nodes inherit the redirected stdout/stderr handles, so the pipe never reaches EOF even once
+`dotnet` itself has exited — the stack showed `dotnet` gone and the read still waiting. Node reuse is
+now disabled for these child invocations (`MSBUILDDISABLENODEREUSE=1`), which removes the cause, and
+both waits are bounded at 10 minutes with a process-tree kill, which turns any remaining wedge into a
+failed scenario instead of a suite that never finishes. `HeadlessSdkQualificationRunnerTests` now
+completes in 21s.
+
+**Needs the user, not the model:**
+- `PendingFileRenameOperations` still holds 78 stale `beeprepair_*` pairs from earlier elevated test
+  runs (harmless — they point at deleted temp dirs — but they are queued boot-time work). Clearing
+  them is a write to a machine-global registry key that was refused to this session. The fix is in
+  place so no new ones accumulate.
+- 6.x DPI matrix (100/150/200) and the Narrator / Accessibility Insights passes still need someone
+  looking at rendered output and listening to a screen reader.
+
+---
+
 ## Progress log — 2026-09-08
 
 **Six items closed: 4.B.1, 2.B.2, 2.C.1, 8.B.2, 7.B.1, and 11.M.1 assessed.**
@@ -1104,7 +1190,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ (pages still use absolute coords — container re-layout ⬜) |
 | 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree + per-file sizing still sync ⬜) |
 | 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ⬜ |
-| 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ⬜ |
+| 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ✅ (also: `AllowComponentSelection`/`AllowPathChange` made live; 9 builder sections no longer show a closed project) |
 | 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
 | 6.M.2 | SOLID review | ⬜ |
 
@@ -1168,7 +1254,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 10.C.1 | `/LOG=` + `InstallLogger` wired at the hosts + ARP `LogFile`; wizard "View log" points at the real log | ✅ |
 | 10.C.2 | Inno aliases (`/VERYSILENT`, `/SUPPRESSMSGBOXES`), unsigned-build SmartScreen warning, `/REQUIRESIGNED` CI gate | ✅ |
 | 10.C.3 | **Three ARP bugs found & fixed by the gates**: `%InstallPath%` never expanded; hive prefix baked into KeyPath (entries landed at `HKCU\HKEY_LOCAL_MACHINE\…`); uninstall left ARP key shells. Full lifecycle now E2E-green: entry present with runnable strings, fully removed on uninstall | ✅ |
-| 10.M.1 | Gate matrix: upgrade ✅ · refused-downgrade ✅ · repair ✅ · log/ARP lifecycle ✅ · locked-file 3010 unit-covered (**live elevated run still outstanding**) | 🟡 |
+| 10.M.1 | Gate matrix: upgrade ✅ · refused-downgrade ✅ · repair ✅ · log/ARP lifecycle ✅ · locked-file 3010 **verified live elevated** (`scripts/verify-locked-file-3010.ps1`; found 3 defects — see 2026-09-08 later) | ✅ |
 
 ## Phase 11: Updates, Partial Updates & the NuGet Module Channel ⬜ — P1
 

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Beep.Installer.Engine;
+using Beep.Installer.Extensibility;
+using Beep.Installer.Extensibility.Providers;
 using Beep.Installer.Hosting;
 using FluentAssertions;
 using TheTechIdea.Beep.Installer;
@@ -31,7 +34,57 @@ public class RepairAndExitCodeTests : IDisposable
 
     public void Dispose()
     {
+        UnschedulePendingRenamesUnderRoot();
         try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); } catch { }
+    }
+
+    /// <summary>
+    /// The locked-file tests schedule a real <c>MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT)</c>, which
+    /// writes machine-global state under
+    /// <c>HKLM\SYSTEM\CurrentControlSet\Control\Session Manager</c>. Scheduling is the behaviour
+    /// under test, so it has to actually happen -- but leaving it queued does not: every elevated
+    /// run used to add another pair, and they accumulated in the hundreds on a dev machine, each one
+    /// a file operation Windows would attempt at the next boot.
+    ///
+    /// Only pairs naming this fixture's own temp root are removed; anything else pending (a Windows
+    /// update, a browser updater) is written back untouched.
+    /// </summary>
+    private void UnschedulePendingRenamesUnderRoot()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SYSTEM\CurrentControlSet\Control\Session Manager", writable: true);
+            if (key?.GetValue("PendingFileRenameOperations") is not string[] entries) return;
+
+            var keep = new List<string>();
+            var removed = false;
+            for (var i = 0; i < entries.Length; i += 2)
+            {
+                var source = entries[i];
+                var destination = i + 1 < entries.Length ? entries[i + 1] : "";
+                if (source.Contains(_root, StringComparison.OrdinalIgnoreCase)
+                    || destination.Contains(_root, StringComparison.OrdinalIgnoreCase))
+                {
+                    removed = true;
+                    continue;
+                }
+
+                keep.Add(source);
+                keep.Add(destination);
+            }
+
+            if (removed)
+                key.SetValue("PendingFileRenameOperations", keep.ToArray(),
+                    Microsoft.Win32.RegistryValueKind.MultiString);
+        }
+        catch
+        {
+            // Unelevated there was nothing to schedule and nothing to clean; any other failure must
+            // not fail the test that already passed.
+        }
     }
 
     private FileCopyOperation Op(string name)
@@ -281,6 +334,101 @@ public class RepairAndExitCodeTests : IDisposable
         else
         {
             result.Message.Should().Contain("in use", "the failure must tell the user what to do");
+        }
+    }
+
+    [Fact]
+    public void TheShippingCopyPath_HandlesALockedDestination_RatherThanThrowingPastTheProvider()
+    {
+        // The wizard graph routes file copies through FileCopyResourceProvider, not FileCopyStep,
+        // so the careful locked-file handling in FileCopyStep was unreachable in a real install: a
+        // live run against a held-open file exited 1 with "Failed to checkpoint typed resource
+        // journal", because the pre-copy backup read the locked destination from outside the try.
+        var source = Path.Combine(_payload, "locked-provider.dll");
+        File.WriteAllText(source, "new-content");
+        var destination = Path.Combine(_install, "locked-provider.dll");
+        File.WriteAllText(destination, "old-content");
+
+        var operation = new CompiledInstallOperation
+        {
+            Id = "file.copy:locked-provider",
+            Type = "file.copy",
+            Inputs = new SortedDictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["source"] = "locked-provider.dll",
+                ["destination"] = "locked-provider.dll"
+            }
+        };
+        var context = new ResourceProviderContext
+        {
+            InstallRoot = _install,
+            Variables = new SortedDictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["PayloadRoot"] = _payload
+            }
+        };
+
+        using var hold = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var apply = () => { new FileCopyResourceProvider().Apply(operation, context); };
+
+        apply.Should().NotThrow("Apply must return a result, not throw past the provider contract");
+    }
+
+    [Fact]
+    public void ALockedDestination_IsEitherScheduledForReboot_OrRefusedActionably()
+    {
+        var source = Path.Combine(_payload, "locked-outcome.dll");
+        File.WriteAllText(source, "new-content");
+        var destination = Path.Combine(_install, "locked-outcome.dll");
+        File.WriteAllText(destination, "old-content");
+
+        var operation = new CompiledInstallOperation
+        {
+            Id = "file.copy:locked-outcome",
+            Type = "file.copy",
+            Inputs = new SortedDictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["source"] = "locked-outcome.dll",
+                ["destination"] = "locked-outcome.dll"
+            }
+        };
+        var context = new ResourceProviderContext
+        {
+            InstallRoot = _install,
+            Variables = new SortedDictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["PayloadRoot"] = _payload
+            }
+        };
+
+        var provider = new FileCopyResourceProvider();
+        ResourceProviderResult result;
+        using (var hold = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            result = provider.Apply(operation, context);
+        }
+
+        // Elevated the swap is queued for the next boot; unelevated PendingFileRenameOperations is
+        // not writable and the only honest answer is a failure naming the file. What must never
+        // happen is a plain success while the old file is still on disk.
+        if (result.Code == ResourceProviderResultCode.RebootRequired)
+        {
+            result.Message.Should().Contain("reboot");
+            File.ReadAllText(destination).Should().Be("old-content",
+                "the replacement is queued, not applied -- the running process still sees the old file");
+
+            // Rolling back a reboot-pending copy removes the staged file rather than trying to
+            // restore a backup that was never written (the backup read is what failed).
+            var rollback = provider.Rollback(operation, context);
+            rollback.Code.Should().Be(ResourceProviderResultCode.Succeeded,
+                "the provider recorded state for this operation, so rollback must act on it");
+            rollback.Message.Should().Contain("Deleted");
+        }
+        else
+        {
+            result.Code.Should().Be(ResourceProviderResultCode.Failed);
+            result.Message.Should().Contain("in use", "the failure has to tell the user what to do");
         }
     }
 

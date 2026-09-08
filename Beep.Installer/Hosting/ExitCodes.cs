@@ -19,8 +19,10 @@ public static class ExitCodes
     /// Resolves the exit code for a finished install run.
     /// </summary>
     /// <param name="succeeded">Whether the wizard run succeeded.</param>
-    /// <param name="context">Run context; <c>RebootRequired</c> is set by FileCopyStep when a
-    /// locked file was scheduled for replacement at reboot.</param>
+    /// <param name="context">Run context; <c>RebootRequired</c> is set by <c>ResourceProviderStep</c>
+    /// when a locked file was scheduled for replacement at reboot, or a package installer asked for
+    /// a restart. (BeepDM's FileCopyStep sets it too, but the wizard graph routes copies through the
+    /// typed resource providers.)</param>
     /// <param name="noRestart">CLI <c>/NORESTART</c>: report plain success even when a reboot
     /// is pending (for tooling that treats any non-zero code as failure).</param>
     /// <param name="restartExitCode">CLI <c>/RESTARTEXITCODE=n</c> override for the 3010 default.</param>

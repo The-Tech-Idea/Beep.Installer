@@ -412,16 +412,24 @@ public class BeepModernInstallerForm : BeepiFormPro
 
     private void BuildPages()
     {
-        _pages.Add(new WelcomePage());
-        _pages.Add(new LicensePage());
-        _pages.Add(new PrerequisitePage());
-        _pages.Add(new ComponentSelectionPage(_ctx));
-        _pages.Add(new FolderPage());
-        _pages.Add(new StartMenuPage());
-        _pages.Add(new AdditionalTasksPage());
-        _pages.Add(new ReadyPage());
+        // The [WizardPages] checklist used to be decorative: it was authored, saved and reloaded,
+        // and then every page was built regardless. Pages are gated here so unchecking one in the
+        // builder actually removes it from the wizard.
+        AddPageIfEnabled(WizardPageIds.Welcome, () => new WelcomePage());
+        AddPageIfEnabled(WizardPageIds.License, () => new LicensePage());
+        AddPageIfEnabled(WizardPageIds.Prerequisites, () => new PrerequisitePage());
+        AddPageIfEnabled(WizardPageIds.Components, () => new ComponentSelectionPage(_ctx));
+        AddPageIfEnabled(WizardPageIds.Folder, () => new FolderPage());
+        AddPageIfEnabled(WizardPageIds.StartMenu, () => new StartMenuPage());
+        AddPageIfEnabled(WizardPageIds.AdditionalTasks, () => new AdditionalTasksPage());
+        AddPageIfEnabled(WizardPageIds.Ready, () => new ReadyPage());
+
+        // Custom pages are governed by their own collection, not the built-in page list.
         foreach (var cp in ((IEnumerable<CustomWizardPage>)_project.CustomPages).OrderBy(p => p.Order))
             _pages.Add(new CustomPage(cp, _ctx));
+
+        // Complete is structural -- it is the only place a failure, a log path or a launch action is
+        // surfaced -- so it is added unconditionally.
         _completePage = new CompletePage();
         _pages.Add(_completePage);
         _errorPage = new ErrorPage();
@@ -436,8 +444,20 @@ public class BeepModernInstallerForm : BeepiFormPro
         };
         _pages.Add(_errorPage);
 
-        if (_pages.Count > 1 && _pages[1] is LicensePage lic)
+        // This used to index _pages[1] on the assumption that License is always second. With the
+        // welcome page suppressible that index can be a different page entirely, so find it.
+        if (_pages.OfType<LicensePage>().FirstOrDefault() is { } lic)
             lic.ValidityChanged += (_, ok) => _nextBtn.Enabled = ok;
+    }
+
+    /// <summary>
+    /// Builds a page only when the project enables it. The factory is a lambda so a suppressed page
+    /// is never constructed -- several of them touch the install context on construction.
+    /// </summary>
+    private void AddPageIfEnabled(string pageId, Func<IInstallerPage> factory)
+    {
+        if (WizardPageIds.IsEnabled(_project, pageId))
+            _pages.Add(factory());
     }
 
     /// <summary>

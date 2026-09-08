@@ -101,20 +101,25 @@ public sealed class FileCopyResourceProvider : IResourceProvider
 
         var existedBefore = File.Exists(destination);
         var backupPath = "";
-        if (existedBefore)
-        {
-            backupPath = Path.Combine(
-                Path.GetTempPath(),
-                "BeepInstaller",
-                "resource-backups",
-                Guid.NewGuid().ToString("N"),
-                Path.GetFileName(destination));
-            Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
-            File.Copy(destination, backupPath, overwrite: true);
-        }
 
         try
         {
+            // Backing up the file we are about to replace reads the destination, so it fails for
+            // exactly the same reason the copy would: the file is in use. This used to sit outside
+            // the try, so a locked destination threw straight out of Apply -- past the provider
+            // contract, past the plan executor, and out to a catch that blamed the journal.
+            if (existedBefore)
+            {
+                backupPath = Path.Combine(
+                    Path.GetTempPath(),
+                    "BeepInstaller",
+                    "resource-backups",
+                    Guid.NewGuid().ToString("N"),
+                    Path.GetFileName(destination));
+                Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
+                File.Copy(destination, backupPath, overwrite: true);
+            }
+
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(source, destination, overwrite: true);
             _rollback[operation.Id] = new FileRollbackState(destination, existedBefore, backupPath);
@@ -126,15 +131,121 @@ public sealed class FileCopyResourceProvider : IResourceProvider
                     : $"Copied file: {destination}"
             };
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return HandleLockedDestination(operation, source, destination, existedBefore, backupPath, ex);
+        }
         catch (Exception ex)
         {
-            if (existedBefore && File.Exists(backupPath))
+            RestoreAfterFailedCopy(destination, existedBefore, backupPath);
+            return Error("BI3010", operation.Id, $"Failed to copy file '{source}' to '{destination}': {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// A destination open in another process cannot be replaced in place. Elevated, the swap can be
+    /// queued in <c>PendingFileRenameOperations</c> via <c>MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT)</c>
+    /// and the install completes pending a reboot; unelevated that key is not writable, so the only
+    /// honest outcome is a failure that names the file and says what to do about it.
+    ///
+    /// BeepDM's <c>FileCopyStep</c> has always done this, but the wizard graph routes file copies
+    /// through the typed resource providers instead, so in the shipping installer the handling was
+    /// unreachable and a locked file could never produce exit code 3010.
+    /// </summary>
+    private ResourceProviderResult HandleLockedDestination(
+        CompiledInstallOperation operation,
+        string source,
+        string destination,
+        bool existedBefore,
+        string backupPath,
+        Exception ex)
+    {
+        if (!IsInUse(destination))
+        {
+            RestoreAfterFailedCopy(destination, existedBefore, backupPath);
+            return Error("BI3010", operation.Id, $"Failed to copy file '{source}' to '{destination}': {ex.Message}");
+        }
+
+        // Stage beside the destination rather than under %TEMP%: a deferred MoveFileEx cannot rename
+        // across volumes, and %TEMP% is frequently on a different one.
+        var staged = destination + ".pending-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(source, staged, overwrite: true);
+
+            if (TheTechIdea.Beep.Installer.InstallHelpers.ScheduleFileForRestart(staged, destination))
+            {
+                // Undo here means removing the staged copy, not restoring the destination: the
+                // destination was never modified -- that is the whole reason a reboot is needed. The
+                // queued rename then finds no source at boot and does nothing. Recording the backup
+                // instead would claim a restore is possible from a file that was never written,
+                // because the backup read is what failed in the first place.
+                _rollback[operation.Id] = new FileRollbackState(staged, ExistedBefore: false, BackupPath: "");
+                return new ResourceProviderResult
+                {
+                    Code = ResourceProviderResultCode.RebootRequired,
+                    Message = $"In use - scheduled for replacement at next reboot: {destination}"
+                };
+            }
+        }
+        catch (Exception stageEx)
+        {
+            TryDelete(staged);
+            RestoreAfterFailedCopy(destination, existedBefore, backupPath);
+            return Error("BI3016", operation.Id,
+                $"The file '{destination}' is in use and could not be staged for replacement: {stageEx.Message}");
+        }
+
+        TryDelete(staged);
+        RestoreAfterFailedCopy(destination, existedBefore, backupPath);
+        return Error("BI3016", operation.Id,
+            $"The file '{destination}' is in use and could not be replaced. Close the application " +
+            "using it and retry, or run the installer elevated so the replacement can be scheduled " +
+            "for the next reboot.");
+    }
+
+    /// <summary>
+    /// Distinguishes "another process holds this file" from every other IO failure -- a read-only
+    /// destination or a full disk must not be answered with a reboot.
+    /// </summary>
+    private static bool IsInUse(string path)
+    {
+        if (!File.Exists(path)) return false;
+        try
+        {
+            using var probe = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return false;
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static void RestoreAfterFailedCopy(string destination, bool existedBefore, string backupPath)
+    {
+        try
+        {
+            if (existedBefore && !string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
                 File.Copy(backupPath, destination, overwrite: true);
             else if (!existedBefore && File.Exists(destination))
                 File.Delete(destination);
-
-            return Error("BI3010", operation.Id, $"Failed to copy file '{source}' to '{destination}': {ex.Message}");
         }
+        catch
+        {
+            // Best effort: the plan executor rolls the whole attempt back, and throwing here would
+            // replace the real failure with this one.
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort */ }
     }
 
     public ResourceProviderResult Rollback(CompiledInstallOperation operation, ResourceProviderContext context)

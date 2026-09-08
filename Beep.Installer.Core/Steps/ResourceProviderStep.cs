@@ -135,7 +135,10 @@ public sealed class ResourceProviderStep : ISetupStep
         }
         catch (Exception ex)
         {
-            return StepErrorHelpers.Fail($"Failed to checkpoint typed resource journal: {ex.Message}");
+            // This wraps the whole execution, not just the checkpointing it also does. Naming the
+            // journal here misattributed every provider bug to the journal -- a locked destination
+            // file surfaced to the user as "failed to checkpoint typed resource journal".
+            return StepErrorHelpers.Fail($"Typed resource execution failed: {ex.Message}");
         }
 
         context.Properties[InstallContextKeys.ResourceExecutionJournal] = result.Journal;
@@ -154,6 +157,11 @@ public sealed class ResourceProviderStep : ISetupStep
         if (!result.Succeeded)
             return StepErrorHelpers.Fail(result.Message + " " +
                                          string.Join("; ", result.Diagnostics.Select(d => $"{d.Code}: {d.Message}")));
+
+        // A file scheduled through MoveFileEx is not on disk yet. The install succeeded, but the
+        // host has to report 3010 so deployment tooling knows to reboot.
+        if (result.RebootRequired)
+            context.Properties["RebootRequired"] = true;
 
         if (!providerContext.DryRun)
             PublishManifestCompatibleOutputs(context, compile.Plan, result.Journal, providerContext);

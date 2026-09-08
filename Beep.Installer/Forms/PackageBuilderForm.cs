@@ -48,6 +48,7 @@ public class PackageBuilderForm : Form
     private TextBox _navSearchBox = null!;
     private Panel _contentHost = null!;
     private Panel? _activeContent;
+    private string? _activeSectionId;
 
     private Panel? _contentIdentity;
     private Panel? _contentLayout;
@@ -98,6 +99,7 @@ public class PackageBuilderForm : Form
     private PropertyGrid _registryProps = null!;
     private BindingSource _registryBinding = null!;
     private CheckedListBox _wizardPagesList = null!;
+    private bool _loadingWizardPages;
     private TextBox _scriptPreviewBox = null!;
     private TextBox _keyboardWalkthroughBox = null!;
     private TextBox _validationCenterBox = null!;
@@ -154,6 +156,13 @@ public class PackageBuilderForm : Form
         if (_includeList != null) _includeList.DataSource = _project.SourceIncludes;
         if (_excludeList != null) _excludeList.DataSource = _project.SourceExcludes;
         InvalidateAllContent();
+
+        // Invalidation drops the panel that is currently on screen along with the rest, so rebuild
+        // it against the project that was just opened. Without this the user is left looking at a
+        // blank pane -- and before invalidation covered these sections at all, at the previous
+        // project's data.
+        if (_activeSectionId is { } section) OnSectionSelected(this, section);
+
         HideWelcome();
     }
 
@@ -325,6 +334,7 @@ public class PackageBuilderForm : Form
     private void OnSectionSelected(object? sender, string id)
     {
         HideWelcome();
+        _activeSectionId = id;
         _contentHost.Controls.Clear();
         _activeContent = id switch
         {
@@ -376,13 +386,34 @@ public class PackageBuilderForm : Form
         return field;
     }
 
+    /// <summary>
+    /// Drops every cached section panel so the next view is rebuilt against the current project.
+    ///
+    /// This was a hand-written assignment chain and it had fallen nine sections behind the fields it
+    /// was meant to cover -- certificates, COM registrations, config transforms, driver packages,
+    /// firewall rules, the two IIS sections, scheduled tasks and web-deploy packages were never
+    /// cleared. Those panels bind to the collections of the project that was open when they were
+    /// first built, so after opening a second project they kept showing the first one's data and
+    /// edits made in them were written back to the project the user had closed.
+    ///
+    /// Enumerating the fields instead of listing them means a new section cannot be forgotten.
+    /// </summary>
     private void InvalidateAllContent()
     {
-        _contentIdentity = _contentLayout = _contentEula = _contentSource = _contentIncludes =
-        _contentComponents = _contentPrerequisites = _contentShortcuts = _contentRegistry =
-        _contentBranding = _contentWizardPages = _contentScript = _contentOutput =
-        _contentBuild = _contentPayload = _contentPackage = _contentCompression = _contentCodeSign = _contentMsix = _contentLog = _contentResult = null;
+        foreach (var field in CachedSectionPanelFields)
+        {
+            if (field.GetValue(this) is Panel panel && !panel.IsDisposed)
+                panel.Dispose();
+
+            field.SetValue(this, null);
+        }
     }
+
+    private static readonly System.Reflection.FieldInfo[] CachedSectionPanelFields =
+        typeof(PackageBuilderForm)
+            .GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Where(f => f.FieldType == typeof(Panel) && f.Name.StartsWith("_content", StringComparison.Ordinal))
+            .ToArray();
 
     // ═══════════════════════════════════════════
     //  Section builders — all WinForms DataBinding
@@ -1135,15 +1166,94 @@ public class PackageBuilderForm : Form
         return p;
     }
 
+    /// <summary>
+    /// The wizard-page ids this checklist offers, in wizard order, with their display labels.
+    /// The label is what the author reads; the id is what goes into <c>[WizardPages]</c>.
+    /// </summary>
+    private static readonly (string Id, string Label)[] WizardPageChoices =
+    {
+        (WizardPageIds.Welcome,         "Welcome"),
+        (WizardPageIds.License,         "License (EULA)"),
+        (WizardPageIds.Prerequisites,   "Prerequisites"),
+        (WizardPageIds.Components,      "Component Selection"),
+        (WizardPageIds.Folder,          "Destination Folder"),
+        (WizardPageIds.StartMenu,       "Start Menu Folder"),
+        (WizardPageIds.AdditionalTasks, "Additional Tasks"),
+        (WizardPageIds.Ready,           "Ready (review)"),
+        (WizardPageIds.Progress,        "Progress (installing)"),
+        (WizardPageIds.Complete,        "Complete (launch / log)")
+    };
+
     private Panel BuildWizardPagesSection()
     {
+        // This list used to hard-check every box, ignore the project entirely, and answer a click by
+        // marking the document dirty -- so it recorded nothing and drove nothing. It is now the
+        // editor for InstallProject.EnabledWizardPages.
         var p = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12) };
         _wizardPagesList = new CheckedListBox { Dock = DockStyle.Fill, CheckOnClick = true, IntegralHeight = false };
-        _wizardPagesList.Items.AddRange(new object[] { "Welcome", "License (EULA)", "Component Selection", "Destination Folder", "Start Menu Folder", "Additional Tasks", "Prerequisites", "Ready (review)", "Progress (installing)", "Complete (launch / log)" });
-        for (int i = 0; i < _wizardPagesList.Items.Count; i++) _wizardPagesList.SetItemChecked(i, true);
-        _wizardPagesList.ItemCheck += (_, _) => BeginInvoke((Action)(() => _project.MarkDirty()));
+        _wizardPagesList.Items.AddRange(WizardPageChoices.Select(c => (object)c.Label).ToArray());
+
+        LoadWizardPageChecks();
+
+        _wizardPagesList.ItemCheck += (_, e) =>
+        {
+            if (_loadingWizardPages) return;
+
+            // ItemCheck fires before the control updates, so read the new value from the event and
+            // let the control settle before writing the model back.
+            var index = e.Index;
+            var isChecked = e.NewValue == CheckState.Checked;
+            if (WizardPageIds.Structural.Contains(WizardPageChoices[index].Id) && !isChecked)
+            {
+                // The wizard builds these regardless; letting the box clear would claim otherwise.
+                e.NewValue = CheckState.Checked;
+                return;
+            }
+
+            BeginInvoke((Action)(() => SaveWizardPageChecks()));
+        };
+
         p.Controls.Add(_wizardPagesList);
         return p;
+    }
+
+    /// <summary>Reflects the project's enabled-page list into the checklist.</summary>
+    private void LoadWizardPageChecks()
+    {
+        if (_wizardPagesList is null || _wizardPagesList.IsDisposed) return;
+
+        _loadingWizardPages = true;
+        try
+        {
+            for (var i = 0; i < WizardPageChoices.Length; i++)
+                _wizardPagesList.SetItemChecked(i, WizardPageIds.IsEnabled(_project, WizardPageChoices[i].Id));
+        }
+        finally
+        {
+            _loadingWizardPages = false;
+        }
+    }
+
+    /// <summary>
+    /// Writes the checklist back to the project. An all-checked list is stored as an empty
+    /// collection so the serializer omits the <c>[WizardPages]</c> section entirely and a default
+    /// project keeps producing the same script it always did.
+    /// </summary>
+    private void SaveWizardPageChecks()
+    {
+        if (_wizardPagesList is null || _wizardPagesList.IsDisposed) return;
+
+        var enabled = new List<string>();
+        for (var i = 0; i < WizardPageChoices.Length; i++)
+            if (_wizardPagesList.GetItemChecked(i))
+                enabled.Add(WizardPageChoices[i].Id);
+
+        _project.EnabledWizardPages.Clear();
+        if (enabled.Count != WizardPageChoices.Length)
+            foreach (var id in enabled)
+                _project.EnabledWizardPages.Add(id);
+
+        _project.MarkDirty();
     }
 
     private Panel BuildScriptSection()

@@ -56,6 +56,13 @@ public sealed class ResourceExecutionResult
     public string Message { get; init; } = "";
     public ResourceExecutionJournal Journal { get; init; } = new();
     public List<ProjectSchemaDiagnostic> Diagnostics { get; init; } = new();
+
+    /// <summary>
+    /// At least one operation applied but needs a reboot to take effect -- a locked file scheduled
+    /// through MoveFileEx, or a package installer that asked for a restart. The install succeeded;
+    /// the host must surface it as exit code 3010 rather than plain 0.
+    /// </summary>
+    public bool RebootRequired { get; init; }
 }
 
 public sealed class ResourceExecutionOptions
@@ -105,6 +112,7 @@ public sealed class ResourcePlanExecutor
 
         var applied = new Stack<(CompiledInstallOperation Operation, IResourceProvider Provider)>();
         var skipped = new HashSet<string>(StringComparer.Ordinal);
+        var rebootRequired = false;
 
         foreach (var operation in OrderForExecution(plan.Operations))
         {
@@ -180,8 +188,18 @@ public sealed class ResourcePlanExecutor
             if (apply.Code == ResourceProviderResultCode.Skipped)
                 skipped.Add(operation.Id);
 
-            if (apply.Code == ResourceProviderResultCode.Succeeded && operation.RollbackSupported)
+            if (apply.Code is ResourceProviderResultCode.Succeeded or ResourceProviderResultCode.RebootRequired
+                && operation.RollbackSupported)
                 applied.Push((operation, provider));
+
+            // A reboot-pending operation has not landed yet -- the old file is still on disk and the
+            // replacement is queued in PendingFileRenameOperations. Verifying now would compare the
+            // superseded file against the new source and fail an install that is actually fine.
+            if (apply.Code == ResourceProviderResultCode.RebootRequired)
+            {
+                rebootRequired = true;
+                continue;
+            }
 
             var verify = provider.Verify(operation, context);
             AddEntry(journal, options, Entry(operation, ResourceExecutionAction.Verify, verify.Code, verify.Message, verify.Evidence, executionMode: executionMode));
@@ -193,9 +211,12 @@ public sealed class ResourcePlanExecutor
         return new ResourceExecutionResult
         {
             Succeeded = true,
-            Message = "Resource provider operations completed.",
+            Message = rebootRequired
+                ? "Resource provider operations completed; a reboot is required to finish."
+                : "Resource provider operations completed.",
             Journal = journal,
-            Diagnostics = diagnostics
+            Diagnostics = diagnostics,
+            RebootRequired = rebootRequired
         };
     }
 

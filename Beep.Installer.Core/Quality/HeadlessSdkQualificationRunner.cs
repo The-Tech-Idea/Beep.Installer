@@ -335,6 +335,13 @@ public sealed class HeadlessSdkQualificationRunner
         return diagnostics;
     }
 
+    /// <summary>
+    /// How long any single <c>dotnet</c> invocation in this qualification may take. A pack or a
+    /// restore on a cold NuGet cache is genuinely slow, so this is deliberately generous -- it is a
+    /// backstop against a wedge, not a performance budget.
+    /// </summary>
+    private static readonly TimeSpan DotnetTimeout = TimeSpan.FromMinutes(10);
+
     private static ProcessRunResult RunDotnet(string workingDirectory, params string[] arguments)
     {
         var start = new ProcessStartInfo("dotnet")
@@ -346,15 +353,59 @@ public sealed class HeadlessSdkQualificationRunner
             CreateNoWindow = true
         };
 
+        // MSBuild keeps worker nodes alive for reuse after the build finishes, and those nodes
+        // inherit the redirected stdout/stderr handles. The pipe then never reaches EOF even though
+        // `dotnet` itself has exited, so reading it to the end waits on processes that are under no
+        // obligation to leave. That is not hypothetical: it hung the whole test suite indefinitely,
+        // with `dotnet` gone and orphaned MSBuild nodes holding the write end.
+        start.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+        start.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
+
         foreach (var argument in arguments)
             start.ArgumentList.Add(argument);
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start dotnet.");
+
+        // Read both pipes concurrently: a child that fills one while nothing drains the other
+        // deadlocks against a full pipe buffer.
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
-        process.WaitForExit();
-        Task.WaitAll(stdoutTask, stderrTask);
+
+        var deadline = DateTime.UtcNow + DotnetTimeout;
+        if (!process.WaitForExit((int)DotnetTimeout.TotalMilliseconds))
+        {
+            KillTree(process);
+            return new ProcessRunResult(
+                -1,
+                Drained(stdoutTask),
+                $"'dotnet {string.Join(' ', arguments)}' did not exit within {DotnetTimeout.TotalMinutes:0} minutes and was terminated.");
+        }
+
+        // Belt and braces: even with node reuse disabled, anything else the build spawned could hold
+        // the handle. Bound the drain rather than letting it wait forever.
+        var remaining = deadline - DateTime.UtcNow;
+        if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
+        if (!Task.WaitAll(new Task[] { stdoutTask, stderrTask }, remaining))
+        {
+            return new ProcessRunResult(
+                process.ExitCode,
+                Drained(stdoutTask),
+                Drained(stderrTask) +
+                $"{Environment.NewLine}'dotnet {string.Join(' ', arguments)}' exited but its output pipes stayed open; " +
+                "a child process is still holding them.");
+        }
+
         return new ProcessRunResult(process.ExitCode, stdoutTask.Result, stderrTask.Result);
+    }
+
+    /// <summary>Whatever a read task produced, or a note that it never finished.</summary>
+    private static string Drained(Task<string> read)
+        => read.IsCompletedSuccessfully ? read.Result : "";
+
+    private static void KillTree(Process process)
+    {
+        try { process.Kill(entireProcessTree: true); }
+        catch { /* already gone, or not ours to kill */ }
     }
 
     private static HeadlessSdkQualificationReport Complete(
