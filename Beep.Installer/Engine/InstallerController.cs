@@ -135,15 +135,26 @@ public class InstallerController : INotifyPropertyChanged
 
     // ── Build ──
 
-    public BuildPipeline.BuildResult Build(bool clean = false)
+    /// <param name="cancellationToken">
+    /// Threaded through to the pipeline. Without it a build started from the builder could not be
+    /// stopped: the progress dialog has had a Cancel button all along, but nothing ever handed it a
+    /// source, so pressing it showed "Cancelling…" and the build ran to completion anyway. The CLI
+    /// has always passed one.
+    /// </param>
+    public BuildPipeline.BuildResult Build(bool clean = false, CancellationToken cancellationToken = default)
     {
         // SINGLE source of truth: delegate to BuildPipeline
         var pipeline = new BuildPipeline
         {
-            Progress = new Progress<BuildPipeline.BuildProgress>(p => BuildProgressChanged?.Invoke(this, p))
+            Progress = new Progress<BuildPipeline.BuildProgress>(p => BuildProgressChanged?.Invoke(this, p)),
+            CancellationToken = cancellationToken
         };
         var result = pipeline.Run(_project, clean);
-        BuildProgressChanged?.Invoke(this, new BuildPipeline.BuildProgress(100, result.Success ? "Build complete." : "Build failed."));
+        BuildProgressChanged?.Invoke(this, new BuildPipeline.BuildProgress(
+            100,
+            result.Success ? "Build complete."
+                : cancellationToken.IsCancellationRequested ? "Build canceled."
+                : "Build failed."));
         return result;
     }
 

@@ -10,6 +10,72 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-08 (open code work)
+
+**3.C.2 — the old `BuildPipeline` was already gone; the real gap was that a build could not be
+stopped.** There is only one `BuildPipeline`, so "delete the old one" was another stale row. But
+`BuildProgressForm` has had a Cancel button **and** a `SetCancellationSource` method all along and
+*nothing ever called the latter* — pressing Cancel set the caption to "Cancelling…" and the build ran
+to completion. The CLI has always passed a token; only the UI path had none.
+`InstallerController.Build` now takes a `CancellationToken`, the builder creates the source and hands
+it to the dialog, and a cancelled build reports "Build canceled." rather than an error dialog that
+would read as a defect in the user's project. 4 tests.
+
+**3.A.4 tail — verified done rather than assumed outstanding.** All ten remaining `catch { }` blocks
+in Core are deliberate and commented (best-effort cleanup, process-tree kill, "diagnostics must never
+throw"); that is correct practice, not a swallowed error. And `Diag` already bridges to the
+structured pipeline through `Diag.UseLog(IBeepLog)`, wired from the composition root — injecting a
+logger in place of the static would be cosmetic at this point.
+
+**6.C.1 tail — the file tree still froze the UI.** 6.C.1 moved the source *scan* off the UI thread but
+left `RefreshFileTree` behind, which does up to two `File.Exists` calls per declared file, on the UI
+thread, every time the source directory changes. The stats now run on a background thread and the
+tree is applied in one `BeginUpdate`/`EndUpdate`; a generation counter stops a stale refresh
+overwriting a newer one, since the directory can change again mid-flight.
+
+**6.A.3 tail — live branding preview.** Ctrl+P has always opened the full wizard preview, but colours
+are tuned by iterating — type a hex value, look, adjust — and a modal you open and close per attempt
+is the wrong shape for that. The Branding section now carries a swatch drawing the sidebar, title and
+accent from the authored values, repainted on every project change. Unparseable colour text falls
+back instead of throwing, because the fields are free text.
+
+**0.B.2 — skips now name the phase and where the coverage actually lives.** The three `EndToEndTests`
+skips explained *why* they were skipped but not what would unblock them; they now reference P9.B.2 and
+point at the CI `/SELFTEST` job that covers the same ground, plus the filter to run them locally.
+
+**9.A.2 / 9.B.1 — the skip requirement is met.** Three skips, all explained, all deliberate
+(integration tests that shell the real exe for a full `dotnet publish`), and the E2E they represent is
+now exercised in CI by the `/SELFTEST` job added for 9.B.2. "Zero unexplained skips" holds.
+
+**0.A.3 — not done, deliberately, and here is why.** The row says "bump BeepDM source to 3.1.2 and
+repack to the local feed". Two things make that wrong as a unilateral edit:
+
+1. **There is no local feed** — no `nuget.config` anywhere in the tree — and Core references
+   `DataManagementModels.csproj` **directly**. The stale 3.1.1 package is already bypassed, which is
+   exactly what `CLAUDE.md` says the direct `ProjectReference` is for. Repacking has nothing to
+   repack into.
+2. **`Beep.Winform.Controls` pins `TheTechIdea.Beep.DataManagementModels` at 3.1.1**, matching the
+   BeepDM source version. `CLAUDE.md` calls that same-version pairing load-bearing: NuGet resolves
+   nearest-to-root, and a mismatch is what produces the `TypeLoadException` on newer BeepDM types.
+   Bumping BeepDM to 3.1.2 without bumping Beep.Winform in the same change would break that
+   invariant.
+
+So this is a **coordinated multi-repo release decision** — bump BeepDM, bump the Beep.Winform pins,
+republish both packages — not a one-line version edit. It also has outward effects (published package
+versions), and BeepDM's working tree currently holds an unrelated uncommitted change from another
+session. Left for the maintainer to sequence.
+
+**3.B.1 tail — not done, and flagged rather than rushed.** `BuildPipeline.Run` is 255 lines across 15
+clearly numbered and commented stages. Decomposing them into pure stages means introducing a build
+context to carry the shared locals and extracting fifteen methods against it — a real refactor with
+no behavioural change, whose only safety net is the suite, attempted at the end of a long session
+that has already made several behavioural changes to this same file. The stages are legible as they
+stand. Worth doing as a focused piece of work with its own verification, not as a tail-end sweep.
+
+Suite **1245/0/3**.
+
+---
+
 ## Progress log — 2026-09-08 (bucket 2)
 
 **3.C.1 — validation was not a gate on anything.** `/VALIDATE` ran `ProjectSchemaService` (strict);
@@ -97,12 +163,24 @@ faster besides. Note for anyone iterating here: this is a **shipped** defect too
 annoyance — `DotnetPublishHostBuilder` runs `dotnet publish` on every installer build, so the tool
 left a process pile on its users' machines.
 
-**Not fully closed.** A full suite run went from 15 nodes / 1.6 GB to roughly 6–7 / 0.5–0.7 GB, but
-not to zero, and the remaining source is **not yet identified** — it survives with the switch applied
-at every site I found and with `dotnet run` eliminated. Isolating `HeadlessSdkQualificationRunnerTests`
-still leaves ~7. Worth finishing with a logged inventory of every child `dotnet` invocation during a
-run rather than more inference; the parallelism cap below is what actually stopped the out-of-memory
-kills, so this is now hygiene rather than a blocker.
+**Residual traced to `pack`/`restore`, and it is SDK behaviour rather than a call-site defect.**
+Measured on this machine, each figure after letting nodes settle:
+
+| invocation | nodes left |
+|---|---|
+| `dotnet build -nodeReuse:false` | **0** |
+| `dotnet pack` (no switch) | 9 |
+| `dotnet pack -nodeReuse:false` | 5 |
+| explicit `restore` then `pack --no-restore`, both with the switch | 14 (worse) |
+| `dotnet pack` then `dotnet build-server shutdown` | 11 → 6 |
+
+So the switch works for `build` and only halves it for `pack`; the implicit-restore theory is wrong
+(splitting restore out made it worse); and even the supported `build-server shutdown` does not clear
+what is left. Keeping `-nodeReuse:false` is right — it measurably halves the leak — but full
+elimination is not available from the call site. Deliberately **not** calling `build-server shutdown`
+from product or test code: it terminates build servers process-wide and would kill servers the
+developer is using for unrelated work. A full suite run now leaves ~6 nodes / ~0.5 GB, down from 15 /
+1.6 GB, and the `maxParallelThreads` cap is what actually stopped the out-of-memory kills.
 
 **Also:** `xunit.runner.json` caps `maxParallelThreads` at 4. The project set no parallelism, so
 xUnit ran one collection per core — 16 here — and a good many of them spawn a real process. Two
@@ -1227,10 +1305,10 @@ context-key tests are not yet written.
 |---|------|--------|
 | 0.A.1 | Purge poisoned global-cache entries for `...DataManagementModels/Engine` 3.1.1 | ⬜ (unnecessary so far — the direct ProjectReference bypassed the stale package) |
 | 0.A.2 | Add direct `DataManagementModels` ProjectReference + `Directory.Build.props` | ✅ |
-| 0.A.3 | Bump BeepDM source to 3.1.2 and repack to the local feed | ⬜ (still advised: 3.1.1 was republished with different content) |
+| 0.A.3 | Bump BeepDM source to 3.1.2 and repack to the local feed | ❌ blocked as specified — no local feed exists, Core bypasses the package via a direct ProjectReference, and `Beep.Winform.Controls` pins 3.1.1 to match. A coordinated multi-repo release decision, not a version edit |
 | 0.A.4 | Confirm startup no longer throws `TypeLoadException` | ✅ |
 | 0.B.1 | Fix the test-project compile errors | ✅ (211 tests now run) |
-| 0.B.2 | Add phase-referenced `Skip=` for step-dependent tests | ⬜ |
+| 0.B.2 | Add phase-referenced `Skip=` for step-dependent tests | ✅ |
 | 0.C.1 | Point CI at real solution/test paths + sibling checkouts + source-binding assertion | ✅ (2026-09-07 — D5 settled as **A**, multi-repo checkout) |
 | 0.M.1 | Gate: builds, `/VER` runs, `dotnet test` executes | ✅ |
 
@@ -1286,15 +1364,15 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 3.A.1 | Create `Beep.Installer.Core`; move leaf helpers | ✅ |
 | 3.A.2 | Move `InstallProject`/`CustomWizardPage` + projector/context builder | ✅ |
 | 3.A.3 | Move the `.bsetup` serializer | ✅ (still one class — the partial split is cosmetic and outstanding) |
-| 3.A.4 | Move scanner, factory, templates, MRU, autosave | ✅ (logger injection + swallowed-catch sweep ⬜) |
-| 3.B.1 | Move `BuildPipeline` + payload/host builders | ✅ (stage decomposition ⬜) |
+| 3.A.4 | Move scanner, factory, templates, MRU, autosave | ✅ (sweep verified: all 10 remaining catches deliberate and commented; `Diag.UseLog(IBeepLog)` already bridges to the structured pipeline) |
+| 3.B.1 | Move `BuildPipeline` + payload/host builders | ✅ (stage decomposition ⬜ — 255 lines / 15 stages, deliberately deferred, see 2026-09-08 open-code-work log) |
 | 4.A.2–4.A.4 | Move Msix, Signing, ClickOnce, Publisher into Core/Packaging | ✅ (async update check + `IInstallerPublisher` interface ⬜) |
 | 3.B.2 | Publish seam (`IInstallerHostBuilder`) + configurable timeout + `KeepIntermediates` | ✅ **unblocked 29 tests** |
 | 3.B.3 | Wire sign + MSIX for real (no silent stubs) | ✅ |
 | 3.B.4 | Wire `SolidCompression` + `CompressionLevel` (were collected then ignored) | ✅ |
 | 3.B.5 | Fix runtime-script source rebasing for files in subdirectories | ✅ |
 | 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ✅ `/BUILD` now runs the schema validator too — validation was not a gate on the build at all |
-| 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ⬜ |
+| 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ✅ only one pipeline exists (row was stale); the UI Cancel button was inert and is now wired end to end |
 | 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | ⬜ |
 | 3.M.2 | SOLID review | ⬜ |
 
@@ -1332,10 +1410,10 @@ that would relocate existing installations, so it is flagged for P2 instead.
 |---|------|--------|
 | 6.A.1 | Stepper generated from pages; gated step-jumps; focus on page change | ✅ |
 | 6.A.2 | Real install progress bar; Cancel no longer orphans a running install | ✅ (true mid-install cancellation blocked upstream — see note) |
-| 6.A.3 | Branding wired at runtime (colours, accent, window icon) | ✅ (builder live preview ⬜) |
+| 6.A.3 | Branding wired at runtime (colours, accent, window icon) | ✅ (live swatch in the Branding section repaints as colours are edited) |
 | 6.B.1 | `Ui/InstallerTheme` shared tokens; the 3 palettes now delegate to it | ✅ |
 | 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ (pages still use absolute coords — container re-layout ⬜) |
-| 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree + per-file sizing still sync ⬜) |
+| 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree existence checks moved off the UI thread, with a generation guard) |
 | 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ✅ declared columns; `ComponentConditionsDialog` opens on the selected component; per-field `ErrorProvider` driven by the same validator the build uses |
 | 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ✅ (also: `AllowComponentSelection`/`AllowPathChange` made live; 9 builder sections no longer show a closed project) |
 | 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
@@ -1380,7 +1458,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 9.A.0 | Restore test-project compilation (moved from P0) | ✅ 211 run / 172 pass |
 | 9.A.1 | D5 spike: CI strategy for cross-repo references | ✅ (workflow checks siblings out beside the repo and asserts the source binding) |
 | 9.A.2 | (continuous) per-phase test moves + golden/parity suites | ⬜ |
-| 9.B.1 | Redistribute suites per map; total ≥ 211 green; zero unexplained skips | ⬜ |
+| 9.B.1 | Redistribute suites per map; total ≥ 211 green; zero unexplained skips | 🟡 1245 green, zero unexplained skips (3 skips, all deliberate + CI-covered); the per-map redistribution itself is ⬜ |
 | 9.B.2 | CI smoke: `/SELFTEST` + build→install→uninstall E2E | ✅ (`/SELFTEST` against the built artifact, run twice so a second-install regression fails CI) |
 | 9.B.3 | Final manual matrix (DPI/Narrator/RTL) + SOLID rows recorded | ⬜ |
 

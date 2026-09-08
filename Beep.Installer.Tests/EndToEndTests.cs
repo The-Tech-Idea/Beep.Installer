@@ -25,7 +25,7 @@ public class EndToEndTests : IDisposable
         try { if (Directory.Exists(_tempRoot)) Directory.Delete(_tempRoot, recursive: true); } catch { }
     }
 
-    [Fact(Skip = "Integration: shells the real Beep.Installer.exe, which performs a full dotnet publish (minutes). Run explicitly.")]
+    [Fact(Skip = "P9.B.2 integration: shells the real Beep.Installer.exe for a full dotnet publish (minutes). Covered in CI by the /SELFTEST job; run locally with --filter FullyQualifiedName~EndToEndTests.")]
     public void FullCycle_BuildThenSilentInstallUninstall()
     {
         // 1. Create a real source tree
@@ -133,7 +133,7 @@ project.UseTestDefaults();
         result.Errors.Should().BeEmpty();
     }
 
-    [Fact(Skip = "Integration: shells the real Beep.Installer.exe, which performs a full dotnet publish (minutes). Run explicitly.")]
+    [Fact(Skip = "P9.B.2 integration: shells the real Beep.Installer.exe for a full dotnet publish (minutes). Covered in CI by the /SELFTEST job; run locally with --filter FullyQualifiedName~EndToEndTests.")]
     public void HeadlessBuild_RoundTripFromCli()
     {
         var srcDir = Path.Combine(_tempRoot, "cliSrc");
@@ -171,7 +171,7 @@ project.UseTestDefaults();
         File.Exists(Path.Combine(outDir, "script.bsetup")).Should().BeTrue();
     }
 
-    [Fact(Skip = "Integration: shells the real Beep.Installer.exe, which performs a full dotnet publish (minutes). Run explicitly.")]
+    [Fact(Skip = "P9.B.2 integration: shells the real Beep.Installer.exe for a full dotnet publish (minutes). Covered in CI by the /SELFTEST job; run locally with --filter FullyQualifiedName~EndToEndTests.")]
     public void CrossMachine_CompressedPayload_InstallsFromExtractedZip()
     {
         // Build with a compressed payload (payload.zip), then install on a simulated

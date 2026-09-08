@@ -188,6 +188,7 @@ public class PackageBuilderForm : Form
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(InstallProject.SourceDirectory)) RefreshFileTree();
+        if (_brandingPreview is { IsDisposed: false }) _brandingPreview.Invalidate();
         ScheduleInlineValidation();
     }
 
@@ -1284,7 +1285,14 @@ public class PackageBuilderForm : Form
         AddBoundRow(layout, L("Field_AccentColor", "Accent color:"),        proj, nameof(InstallProject.AccentColor));
         AddCheckRow(layout, L("Field_AllowComponentSelection", "Allow component selection:"), proj, nameof(InstallProject.AllowComponentSelection));
         AddCheckRow(layout, L("Field_AllowPathChange", "Allow path change:"),        proj, nameof(InstallProject.AllowPathChange));
+
+        // Live swatch. Ctrl+P has always opened the full wizard preview, but colours are the one
+        // thing you tune by iterating -- typing a hex value, looking, adjusting -- and a modal you
+        // have to open and close for each attempt is the wrong shape for that.
+        _brandingPreview = new Panel { Dock = DockStyle.Bottom, Height = 132, Padding = new Padding(0, 8, 0, 0) };
+        _brandingPreview.Paint += (_, e) => PaintBrandingPreview(e.Graphics, _brandingPreview!.ClientRectangle);
         p.Controls.Add(layout);
+        p.Controls.Add(_brandingPreview);
         return p;
     }
 
@@ -2247,15 +2255,34 @@ public class PackageBuilderForm : Form
         var projectName = _project.AppName;
         var progressForm = new BuildProgressForm($"Building {projectName}", "Initializing build…") { Owner = this };
         _activeBuildProgressForm = progressForm;
+
+        // The dialog's Cancel button was inert because nothing supplied a cancellation source.
+        var buildCts = new CancellationTokenSource();
+        progressForm.SetCancellationSource(buildCts);
         progressForm.Show(this);
+
         Task.Run(() =>
         {
-            var result = _controller.Build(clean);
+            var result = _controller.Build(clean, buildCts.Token);
+            var canceled = buildCts.IsCancellationRequested;
             BeginInvoke((Action)(() =>
             {
                 _progress.Visible = false;
                 _activeBuildProgressForm = null;
                 progressForm.Close();
+                buildCts.Dispose();
+
+                // A cancelled build is neither a success nor a failure to show an error dialog for:
+                // the user asked for it to stop, and telling them "Build failed" would read as a
+                // defect in their project.
+                if (canceled)
+                {
+                    SetStatus("Build canceled.");
+                    RecordLastBuild(result);
+                    ShowBuildResultInForm(result);
+                    return;
+                }
+
                 SetStatus(result.Success ? $"Built {Path.GetFileName(result.OutputFile)} in {result.Elapsed.TotalSeconds:F1}s" : "Build failed.");
                 RecordLastBuild(result);
                 ShowBuildResultInForm(result);
@@ -2374,23 +2401,130 @@ public class PackageBuilderForm : Form
     //  File tree / scanning
     // ═══════════════════════════════════════════
 
+    /// <summary>
+    /// Rebuilds the source file tree.
+    ///
+    /// The filesystem work happens off the UI thread. Every declared file cost up to two
+    /// <see cref="File.Exists"/> calls — one to choose the path and one inside the tree walk — and
+    /// this runs whenever the source directory changes, so on a project declaring thousands of
+    /// files the builder froze for the duration. 6.C.1 moved the *scan* off the UI thread but left
+    /// this behind, which is the same freeze on a smaller budget.
+    ///
+    /// Reads of <c>Components</c> are snapshotted first: the collections are observable and the
+    /// user can edit them while this is in flight.
+    /// </summary>
     private void RefreshFileTree()
     {
         if (_fileTree == null) return;
+
         _fileTree.Nodes.Clear();
         var sourceDir = _project.SourceDirectory;
         if (string.IsNullOrEmpty(sourceDir) || !Directory.Exists(sourceDir)) return;
-        var rootNode = new TreeNode(sourceDir) { Tag = sourceDir };
-        _fileTree.Nodes.Add(rootNode);
-        foreach (var comp in _project.Components)
-            foreach (var f in comp.Files ?? new List<FileCopyOperation>())
-                AddFileToTree(rootNode, sourceDir, File.Exists(f.SourcePath) ? f.SourcePath : Path.Combine(sourceDir, f.DestinationPath));
-        rootNode.Expand();
+
+        var declared = _project.Components
+            .SelectMany(c => (IEnumerable<FileCopyOperation>?)c.Files ?? Array.Empty<FileCopyOperation>())
+            .Select(f => (f.SourcePath, f.DestinationPath))
+            .ToList();
+
+        // Track the request so a stale result cannot overwrite a newer tree: the source directory
+        // can change again while this one is still resolving.
+        var generation = ++_fileTreeGeneration;
+
+        Task.Run(() => declared
+                .Select(d => File.Exists(d.SourcePath) ? d.SourcePath : Path.Combine(sourceDir, d.DestinationPath))
+                .Where(File.Exists)
+                .ToList())
+            .ContinueWith(t =>
+            {
+                if (IsDisposed || Disposing || _fileTree is null || _fileTree.IsDisposed) return;
+                if (generation != _fileTreeGeneration) return;
+                if (t.IsFaulted) return;
+
+                _fileTree.BeginUpdate();
+                try
+                {
+                    _fileTree.Nodes.Clear();
+                    var rootNode = new TreeNode(sourceDir) { Tag = sourceDir };
+                    _fileTree.Nodes.Add(rootNode);
+                    foreach (var path in t.Result)
+                        AddFileToTree(rootNode, sourceDir, path);
+                    rootNode.Expand();
+                }
+                finally
+                {
+                    _fileTree.EndUpdate();
+                }
+            }, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
+    /// <summary>Guards against an older refresh landing after a newer one.</summary>
+    private int _fileTreeGeneration;
+
+    private Panel? _brandingPreview;
+
+    /// <summary>
+    /// Draws the wizard's sidebar, title and accent using the authored colours, so the effect of a
+    /// change is visible while it is being made.
+    /// </summary>
+    private void PaintBrandingPreview(Graphics g, Rectangle bounds)
+    {
+        if (bounds.Width <= 0 || bounds.Height <= 0) return;
+
+        var area = Rectangle.Inflate(bounds, -1, -1);
+        area.Y += 8;
+        area.Height -= 8;
+        if (area.Height <= 0) return;
+
+        var sidebarBack = ParseColor(_project.SidebarBackgroundColor, Color.FromArgb(31, 41, 55));
+        var sidebarText = ParseColor(_project.SidebarTextColor, Color.White);
+        var accent = ParseColor(_project.AccentColor, Color.FromArgb(37, 99, 235));
+
+        using var page = new SolidBrush(Color.White);
+        g.FillRectangle(page, area);
+        using (var border = new Pen(BorderColor)) g.DrawRectangle(border, area);
+
+        var sidebar = new Rectangle(area.X + 1, area.Y + 1, Math.Max(1, area.Width / 3), area.Height - 2);
+        using (var back = new SolidBrush(sidebarBack)) g.FillRectangle(back, sidebar);
+
+        using var text = new SolidBrush(sidebarText);
+        var title = string.IsNullOrWhiteSpace(_project.WelcomeTitle) ? _project.AppName : _project.WelcomeTitle;
+        g.DrawString(title, UiFontBold, text, new RectangleF(sidebar.X + 8, sidebar.Y + 10, sidebar.Width - 16, 40));
+        using (var muted = new SolidBrush(Color.FromArgb(160, sidebarText)))
+            g.DrawString(L("Builder_BrandingPreviewStep", "Setup"), UiFont, muted, sidebar.X + 8, sidebar.Y + 56);
+
+        // The accent shows where it actually lands: the primary button.
+        var button = new Rectangle(area.Right - 104, area.Bottom - 40, 88, 26);
+        using (var fill = new SolidBrush(accent)) g.FillRectangle(fill, button);
+        using var buttonText = new SolidBrush(Contrasting(accent));
+        using var centered = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        g.DrawString(L("Btn_Install", "Install"), UiFont, buttonText, button, centered);
+    }
+
+    /// <summary>Authored colours are free text, so an unparseable value falls back rather than throwing.</summary>
+    private static Color ParseColor(string? value, Color fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        try
+        {
+            var parsed = ColorTranslator.FromHtml(value.Trim());
+            return parsed.A == 0 ? fallback : parsed;
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
+
+    /// <summary>Black or white, whichever stays readable on the accent.</summary>
+    private static Color Contrasting(Color background)
+        => (background.R * 0.299 + background.G * 0.587 + background.B * 0.114) > 150 ? Color.Black : Color.White;
+
+    /// <summary>
+    /// Adds one already-verified path. The existence check moved to the caller's background pass —
+    /// doing it here meant a filesystem stat per file on the UI thread.
+    /// </summary>
     private static void AddFileToTree(TreeNode root, string baseDir, string filePath)
     {
-        if (!File.Exists(filePath)) return;
         var rel = Path.GetRelativePath(baseDir, filePath);
         var parts = rel.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var current = root;
