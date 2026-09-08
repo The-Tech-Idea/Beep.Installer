@@ -39,6 +39,7 @@ public class BeepModernInstallerForm : BeepiFormPro
     private Panel _buttonBar = null!;
 
     private readonly List<IInstallerPage> _pages = new();
+    private readonly string[] _runtimeArgs = Array.Empty<string>();
     private int _currentPage = -1;
     private readonly InstallContext _ctx = new();
     private bool _installComplete;
@@ -143,10 +144,16 @@ public class BeepModernInstallerForm : BeepiFormPro
     private int NavigablePageCount
         => _pages.Count(p => p is not CompletePage && p is not ErrorPage);
 
-    public BeepModernInstallerForm(InstallProject project, bool previewMode = false)
+    /// <param name="runtimeArgs">
+    /// The process command line, so the wizard honours the same policy and consent switches the
+    /// silent path does. It used to ignore them: `/POLICY=` was applied by `/S` and silently
+    /// dropped by an interactive run of the very same installer.
+    /// </param>
+    public BeepModernInstallerForm(InstallProject project, bool previewMode = false, string[]? runtimeArgs = null)
     {
         _previewMode = previewMode;
         _project = project;
+        _runtimeArgs = runtimeArgs ?? Array.Empty<string>();
 
         LanguageManager.Initialize();
         // Re-read on the UI thread when the language changes, so a switch retranslates the window
@@ -747,6 +754,18 @@ public class BeepModernInstallerForm : BeepiFormPro
             var context = Engine.InstallContextBuilder.ForInstall(
                 _project, _ctx.InstallPath, _ctx.PerUser, rollback, payloadRoot: null, customValues);
             context.Properties[InstallContextKeys.ResourceExecutionMode] = "install";
+
+            // Same policy and consent binding the silent path applies. Without this the comment
+            // above was not true: the two contexts differed by exactly the security-relevant keys.
+            var policyBinding = RuntimePolicyBinder.Apply(context, _project, _runtimeArgs);
+            if (policyBinding.HasErrors)
+            {
+                var problems = string.Join(Environment.NewLine,
+                    policyBinding.Diagnostics
+                        .Where(d => d.Severity == ProjectSchemaDiagnosticSeverity.Error)
+                        .Select(d => $"{d.Code}: {d.Message}"));
+                throw new InvalidOperationException("Installer policy refused this installation:" + Environment.NewLine + problems);
+            }
 
             // Wizard-page answers the built-in steps don't model.
             context.Properties["CreateDesktopIcon"] = _ctx.CreateDesktopIcon;

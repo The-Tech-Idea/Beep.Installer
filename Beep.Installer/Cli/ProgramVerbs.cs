@@ -153,7 +153,7 @@ internal static partial class Program
         {
             var project = LoadRuntimeProject(args);
             if (project == null) { ShowFatalMessage("Installer script could not be parsed — the installer is corrupted."); return 2; }
-            Application.Run(new BeepModernInstallerForm(project));
+            Application.Run(new BeepModernInstallerForm(project, previewMode: false, runtimeArgs: args));
             return 0;
         }
 
