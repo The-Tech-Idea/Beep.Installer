@@ -17,6 +17,15 @@ public interface IInstallerPage
     void OnEnter(InstallContext ctx);
     bool Validate();
     event EventHandler<bool>? ValidityChanged;
+
+    /// <summary>
+    /// Re-reads every user-visible string from <c>LanguageManager</c>. Called when the language
+    /// changes while the page is on screen.
+    ///
+    /// Defaulted to a no-op so a page that has no translated text of its own — or has not been
+    /// localized yet — stays valid; a page that reads strings overrides it.
+    /// </summary>
+    void ReloadStrings() { }
 }
 
 /// <summary>Shared context passed between installer pages and the wizard shell.

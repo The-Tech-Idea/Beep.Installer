@@ -45,6 +45,15 @@ public static class LanguageManager
     /// <summary>Initialize from the system UI culture.</summary>
     public static void Initialize() => SetLanguage(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
+    /// <summary>
+    /// Raised after the language actually changes, so UI already on screen can re-read its text.
+    ///
+    /// Without this, switching language only affected windows opened afterwards: every caption
+    /// already rendered kept the old language, because <c>GetString</c> is pull-only and nothing
+    /// told anyone to pull again.
+    /// </summary>
+    public static event EventHandler? LanguageChanged;
+
     /// <summary>Switch to a specific two-letter language code (e.g. "en", "fr").</summary>
     public static void SetLanguage(string twoLetterCode)
     {
@@ -53,8 +62,26 @@ public static class LanguageManager
         if (twoLetterCode.Length > 2) twoLetterCode = twoLetterCode[..2];
         if (!SupportedCultures.Contains(twoLetterCode)) twoLetterCode = "en";
 
+        // Only announce a real change: re-selecting the current language should not churn the UI.
+        var changed = !string.Equals(_currentCulture.TwoLetterISOLanguageName, twoLetterCode, StringComparison.Ordinal);
+
         _currentCulture = CultureInfo.GetCultureInfo(twoLetterCode);
         _currentStrings = LoadStrings(twoLetterCode);
+
+        if (changed) RaiseLanguageChanged();
+    }
+
+    /// <summary>
+    /// Notifies listeners. A handler that throws — a disposed form, typically — must not stop the
+    /// rest of the UI from re-reading its strings, or a switch leaves the window half-translated.
+    /// </summary>
+    private static void RaiseLanguageChanged()
+    {
+        foreach (var handler in (LanguageChanged?.GetInvocationList() ?? Array.Empty<Delegate>()).Cast<EventHandler>())
+        {
+            try { handler(null, EventArgs.Empty); }
+            catch (Exception ex) { Engine.Diag.Debug("LanguageManager", "a language-changed listener threw", ex); }
+        }
     }
 
     /// <summary>Get a localized string by key. Returns the key itself if not found.</summary>

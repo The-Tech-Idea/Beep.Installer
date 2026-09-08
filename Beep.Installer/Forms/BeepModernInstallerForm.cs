@@ -94,6 +94,35 @@ public class BeepModernInstallerForm : BeepiFormPro
     /// (see <see cref="SyncStepperToPages"/>) rather than a parallel hardcoded array — the two
     /// had drifted apart, so every step from "Additional Tasks" onward showed the wrong label.
     /// </summary>
+
+    /// <summary>
+    /// Retranslates the live wizard: RTL first, because a language change can flip the layout
+    /// direction, then every page's own strings.
+    /// </summary>
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (IsDisposed) return;
+        if (InvokeRequired) { BeginInvoke(new Action(() => OnLanguageChanged(sender, e))); return; }
+
+        try
+        {
+            Engine.RtlHelper.ApplyDirection(this,
+                Engine.RtlHelper.IsRtl(LanguageManager.CurrentCulture.TwoLetterISOLanguageName));
+
+            foreach (var page in _pages)
+            {
+                try { page.ReloadStrings(); }
+                catch (Exception ex) { Engine.Diag.Debug("Language", $"{page.GetType().Name} could not reload strings", ex); }
+            }
+
+            Refresh();
+        }
+        catch (Exception ex)
+        {
+            Engine.Diag.Warn("Language", "live language switch failed", ex, "BI2650");
+        }
+    }
+
     private static string IconFor(IInstallerPage page) => page switch
     {
         WelcomePage => "home.svg",
@@ -120,6 +149,9 @@ public class BeepModernInstallerForm : BeepiFormPro
         _project = project;
 
         LanguageManager.Initialize();
+        // Re-read on the UI thread when the language changes, so a switch retranslates the window
+        // that is already open rather than only the next one.
+        LanguageManager.LanguageChanged += OnLanguageChanged;
         _ctx.Project = project;
         _ctx.InstallPath = project.DefaultDirName;
         _ctx.StartMenuFolder = project.DefaultGroupName;

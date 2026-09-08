@@ -22,24 +22,36 @@ public static class RtlHelper
     }
 
     /// <summary>Applies RTL layout to a form and all its children.</summary>
-    public static void ApplyRtl(Form form)
+    public static void ApplyRtl(Form form) => ApplyDirection(form, rightToLeft: true);
+
+    /// <summary>
+    /// Sets reading direction on a form and its children, in both directions.
+    ///
+    /// This only ever turned RTL on. That is enough when the language is chosen once at startup,
+    /// but a live switch from Arabic back to English left the window mirrored, because nothing
+    /// could put it back.
+    /// </summary>
+    public static void ApplyDirection(Form form, bool rightToLeft)
     {
-        form.RightToLeft = RightToLeft.Yes;
-        form.RightToLeftLayout = true;
-        ApplyRtlRecursive(form);
+        ArgumentNullException.ThrowIfNull(form);
+
+        var direction = rightToLeft ? RightToLeft.Yes : RightToLeft.No;
+        form.RightToLeft = direction;
+        form.RightToLeftLayout = rightToLeft;
+        ApplyDirectionRecursive(form, direction);
     }
 
-    private static void ApplyRtlRecursive(Control parent)
+    private static void ApplyDirectionRecursive(Control parent, RightToLeft direction)
     {
         foreach (Control c in parent.Controls)
         {
             if (c is TextBox || c is RichTextBox || c is ComboBox || c is DataGridView ||
                 c is TreeView || c is ListView || c is ListBox || c is CheckedListBox)
             {
-                c.RightToLeft = RightToLeft.Yes;
+                c.RightToLeft = direction;
             }
             if (c.Controls.Count > 0)
-                ApplyRtlRecursive(c);
+                ApplyDirectionRecursive(c, direction);
         }
     }
 }
