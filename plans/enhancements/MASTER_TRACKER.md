@@ -10,6 +10,57 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-08
+
+**Six items closed: 4.B.1, 2.B.2, 2.C.1, 8.B.2, 7.B.1, and 11.M.1 assessed.**
+
+**4.B.1** — ClickOnce shortcut creation shelled `powershell.exe` to reach the same `WScript.Shell`
+COM object the runtime path already used directly: an interpreter per shortcut, values quoted
+twice, silent failure where PowerShell is disabled by policy, and the process-launch defects swept
+out of BeepDM yesterday. Now COM directly, returning whether the `.lnk` exists — the old code
+returned `ExitCode == 0` and assumed.
+
+**2.B.2** — file-copy, shortcut and COM steps now declare `SupportsRollback` and undo what they
+recorded. FileCopy needed care: `RollbackManager.RegisterFileCreated` deletes unconditionally and
+the step registers *every* destination, including one that overwrote a file the machine already
+had. Step rollback tracks paths that did not exist before the copy and deletes only those; an
+overwritten file is left for the upgrade backup, because deleting it would take away something the
+installer never owned.
+
+**2.C.1** — Core had two private `TryParseVersion` copies that disagreed: `"1"` was valid in the
+schema service and invalid in the extension validator; `"1.0+build"` the reverse. Both now delegate
+to BeepDM's `SemVer`, the same parser the runtime version gate uses.
+
+**8.B.2** — the autosave timer serialised the live project from a thread-pool thread while the user
+edited it, walking `ObservableCollection`s mid-mutation. It also called `Save`, which stamps
+`ModifiedAt` and therefore set `IsDirty`: **autosave dirtied the project it was snapshotting**, so a
+saved document claimed unsaved changes 30 seconds later. And it wrote straight to the autosave path,
+leaving a truncated file recoverable after a crash. Now: snapshot under a shared lock, no mutation,
+atomic write, overlapping ticks dropped.
+
+**7.B.1** — `SetLanguage` swapped the string table and told nobody, so a switch only affected
+windows opened afterwards. `LanguageChanged` now fires on real changes, `IInstallerPage.ReloadStrings`
+(defaulted no-op) lets pages re-read, and `RtlHelper.ApplyDirection` replaces a one-way `ApplyRtl`
+that left an Arabic→English switch mirrored with no way back. The switcher *control* is not placed
+in the wizard chrome — where it belongs on screen is a visual decision this session cannot verify.
+
+**11.M.1 — the gate is already met, and the "deferred" note was stale.** `DeltaUpdateQualificationRunner`
+covers verify / apply-rollback / tampered-manifest / missing-blob / wrong-base-tree;
+`UpdateChannelQualificationRunner` covers lifecycle, preflight, offline-reconnect, tampered-feed,
+transition and recovery. Both run **through the shipped exe** in `EnterpriseProcessContractTests`
+via `/QUALIFYDELTA`, `/QUALIFYUPDATECHANNELFEED` and `/RECOVERDELTA` — 131 tests green. One honest
+gap remains: recovery is driven from journal state, not from actually killing the process mid-write.
+
+Suite **1202/0/3** in ~1m35s. Yesterday's 15-minute run was environmental and has not recurred.
+
+**Still genuinely blocked, not skipped:**
+- **6.x DPI matrix (100/150/200)** and **Narrator / Accessibility Insights passes** need someone to
+  look at rendered output and listen to a screen reader. Codeable parts of 6.x — dead-UI removal and
+  making the `WizardPages` checklist actually drive pages — remain open and are worth doing.
+- **10.M.1** elevated locked-file/3010 live run needs an elevated session.
+
+---
+
 ## Progress log — 2026-09-07
 
 **The tree did not build: merge commit `7d5287d` was committed with unresolved conflict markers.**
