@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Beep.Installer.Lang;
@@ -24,10 +25,13 @@ namespace Beep.Installer.Tests;
 [Collection("Language")]
 public class StringResourceCoverageTests
 {
-    /// <summary>L("Key", "English") and LanguageManager.GetOrDefault("Key", "English").</summary>
-    private static readonly Regex Call =
-        new(@"(?:\bL|GetOrDefault)\(\s*""([A-Za-z0-9_]+)""\s*,\s*""((?:[^""\\]|\\.)*)""\s*\)",
-            RegexOptions.Compiled);
+    /// <summary>The opening of a lookup: <c>L("Key",</c> or <c>GetOrDefault("Key",</c>.</summary>
+    private static readonly Regex CallHead =
+        new("(?:\\bL|GetOrDefault)\\(\\s*\"([A-Za-z0-9_]+)\"\\s*,", RegexOptions.Compiled);
+
+    /// <summary>A C# string literal, escapes included.</summary>
+    private static readonly Regex Literal =
+        new("\"((?:[^\"\\\\]|\\\\.)*)\"", RegexOptions.Compiled);
 
     private static readonly string[] Cultures = { "ar", "de", "en", "es", "fr", "ja", "pt", "zh" };
 
@@ -52,11 +56,95 @@ public class StringResourceCoverageTests
             var normalised = file.Replace('\\', '/');
             if (normalised.Contains("/obj/") || normalised.Contains("/bin/")) continue;
 
-            foreach (Match m in Call.Matches(File.ReadAllText(file)))
-                keys.TryAdd(m.Groups[1].Value, m.Groups[2].Value);
+            foreach (var (key, english) in Lookups(File.ReadAllText(file)))
+                keys.TryAdd(key, english);
         }
 
         return keys;
+    }
+
+    /// <summary>
+    /// Every <c>L(key, english)</c> in a file, including defaults assembled by concatenation.
+    ///
+    /// A regex over a single literal missed 28 keys whose English text is written as
+    /// <c>"..." + "..."</c>. They were absent from all eight resx files and nothing said so, which
+    /// made this class quietly under-report the very thing it exists to catch.
+    ///
+    /// It must also reject a computed second argument: <c>UpdateCenterForm</c> has its own
+    /// <c>L(key, params object[])</c> overload where the second argument is a value, not a default.
+    /// </summary>
+    private static IEnumerable<(string Key, string English)> Lookups(string source)
+    {
+        foreach (Match head in CallHead.Matches(source))
+        {
+            var open = source.LastIndexOf('(', head.Index + head.Length - 1);
+            if (open < 0) continue;
+
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+            var end = -1;
+
+            for (var i = open; i < source.Length; i++)
+            {
+                var c = source[i];
+
+                if (inString)
+                {
+                    if (escaped) escaped = false;
+                    else if (c == '\\') escaped = true;
+                    else if (c == '"') inString = false;
+                    continue;
+                }
+
+                if (c == '"') inString = true;
+                else if (c == '(') depth++;
+                else if (c == ')')
+                {
+                    depth--;
+                    if (depth == 0) { end = i; break; }
+                }
+            }
+
+            if (end < 0) continue;
+
+            var body = source.Substring(head.Index + head.Length, end - (head.Index + head.Length));
+            var parts = Literal.Matches(body).Select(m => m.Groups[1].Value).ToList();
+            if (parts.Count == 0) continue;
+
+            // Once the literals and the `+` that join them are removed, anything left means the
+            // default is computed — so this is not a declaration of English text.
+            var residue = Literal.Replace(body, "").Replace("+", "").Trim();
+            if (residue.Length > 0) continue;
+
+            yield return (head.Groups[1].Value, Unescape(string.Concat(parts)));
+        }
+    }
+
+    /// <summary>Turns a C# literal body into the runtime string it produces.</summary>
+    private static string Unescape(string text)
+    {
+        var sb = new StringBuilder(text.Length);
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] != '\\' || i + 1 >= text.Length)
+            {
+                sb.Append(text[i]);
+                continue;
+            }
+
+            i++;
+            sb.Append(text[i] switch
+            {
+                'r' => '\r',
+                'n' => '\n',
+                't' => '\t',
+                _ => text[i],
+            });
+        }
+
+        return sb.ToString();
     }
 
     private static HashSet<string> KeysDeclaredFor(string culture)
@@ -69,6 +157,21 @@ public class StringResourceCoverageTests
             .Select(d => (string?)d.Attribute("name") ?? "")
             .Where(n => n.Length > 0)
             .ToHashSet(StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void TheScannerSeesConcatenatedDefaults()
+    {
+        // Anti-vacuity, and a regression guard for the blind spot itself: if this stopped matching,
+        // every coverage assertion below would pass by simply not looking.
+        var used = KeysUsedInCode();
+
+        used.Should().ContainKey("Signing_TimestampHint",
+            "its English default is written as several concatenated literals");
+        used["Signing_TimestampHint"].Should().Contain("Timestamping keeps the signature valid");
+
+        used.Should().NotContainKey("Completed",
+            "that is UpdateCenterForm's L(key, params object[]) overload, not an English default");
     }
 
     [Fact]
@@ -110,14 +213,14 @@ public class StringResourceCoverageTests
         // The other direction. A key nothing reads is dead weight that still has to be translated
         // eight times whenever someone touches it.
         //
-        // Not every declared key comes from an L(...) literal -- some are composed at runtime -- so
-        // this asserts on the shape the scanner can see rather than demanding an exact match.
+        // Not every declared key comes from an L(...) literal -- UpdateCenterForm composes its keys
+        // by prefixing "Update_" -- so this asserts on the shape the scanner can see rather than
+        // demanding an exact match.
         var used = KeysUsedInCode().Keys.ToHashSet(StringComparer.Ordinal);
         var declared = KeysDeclaredFor("en");
 
         var orphans = declared.Where(k => !used.Contains(k)).ToList();
 
-        // Report rather than fail: this is a hygiene signal, and dynamic keys are legitimate.
         orphans.Count.Should().BeLessThan(declared.Count,
             "at least some declared keys must be reachable from the code");
     }
@@ -137,6 +240,9 @@ public class StringResourceCoverageTests
 
             LanguageManager.TryGetString("Signing_Title", out var signing).Should().BeTrue();
             signing.Should().NotBe("Code signing");
+
+            LanguageManager.TryGetString("Resource_ChooseHeading", out var resource).Should().BeTrue();
+            resource.Should().NotBe("What should the installer do?");
         }
         finally
         {
@@ -168,7 +274,7 @@ public class StringResourceCoverageTests
                 var actual = Placeholders(translated);
 
                 if (!expected.SetEquals(actual))
-                    problems.Add($"{culture}/{key}: expected {{{string.Join(",", expected.Order())}}}, got {{{string.Join(",", actual.Order())}}}");
+                    problems.Add($"{culture}/{key}: expected [{string.Join(",", expected.Order())}], got [{string.Join(",", actual.Order())}]");
             }
         }
 
@@ -177,7 +283,7 @@ public class StringResourceCoverageTests
 
     /// <summary>The set of numeric placeholder indexes in a format string, ignoring any format spec.</summary>
     private static HashSet<string> Placeholders(string text)
-        => Regex.Matches(text, @"\{(\d+)(?::[^}]*)?\}")
+        => Regex.Matches(text, "\\{(\\d+)(?::[^}]*)?\\}")
             .Select(m => m.Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);
 }

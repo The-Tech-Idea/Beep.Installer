@@ -1173,4 +1173,112 @@ Clean before building?</value>
   <data name="Wizard_Prerequisites" xml:space="preserve">
     <value>Prerequisites</value>
   </data>
+  <data name="Builder_AddGuided" xml:space="preserve">
+    <value>Add with wizard...</value>
+  </data>
+  <data name="Builder_EditGuided" xml:space="preserve">
+    <value>Edit in wizard...</value>
+  </data>
+  <data name="Builder_NoDescriptor" xml:space="preserve">
+    <value>'{0}' has no described inputs, so it can only be edited in the grid.</value>
+  </data>
+  <data name="Packaging_Explain" xml:space="preserve">
+    <value>The format decides what the installer can do. Anything the chosen format cannot carry is listed below, taken from this project.</value>
+  </data>
+  <data name="Packaging_PublisherHint" xml:space="preserve">
+    <value>The certificate subject, exactly — for example CN=Contoso Ltd, O=Contoso Ltd, C=GB. A package whose publisher does not match its signing certificate is rejected when it is installed, not when it is built.</value>
+  </data>
+  <data name="Packaging_ResourcesBlock" xml:space="preserve">
+    <value>This project has typed resources, and a build with MSIX output refuses them. Remove them, or choose Setup.exe.</value>
+  </data>
+  <data name="Packaging_SolidHint" xml:space="preserve">
+    <value>Solid compression deduplicates identical files before compressing, which helps most when the payload has many copies of the same assembly.</value>
+  </data>
+  <data name="Publish_Explain" xml:space="preserve">
+    <value>Two of these decide whether your users ever receive an update, so they are asked rather than assumed.</value>
+  </data>
+  <data name="Publish_UpdateUrlHint" xml:space="preserve">
+    <value>The address installed clients will check for updates — usually an https:// URL, not the folder above. Leave empty for a deployment that never updates itself.</value>
+  </data>
+  <data name="Publish_UrlNotAbsolute" xml:space="preserve">
+    <value>The update address must be absolute, such as https://example.com/app/ — clients resolve it from their own machine, not from yours.</value>
+  </data>
+  <data name="Quick_NextSteps" xml:space="preserve">
+    <value>The full builder opens next. Components, shortcuts, registry entries, signing and packaging format are all optional and can be set there.</value>
+  </data>
+  <data name="Quick_ReviewExplain" xml:space="preserve">
+    <value>These are the answers that will be written to your .bsetup. Everything else keeps its default, and the full builder can change any of it afterwards.</value>
+  </data>
+  <data name="Quick_SourceExplain" xml:space="preserve">
+    <value>The folder holding the application to install — usually your build output, such as bin\Release. Everything in it is packaged unless you exclude it later.</value>
+  </data>
+  <data name="Quick_TargetExplain" xml:space="preserve">
+    <value>Per-machine installs go under Program Files and need administrator rights. Per-user installs go under the user's own folder and do not.</value>
+  </data>
+  <data name="Resource_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Resource_Browse" xml:space="preserve">
+    <value>Browse for {0}</value>
+  </data>
+  <data name="Resource_ChooseExplain" xml:space="preserve">
+    <value>Each of these is executed at install time by a typed provider, with rollback if a later step fails.</value>
+  </data>
+  <data name="Resource_ChooseHeading" xml:space="preserve">
+    <value>What should the installer do?</value>
+  </data>
+  <data name="Resource_EditTitle" xml:space="preserve">
+    <value>Edit an install operation</value>
+  </data>
+  <data name="Resource_NeedsPermissions" xml:space="preserve">
+    <value>Runs with: {0}</value>
+  </data>
+  <data name="Resource_NoPermissions" xml:space="preserve">
+    <value>no special permissions</value>
+  </data>
+  <data name="Resource_Title" xml:space="preserve">
+    <value>Add an install operation</value>
+  </data>
+  <data name="Section_CustomPagesHelp" xml:space="preserve">
+    <value>Extra pages shown during install, with fields whose answers reach the install context. Order decides where a page appears in the wizard.</value>
+  </data>
+  <data name="Section_FileAssociationsHelp" xml:space="preserve">
+    <value>File types this application opens. The ProgId must be unique to the product, or another installer's uninstall can take the association with it.</value>
+  </data>
+  <data name="Section_MsixOptionalPackagesHelp" xml:space="preserve">
+    <value>Optional packages that join this application's MSIX family. Publisher must match the main package exactly or Windows refuses the relationship.</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogsHelp" xml:space="preserve">
+    <value>Signed catalogs of prerequisite definitions. A catalog without a trusted key is read but not trusted, so pin the publisher key you expect.</value>
+  </data>
+  <data name="Section_ResourcesHelp" xml:space="preserve">
+    <value>Operations executed by the typed resource providers at install time. These need explicit extension directories and the EXE host — a build refuses otherwise, because MSIX cannot execute providers.</value>
+  </data>
+  <data name="Section_SupersedenceHelp" xml:space="preserve">
+    <value>Earlier products this installer replaces, for Intune and ConfigMgr. The version range decides which installs are superseded rather than left alongside.</value>
+  </data>
+  <data name="Section_UpdateChannelsHelp" xml:space="preserve">
+    <value>Named release rings and their feeds. Rollout percentage staggers who is offered a build; the feed URL is what installed clients actually check.</value>
+  </data>
+  <data name="Section_WindowsServicesHelp" xml:space="preserve">
+    <value>Services registered at install. A service needs a per-machine install: it cannot be registered from a per-user one.</value>
+  </data>
+  <data name="Signing_Explain" xml:space="preserve">
+    <value>An unsigned installer triggers Windows SmartScreen's "unrecognized app" warning, which most users read as a malware alert. These are alternatives — pick one.</value>
+  </data>
+  <data name="Signing_NoneExplain" xml:space="preserve">
+    <value>The installer will not be signed. This is fine for internal testing; for anything you distribute, expect users to see a SmartScreen warning.</value>
+  </data>
+  <data name="Signing_PfxHint" xml:space="preserve">
+    <value>Prefer a dpapi: or env: reference to a literal password — a password written into the .bsetup travels with the script into source control.</value>
+  </data>
+  <data name="Signing_RemoteHint" xml:space="preserve">
+    <value>The credential should be a dpapi: or env: reference. A signing credential in a script is a signing credential in your repository.</value>
+  </data>
+  <data name="Signing_StoreHint" xml:space="preserve">
+    <value>A thumbprint identifies exactly one certificate; a subject name matches whichever one is installed, which can change under you when it is renewed.</value>
+  </data>
+  <data name="Signing_TimestampHint" xml:space="preserve">
+    <value>Timestamping keeps the signature valid after the certificate expires. Without it, the installer stops being trusted the day the certificate does.</value>
+  </data>
 </root>

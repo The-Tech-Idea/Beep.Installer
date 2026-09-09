@@ -1198,6 +1198,26 @@ public class PackageBuilderForm : Form
                 Type = "file.copy",
                 DisplayName = L("Section_ResourcesDefaultName", "Copy a file"),
                 RollbackSupported = true
+            },
+            createGuided: () =>
+            {
+                using var wizard = new ResourceWizard(_project);
+                return wizard.ShowDialog(this) == DialogResult.OK ? wizard.Result : null;
+            },
+            editGuided: current =>
+            {
+                if (!Beep.Installer.Extensibility.ResourceInputCatalog.TryGet(current.Type, out _))
+                {
+                    MessageBox.Show(this,
+                        string.Format(L("Builder_NoDescriptor",
+                            "'{0}' has no described inputs, so it can only be edited in the grid."), current.Type),
+                        L("Section_Resources", "Typed Resources"),
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return null;
+                }
+
+                using var wizard = new ResourceWizard(_project, current);
+                return wizard.ShowDialog(this) == DialogResult.OK ? wizard.Result : null;
             });
 
     private Panel BuildCustomPagesSection()
@@ -1344,7 +1364,9 @@ public class PackageBuilderForm : Form
         string title,
         string description,
         System.Collections.ObjectModel.ObservableCollection<T> collection,
-        Func<T> createDefault)
+        Func<T> createDefault,
+        Func<T?>? createGuided = null,
+        Func<T, T?>? editGuided = null)
         where T : class
     {
         var p = new Panel { Dock = DockStyle.Fill };
@@ -1424,6 +1446,40 @@ public class PackageBuilderForm : Form
             _project.MarkDirty();
         };
         btnPanel.Controls.AddRange(new Control[] { addBtn, duplicateBtn, removeBtn });
+
+        // A guided path, where one exists. Typed resources are the case that needs it: "Add" gives a
+        // blank operation whose arguments are a raw string dictionary, so the only way to fill it in
+        // was to already know every key the provider reads.
+        if (createGuided != null)
+        {
+            var guidedBtn = new Button { Text = L("Builder_AddGuided", "Add with wizard..."), AutoSize = true };
+            guidedBtn.Click += (_, _) =>
+            {
+                if (createGuided() is not { } item) return;
+                collection.Add(item);
+                binding.Position = collection.Count - 1;
+                _project.MarkDirty();
+            };
+            btnPanel.Controls.Add(guidedBtn);
+        }
+
+        if (editGuided != null)
+        {
+            var editBtn = new Button { Text = L("Builder_EditGuided", "Edit in wizard..."), AutoSize = true };
+            editBtn.Click += (_, _) =>
+            {
+                if (binding.Current is not T current) return;
+                if (editGuided(current) is not { } replacement) return;
+
+                var index = collection.IndexOf(current);
+                if (index < 0) return;
+
+                collection[index] = replacement;
+                binding.Position = index;
+                _project.MarkDirty();
+            };
+            btnPanel.Controls.Add(editBtn);
+        }
 
         var left = new Panel { Dock = DockStyle.Fill };
         left.Controls.Add(grid);

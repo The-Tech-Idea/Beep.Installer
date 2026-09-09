@@ -1163,4 +1163,112 @@ Limpar antes de compilar?</value>
   <data name="Wizard_Prerequisites" xml:space="preserve">
     <value>Pré-requisitos</value>
   </data>
+  <data name="Builder_AddGuided" xml:space="preserve">
+    <value>Adicionar com assistente...</value>
+  </data>
+  <data name="Builder_EditGuided" xml:space="preserve">
+    <value>Editar no assistente...</value>
+  </data>
+  <data name="Builder_NoDescriptor" xml:space="preserve">
+    <value>'{0}' não tem entradas descritas, por isso só pode ser editado na grelha.</value>
+  </data>
+  <data name="Packaging_Explain" xml:space="preserve">
+    <value>O formato decide o que o instalador pode fazer. Tudo o que o formato escolhido não conseguir incluir é listado abaixo, retirado deste projeto.</value>
+  </data>
+  <data name="Packaging_PublisherHint" xml:space="preserve">
+    <value>O requerente do certificado, exatamente — por exemplo CN=Contoso Ltd, O=Contoso Ltd, C=GB. Um pacote cujo editor não corresponde ao certificado de assinatura é recusado ao instalar, não ao compilar.</value>
+  </data>
+  <data name="Packaging_ResourcesBlock" xml:space="preserve">
+    <value>Este projeto tem recursos tipados e uma compilação com saída MSIX recusa-os. Remova-os ou escolha Setup.exe.</value>
+  </data>
+  <data name="Packaging_SolidHint" xml:space="preserve">
+    <value>A compressão sólida elimina ficheiros duplicados antes de comprimir, o que ajuda sobretudo quando a carga tem muitas cópias do mesmo assembly.</value>
+  </data>
+  <data name="Publish_Explain" xml:space="preserve">
+    <value>Dois destes decidem se os seus utilizadores alguma vez receberão uma atualização, por isso são perguntados em vez de assumidos.</value>
+  </data>
+  <data name="Publish_UpdateUrlHint" xml:space="preserve">
+    <value>O endereço que os clientes instalados verificarão para atualizações — normalmente um URL https://, não a pasta acima. Deixe vazio para uma implementação que nunca se atualiza.</value>
+  </data>
+  <data name="Publish_UrlNotAbsolute" xml:space="preserve">
+    <value>O endereço de atualização tem de ser absoluto, como https://example.com/app/ — os clientes resolvem-no a partir da própria máquina, não da sua.</value>
+  </data>
+  <data name="Quick_NextSteps" xml:space="preserve">
+    <value>De seguida abre o construtor completo. Componentes, atalhos, entradas de registo, assinatura e formato do pacote são opcionais e podem ser definidos aí.</value>
+  </data>
+  <data name="Quick_ReviewExplain" xml:space="preserve">
+    <value>Estas são as respostas que serão escritas no seu .bsetup. Tudo o resto mantém o valor predefinido, e o construtor completo pode alterá-lo depois.</value>
+  </data>
+  <data name="Quick_SourceExplain" xml:space="preserve">
+    <value>A pasta que contém a aplicação a instalar — normalmente a sua saída de compilação, como bin\Release. Tudo o que estiver lá é empacotado, salvo se o excluir depois.</value>
+  </data>
+  <data name="Quick_TargetExplain" xml:space="preserve">
+    <value>As instalações por máquina vão para Program Files e requerem direitos de administrador. As por utilizador vão para a pasta do utilizador e não requerem.</value>
+  </data>
+  <data name="Resource_Add" xml:space="preserve">
+    <value>Adicionar</value>
+  </data>
+  <data name="Resource_Browse" xml:space="preserve">
+    <value>Procurar {0}</value>
+  </data>
+  <data name="Resource_ChooseExplain" xml:space="preserve">
+    <value>Cada uma destas é executada no momento da instalação por um fornecedor tipado, com reversão se um passo posterior falhar.</value>
+  </data>
+  <data name="Resource_ChooseHeading" xml:space="preserve">
+    <value>O que deve o instalador fazer?</value>
+  </data>
+  <data name="Resource_EditTitle" xml:space="preserve">
+    <value>Editar uma operação de instalação</value>
+  </data>
+  <data name="Resource_NeedsPermissions" xml:space="preserve">
+    <value>Executa com: {0}</value>
+  </data>
+  <data name="Resource_NoPermissions" xml:space="preserve">
+    <value>sem permissões especiais</value>
+  </data>
+  <data name="Resource_Title" xml:space="preserve">
+    <value>Adicionar uma operação de instalação</value>
+  </data>
+  <data name="Section_CustomPagesHelp" xml:space="preserve">
+    <value>Páginas adicionais mostradas durante a instalação, com campos cujas respostas chegam ao contexto de instalação. A ordem decide onde uma página aparece no assistente.</value>
+  </data>
+  <data name="Section_FileAssociationsHelp" xml:space="preserve">
+    <value>Tipos de ficheiro que esta aplicação abre. O ProgId tem de ser exclusivo do produto, ou a desinstalação de outro instalador pode levar a associação consigo.</value>
+  </data>
+  <data name="Section_MsixOptionalPackagesHelp" xml:space="preserve">
+    <value>Pacotes opcionais que se juntam à família MSIX desta aplicação. O editor tem de corresponder exatamente ao pacote principal ou o Windows recusa a relação.</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogsHelp" xml:space="preserve">
+    <value>Catálogos assinados de definições de pré-requisitos. Um catálogo sem chave fidedigna é lido mas não confiável, por isso fixe a chave do editor que espera.</value>
+  </data>
+  <data name="Section_ResourcesHelp" xml:space="preserve">
+    <value>Operações executadas pelos fornecedores de recursos tipados no momento da instalação. Precisam de diretórios de extensão explícitos e do anfitrião EXE — caso contrário a compilação recusa, porque o MSIX não consegue executar fornecedores.</value>
+  </data>
+  <data name="Section_SupersedenceHelp" xml:space="preserve">
+    <value>Produtos anteriores que este instalador substitui, para o Intune e o ConfigMgr. O intervalo de versões decide quais instalações são substituídas em vez de deixadas lado a lado.</value>
+  </data>
+  <data name="Section_UpdateChannelsHelp" xml:space="preserve">
+    <value>Anéis de lançamento nomeados e os seus feeds. A percentagem de implementação escalona a quem uma compilação é oferecida; o URL do feed é o que os clientes instalados realmente verificam.</value>
+  </data>
+  <data name="Section_WindowsServicesHelp" xml:space="preserve">
+    <value>Serviços registados na instalação. Um serviço precisa de uma instalação por máquina: não pode ser registado a partir de uma por utilizador.</value>
+  </data>
+  <data name="Signing_Explain" xml:space="preserve">
+    <value>Um instalador sem assinatura aciona o aviso de "aplicação não reconhecida" do SmartScreen, que a maioria dos utilizadores lê como um alerta de malware. Estas são alternativas — escolha uma.</value>
+  </data>
+  <data name="Signing_NoneExplain" xml:space="preserve">
+    <value>O instalador não será assinado. Isto é aceitável para testes internos; para algo que distribua, espere que os utilizadores vejam um aviso do SmartScreen.</value>
+  </data>
+  <data name="Signing_PfxHint" xml:space="preserve">
+    <value>Prefira uma referência dpapi: ou env: a uma palavra-passe literal — uma palavra-passe escrita no .bsetup viaja com o script para o controlo de código.</value>
+  </data>
+  <data name="Signing_RemoteHint" xml:space="preserve">
+    <value>A credencial deve ser uma referência dpapi: ou env:. Uma credencial de assinatura num script é uma credencial de assinatura no seu repositório.</value>
+  </data>
+  <data name="Signing_StoreHint" xml:space="preserve">
+    <value>Uma impressão digital identifica exatamente um certificado; um nome de requerente corresponde ao que estiver instalado, o que pode mudar sem aviso quando é renovado.</value>
+  </data>
+  <data name="Signing_TimestampHint" xml:space="preserve">
+    <value>O carimbo de data/hora mantém a assinatura válida após a expiração do certificado. Sem ele, o instalador deixa de ser fidedigno no dia em que o certificado expira.</value>
+  </data>
 </root>

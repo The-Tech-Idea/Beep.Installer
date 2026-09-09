@@ -1163,4 +1163,112 @@ Vor dem Erstellen bereinigen?</value>
   <data name="Wizard_Prerequisites" xml:space="preserve">
     <value>Voraussetzungen</value>
   </data>
+  <data name="Builder_AddGuided" xml:space="preserve">
+    <value>Mit Assistent hinzufügen...</value>
+  </data>
+  <data name="Builder_EditGuided" xml:space="preserve">
+    <value>Im Assistenten bearbeiten...</value>
+  </data>
+  <data name="Builder_NoDescriptor" xml:space="preserve">
+    <value>Für '{0}' sind keine Eingaben beschrieben; es kann nur im Raster bearbeitet werden.</value>
+  </data>
+  <data name="Packaging_Explain" xml:space="preserve">
+    <value>Das Format entscheidet, was das Installationsprogramm kann. Alles, was das gewählte Format nicht abbilden kann, ist unten aufgeführt — aus diesem Projekt entnommen.</value>
+  </data>
+  <data name="Packaging_PublisherHint" xml:space="preserve">
+    <value>Exakt der Zertifikatsantragsteller — zum Beispiel CN=Contoso Ltd, O=Contoso Ltd, C=GB. Ein Paket, dessen Herausgeber nicht zum Signaturzertifikat passt, wird bei der Installation abgelehnt, nicht beim Erstellen.</value>
+  </data>
+  <data name="Packaging_ResourcesBlock" xml:space="preserve">
+    <value>Dieses Projekt enthält typisierte Ressourcen, und ein Build mit MSIX-Ausgabe lehnt sie ab. Entfernen Sie sie oder wählen Sie Setup.exe.</value>
+  </data>
+  <data name="Packaging_SolidHint" xml:space="preserve">
+    <value>Solide Komprimierung entfernt identische Dateien vor dem Komprimieren; das hilft am meisten, wenn die Nutzlast viele Kopien derselben Assembly enthält.</value>
+  </data>
+  <data name="Publish_Explain" xml:space="preserve">
+    <value>Zwei davon entscheiden, ob Ihre Benutzer jemals ein Update erhalten — deshalb werden sie gefragt statt angenommen.</value>
+  </data>
+  <data name="Publish_UpdateUrlHint" xml:space="preserve">
+    <value>Die Adresse, die installierte Clients auf Updates prüfen — üblicherweise eine https://-URL, nicht der Ordner oben. Leer lassen für eine Bereitstellung, die sich nie aktualisiert.</value>
+  </data>
+  <data name="Publish_UrlNotAbsolute" xml:space="preserve">
+    <value>Die Update-Adresse muss absolut sein, etwa https://example.com/app/ — Clients lösen sie von ihrem eigenen Rechner aus auf, nicht von Ihrem.</value>
+  </data>
+  <data name="Quick_NextSteps" xml:space="preserve">
+    <value>Als Nächstes öffnet sich der vollständige Generator. Komponenten, Verknüpfungen, Registrierungseinträge, Signierung und Paketformat sind optional und dort einstellbar.</value>
+  </data>
+  <data name="Quick_ReviewExplain" xml:space="preserve">
+    <value>Dies sind die Angaben, die in Ihre .bsetup geschrieben werden. Alles Übrige behält seinen Standardwert, und der vollständige Generator kann es später ändern.</value>
+  </data>
+  <data name="Quick_SourceExplain" xml:space="preserve">
+    <value>Der Ordner mit der zu installierenden Anwendung — üblicherweise Ihre Build-Ausgabe, etwa bin\Release. Alles darin wird verpackt, sofern Sie es nicht später ausschließen.</value>
+  </data>
+  <data name="Quick_TargetExplain" xml:space="preserve">
+    <value>Computerweite Installationen landen unter Programme und erfordern Administratorrechte. Benutzerbezogene Installationen landen im Benutzerordner und nicht.</value>
+  </data>
+  <data name="Resource_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="Resource_Browse" xml:space="preserve">
+    <value>Nach {0} suchen</value>
+  </data>
+  <data name="Resource_ChooseExplain" xml:space="preserve">
+    <value>Jede davon wird zur Installationszeit von einem typisierten Anbieter ausgeführt, mit Rollback, wenn ein späterer Schritt fehlschlägt.</value>
+  </data>
+  <data name="Resource_ChooseHeading" xml:space="preserve">
+    <value>Was soll das Installationsprogramm tun?</value>
+  </data>
+  <data name="Resource_EditTitle" xml:space="preserve">
+    <value>Installationsvorgang bearbeiten</value>
+  </data>
+  <data name="Resource_NeedsPermissions" xml:space="preserve">
+    <value>Läuft mit: {0}</value>
+  </data>
+  <data name="Resource_NoPermissions" xml:space="preserve">
+    <value>keine besonderen Berechtigungen</value>
+  </data>
+  <data name="Resource_Title" xml:space="preserve">
+    <value>Installationsvorgang hinzufügen</value>
+  </data>
+  <data name="Section_CustomPagesHelp" xml:space="preserve">
+    <value>Zusätzliche Seiten während der Installation, deren Feldantworten in den Installationskontext gelangen. Die Reihenfolge bestimmt, wo eine Seite im Assistenten erscheint.</value>
+  </data>
+  <data name="Section_FileAssociationsHelp" xml:space="preserve">
+    <value>Dateitypen, die diese Anwendung öffnet. Die ProgId muss produktspezifisch sein, sonst kann die Deinstallation eines anderen Installationsprogramms die Zuordnung mitnehmen.</value>
+  </data>
+  <data name="Section_MsixOptionalPackagesHelp" xml:space="preserve">
+    <value>Optionale Pakete, die zur MSIX-Familie dieser Anwendung gehören. Der Herausgeber muss exakt dem Hauptpaket entsprechen, sonst lehnt Windows die Beziehung ab.</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogsHelp" xml:space="preserve">
+    <value>Signierte Kataloge mit Voraussetzungsdefinitionen. Ein Katalog ohne vertrauenswürdigen Schlüssel wird gelesen, aber nicht als vertrauenswürdig behandelt — pinnen Sie daher den erwarteten Herausgeberschlüssel.</value>
+  </data>
+  <data name="Section_ResourcesHelp" xml:space="preserve">
+    <value>Vorgänge, die zur Installationszeit von den typisierten Ressourcenanbietern ausgeführt werden. Sie erfordern explizite Erweiterungsverzeichnisse und den EXE-Host — andernfalls lehnt der Build ab, weil MSIX keine Anbieter ausführen kann.</value>
+  </data>
+  <data name="Section_SupersedenceHelp" xml:space="preserve">
+    <value>Frühere Produkte, die dieses Installationsprogramm ersetzt — für Intune und ConfigMgr. Der Versionsbereich entscheidet, welche Installationen abgelöst statt daneben belassen werden.</value>
+  </data>
+  <data name="Section_UpdateChannelsHelp" xml:space="preserve">
+    <value>Benannte Release-Ringe und ihre Feeds. Der Rollout-Prozentsatz staffelt, wem ein Build angeboten wird; die Feed-URL ist das, was installierte Clients tatsächlich prüfen.</value>
+  </data>
+  <data name="Section_WindowsServicesHelp" xml:space="preserve">
+    <value>Dienste, die bei der Installation registriert werden. Ein Dienst erfordert eine computerweite Installation: Aus einer benutzerbezogenen Installation kann er nicht registriert werden.</value>
+  </data>
+  <data name="Signing_Explain" xml:space="preserve">
+    <value>Ein unsigniertes Installationsprogramm löst die SmartScreen-Warnung „Unbekannte App“ aus, die die meisten Benutzer als Malware-Warnung lesen. Dies sind Alternativen — wählen Sie eine.</value>
+  </data>
+  <data name="Signing_NoneExplain" xml:space="preserve">
+    <value>Das Installationsprogramm wird nicht signiert. Für interne Tests ist das in Ordnung; bei allem, was Sie verteilen, ist mit einer SmartScreen-Warnung zu rechnen.</value>
+  </data>
+  <data name="Signing_PfxHint" xml:space="preserve">
+    <value>Bevorzugen Sie eine dpapi:- oder env:-Referenz gegenüber einem literalen Kennwort — ein in die .bsetup geschriebenes Kennwort wandert mit dem Skript in die Versionsverwaltung.</value>
+  </data>
+  <data name="Signing_RemoteHint" xml:space="preserve">
+    <value>Die Anmeldeinformationen sollten eine dpapi:- oder env:-Referenz sein. Signaturanmeldeinformationen in einem Skript sind Signaturanmeldeinformationen in Ihrem Repository.</value>
+  </data>
+  <data name="Signing_StoreHint" xml:space="preserve">
+    <value>Ein Fingerabdruck identifiziert genau ein Zertifikat; ein Antragstellername passt auf das jeweils installierte Zertifikat, was sich bei einer Erneuerung unbemerkt ändern kann.</value>
+  </data>
+  <data name="Signing_TimestampHint" xml:space="preserve">
+    <value>Ein Zeitstempel hält die Signatur auch nach Ablauf des Zertifikats gültig. Ohne ihn wird dem Installationsprogramm ab dem Ablauftag nicht mehr vertraut.</value>
+  </data>
 </root>

@@ -1163,4 +1163,112 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Wizard_Prerequisites" xml:space="preserve">
     <value>前提条件</value>
   </data>
+  <data name="Builder_AddGuided" xml:space="preserve">
+    <value>ウィザードで追加...</value>
+  </data>
+  <data name="Builder_EditGuided" xml:space="preserve">
+    <value>ウィザードで編集...</value>
+  </data>
+  <data name="Builder_NoDescriptor" xml:space="preserve">
+    <value>'{0}' には記述された入力がないため、グリッドでのみ編集できます。</value>
+  </data>
+  <data name="Packaging_Explain" xml:space="preserve">
+    <value>形式によってインストーラーにできることが決まります。選択した形式で扱えないものを、このプロジェクトから抽出して以下に示します。</value>
+  </data>
+  <data name="Packaging_PublisherHint" xml:space="preserve">
+    <value>証明書のサブジェクトを正確に指定します。例: CN=Contoso Ltd, O=Contoso Ltd, C=GB。発行者が署名証明書と一致しないパッケージは、ビルド時ではなくインストール時に拒否されます。</value>
+  </data>
+  <data name="Packaging_ResourcesBlock" xml:space="preserve">
+    <value>このプロジェクトには型付きリソースがあり、MSIX 出力のビルドはそれらを拒否します。削除するか、Setup.exe を選択してください。</value>
+  </data>
+  <data name="Packaging_SolidHint" xml:space="preserve">
+    <value>ソリッド圧縮は圧縮前に同一ファイルを重複排除します。ペイロードに同じアセンブリのコピーが多い場合に最も効果的です。</value>
+  </data>
+  <data name="Publish_Explain" xml:space="preserve">
+    <value>このうち 2 つは、ユーザーが更新を受け取れるかどうかを左右します。そのため既定に任せず確認します。</value>
+  </data>
+  <data name="Publish_UpdateUrlHint" xml:space="preserve">
+    <value>インストール済みクライアントが更新を確認するアドレス。通常は上のフォルダーではなく https:// の URL です。自己更新しない配置の場合は空のままにします。</value>
+  </data>
+  <data name="Publish_UrlNotAbsolute" xml:space="preserve">
+    <value>更新アドレスは絶対 URL である必要があります (例: https://example.com/app/)。クライアントは自分のマシンから解決するためです。</value>
+  </data>
+  <data name="Quick_NextSteps" xml:space="preserve">
+    <value>次に完全なビルダーが開きます。コンポーネント、ショートカット、レジストリ エントリ、署名、パッケージ形式はすべて任意で、そこで設定できます。</value>
+  </data>
+  <data name="Quick_ReviewExplain" xml:space="preserve">
+    <value>これらが .bsetup に書き込まれる内容です。その他はすべて既定値のままで、後から完全なビルダーで変更できます。</value>
+  </data>
+  <data name="Quick_SourceExplain" xml:space="preserve">
+    <value>インストールするアプリケーションが入ったフォルダー。通常は bin\Release などのビルド出力です。後で除外しない限り、中身はすべてパッケージ化されます。</value>
+  </data>
+  <data name="Quick_TargetExplain" xml:space="preserve">
+    <value>コンピューター単位のインストールは Program Files に配置され、管理者権限が必要です。ユーザー単位のインストールはユーザー フォルダーに配置され、権限は不要です。</value>
+  </data>
+  <data name="Resource_Add" xml:space="preserve">
+    <value>追加</value>
+  </data>
+  <data name="Resource_Browse" xml:space="preserve">
+    <value>{0} を参照</value>
+  </data>
+  <data name="Resource_ChooseExplain" xml:space="preserve">
+    <value>これらはインストール時に型付きプロバイダーによって実行され、後続のステップが失敗した場合はロールバックされます。</value>
+  </data>
+  <data name="Resource_ChooseHeading" xml:space="preserve">
+    <value>インストーラーは何を行いますか?</value>
+  </data>
+  <data name="Resource_EditTitle" xml:space="preserve">
+    <value>インストール操作を編集</value>
+  </data>
+  <data name="Resource_NeedsPermissions" xml:space="preserve">
+    <value>実行権限: {0}</value>
+  </data>
+  <data name="Resource_NoPermissions" xml:space="preserve">
+    <value>特別な権限は不要</value>
+  </data>
+  <data name="Resource_Title" xml:space="preserve">
+    <value>インストール操作を追加</value>
+  </data>
+  <data name="Section_CustomPagesHelp" xml:space="preserve">
+    <value>インストール中に表示される追加ページ。フィールドの回答はインストール コンテキストに渡されます。順序はウィザード内での表示位置を決めます。</value>
+  </data>
+  <data name="Section_FileAssociationsHelp" xml:space="preserve">
+    <value>このアプリケーションが開くファイルの種類。ProgId は製品固有である必要があります。そうでないと、別のインストーラーのアンインストールで関連付けが失われることがあります。</value>
+  </data>
+  <data name="Section_MsixOptionalPackagesHelp" xml:space="preserve">
+    <value>このアプリケーションの MSIX ファミリに加わるオプション パッケージ。発行者がメイン パッケージと完全に一致しないと、Windows は関係を拒否します。</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogsHelp" xml:space="preserve">
+    <value>前提条件定義の署名済みカタログ。信頼された鍵のないカタログは読み取られますが信頼はされないため、想定する発行者の鍵を固定してください。</value>
+  </data>
+  <data name="Section_ResourcesHelp" xml:space="preserve">
+    <value>インストール時に型付きリソース プロバイダーが実行する操作。明示的な拡張ディレクトリと EXE ホストが必要です。そうでないとビルドは拒否されます (MSIX はプロバイダーを実行できないため)。</value>
+  </data>
+  <data name="Section_SupersedenceHelp" xml:space="preserve">
+    <value>このインストーラーが置き換える以前の製品 (Intune および ConfigMgr 用)。バージョン範囲によって、併存させるのではなく置き換える対象が決まります。</value>
+  </data>
+  <data name="Section_UpdateChannelsHelp" xml:space="preserve">
+    <value>名前付きリリース リングとそのフィード。ロールアウト率はビルドを提供する対象を段階的に決め、フィード URL は実際にインストール済みクライアントが確認する先です。</value>
+  </data>
+  <data name="Section_WindowsServicesHelp" xml:space="preserve">
+    <value>インストール時に登録されるサービス。サービスにはコンピューター単位のインストールが必要で、ユーザー単位のインストールからは登録できません。</value>
+  </data>
+  <data name="Signing_Explain" xml:space="preserve">
+    <value>署名のないインストーラーは Windows SmartScreen の「認識されないアプリ」警告を引き起こし、多くのユーザーはこれをマルウェア警告と受け取ります。これらは択一です。1 つ選んでください。</value>
+  </data>
+  <data name="Signing_NoneExplain" xml:space="preserve">
+    <value>インストーラーは署名されません。社内テストであれば問題ありませんが、配布するものについては SmartScreen 警告が表示されると考えてください。</value>
+  </data>
+  <data name="Signing_PfxHint" xml:space="preserve">
+    <value>リテラルのパスワードより dpapi: または env: 参照を推奨します。.bsetup に書かれたパスワードはスクリプトごとソース管理に入ります。</value>
+  </data>
+  <data name="Signing_RemoteHint" xml:space="preserve">
+    <value>資格情報は dpapi: または env: 参照にしてください。スクリプト内の署名資格情報は、リポジトリ内の署名資格情報と同じです。</value>
+  </data>
+  <data name="Signing_StoreHint" xml:space="preserve">
+    <value>拇印は証明書を 1 つに特定します。サブジェクト名はインストールされている証明書に一致するため、更新時に気付かないうちに変わることがあります。</value>
+  </data>
+  <data name="Signing_TimestampHint" xml:space="preserve">
+    <value>タイムスタンプは証明書の有効期限後も署名を有効に保ちます。これがないと、証明書が失効した日にインストーラーは信頼されなくなります。</value>
+  </data>
 </root>

@@ -1163,4 +1163,112 @@
   <data name="Wizard_Prerequisites" xml:space="preserve">
     <value>先决条件</value>
   </data>
+  <data name="Builder_AddGuided" xml:space="preserve">
+    <value>使用向导添加...</value>
+  </data>
+  <data name="Builder_EditGuided" xml:space="preserve">
+    <value>在向导中编辑...</value>
+  </data>
+  <data name="Builder_NoDescriptor" xml:space="preserve">
+    <value>“{0}”没有已描述的输入，因此只能在网格中编辑。</value>
+  </data>
+  <data name="Packaging_Explain" xml:space="preserve">
+    <value>格式决定安装程序能做什么。所选格式无法承载的内容列在下方，取自本项目。</value>
+  </data>
+  <data name="Packaging_PublisherHint" xml:space="preserve">
+    <value>必须与证书使用者完全一致，例如 CN=Contoso Ltd, O=Contoso Ltd, C=GB。发布者与签名证书不匹配的包会在安装时被拒绝，而非生成时。</value>
+  </data>
+  <data name="Packaging_ResourcesBlock" xml:space="preserve">
+    <value>本项目包含类型化资源，而 MSIX 输出的生成会拒绝它们。请移除它们，或改选 Setup.exe。</value>
+  </data>
+  <data name="Packaging_SolidHint" xml:space="preserve">
+    <value>固实压缩在压缩前对相同文件去重，当负载中含有同一程序集的多个副本时效果最佳。</value>
+  </data>
+  <data name="Publish_Explain" xml:space="preserve">
+    <value>其中两项决定用户是否能收到更新，因此这里询问而非默认假定。</value>
+  </data>
+  <data name="Publish_UpdateUrlHint" xml:space="preserve">
+    <value>已安装客户端检查更新的地址 — 通常是 https:// URL，而非上面的文件夹。若部署从不自更新，请留空。</value>
+  </data>
+  <data name="Publish_UrlNotAbsolute" xml:space="preserve">
+    <value>更新地址必须是绝对地址，例如 https://example.com/app/ — 客户端是从自己的机器解析它，而非您的机器。</value>
+  </data>
+  <data name="Quick_NextSteps" xml:space="preserve">
+    <value>随后将打开完整生成器。组件、快捷方式、注册表项、签名和打包格式均为可选，可在那里设置。</value>
+  </data>
+  <data name="Quick_ReviewExplain" xml:space="preserve">
+    <value>这些是将写入 .bsetup 的内容。其余项保持默认值，之后可在完整生成器中更改。</value>
+  </data>
+  <data name="Quick_SourceExplain" xml:space="preserve">
+    <value>包含待安装应用程序的文件夹 — 通常是生成输出，例如 bin\Release。除非稍后排除，否则其中所有内容都会被打包。</value>
+  </data>
+  <data name="Quick_TargetExplain" xml:space="preserve">
+    <value>按计算机安装位于 Program Files，需要管理员权限；按用户安装位于用户自己的文件夹，无需管理员权限。</value>
+  </data>
+  <data name="Resource_Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="Resource_Browse" xml:space="preserve">
+    <value>浏览{0}</value>
+  </data>
+  <data name="Resource_ChooseExplain" xml:space="preserve">
+    <value>其中每一项都在安装时由类型化提供程序执行；若后续步骤失败则回滚。</value>
+  </data>
+  <data name="Resource_ChooseHeading" xml:space="preserve">
+    <value>安装程序应执行什么操作？</value>
+  </data>
+  <data name="Resource_EditTitle" xml:space="preserve">
+    <value>编辑安装操作</value>
+  </data>
+  <data name="Resource_NeedsPermissions" xml:space="preserve">
+    <value>运行权限：{0}</value>
+  </data>
+  <data name="Resource_NoPermissions" xml:space="preserve">
+    <value>无需特殊权限</value>
+  </data>
+  <data name="Resource_Title" xml:space="preserve">
+    <value>添加安装操作</value>
+  </data>
+  <data name="Section_CustomPagesHelp" xml:space="preserve">
+    <value>安装过程中显示的附加页面，其字段答案会进入安装上下文。顺序决定页面在向导中的位置。</value>
+  </data>
+  <data name="Section_FileAssociationsHelp" xml:space="preserve">
+    <value>此应用程序可打开的文件类型。ProgId 必须为本产品独有，否则其他安装程序卸载时可能把关联一并带走。</value>
+  </data>
+  <data name="Section_MsixOptionalPackagesHelp" xml:space="preserve">
+    <value>加入此应用程序 MSIX 系列的可选包。发布者必须与主包完全一致，否则 Windows 会拒绝该关系。</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogsHelp" xml:space="preserve">
+    <value>先决条件定义的已签名目录。没有受信任密钥的目录会被读取但不被信任，因此请固定您期望的发布者密钥。</value>
+  </data>
+  <data name="Section_ResourcesHelp" xml:space="preserve">
+    <value>安装时由类型化资源提供程序执行的操作。它们需要显式的扩展目录和 EXE 宿主，否则生成会被拒绝，因为 MSIX 无法执行提供程序。</value>
+  </data>
+  <data name="Section_SupersedenceHelp" xml:space="preserve">
+    <value>此安装程序取代的早期产品（用于 Intune 和 ConfigMgr）。版本范围决定哪些安装被取代，而非并存。</value>
+  </data>
+  <data name="Section_UpdateChannelsHelp" xml:space="preserve">
+    <value>具名发布环及其源。推出百分比用于分批决定向谁提供某个生成；源 URL 才是已安装客户端实际检查的地址。</value>
+  </data>
+  <data name="Section_WindowsServicesHelp" xml:space="preserve">
+    <value>安装时注册的服务。服务需要按计算机安装：无法从按用户安装中注册。</value>
+  </data>
+  <data name="Signing_Explain" xml:space="preserve">
+    <value>未签名的安装程序会触发 Windows SmartScreen 的“无法识别的应用”警告，多数用户会将其视为恶意软件警报。以下为互斥选项，请选择其一。</value>
+  </data>
+  <data name="Signing_NoneExplain" xml:space="preserve">
+    <value>安装程序将不被签名。这适用于内部测试；对于对外分发的内容，请预期用户会看到 SmartScreen 警告。</value>
+  </data>
+  <data name="Signing_PfxHint" xml:space="preserve">
+    <value>优先使用 dpapi: 或 env: 引用而非明文密码 — 写入 .bsetup 的密码会随脚本一起进入源代码管理。</value>
+  </data>
+  <data name="Signing_RemoteHint" xml:space="preserve">
+    <value>凭据应使用 dpapi: 或 env: 引用。脚本中的签名凭据就等于仓库中的签名凭据。</value>
+  </data>
+  <data name="Signing_StoreHint" xml:space="preserve">
+    <value>指纹精确标识一份证书；使用者名称则匹配当前已安装的证书，续订时可能在您不知情的情况下改变。</value>
+  </data>
+  <data name="Signing_TimestampHint" xml:space="preserve">
+    <value>时间戳可在证书过期后仍保持签名有效。没有它，安装程序会在证书过期当天失去信任。</value>
+  </data>
 </root>

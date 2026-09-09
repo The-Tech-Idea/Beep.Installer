@@ -1163,4 +1163,112 @@
   <data name="Wizard_Prerequisites" xml:space="preserve">
     <value>المتطلبات المسبقة</value>
   </data>
+  <data name="Builder_AddGuided" xml:space="preserve">
+    <value>إضافة عبر المعالج...</value>
+  </data>
+  <data name="Builder_EditGuided" xml:space="preserve">
+    <value>تحرير في المعالج...</value>
+  </data>
+  <data name="Builder_NoDescriptor" xml:space="preserve">
+    <value>‎'{0}'‎ ليس له مدخلات موصوفة، لذا يمكن تحريره في الشبكة فقط.</value>
+  </data>
+  <data name="Packaging_Explain" xml:space="preserve">
+    <value>يحدّد التنسيق ما يمكن للمثبّت فعله. كل ما لا يستطيع التنسيق المختار حمله مذكور أدناه، مأخوذاً من هذا المشروع.</value>
+  </data>
+  <data name="Packaging_PublisherHint" xml:space="preserve">
+    <value>موضوع الشهادة بالضبط — على سبيل المثال CN=Contoso Ltd, O=Contoso Ltd, C=GB. الحزمة التي لا يطابق ناشرها شهادة توقيعها تُرفض عند التثبيت وليس عند البناء.</value>
+  </data>
+  <data name="Packaging_ResourcesBlock" xml:space="preserve">
+    <value>يحتوي هذا المشروع على موارد مُصنّفة، والبناء بمخرجات MSIX يرفضها. أزلها أو اختر Setup.exe.</value>
+  </data>
+  <data name="Packaging_SolidHint" xml:space="preserve">
+    <value>يزيل الضغط الصلب تكرار الملفات المتطابقة قبل الضغط، وهو أنفع ما يكون عندما تحتوي الحمولة على نسخ كثيرة من نفس التجميعة.</value>
+  </data>
+  <data name="Publish_Explain" xml:space="preserve">
+    <value>اثنان من هذه الإعدادات يحدّدان ما إذا كان المستخدمون سيتلقون تحديثاً على الإطلاق، لذا يُسأل عنهما بدلاً من افتراضهما.</value>
+  </data>
+  <data name="Publish_UpdateUrlHint" xml:space="preserve">
+    <value>العنوان الذي سيتحقق منه العملاء المثبَّتون بحثاً عن التحديثات — عادةً عنوان https:// وليس المجلد أعلاه. اتركه فارغاً لتوزيع لا يحدّث نفسه أبداً.</value>
+  </data>
+  <data name="Publish_UrlNotAbsolute" xml:space="preserve">
+    <value>يجب أن يكون عنوان التحديث مطلقاً، مثل https://example.com/app/ — فالعملاء يحلّونه من أجهزتهم لا من جهازك.</value>
+  </data>
+  <data name="Quick_NextSteps" xml:space="preserve">
+    <value>سيُفتح المنشئ الكامل بعد ذلك. المكوّنات والاختصارات وإدخالات السجل والتوقيع وتنسيق الحزمة كلها اختيارية ويمكن ضبطها هناك.</value>
+  </data>
+  <data name="Quick_ReviewExplain" xml:space="preserve">
+    <value>هذه هي الإجابات التي ستُكتب في ملف ‎.bsetup‎. كل ما عداها يبقى على قيمته الافتراضية، ويمكن للمنشئ الكامل تغيير أي منها لاحقاً.</value>
+  </data>
+  <data name="Quick_SourceExplain" xml:space="preserve">
+    <value>المجلد الذي يحتوي على التطبيق المراد تثبيته — عادةً ناتج البناء مثل bin\Release. سيتم تعبئة كل ما فيه ما لم تستبعده لاحقاً.</value>
+  </data>
+  <data name="Quick_TargetExplain" xml:space="preserve">
+    <value>عمليات التثبيت على مستوى الجهاز تذهب إلى Program Files وتتطلب صلاحيات مسؤول. أما على مستوى المستخدم فتذهب إلى مجلد المستخدم ولا تتطلب ذلك.</value>
+  </data>
+  <data name="Resource_Add" xml:space="preserve">
+    <value>إضافة</value>
+  </data>
+  <data name="Resource_Browse" xml:space="preserve">
+    <value>استعراض بحثاً عن {0}</value>
+  </data>
+  <data name="Resource_ChooseExplain" xml:space="preserve">
+    <value>يُنفَّذ كل من هذه العمليات وقت التثبيت بواسطة موفّر مُصنّف، مع التراجع إذا فشلت خطوة لاحقة.</value>
+  </data>
+  <data name="Resource_ChooseHeading" xml:space="preserve">
+    <value>ما الذي يجب أن يفعله المثبّت؟</value>
+  </data>
+  <data name="Resource_EditTitle" xml:space="preserve">
+    <value>تحرير عملية تثبيت</value>
+  </data>
+  <data name="Resource_NeedsPermissions" xml:space="preserve">
+    <value>يعمل بـ: {0}</value>
+  </data>
+  <data name="Resource_NoPermissions" xml:space="preserve">
+    <value>بدون أذونات خاصة</value>
+  </data>
+  <data name="Resource_Title" xml:space="preserve">
+    <value>إضافة عملية تثبيت</value>
+  </data>
+  <data name="Section_CustomPagesHelp" xml:space="preserve">
+    <value>صفحات إضافية تُعرض أثناء التثبيت، بحقول تصل إجاباتها إلى سياق التثبيت. يحدّد الترتيب موضع ظهور الصفحة في المعالج.</value>
+  </data>
+  <data name="Section_FileAssociationsHelp" xml:space="preserve">
+    <value>أنواع الملفات التي يفتحها هذا التطبيق. يجب أن يكون ProgId فريداً للمنتج، وإلا فقد يأخذ إلغاء تثبيت مثبّت آخر الاقتران معه.</value>
+  </data>
+  <data name="Section_MsixOptionalPackagesHelp" xml:space="preserve">
+    <value>حزم اختيارية تنضم إلى عائلة MSIX لهذا التطبيق. يجب أن يطابق الناشر الحزمة الرئيسية تماماً وإلا رفض Windows العلاقة.</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogsHelp" xml:space="preserve">
+    <value>فهارس موقّعة لتعريفات المتطلبات المسبقة. الفهرس بدون مفتاح موثوق يُقرأ ولا يُوثق به، لذا ثبّت مفتاح الناشر الذي تتوقعه.</value>
+  </data>
+  <data name="Section_ResourcesHelp" xml:space="preserve">
+    <value>عمليات تنفّذها موفّرات الموارد المُصنّفة وقت التثبيت. تتطلب أدلة امتدادات صريحة ومضيف EXE — وإلا رفض البناء، لأن MSIX لا يستطيع تشغيل الموفّرات.</value>
+  </data>
+  <data name="Section_SupersedenceHelp" xml:space="preserve">
+    <value>منتجات سابقة يحل هذا المثبّت محلها، من أجل Intune وConfigMgr. يحدّد نطاق الإصدارات أي عمليات تثبيت تُستبدل بدلاً من تركها جنباً إلى جنب.</value>
+  </data>
+  <data name="Section_UpdateChannelsHelp" xml:space="preserve">
+    <value>حلقات إصدار مسمّاة وموجزاتها. تحدّد نسبة الطرح من يُعرض عليه الإصدار تدريجياً؛ وعنوان الموجز هو ما يتحقق منه العملاء المثبَّتون فعلياً.</value>
+  </data>
+  <data name="Section_WindowsServicesHelp" xml:space="preserve">
+    <value>خدمات تُسجَّل عند التثبيت. تتطلب الخدمة تثبيتاً على مستوى الجهاز: لا يمكن تسجيلها من تثبيت على مستوى المستخدم.</value>
+  </data>
+  <data name="Signing_Explain" xml:space="preserve">
+    <value>المثبّت غير الموقّع يُطلق تحذير "تطبيق غير معروف" من Windows SmartScreen، والذي يقرأه معظم المستخدمين على أنه تنبيه برمجيات خبيثة. هذه بدائل — اختر واحداً.</value>
+  </data>
+  <data name="Signing_NoneExplain" xml:space="preserve">
+    <value>لن يتم توقيع المثبّت. هذا مناسب للاختبار الداخلي؛ أما لأي شيء توزّعه فتوقّع أن يرى المستخدمون تحذير SmartScreen.</value>
+  </data>
+  <data name="Signing_PfxHint" xml:space="preserve">
+    <value>يُفضَّل استخدام مرجع ‎dpapi:‎ أو ‎env:‎ بدلاً من كلمة مرور صريحة — فكلمة المرور المكتوبة في ملف ‎.bsetup‎ تنتقل مع البرنامج النصي إلى مستودع التعليمات البرمجية.</value>
+  </data>
+  <data name="Signing_RemoteHint" xml:space="preserve">
+    <value>ينبغي أن تكون بيانات الاعتماد مرجع ‎dpapi:‎ أو ‎env:‎. بيانات اعتماد التوقيع داخل برنامج نصي هي بيانات اعتماد توقيع داخل مستودعك.</value>
+  </data>
+  <data name="Signing_StoreHint" xml:space="preserve">
+    <value>تحدّد البصمة شهادة واحدة بالضبط؛ أما اسم الموضوع فيطابق أي شهادة مثبَّتة، وقد يتغير من تحتك عند تجديدها.</value>
+  </data>
+  <data name="Signing_TimestampHint" xml:space="preserve">
+    <value>يحافظ الطابع الزمني على صلاحية التوقيع بعد انتهاء صلاحية الشهادة. بدونه يتوقف الوثوق بالمثبّت في اليوم الذي تنتهي فيه صلاحية الشهادة.</value>
+  </data>
 </root>
