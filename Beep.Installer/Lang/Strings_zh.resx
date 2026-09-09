@@ -1271,4 +1271,106 @@
   <data name="Signing_TimestampHint" xml:space="preserve">
     <value>时间戳可在证书过期后仍保持签名有效。没有它，安装程序会在证书过期当天失去信任。</value>
   </data>
+  <data name="ResType_CertificateInstall_Label" xml:space="preserve">
+    <value>安装证书</value>
+  </data>
+  <data name="ResType_CertificateInstall_Summary" xml:space="preserve">
+    <value>将证书导入 Windows 证书存储。</value>
+  </data>
+  <data name="ResType_ComRegister_Label" xml:space="preserve">
+    <value>注册 COM 服务器</value>
+  </data>
+  <data name="ResType_ComRegister_Summary" xml:space="preserve">
+    <value>注册 COM 服务器及其 ProgID。</value>
+  </data>
+  <data name="ResType_ComponentSelect_Label" xml:space="preserve">
+    <value>预选组件</value>
+  </data>
+  <data name="ResType_ComponentSelect_Summary" xml:space="preserve">
+    <value>设置组件是否默认选中，或是否为必需。</value>
+  </data>
+  <data name="ResType_ConfigTransform_Label" xml:space="preserve">
+    <value>编辑配置文件</value>
+  </data>
+  <data name="ResType_ConfigTransform_Summary" xml:space="preserve">
+    <value>在已安装的 JSON、XML 或 INI 文件中设置或移除一个值。</value>
+  </data>
+  <data name="ResType_DriverPackage_Label" xml:space="preserve">
+    <value>安装驱动程序包</value>
+  </data>
+  <data name="ResType_DriverPackage_Summary" xml:space="preserve">
+    <value>使用 pnputil 暂存并安装驱动程序包。</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Label" xml:space="preserve">
+    <value>设置环境变量</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Summary" xml:space="preserve">
+    <value>在安装时写入变量，在卸载时移除。</value>
+  </data>
+  <data name="ResType_FileAssociation_Label" xml:space="preserve">
+    <value>注册文件关联</value>
+  </data>
+  <data name="ResType_FileAssociation_Summary" xml:space="preserve">
+    <value>将扩展名与此应用程序关联。</value>
+  </data>
+  <data name="ResType_FileCopy_Label" xml:space="preserve">
+    <value>复制文件</value>
+  </data>
+  <data name="ResType_FileCopy_Summary" xml:space="preserve">
+    <value>将文件从负载复制到安装位置。</value>
+  </data>
+  <data name="ResType_FirewallRule_Label" xml:space="preserve">
+    <value>添加防火墙规则</value>
+  </data>
+  <data name="ResType_FirewallRule_Summary" xml:space="preserve">
+    <value>通过 netsh advfirewall 创建 Windows 防火墙规则。</value>
+  </data>
+  <data name="ResType_IisAppPool_Label" xml:space="preserve">
+    <value>创建 IIS 应用程序池</value>
+  </data>
+  <data name="ResType_IisAppPool_Summary" xml:space="preserve">
+    <value>添加应用程序池及其标识。</value>
+  </data>
+  <data name="ResType_IisSite_Label" xml:space="preserve">
+    <value>创建 IIS 站点</value>
+  </data>
+  <data name="ResType_IisSite_Summary" xml:space="preserve">
+    <value>添加站点、其物理路径及绑定。</value>
+  </data>
+  <data name="ResType_PackageInstall_Label" xml:space="preserve">
+    <value>链式调用其他安装程序</value>
+  </data>
+  <data name="ResType_PackageInstall_Summary" xml:space="preserve">
+    <value>运行嵌套的 MSI/EXE 包，支持检测与重试。</value>
+  </data>
+  <data name="ResType_RegistryWrite_Label" xml:space="preserve">
+    <value>写入注册表值</value>
+  </data>
+  <data name="ResType_RegistryWrite_Summary" xml:space="preserve">
+    <value>创建或更新一个注册表值，并在回滚时还原原值。</value>
+  </data>
+  <data name="ResType_ScheduledTask_Label" xml:space="preserve">
+    <value>创建计划任务</value>
+  </data>
+  <data name="ResType_ScheduledTask_Summary" xml:space="preserve">
+    <value>注册 Windows 计划任务。</value>
+  </data>
+  <data name="ResType_ServiceInstall_Label" xml:space="preserve">
+    <value>安装 Windows 服务</value>
+  </data>
+  <data name="ResType_ServiceInstall_Summary" xml:space="preserve">
+    <value>注册服务，并可在安装后启动它。</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Label" xml:space="preserve">
+    <value>创建快捷方式</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Summary" xml:space="preserve">
+    <value>添加快捷方式，并在卸载时移除。</value>
+  </data>
+  <data name="ResType_WebDeploy_Label" xml:space="preserve">
+    <value>部署 Web Deploy 包</value>
+  </data>
+  <data name="ResType_WebDeploy_Summary" xml:space="preserve">
+    <value>对 .zip 包运行 msdeploy。</value>
+  </data>
 </root>

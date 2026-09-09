@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
 using Beep.Installer.Extensibility;
+using Beep.Installer.Lang;
 using Beep.Installer.Models;
 using static Beep.Installer.Lang.UiStrings;
 
@@ -61,7 +62,7 @@ public sealed class ResourceWizard : Form
 
     private sealed record TypeChoice(ResourceTypeDescriptor Descriptor)
     {
-        public override string ToString() => Descriptor.Label;
+        public override string ToString() => ResourceTypeStrings.Label(Descriptor);
     }
 
     public ResourceWizard(InstallProject project, CompiledInstallOperation? editing = null)
@@ -182,7 +183,7 @@ public sealed class ResourceWizard : Form
     {
         if (_typeList.SelectedItem is not TypeChoice choice) return;
 
-        _typeSummary.Text = choice.Descriptor.Summary
+        _typeSummary.Text = ResourceTypeStrings.Summary(choice.Descriptor)
                             + Environment.NewLine + Environment.NewLine
                             + string.Format(
                                 L("Resource_NeedsPermissions", "Runs with: {0}"),
@@ -224,8 +225,8 @@ public sealed class ResourceWizard : Form
         else
         {
             ResourceInputCatalog.TryGet(SelectedType, out var descriptor);
-            _heading.Text = descriptor.Label;
-            _explain.Text = descriptor.Summary;
+            _heading.Text = ResourceTypeStrings.Label(descriptor);
+            _explain.Text = ResourceTypeStrings.Summary(descriptor);
             _content.Controls.Add(BuildFieldsStep(descriptor));
         }
 

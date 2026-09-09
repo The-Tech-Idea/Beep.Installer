@@ -1271,4 +1271,106 @@ Vor dem Erstellen bereinigen?</value>
   <data name="Signing_TimestampHint" xml:space="preserve">
     <value>Ein Zeitstempel hält die Signatur auch nach Ablauf des Zertifikats gültig. Ohne ihn wird dem Installationsprogramm ab dem Ablauftag nicht mehr vertraut.</value>
   </data>
+  <data name="ResType_CertificateInstall_Label" xml:space="preserve">
+    <value>Zertifikat installieren</value>
+  </data>
+  <data name="ResType_CertificateInstall_Summary" xml:space="preserve">
+    <value>Importiert ein Zertifikat in einen Windows-Zertifikatspeicher.</value>
+  </data>
+  <data name="ResType_ComRegister_Label" xml:space="preserve">
+    <value>COM-Server registrieren</value>
+  </data>
+  <data name="ResType_ComRegister_Summary" xml:space="preserve">
+    <value>Registriert einen COM-Server und seine ProgIDs.</value>
+  </data>
+  <data name="ResType_ComponentSelect_Label" xml:space="preserve">
+    <value>Komponente vorauswählen</value>
+  </data>
+  <data name="ResType_ComponentSelect_Summary" xml:space="preserve">
+    <value>Legt fest, ob eine Komponente vorausgewählt ist oder verpflichtend ist.</value>
+  </data>
+  <data name="ResType_ConfigTransform_Label" xml:space="preserve">
+    <value>Konfigurationsdatei bearbeiten</value>
+  </data>
+  <data name="ResType_ConfigTransform_Summary" xml:space="preserve">
+    <value>Setzt oder entfernt einen Wert in einer installierten JSON-, XML- oder INI-Datei.</value>
+  </data>
+  <data name="ResType_DriverPackage_Label" xml:space="preserve">
+    <value>Treiberpaket installieren</value>
+  </data>
+  <data name="ResType_DriverPackage_Summary" xml:space="preserve">
+    <value>Stellt ein Treiberpaket bereit und installiert es mit pnputil.</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Label" xml:space="preserve">
+    <value>Umgebungsvariable setzen</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Summary" xml:space="preserve">
+    <value>Schreibt eine Variable bei der Installation und entfernt sie bei der Deinstallation.</value>
+  </data>
+  <data name="ResType_FileAssociation_Label" xml:space="preserve">
+    <value>Dateizuordnung registrieren</value>
+  </data>
+  <data name="ResType_FileAssociation_Summary" xml:space="preserve">
+    <value>Verknüpft eine Dateierweiterung mit dieser Anwendung.</value>
+  </data>
+  <data name="ResType_FileCopy_Label" xml:space="preserve">
+    <value>Datei kopieren</value>
+  </data>
+  <data name="ResType_FileCopy_Summary" xml:space="preserve">
+    <value>Kopiert eine Datei aus der Nutzlast an den Installationsort.</value>
+  </data>
+  <data name="ResType_FirewallRule_Label" xml:space="preserve">
+    <value>Firewallregel hinzufügen</value>
+  </data>
+  <data name="ResType_FirewallRule_Summary" xml:space="preserve">
+    <value>Erstellt eine Windows-Firewallregel über netsh advfirewall.</value>
+  </data>
+  <data name="ResType_IisAppPool_Label" xml:space="preserve">
+    <value>IIS-Anwendungspool erstellen</value>
+  </data>
+  <data name="ResType_IisAppPool_Summary" xml:space="preserve">
+    <value>Fügt einen Anwendungspool und seine Identität hinzu.</value>
+  </data>
+  <data name="ResType_IisSite_Label" xml:space="preserve">
+    <value>IIS-Website erstellen</value>
+  </data>
+  <data name="ResType_IisSite_Summary" xml:space="preserve">
+    <value>Fügt eine Website, ihren physischen Pfad und ihre Bindungen hinzu.</value>
+  </data>
+  <data name="ResType_PackageInstall_Label" xml:space="preserve">
+    <value>Weiteres Installationsprogramm verketten</value>
+  </data>
+  <data name="ResType_PackageInstall_Summary" xml:space="preserve">
+    <value>Führt ein eingebettetes MSI-/EXE-Paket aus, mit Erkennung und Wiederholung.</value>
+  </data>
+  <data name="ResType_RegistryWrite_Label" xml:space="preserve">
+    <value>Registrierungswert schreiben</value>
+  </data>
+  <data name="ResType_RegistryWrite_Summary" xml:space="preserve">
+    <value>Erstellt oder aktualisiert einen Registrierungswert und stellt beim Rollback den vorherigen wieder her.</value>
+  </data>
+  <data name="ResType_ScheduledTask_Label" xml:space="preserve">
+    <value>Geplante Aufgabe erstellen</value>
+  </data>
+  <data name="ResType_ScheduledTask_Summary" xml:space="preserve">
+    <value>Registriert eine geplante Windows-Aufgabe.</value>
+  </data>
+  <data name="ResType_ServiceInstall_Label" xml:space="preserve">
+    <value>Windows-Dienst installieren</value>
+  </data>
+  <data name="ResType_ServiceInstall_Summary" xml:space="preserve">
+    <value>Registriert einen Dienst und startet ihn optional nach der Installation.</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Label" xml:space="preserve">
+    <value>Verknüpfung erstellen</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Summary" xml:space="preserve">
+    <value>Fügt eine Verknüpfung hinzu und entfernt sie bei der Deinstallation wieder.</value>
+  </data>
+  <data name="ResType_WebDeploy_Label" xml:space="preserve">
+    <value>Web Deploy-Paket bereitstellen</value>
+  </data>
+  <data name="ResType_WebDeploy_Summary" xml:space="preserve">
+    <value>Führt msdeploy für ein .zip-Paket aus.</value>
+  </data>
 </root>

@@ -1271,4 +1271,106 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Signing_TimestampHint" xml:space="preserve">
     <value>タイムスタンプは証明書の有効期限後も署名を有効に保ちます。これがないと、証明書が失効した日にインストーラーは信頼されなくなります。</value>
   </data>
+  <data name="ResType_CertificateInstall_Label" xml:space="preserve">
+    <value>証明書をインストール</value>
+  </data>
+  <data name="ResType_CertificateInstall_Summary" xml:space="preserve">
+    <value>証明書を Windows の証明書ストアにインポートします。</value>
+  </data>
+  <data name="ResType_ComRegister_Label" xml:space="preserve">
+    <value>COM サーバーを登録</value>
+  </data>
+  <data name="ResType_ComRegister_Summary" xml:space="preserve">
+    <value>COM サーバーとその ProgID を登録します。</value>
+  </data>
+  <data name="ResType_ComponentSelect_Label" xml:space="preserve">
+    <value>コンポーネントを事前選択</value>
+  </data>
+  <data name="ResType_ComponentSelect_Summary" xml:space="preserve">
+    <value>コンポーネントを既定で選択状態にするか、必須にするかを設定します。</value>
+  </data>
+  <data name="ResType_ConfigTransform_Label" xml:space="preserve">
+    <value>構成ファイルを編集</value>
+  </data>
+  <data name="ResType_ConfigTransform_Summary" xml:space="preserve">
+    <value>インストール済みの JSON、XML、INI ファイル内の値を 1 つ設定または削除します。</value>
+  </data>
+  <data name="ResType_DriverPackage_Label" xml:space="preserve">
+    <value>ドライバー パッケージをインストール</value>
+  </data>
+  <data name="ResType_DriverPackage_Summary" xml:space="preserve">
+    <value>pnputil を使ってドライバー パッケージをステージングし、インストールします。</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Label" xml:space="preserve">
+    <value>環境変数を設定</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Summary" xml:space="preserve">
+    <value>インストール時に変数を書き込み、アンインストール時に削除します。</value>
+  </data>
+  <data name="ResType_FileAssociation_Label" xml:space="preserve">
+    <value>ファイルの関連付けを登録</value>
+  </data>
+  <data name="ResType_FileAssociation_Summary" xml:space="preserve">
+    <value>拡張子をこのアプリケーションに関連付けます。</value>
+  </data>
+  <data name="ResType_FileCopy_Label" xml:space="preserve">
+    <value>ファイルをコピー</value>
+  </data>
+  <data name="ResType_FileCopy_Summary" xml:space="preserve">
+    <value>ペイロードからインストール先へファイルをコピーします。</value>
+  </data>
+  <data name="ResType_FirewallRule_Label" xml:space="preserve">
+    <value>ファイアウォール規則を追加</value>
+  </data>
+  <data name="ResType_FirewallRule_Summary" xml:space="preserve">
+    <value>netsh advfirewall を使って Windows ファイアウォール規則を作成します。</value>
+  </data>
+  <data name="ResType_IisAppPool_Label" xml:space="preserve">
+    <value>IIS アプリケーション プールを作成</value>
+  </data>
+  <data name="ResType_IisAppPool_Summary" xml:space="preserve">
+    <value>アプリケーション プールとその ID を追加します。</value>
+  </data>
+  <data name="ResType_IisSite_Label" xml:space="preserve">
+    <value>IIS サイトを作成</value>
+  </data>
+  <data name="ResType_IisSite_Summary" xml:space="preserve">
+    <value>サイト、その物理パス、バインドを追加します。</value>
+  </data>
+  <data name="ResType_PackageInstall_Label" xml:space="preserve">
+    <value>別のインストーラーを連鎖実行</value>
+  </data>
+  <data name="ResType_PackageInstall_Summary" xml:space="preserve">
+    <value>入れ子の MSI/EXE パッケージを、検出と再試行付きで実行します。</value>
+  </data>
+  <data name="ResType_RegistryWrite_Label" xml:space="preserve">
+    <value>レジストリ値を書き込む</value>
+  </data>
+  <data name="ResType_RegistryWrite_Summary" xml:space="preserve">
+    <value>レジストリ値を 1 つ作成または更新し、ロールバック時に以前の値を復元します。</value>
+  </data>
+  <data name="ResType_ScheduledTask_Label" xml:space="preserve">
+    <value>スケジュールされたタスクを作成</value>
+  </data>
+  <data name="ResType_ScheduledTask_Summary" xml:space="preserve">
+    <value>Windows のスケジュールされたタスクを登録します。</value>
+  </data>
+  <data name="ResType_ServiceInstall_Label" xml:space="preserve">
+    <value>Windows サービスをインストール</value>
+  </data>
+  <data name="ResType_ServiceInstall_Summary" xml:space="preserve">
+    <value>サービスを登録し、必要に応じてインストール後に開始します。</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Label" xml:space="preserve">
+    <value>ショートカットを作成</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Summary" xml:space="preserve">
+    <value>ショートカットを追加し、アンインストール時に削除します。</value>
+  </data>
+  <data name="ResType_WebDeploy_Label" xml:space="preserve">
+    <value>Web Deploy パッケージを配置</value>
+  </data>
+  <data name="ResType_WebDeploy_Summary" xml:space="preserve">
+    <value>.zip パッケージに対して msdeploy を実行します。</value>
+  </data>
 </root>

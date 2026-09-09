@@ -1271,4 +1271,106 @@
   <data name="Signing_TimestampHint" xml:space="preserve">
     <value>يحافظ الطابع الزمني على صلاحية التوقيع بعد انتهاء صلاحية الشهادة. بدونه يتوقف الوثوق بالمثبّت في اليوم الذي تنتهي فيه صلاحية الشهادة.</value>
   </data>
+  <data name="ResType_CertificateInstall_Label" xml:space="preserve">
+    <value>تثبيت شهادة</value>
+  </data>
+  <data name="ResType_CertificateInstall_Summary" xml:space="preserve">
+    <value>يستورد شهادة إلى مخزن شهادات Windows.</value>
+  </data>
+  <data name="ResType_ComRegister_Label" xml:space="preserve">
+    <value>تسجيل خادم COM</value>
+  </data>
+  <data name="ResType_ComRegister_Summary" xml:space="preserve">
+    <value>يسجّل خادم COM ومعرّفات ProgID الخاصة به.</value>
+  </data>
+  <data name="ResType_ComponentSelect_Label" xml:space="preserve">
+    <value>تحديد مكوّن مسبقاً</value>
+  </data>
+  <data name="ResType_ComponentSelect_Summary" xml:space="preserve">
+    <value>يحدّد ما إذا كان المكوّن يبدأ محدداً، أو أنه إلزامي.</value>
+  </data>
+  <data name="ResType_ConfigTransform_Label" xml:space="preserve">
+    <value>تحرير ملف تكوين</value>
+  </data>
+  <data name="ResType_ConfigTransform_Summary" xml:space="preserve">
+    <value>يعيّن أو يزيل قيمة واحدة في ملف JSON أو XML أو INI مثبَّت.</value>
+  </data>
+  <data name="ResType_DriverPackage_Label" xml:space="preserve">
+    <value>تثبيت حزمة برنامج تشغيل</value>
+  </data>
+  <data name="ResType_DriverPackage_Summary" xml:space="preserve">
+    <value>يجهّز حزمة برنامج تشغيل ويثبّتها باستخدام pnputil.</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Label" xml:space="preserve">
+    <value>تعيين متغير بيئة</value>
+  </data>
+  <data name="ResType_EnvironmentSet_Summary" xml:space="preserve">
+    <value>يكتب متغيراً عند التثبيت ويزيله عند إلغاء التثبيت.</value>
+  </data>
+  <data name="ResType_FileAssociation_Label" xml:space="preserve">
+    <value>تسجيل اقتران ملفات</value>
+  </data>
+  <data name="ResType_FileAssociation_Summary" xml:space="preserve">
+    <value>يربط امتداد ملف بهذا التطبيق.</value>
+  </data>
+  <data name="ResType_FileCopy_Label" xml:space="preserve">
+    <value>نسخ ملف</value>
+  </data>
+  <data name="ResType_FileCopy_Summary" xml:space="preserve">
+    <value>ينسخ ملفاً من الحمولة إلى موقع التثبيت.</value>
+  </data>
+  <data name="ResType_FirewallRule_Label" xml:space="preserve">
+    <value>إضافة قاعدة جدار حماية</value>
+  </data>
+  <data name="ResType_FirewallRule_Summary" xml:space="preserve">
+    <value>ينشئ قاعدة في جدار حماية Windows عبر netsh advfirewall.</value>
+  </data>
+  <data name="ResType_IisAppPool_Label" xml:space="preserve">
+    <value>إنشاء تجمع تطبيقات IIS</value>
+  </data>
+  <data name="ResType_IisAppPool_Summary" xml:space="preserve">
+    <value>يضيف تجمع تطبيقات وهويته.</value>
+  </data>
+  <data name="ResType_IisSite_Label" xml:space="preserve">
+    <value>إنشاء موقع IIS</value>
+  </data>
+  <data name="ResType_IisSite_Summary" xml:space="preserve">
+    <value>يضيف موقعاً ومساره الفعلي وارتباطاته.</value>
+  </data>
+  <data name="ResType_PackageInstall_Label" xml:space="preserve">
+    <value>تسلسل مثبّت آخر</value>
+  </data>
+  <data name="ResType_PackageInstall_Summary" xml:space="preserve">
+    <value>يشغّل حزمة MSI/EXE متداخلة، مع الكشف وإعادة المحاولة.</value>
+  </data>
+  <data name="ResType_RegistryWrite_Label" xml:space="preserve">
+    <value>كتابة قيمة في السجل</value>
+  </data>
+  <data name="ResType_RegistryWrite_Summary" xml:space="preserve">
+    <value>ينشئ أو يحدّث قيمة واحدة في السجل، ويستعيد القيمة السابقة عند التراجع.</value>
+  </data>
+  <data name="ResType_ScheduledTask_Label" xml:space="preserve">
+    <value>إنشاء مهمة مجدولة</value>
+  </data>
+  <data name="ResType_ScheduledTask_Summary" xml:space="preserve">
+    <value>يسجّل مهمة مجدولة في Windows.</value>
+  </data>
+  <data name="ResType_ServiceInstall_Label" xml:space="preserve">
+    <value>تثبيت خدمة Windows</value>
+  </data>
+  <data name="ResType_ServiceInstall_Summary" xml:space="preserve">
+    <value>يسجّل خدمة، مع إمكانية تشغيلها بعد التثبيت.</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Label" xml:space="preserve">
+    <value>إنشاء اختصار</value>
+  </data>
+  <data name="ResType_ShortcutCreate_Summary" xml:space="preserve">
+    <value>يضيف اختصاراً، ويزيله عند إلغاء التثبيت.</value>
+  </data>
+  <data name="ResType_WebDeploy_Label" xml:space="preserve">
+    <value>نشر حزمة Web Deploy</value>
+  </data>
+  <data name="ResType_WebDeploy_Summary" xml:space="preserve">
+    <value>يشغّل msdeploy على حزمة ‎.zip‎.</value>
+  </data>
 </root>
