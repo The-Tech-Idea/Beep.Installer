@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using Beep.Installer.Forms;
 using Beep.Installer.Models;
@@ -17,33 +18,21 @@ namespace Beep.Installer.Tests;
 /// roots is set, so a leftover value in one group silently decides which strategy the build
 /// attempts, and the mistake surfaces as a signing failure at build time rather than where it was
 /// made.
+///
+/// The rules are exercised through <see cref="CodeSigningWizard.Choice"/> rather than by reflecting
+/// on the dialog's private text boxes. The filesystem probe is injected, so "that certificate does
+/// not exist" is testable without staging a real .pfx.
 /// </summary>
 [Collection("Language")]
 public class CodeSigningWizardTests
 {
     private static InstallProject Project() => new() { AppName = "Contoso Suite", AppVersion = "1.0.0" };
 
-    private static void Set(CodeSigningWizard wizard, string field, string value)
-    {
-        var box = (TextBox?)typeof(CodeSigningWizard)
-            .GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .GetValue(wizard);
-        box.Should().NotBeNull($"{field} should be on screen for the selected method");
-        box!.Text = value;
-    }
+    /// <summary>A filesystem where nothing exists.</summary>
+    private static readonly Func<string, bool> NothingOnDisk = _ => false;
 
-    private static void SelectMethod(CodeSigningWizard wizard, CodeSigningWizard.SigningMethod method)
-    {
-        var combo = (ComboBox)typeof(CodeSigningWizard)
-            .GetField("_method", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .GetValue(wizard)!;
-        combo.SelectedIndex = (int)method;
-    }
-
-    private static string? Validate(CodeSigningWizard wizard)
-        => (string?)typeof(CodeSigningWizard)
-            .GetMethod("Validate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .Invoke(wizard, null);
+    /// <summary>A filesystem where everything exists.</summary>
+    private static readonly Func<string, bool> EverythingOnDisk = _ => true;
 
     [Fact]
     public void ChoosingAStoreCertificateClearsAnyPfxLeftBehind()
@@ -54,11 +43,11 @@ public class CodeSigningWizardTests
         project.CodeSignCertificatePath = @"C:\certs\old.pfx";
         project.CodeSignCertificatePassword = "secret";
 
-        using var wizard = new CodeSigningWizard(project);
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.CertificateStore);
-        Set(wizard, "_thumbprint", "AA BB CC DD");
-
-        wizard.Apply();
+        CodeSigningWizard.ApplyTo(new CodeSigningWizard.Choice
+        {
+            Method = CodeSigningWizard.SigningMethod.CertificateStore,
+            Thumbprint = "AA BB CC DD",
+        }, project);
 
         project.CodeSignStoreThumbprint.Should().Be("AA BB CC DD");
         project.CodeSignCertificatePath.Should().BeEmpty("the PFX strategy was not chosen");
@@ -72,13 +61,29 @@ public class CodeSigningWizardTests
         project.CodeSignRemoteEndpoint = "https://sign.contoso.com";
         project.CodeSignRemoteCredential = "env:SIGN_TOKEN";
 
-        using var wizard = new CodeSigningWizard(project);
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.None);
-
-        wizard.Apply();
+        CodeSigningWizard.ApplyTo(new CodeSigningWizard.Choice { Method = CodeSigningWizard.SigningMethod.None }, project);
 
         project.HasCodeSigningCertificate.Should().BeFalse(
             "choosing not to sign must actually leave the project unsigned");
+        project.CodeSignRemoteCredential.Should().BeEmpty("a stale credential is a leaked secret");
+    }
+
+    [Fact]
+    public void SwitchingToRemoteClearsTheStoreSelectors()
+    {
+        var project = Project();
+        project.CodeSignStoreThumbprint = "AABB";
+        project.CodeSignStoreSubject = "CN=Old";
+
+        CodeSigningWizard.ApplyTo(new CodeSigningWizard.Choice
+        {
+            Method = CodeSigningWizard.SigningMethod.RemoteService,
+            Endpoint = "https://sign.contoso.com/api",
+        }, project);
+
+        project.CodeSignStoreThumbprint.Should().BeEmpty();
+        project.CodeSignStoreSubject.Should().BeEmpty();
+        project.CodeSignRemoteEndpoint.Should().Be("https://sign.contoso.com/api");
     }
 
     [Fact]
@@ -90,70 +95,115 @@ public class CodeSigningWizardTests
         project.CodeSignCertificatePath = @"C:\certs\a.pfx";
         project.CodeSignStoreThumbprint = "AABB";
 
-        using var wizard = new CodeSigningWizard(project);
-
-        wizard.DetectCurrentMethod().Should().Be(CodeSigningWizard.SigningMethod.PfxFile);
+        CodeSigningWizard.DetectMethod(project).Should().Be(CodeSigningWizard.SigningMethod.PfxFile);
     }
+
+    [Fact]
+    public void AProjectWithNoSigningAtAllDetectsAsNone()
+        => CodeSigningWizard.DetectMethod(Project()).Should().Be(CodeSigningWizard.SigningMethod.None);
 
     [Fact]
     public void AStoreStrategyNeedsSomethingThatSelectsACertificate()
     {
-        var project = Project();
-        using var wizard = new CodeSigningWizard(project);
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.CertificateStore);
+        var bare = new CodeSigningWizard.Choice { Method = CodeSigningWizard.SigningMethod.CertificateStore };
 
-        Validate(wizard).Should().NotBeNull("neither a thumbprint nor a subject was given");
+        CodeSigningWizard.Validate(bare).Should().NotBeNull("neither a thumbprint nor a subject was given");
 
-        Set(wizard, "_subject", "CN=Contoso");
-        Validate(wizard).Should().BeNull();
+        CodeSigningWizard.Validate(bare with { Subject = "CN=Contoso" }).Should().BeNull();
+        CodeSigningWizard.Validate(bare with { Thumbprint = "AABB" }).Should().BeNull();
     }
 
     [Fact]
     public void ARemoteEndpointMustBeAbsolute()
     {
-        var project = Project();
-        using var wizard = new CodeSigningWizard(project);
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.RemoteService);
-        Set(wizard, "_endpoint", "sign/api");
+        var remote = new CodeSigningWizard.Choice { Method = CodeSigningWizard.SigningMethod.RemoteService };
 
-        Validate(wizard).Should().NotBeNull("a relative endpoint cannot be reached from a build agent");
+        CodeSigningWizard.Validate(remote).Should().NotBeNull("a remote service with no endpoint signs nothing");
+        CodeSigningWizard.Validate(remote with { Endpoint = "sign/api" })
+            .Should().NotBeNull("a relative endpoint cannot be reached from a build agent");
 
-        Set(wizard, "_endpoint", "https://sign.contoso.com/api");
-        Validate(wizard).Should().BeNull();
+        CodeSigningWizard.Validate(remote with { Endpoint = "https://sign.contoso.com/api" }).Should().BeNull();
     }
 
     [Fact]
     public void AMissingPfxIsCaughtHereRatherThanAtBuildTime()
     {
-        var project = Project();
-        using var wizard = new CodeSigningWizard(project);
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.PfxFile);
-        Set(wizard, "_pfxPath", Path.Combine(Path.GetTempPath(), $"missing_{Guid.NewGuid():N}.pfx"));
+        var choice = new CodeSigningWizard.Choice
+        {
+            Method = CodeSigningWizard.SigningMethod.PfxFile,
+            PfxPath = @"C:\certs\absent.pfx",
+        };
 
-        Validate(wizard).Should().NotBeNull("a certificate that is not there cannot sign anything");
+        CodeSigningWizard.Validate(choice, NothingOnDisk)
+            .Should().NotBeNull("a certificate that is not there cannot sign anything");
+
+        CodeSigningWizard.Validate(choice, EverythingOnDisk).Should().BeNull();
+    }
+
+    [Fact]
+    public void APfxStrategyWithNoPathAtAllIsRejected()
+        => CodeSigningWizard.Validate(
+                new CodeSigningWizard.Choice { Method = CodeSigningWizard.SigningMethod.PfxFile },
+                EverythingOnDisk)
+            .Should().NotBeNull();
+
+    [Fact]
+    public void ATimestampUrlMustBeAbsoluteWhicheverStrategyIsChosen()
+    {
+        // The timestamp is shared across all three strategies, so it is the one rule that must hold
+        // no matter which branch above was taken.
+        var choice = new CodeSigningWizard.Choice
+        {
+            Method = CodeSigningWizard.SigningMethod.CertificateStore,
+            Subject = "CN=Contoso",
+            TimestampUrl = "timestamp/digicert",
+        };
+
+        CodeSigningWizard.Validate(choice).Should().NotBeNull();
+        CodeSigningWizard.Validate(choice with { TimestampUrl = "http://timestamp.digicert.com" }).Should().BeNull();
+        CodeSigningWizard.Validate(choice with { TimestampUrl = "" }).Should().BeNull("a timestamp is optional");
     }
 
     [Fact]
     public void NotSigningIsAlwaysValid()
     {
         // Refusing to proceed without a certificate would make internal test builds impossible.
-        using var wizard = new CodeSigningWizard(Project());
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.None);
-
-        Validate(wizard).Should().BeNull();
+        CodeSigningWizard.Validate(new CodeSigningWizard.Choice { Method = CodeSigningWizard.SigningMethod.None })
+            .Should().BeNull();
     }
 
     [Fact]
     public void ThePasswordFieldIsMasked()
     {
         var project = Project();
+        project.CodeSignCertificatePath = @"C:\certs\a.pfx";   // so the dialog opens on the PFX strategy
+
         using var wizard = new CodeSigningWizard(project);
-        SelectMethod(wizard, CodeSigningWizard.SigningMethod.PfxFile);
 
-        var box = (TextBox)typeof(CodeSigningWizard)
-            .GetField("_pfxPassword", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .GetValue(wizard)!;
+        var box = wizard.Controls.Find("pfxPassword", searchAllChildren: true).OfType<TextBox>().SingleOrDefault();
 
-        box.UseSystemPasswordChar.Should().BeTrue("a signing password should not be readable over a shoulder");
+        box.Should().NotBeNull("the PFX strategy must offer a password field");
+        box!.UseSystemPasswordChar.Should().BeTrue("a signing password should not be readable over a shoulder");
+    }
+
+    [Fact]
+    public void TheControlsFeedTheChoice()
+    {
+        // The one test about the dialog itself: the constructor fills real text boxes from the
+        // project, and CurrentChoice must read those same boxes back. Without this, every rule above
+        // could pass while the dialog applied blanks.
+        var project = Project();
+        project.CodeSignStoreThumbprint = "AA BB CC";
+        project.CodeSignStoreSubject = "CN=Seeded";
+        project.CodeSignTimestampUrl = "http://timestamp.digicert.com";
+
+        using var wizard = new CodeSigningWizard(project);
+
+        var choice = wizard.CurrentChoice;
+
+        choice.Method.Should().Be(CodeSigningWizard.SigningMethod.CertificateStore);
+        choice.Thumbprint.Should().Be("AA BB CC", "the thumbprint box must feed the choice");
+        choice.Subject.Should().Be("CN=Seeded", "the subject box must feed the choice");
+        choice.TimestampUrl.Should().Be("http://timestamp.digicert.com", "the timestamp box must feed the choice");
     }
 }

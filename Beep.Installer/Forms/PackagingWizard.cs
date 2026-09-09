@@ -48,6 +48,32 @@ public sealed class PackagingWizard : Form
 
     public InstallerOutputFormat Format => ((FormatChoice)_format.SelectedItem!).Value;
 
+    /// <summary>
+    /// Everything the dialog decides, with no control attached.
+    ///
+    /// The rules below (what MSIX cannot carry, what a legal package identity looks like) are worth
+    /// testing on their own, and a test that has to construct a <see cref="Form"/> and reach past
+    /// <c>private</c> to reach them is testing the layout by accident. Splitting the answer from the
+    /// widgets that collect it means the decision is exercised directly and the wiring is exercised
+    /// once, deliberately, through <see cref="CurrentChoice"/>.
+    /// </summary>
+    public readonly record struct Choice(
+        InstallerOutputFormat Format,
+        string Identity,
+        string Publisher,
+        bool SingleFile,
+        bool SelfContained,
+        bool SolidCompression);
+
+    /// <summary>What the controls say right now — the bridge between the widgets and <see cref="Choice"/>.</summary>
+    public Choice CurrentChoice => new(
+        Format,
+        _identity?.Text.Trim() ?? "",
+        _publisher?.Text.Trim() ?? "",
+        _singleFile?.Checked ?? _project.SingleFile,
+        _selfContained?.Checked ?? _project.SelfContained,
+        _solid?.Checked ?? _project.SolidCompression);
+
     public PackagingWizard(InstallProject project)
     {
         _project = project ?? throw new ArgumentNullException(nameof(project));
@@ -120,7 +146,7 @@ public sealed class PackagingWizard : Form
 
         ok.Click += (_, _) =>
         {
-            var problem = Validate();
+            var problem = CurrentProblem();
             if (problem != null) { _validation.Text = problem; return; }
             Apply();
             DialogResult = DialogResult.OK;
@@ -142,38 +168,38 @@ public sealed class PackagingWizard : Form
     /// be installed" is actionable in a way that "MSIX does not support prerequisite chaining" is
     /// not, when you cannot remember whether you authored any.
     /// </summary>
-    internal IReadOnlyList<string> IncompatibilitiesFor(InstallerOutputFormat format)
+    public static IReadOnlyList<string> IncompatibilitiesFor(InstallProject project, InstallerOutputFormat format)
     {
         if (format == InstallerOutputFormat.Exe) return Array.Empty<string>();
 
         var lost = new List<string>();
 
-        if (_project.Resources.Count > 0)
+        if (project.Resources.Count > 0)
             lost.Add(string.Format(L("Packaging_LostResources",
                 "{0} typed resource operation(s) — MSIX cannot execute extension providers, and the build will refuse."),
-                _project.Resources.Count));
+                project.Resources.Count));
 
-        if (_project.Prerequisites.Count > 0)
+        if (project.Prerequisites.Count > 0)
             lost.Add(string.Format(L("Packaging_LostPrereqs",
-                "{0} prerequisite(s) — MSIX cannot chain installers."), _project.Prerequisites.Count));
+                "{0} prerequisite(s) — MSIX cannot chain installers."), project.Prerequisites.Count));
 
-        if (_project.PrerequisiteCatalogs.Count > 0)
+        if (project.PrerequisiteCatalogs.Count > 0)
             lost.Add(string.Format(L("Packaging_LostCatalogs",
                 "{0} prerequisite catalog(s) — catalog expansion produces resources MSIX cannot run."),
-                _project.PrerequisiteCatalogs.Count));
+                project.PrerequisiteCatalogs.Count));
 
-        if (_project.Packages.Count > 0)
+        if (project.Packages.Count > 0)
             lost.Add(string.Format(L("Packaging_LostPackages",
-                "{0} package node(s) — these are suite/chainer resources."), _project.Packages.Count));
+                "{0} package node(s) — these are suite/chainer resources."), project.Packages.Count));
 
-        if (_project.CustomActions.Count > 0)
+        if (project.CustomActions.Count > 0)
             lost.Add(string.Format(L("Packaging_LostActions",
-                "{0} custom action(s) — MSIX runs no install-time executables."), _project.CustomActions.Count));
+                "{0} custom action(s) — MSIX runs no install-time executables."), project.CustomActions.Count));
 
-        if (_project.WindowsServices.Count > 0)
+        if (project.WindowsServices.Count > 0)
             lost.Add(string.Format(L("Packaging_LostServices",
                 "{0} Windows service(s) — service registration is not represented in MSIX output."),
-                _project.WindowsServices.Count));
+                project.WindowsServices.Count));
 
         return lost;
     }
@@ -217,7 +243,7 @@ public sealed class PackagingWizard : Form
 
     private void DescribeImpact()
     {
-        var lost = IncompatibilitiesFor(Format);
+        var lost = IncompatibilitiesFor(_project, Format);
         if (lost.Count == 0)
         {
             _impact.Text = Format == InstallerOutputFormat.Exe
@@ -233,22 +259,24 @@ public sealed class PackagingWizard : Form
         _impact.ForeColor = Color.FromArgb(150, 90, 0);
     }
 
-    private string? Validate()
-    {
-        if (Format == InstallerOutputFormat.Exe) return null;
+    private string? CurrentProblem() => Validate(CurrentChoice, _project);
 
-        var identity = _identity?.Text.Trim() ?? "";
-        if (!IdentityName.IsMatch(identity))
+    /// <summary>Why this choice cannot be applied, or <c>null</c> if it can.</summary>
+    public static string? Validate(Choice choice, InstallProject project)
+    {
+        if (choice.Format == InstallerOutputFormat.Exe) return null;
+
+        if (!IdentityName.IsMatch(choice.Identity))
             return L("Packaging_BadIdentity",
                 "MSIX identity must be 3–50 ASCII letters, digits, periods or hyphens.");
 
-        if (string.IsNullOrWhiteSpace(_publisher?.Text))
+        if (string.IsNullOrWhiteSpace(choice.Publisher))
             return L("Packaging_NeedPublisher",
                 "MSIX needs the certificate subject as its publisher.");
 
         // Refusing outright would be wrong -- the author may intend to remove the resources. Saying
         // so plainly is not the same as blocking.
-        if (_project.Resources.Count > 0)
+        if (project.Resources.Count > 0)
             return L("Packaging_ResourcesBlock",
                 "This project has typed resources, and a build with MSIX output refuses them. Remove them, or "
                 + "choose Setup.exe.");
@@ -256,20 +284,23 @@ public sealed class PackagingWizard : Form
         return null;
     }
 
-    internal void Apply()
-    {
-        _project.OutputFormat = Format;
+    internal void Apply() => ApplyTo(CurrentChoice, _project);
 
-        if (Format == InstallerOutputFormat.Exe)
+    /// <summary>Writes the choice onto the project.</summary>
+    public static void ApplyTo(Choice choice, InstallProject project)
+    {
+        project.OutputFormat = choice.Format;
+
+        if (choice.Format == InstallerOutputFormat.Exe)
         {
-            if (_singleFile != null) _project.SingleFile = _singleFile.Checked;
-            if (_selfContained != null) _project.SelfContained = _selfContained.Checked;
-            if (_solid != null) _project.SolidCompression = _solid.Checked;
+            project.SingleFile = choice.SingleFile;
+            project.SelfContained = choice.SelfContained;
+            project.SolidCompression = choice.SolidCompression;
             return;
         }
 
-        if (_identity != null) _project.MsixIdentity = _identity.Text.Trim();
-        if (_publisher != null) _project.MsixPublisher = _publisher.Text.Trim();
+        project.MsixIdentity = choice.Identity;
+        project.MsixPublisher = choice.Publisher;
     }
 
     // ── layout helpers ──────────────────────────────────────────────────────

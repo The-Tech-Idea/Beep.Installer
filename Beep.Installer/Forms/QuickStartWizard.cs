@@ -45,6 +45,15 @@ public sealed class QuickStartWizard : Form
     /// <summary>The project the author ends up with. Only meaningful when the dialog returns OK.</summary>
     public InstallProject Project => _project;
 
+    /// <summary>
+    /// How many questions the on-ramp asks.
+    ///
+    /// Public because it is a claim worth holding: four questions is the point of the wizard, and a
+    /// fifth would make it the builder again. Exposing the count beats a test reaching for the step
+    /// array through reflection.
+    /// </summary>
+    public int StepCount => _steps.Length;
+
     public QuickStartWizard(InstallProject project)
     {
         _project = project ?? throw new ArgumentNullException(nameof(project));
@@ -202,17 +211,32 @@ public sealed class QuickStartWizard : Form
 
     private string? ValidateProduct()
     {
-        if (string.IsNullOrWhiteSpace(_nameBox.Text))
+        var problem = CheckProduct(_nameBox.Text, _versionBox.Text);
+        if (problem != null) return problem;
+
+        ApplyProduct(_project, _nameBox.Text, _versionBox.Text, _publisherBox.Text);
+        return null;
+    }
+
+    /// <summary>Commits a product identity that <see cref="CheckProduct"/> has already accepted.</summary>
+    public static void ApplyProduct(InstallProject project, string name, string version, string publisher)
+    {
+        project.AppName = name.Trim();
+        project.AppVersion = version.Trim();
+        project.AppPublisher = publisher.Trim();
+    }
+
+    /// <summary>Why this product identity is not usable, or <c>null</c> if it is.</summary>
+    public static string? CheckProduct(string name, string version)
+    {
+        if (string.IsNullOrWhiteSpace(name))
             return L("Quick_NeedName", "A product name is required — it is what users see when they install and uninstall.");
 
         // The one parser the schema validator and the runtime version gate both use, so the
         // wizard cannot accept something the build will later reject.
-        if (!Engine.SemanticVersion.TryParse(_versionBox.Text, out _))
+        if (!Engine.SemanticVersion.TryParse(version, out _))
             return L("Quick_NeedVersion", "The version must look like 1.0 or 1.0.0 — upgrades are decided by comparing it.");
 
-        _project.AppName = _nameBox.Text.Trim();
-        _project.AppVersion = _versionBox.Text.Trim();
-        _project.AppPublisher = _publisherBox.Text.Trim();
         return null;
     }
 
@@ -280,6 +304,16 @@ public sealed class QuickStartWizard : Form
     private string? ValidateSource()
     {
         var path = _sourceBox.Text.Trim();
+        var problem = CheckSource(path);
+        if (problem != null) return problem;
+
+        _project.SourceDirectory = path;
+        return null;
+    }
+
+    /// <summary>Why this source folder cannot be packaged, or <c>null</c> if it can.</summary>
+    public static string? CheckSource(string path)
+    {
         if (string.IsNullOrWhiteSpace(path))
             return L("Quick_NeedSource", "Choose the folder holding the application to install.");
         if (!Directory.Exists(path))
@@ -287,7 +321,6 @@ public sealed class QuickStartWizard : Form
         if (!Directory.EnumerateFileSystemEntries(path).Any())
             return L("Quick_SourceEmpty", "That folder is empty — the installer would contain nothing.");
 
-        _project.SourceDirectory = path;
         return null;
     }
 
@@ -333,23 +366,42 @@ public sealed class QuickStartWizard : Form
         return table;
     }
 
-    private string DefaultFolderFor(bool perUser)
+    private string DefaultFolderFor(bool perUser) => DefaultFolderFor(_project.AppName, perUser);
+
+    /// <summary>The install location suggested for a scope, in the constant form the runtime expands.</summary>
+    public static string DefaultFolderFor(string? appName, bool perUser)
     {
-        var name = string.IsNullOrWhiteSpace(_project.AppName) ? "MyApp" : _project.AppName;
+        var name = string.IsNullOrWhiteSpace(appName) ? "MyApp" : appName;
         return perUser ? $@"{{localappdata}}\{name}" : $@"{{pf}}\{name}";
     }
 
     private string? ValidateTarget()
     {
-        if (string.IsNullOrWhiteSpace(_folderBox.Text))
-            return L("Quick_NeedFolder", "Choose where the application should be installed.");
+        var problem = CheckTarget(_folderBox.Text);
+        if (problem != null) return problem;
 
-        _project.DefaultScope = _perUser.Checked ? InstallationScope.User : InstallationScope.Machine;
         _project.DefaultDirName = _folderBox.Text.Trim();
-        // Scope and privilege are separate in the model but not independent in practice: a per-user
-        // install that demands elevation prompts for nothing it needs.
-        _project.PrivilegesRequired = _perUser.Checked ? PrivilegeLevel.Lowest : PrivilegeLevel.Admin;
+        ApplyScope(_project, _perUser.Checked);
         return null;
+    }
+
+    /// <summary>Why this install location is not usable, or <c>null</c> if it is.</summary>
+    public static string? CheckTarget(string folder)
+        => string.IsNullOrWhiteSpace(folder)
+            ? L("Quick_NeedFolder", "Choose where the application should be installed.")
+            : null;
+
+    /// <summary>
+    /// Sets scope and privilege together.
+    ///
+    /// They are separate in the model but not independent in practice: a per-user install that
+    /// demands elevation prompts for something it does not need, and a machine-wide install that
+    /// does not ask will fail on the first write outside the user profile.
+    /// </summary>
+    public static void ApplyScope(InstallProject project, bool perUser)
+    {
+        project.DefaultScope = perUser ? InstallationScope.User : InstallationScope.Machine;
+        project.PrivilegesRequired = perUser ? PrivilegeLevel.Lowest : PrivilegeLevel.Admin;
     }
 
     // ── step 4 · review ─────────────────────────────────────────────────────

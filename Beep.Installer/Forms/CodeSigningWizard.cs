@@ -60,6 +60,50 @@ public sealed class CodeSigningWizard : Form
 
     public SigningMethod Method => (SigningMethod)(_method.SelectedItem as MethodChoice)!.Value;
 
+    /// <summary>
+    /// Everything the dialog decides, with no control attached.
+    ///
+    /// Named rather than positional: twelve strings in a row is an invitation to transpose two of
+    /// them, and a transposed thumbprint/subject would still compile and still sign, just with the
+    /// wrong certificate.
+    /// </summary>
+    public sealed record Choice
+    {
+        public SigningMethod Method { get; init; }
+
+        public string PfxPath { get; init; } = "";
+        public string PfxPassword { get; init; } = "";
+
+        public string StoreName { get; init; } = "";
+        public string StoreLocation { get; init; } = "";
+        public string Thumbprint { get; init; } = "";
+        public string Subject { get; init; } = "";
+
+        public string Provider { get; init; } = "";
+        public string Endpoint { get; init; } = "";
+        public string KeyId { get; init; } = "";
+        public string Credential { get; init; } = "";
+
+        public string TimestampUrl { get; init; } = "";
+    }
+
+    /// <summary>What the controls say right now.</summary>
+    public Choice CurrentChoice => new()
+    {
+        Method = Method,
+        PfxPath = _pfxPath?.Text.Trim() ?? "",
+        PfxPassword = _pfxPassword?.Text ?? "",
+        StoreName = _storeName?.Text.Trim() ?? "",
+        StoreLocation = _storeLocation?.Text.Trim() ?? "",
+        Thumbprint = _thumbprint?.Text.Trim() ?? "",
+        Subject = _subject?.Text.Trim() ?? "",
+        Provider = _provider?.Text.Trim() ?? "",
+        Endpoint = _endpoint?.Text.Trim() ?? "",
+        KeyId = _keyId?.Text.Trim() ?? "",
+        Credential = _credential?.Text.Trim() ?? "",
+        TimestampUrl = _timestamp?.Text.Trim() ?? "",
+    };
+
     private sealed record MethodChoice(SigningMethod Value, string Label)
     {
         public override string ToString() => Label;
@@ -136,7 +180,7 @@ public sealed class CodeSigningWizard : Form
 
         ok.Click += (_, _) =>
         {
-            var problem = Validate();
+            var problem = CurrentProblem();
             if (problem != null) { _validation.Text = problem; return; }
             Apply();
             DialogResult = DialogResult.OK;
@@ -157,12 +201,15 @@ public sealed class CodeSigningWizard : Form
     /// Checked in the order <c>HasCodeSigningCertificate</c> itself uses, so the wizard opens on the
     /// strategy the build would actually attempt rather than on a different one that also has values.
     /// </summary>
-    internal SigningMethod DetectCurrentMethod()
+    internal SigningMethod DetectCurrentMethod() => DetectMethod(_project);
+
+    /// <summary>Which strategy the project already describes, following HasCodeSigningCertificate precedence.</summary>
+    public static SigningMethod DetectMethod(InstallProject project)
     {
-        if (!string.IsNullOrWhiteSpace(_project.CodeSignCertificatePath)) return SigningMethod.PfxFile;
-        if (!string.IsNullOrWhiteSpace(_project.CodeSignStoreThumbprint)
-            || !string.IsNullOrWhiteSpace(_project.CodeSignStoreSubject)) return SigningMethod.CertificateStore;
-        if (!string.IsNullOrWhiteSpace(_project.CodeSignRemoteEndpoint)) return SigningMethod.RemoteService;
+        if (!string.IsNullOrWhiteSpace(project.CodeSignCertificatePath)) return SigningMethod.PfxFile;
+        if (!string.IsNullOrWhiteSpace(project.CodeSignStoreThumbprint)
+            || !string.IsNullOrWhiteSpace(project.CodeSignStoreSubject)) return SigningMethod.CertificateStore;
+        if (!string.IsNullOrWhiteSpace(project.CodeSignRemoteEndpoint)) return SigningMethod.RemoteService;
         return SigningMethod.None;
     }
 
@@ -197,6 +244,10 @@ public sealed class CodeSigningWizard : Form
                 _pfxPath = Row(table, L("Field_CertificatePfx", "Certificate (.pfx):"), _project.CodeSignCertificatePath, browseFilter: "Certificates (*.pfx)|*.pfx|All files (*.*)|*.*");
                 _pfxPassword = Row(table, L("Field_CertificatePassword", "Certificate password:"), _project.CodeSignCertificatePassword);
                 _pfxPassword.UseSystemPasswordChar = true;
+                // Named so it can be found through the public control tree rather than by reflecting
+                // on a private field -- a test that pins field names breaks on a rename that changes
+                // no behaviour, and would not notice the box being built but never masked.
+                _pfxPassword.Name = "pfxPassword";
                 Hint(table, L("Signing_PfxHint",
                     "Prefer a dpapi: or env: reference to a literal password — a password written into the "
                     + ".bsetup travels with the script into source control."));
@@ -231,35 +282,45 @@ public sealed class CodeSigningWizard : Form
         _fields.Controls.Add(table);
     }
 
-    private string? Validate()
+    private string? CurrentProblem() => Validate(CurrentChoice);
+
+    /// <summary>
+    /// Why this signing choice cannot be applied, or <c>null</c> if it can.
+    /// </summary>
+    /// <param name="fileExists">
+    /// How to test for the .pfx. Injectable so the rule can be exercised without staging a real
+    /// certificate on disk; defaults to the real filesystem.
+    /// </param>
+    public static string? Validate(Choice choice, Func<string, bool>? fileExists = null)
     {
-        switch (Method)
+        fileExists ??= File.Exists;
+
+        switch (choice.Method)
         {
             case SigningMethod.None:
                 return null;
 
             case SigningMethod.PfxFile:
-                if (string.IsNullOrWhiteSpace(_pfxPath?.Text))
+                if (string.IsNullOrWhiteSpace(choice.PfxPath))
                     return L("Signing_NeedPfx", "Choose the .pfx file to sign with.");
-                if (!File.Exists(_pfxPath!.Text.Trim()))
+                if (!fileExists(choice.PfxPath))
                     return L("Signing_PfxMissing", "That certificate file does not exist.");
                 break;
 
             case SigningMethod.CertificateStore:
-                if (string.IsNullOrWhiteSpace(_thumbprint?.Text) && string.IsNullOrWhiteSpace(_subject?.Text))
+                if (string.IsNullOrWhiteSpace(choice.Thumbprint) && string.IsNullOrWhiteSpace(choice.Subject))
                     return L("Signing_NeedSelector", "Give a thumbprint or a subject name — one of them has to select the certificate.");
                 break;
 
             case SigningMethod.RemoteService:
-                if (string.IsNullOrWhiteSpace(_endpoint?.Text))
+                if (string.IsNullOrWhiteSpace(choice.Endpoint))
                     return L("Signing_NeedEndpoint", "A remote signing service needs an endpoint.");
-                if (!Uri.TryCreate(_endpoint!.Text.Trim(), UriKind.Absolute, out _))
+                if (!Uri.TryCreate(choice.Endpoint, UriKind.Absolute, out _))
                     return L("Signing_EndpointNotAbsolute", "The endpoint must be an absolute URL.");
                 break;
         }
 
-        var timestamp = _timestamp?.Text.Trim();
-        if (!string.IsNullOrEmpty(timestamp) && !Uri.TryCreate(timestamp, UriKind.Absolute, out _))
+        if (!string.IsNullOrEmpty(choice.TimestampUrl) && !Uri.TryCreate(choice.TimestampUrl, UriKind.Absolute, out _))
             return L("Signing_TimestampNotAbsolute", "The timestamp URL must be absolute, such as http://timestamp.digicert.com.");
 
         return null;
@@ -272,42 +333,47 @@ public sealed class CodeSigningWizard : Form
     /// different roots is set, so leaving a stale value behind lets the project describe two
     /// strategies and the build pick whichever it checks first.
     /// </summary>
-    internal void Apply()
-    {
-        _project.CodeSignCertificatePath = "";
-        _project.CodeSignCertificatePassword = "";
-        _project.CodeSignStoreName = "";
-        _project.CodeSignStoreLocation = "";
-        _project.CodeSignStoreThumbprint = "";
-        _project.CodeSignStoreSubject = "";
-        _project.CodeSignRemoteProvider = "";
-        _project.CodeSignRemoteEndpoint = "";
-        _project.CodeSignRemoteKeyId = "";
-        _project.CodeSignRemoteCredential = "";
+    internal void Apply() => ApplyTo(CurrentChoice, _project);
 
-        switch (Method)
+    /// <summary>
+    /// Writes the chosen strategy and clears the other two. See the remarks on <see cref="Apply"/>.
+    /// </summary>
+    public static void ApplyTo(Choice choice, InstallProject project)
+    {
+        project.CodeSignCertificatePath = "";
+        project.CodeSignCertificatePassword = "";
+        project.CodeSignStoreName = "";
+        project.CodeSignStoreLocation = "";
+        project.CodeSignStoreThumbprint = "";
+        project.CodeSignStoreSubject = "";
+        project.CodeSignRemoteProvider = "";
+        project.CodeSignRemoteEndpoint = "";
+        project.CodeSignRemoteKeyId = "";
+        project.CodeSignRemoteCredential = "";
+
+        switch (choice.Method)
         {
             case SigningMethod.PfxFile:
-                _project.CodeSignCertificatePath = _pfxPath?.Text.Trim() ?? "";
-                _project.CodeSignCertificatePassword = _pfxPassword?.Text ?? "";
+                project.CodeSignCertificatePath = choice.PfxPath;
+                project.CodeSignCertificatePassword = choice.PfxPassword;
                 break;
 
             case SigningMethod.CertificateStore:
-                _project.CodeSignStoreName = _storeName?.Text.Trim() ?? "";
-                _project.CodeSignStoreLocation = _storeLocation?.Text.Trim() ?? "";
-                _project.CodeSignStoreThumbprint = _thumbprint?.Text.Trim() ?? "";
-                _project.CodeSignStoreSubject = _subject?.Text.Trim() ?? "";
+                project.CodeSignStoreName = choice.StoreName;
+                project.CodeSignStoreLocation = choice.StoreLocation;
+                project.CodeSignStoreThumbprint = choice.Thumbprint;
+                project.CodeSignStoreSubject = choice.Subject;
                 break;
 
             case SigningMethod.RemoteService:
-                _project.CodeSignRemoteProvider = _provider?.Text.Trim() ?? "";
-                _project.CodeSignRemoteEndpoint = _endpoint?.Text.Trim() ?? "";
-                _project.CodeSignRemoteKeyId = _keyId?.Text.Trim() ?? "";
-                _project.CodeSignRemoteCredential = _credential?.Text.Trim() ?? "";
+                project.CodeSignRemoteProvider = choice.Provider;
+                project.CodeSignRemoteEndpoint = choice.Endpoint;
+                project.CodeSignRemoteKeyId = choice.KeyId;
+                project.CodeSignRemoteCredential = choice.Credential;
                 break;
         }
 
-        if (_timestamp != null) _project.CodeSignTimestampUrl = _timestamp.Text.Trim();
+        project.CodeSignTimestampUrl = choice.TimestampUrl;
     }
 
     // ── layout helpers ──────────────────────────────────────────────────────

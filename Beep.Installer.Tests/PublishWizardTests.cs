@@ -20,6 +20,9 @@ namespace Beep.Installer.Tests;
 /// works, and the application never updates again.</item>
 /// <item><b>Unsigned</b> deployments trigger SmartScreen's "unrecognized app" interstitial.</item>
 /// </list>
+///
+/// The rules run against <see cref="PublishWizard.Choice"/>; the dialog is constructed only where
+/// the test is genuinely about the dialog.
 /// </summary>
 [Collection("Language")]
 public class PublishWizardTests
@@ -31,21 +34,8 @@ public class PublishWizardTests
         AppUpdatesURL = updateUrl ?? "",
     };
 
-    private static string? Validate(PublishWizard wizard)
-    {
-        var method = typeof(PublishWizard).GetMethod("Validate",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        method.Should().NotBeNull();
-        return (string?)method!.Invoke(wizard, null);
-    }
-
-    private static void Set(PublishWizard wizard, string field, string value)
-    {
-        var box = (System.Windows.Forms.TextBox)typeof(PublishWizard)
-            .GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .GetValue(wizard)!;
-        box.Text = value;
-    }
+    private static PublishWizard.Choice Into(string url) =>
+        new(Path.Combine(Path.GetTempPath(), "publish"), url, false);
 
     [Fact]
     public void TheUpdateUrlIsPrefilledFromTheProject()
@@ -59,10 +49,16 @@ public class PublishWizardTests
 
     [Fact]
     public void APublishFolderIsRequired()
-    {
-        using var wizard = new PublishWizard(Project());
+        => PublishWizard.Validate(new PublishWizard.Choice("", "", false))
+            .Should().NotBeNull("there is nowhere to write the output");
 
-        Validate(wizard).Should().NotBeNull("there is nowhere to write the output");
+    [Fact]
+    public void AFolderWhoseParentDoesNotExistIsRefused()
+    {
+        var unreachable = Path.Combine(Path.GetTempPath(), $"absent_{Guid.NewGuid():N}", "publish");
+
+        PublishWizard.Validate(new PublishWizard.Choice(unreachable, "", false))
+            .Should().NotBeNull("the publish would fail on the first write");
     }
 
     [Fact]
@@ -70,12 +66,7 @@ public class PublishWizardTests
     {
         // Clients resolve this from their own machine. A relative address produces a manifest they
         // cannot follow, and the failure only appears on someone else's computer at update time.
-        var root = Path.GetTempPath();
-        using var wizard = new PublishWizard(Project());
-        Set(wizard, "_folderBox", Path.Combine(root, "publish"));
-        Set(wizard, "_urlBox", "updates/");
-
-        var problem = Validate(wizard);
+        var problem = PublishWizard.Validate(Into("updates/"));
 
         problem.Should().NotBeNull();
         problem!.Should().Contain("absolute");
@@ -83,23 +74,12 @@ public class PublishWizardTests
 
     [Fact]
     public void AnAbsoluteUpdateUrlIsAccepted()
-    {
-        using var wizard = new PublishWizard(Project());
-        Set(wizard, "_folderBox", Path.Combine(Path.GetTempPath(), "publish"));
-        Set(wizard, "_urlBox", "https://downloads.contoso.com/suite/");
-
-        Validate(wizard).Should().BeNull();
-    }
+        => PublishWizard.Validate(Into("https://downloads.contoso.com/suite/")).Should().BeNull();
 
     [Fact]
     public void AnEmptyUpdateUrlIsAllowed_BecauseNotEveryDeploymentSelfUpdates()
-    {
-        using var wizard = new PublishWizard(Project());
-        Set(wizard, "_folderBox", Path.Combine(Path.GetTempPath(), "publish"));
-        Set(wizard, "_urlBox", "");
-
-        Validate(wizard).Should().BeNull("a deployment that never updates itself is a legitimate choice");
-    }
+        => PublishWizard.Validate(Into(""))
+            .Should().BeNull("a deployment that never updates itself is a legitimate choice");
 
     [Fact]
     public void SigningDefaultsToWhetherACertificateIsActuallyConfigured()
@@ -113,5 +93,21 @@ public class PublishWizardTests
         configured.CodeSignCertificatePath = @"C:\certs\contoso.pfx";
         using var with = new PublishWizard(configured);
         with.Sign.Should().Be(configured.HasCodeSigningCertificate);
+    }
+
+    [Fact]
+    public void TheControlsFeedTheChoice()
+    {
+        // The dialog's own wiring: what the constructor put in the boxes is what Validate will see.
+        var project = Project("https://downloads.contoso.com/suite/");
+        project.CodeSignCertificatePath = @"C:\certs\contoso.pfx";
+
+        using var wizard = new PublishWizard(project);
+
+        var choice = wizard.CurrentChoice;
+
+        choice.UpdateUrl.Should().Be("https://downloads.contoso.com/suite/");
+        choice.Sign.Should().BeTrue();
+        choice.Folder.Should().Be(wizard.PublishFolder);
     }
 }

@@ -45,6 +45,12 @@ public sealed class PublishWizard : Form
     /// <summary>Whether to sign the manifests when a certificate is configured.</summary>
     public bool Sign => _signBox.Checked;
 
+    /// <summary>Everything the dialog decides, with no control attached.</summary>
+    public readonly record struct Choice(string Folder, string UpdateUrl, bool Sign);
+
+    /// <summary>What the controls say right now.</summary>
+    public Choice CurrentChoice => new(PublishFolder, UpdateUrl, Sign);
+
     public PublishWizard(InstallProject project)
     {
         _project = project ?? throw new ArgumentNullException(nameof(project));
@@ -113,7 +119,7 @@ public sealed class PublishWizard : Form
 
         publish.Click += (_, _) =>
         {
-            var problem = Validate();
+            var problem = CurrentProblem();
             if (problem != null) { _validation.Text = problem; return; }
             DialogResult = DialogResult.OK;
             Close();
@@ -153,17 +159,20 @@ public sealed class PublishWizard : Form
         _signalLabel.ForeColor = Ui.InstallerTheme.MutedText;
     }
 
-    private string? Validate()
+    private string? CurrentProblem() => Validate(CurrentChoice);
+
+    /// <summary>Why this publish target cannot be used, or <c>null</c> if it can.</summary>
+    public static string? Validate(Choice choice)
     {
-        if (string.IsNullOrWhiteSpace(_folderBox.Text))
+        if (string.IsNullOrWhiteSpace(choice.Folder))
             return L("Publish_NeedFolder", "Choose a folder to publish into.");
 
-        var folder = _folderBox.Text.Trim();
+        var folder = choice.Folder.Trim();
         var parent = Path.GetDirectoryName(Path.GetFullPath(folder));
         if (parent != null && !Directory.Exists(parent) && !Directory.Exists(folder))
             return L("Publish_FolderUnreachable", "That folder's parent does not exist.");
 
-        var url = _urlBox.Text.Trim();
+        var url = choice.UpdateUrl.Trim();
         if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
         {
             // A relative update URL produces a manifest clients cannot resolve, and the failure only
