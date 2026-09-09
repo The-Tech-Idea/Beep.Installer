@@ -210,7 +210,7 @@ public class ComponentConditionsDialog : Form
         {
             Text = L("Conditions_NotesNGroupExpression", "Notes:\n • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.\n • Value holds the primary operand (registry path, file path, OS version, command, …).\n • Value2 is the expected value for RegistryValue and CommandReturns comparisons.\n • Operator is one of ==, =, !=, >, >=, <, <= (default '==')."),
             Dock = DockStyle.Fill,
-            ForeColor = Color.Gray
+            ForeColor = Ui.InstallerTheme.MutedText
         };
         layout.Controls.Add(notes, 0, row);
         layout.SetColumnSpan(notes, 2);

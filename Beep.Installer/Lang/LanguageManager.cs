@@ -30,7 +30,13 @@ public static class LanguageManager
     /// <summary>Languages we ship translations for.</summary>
     public static readonly string[] SupportedCultures = { "en", "ar", "es", "fr", "de", "zh", "ja", "pt" };
 
-    public static string CurrentLanguageName => _currentCulture.TwoLetterISOLanguageName switch
+    public static string CurrentLanguageName => NativeNameOf(_currentCulture.TwoLetterISOLanguageName);
+
+    /// <summary>
+    /// A language's name in that language, which is what a user scanning a picker recognises —
+    /// someone looking for Japanese is looking for 日本語, not for "Japanese" spelled in English.
+    /// </summary>
+    public static string NativeNameOf(string twoLetterCode) => twoLetterCode switch
     {
         "ar" => "العربية",
         "es" => "Español",

@@ -78,7 +78,7 @@ public class ComponentSelectionPage : UserControl, IInstallerPage
         {
             Location = new Point(412, 220),
             Size = new Size(220, 24),
-            ForeColor = Color.Gray,
+            ForeColor = Ui.InstallerTheme.MutedText,
             Font = new Font("Segoe UI", 9)
         };
 
@@ -88,7 +88,7 @@ public class ComponentSelectionPage : UserControl, IInstallerPage
             Size = new Size(620, 30),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
             Font = new Font("Segoe UI", 9, FontStyle.Italic),
-            ForeColor = Color.Gray
+            ForeColor = Ui.InstallerTheme.MutedText
         };
 
         _tree.AfterCheck += OnNodeChecked;

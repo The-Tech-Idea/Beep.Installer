@@ -103,7 +103,7 @@ public class ErrorPage : UserControl, IInstallerPage
             Location = new Point(0, 296),
             Size = new Size(500, 30),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-            ForeColor = Color.Gray,
+            ForeColor = Ui.InstallerTheme.MutedText,
             Text = "Check the log for details, or click Retry to attempt the installation again."
         };
 

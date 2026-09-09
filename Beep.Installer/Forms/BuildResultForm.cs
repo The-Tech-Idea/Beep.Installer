@@ -116,7 +116,7 @@ public class BuildResultForm : Form
         else
         {
             pathBox.Text = result.Success ? "(no output file)" : "(build failed — see log)";
-            pathBox.ForeColor = Color.Gray;
+            pathBox.ForeColor = Ui.InstallerTheme.MutedText;
         }
         fileRow.Controls.Add(fileLabel, 0, 0);
         fileRow.Controls.Add(pathBox, 1, 0);

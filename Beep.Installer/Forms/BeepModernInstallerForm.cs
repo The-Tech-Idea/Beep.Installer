@@ -40,6 +40,16 @@ public class BeepModernInstallerForm : BeepiFormPro
 
     private readonly List<IInstallerPage> _pages = new();
     private readonly string[] _runtimeArgs = Array.Empty<string>();
+    private ComboBox? _languageBox;
+
+    /// <summary>Guards against the reload writing back into the box that triggered it.</summary>
+    private bool _applyingLanguage;
+
+    /// <summary>A culture shown by its own name, which is what a user looking for it recognises.</summary>
+    private sealed record LanguageChoice(string Code)
+    {
+        public override string ToString() => LanguageManager.NativeNameOf(Code);
+    }
     private int _currentPage = -1;
     private readonly InstallContext _ctx = new();
     private bool _installComplete;
@@ -377,8 +387,46 @@ public class BeepModernInstallerForm : BeepiFormPro
         };
         buttonCluster.Controls.AddRange(new Control[] { _backBtn, _nextBtn, _cancelBtn });
 
-        var spacer = new Panel { BackColor = bg, Dock = DockStyle.Fill };
-        buttonRow.Controls.Add(spacer, 0, 0);
+        // The language switcher goes bottom-left, opposite the Back/Next/Cancel cluster (7.B.1).
+        //
+        // The plumbing for live switching has existed for a while -- LanguageChanged, ReloadStrings
+        // and two-way RtlHelper.ApplyDirection -- but nothing ever put a control on screen, so an
+        // end user could not reach any of it. Bottom-left is where installers conventionally put it,
+        // it is the one region of the chrome not already spoken for, and it stays out of the
+        // Next-button path a user is actually following.
+        var leftCluster = new FlowLayoutPanel
+        {
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = bg,
+            Dock = DockStyle.Left,
+            Margin = new Padding(0),
+        };
+
+        _languageBox = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Width = 150,
+            Margin = new Padding(0, 4, 0, 0),
+            AccessibleName = LanguageManager.GetOrDefault("Wizard_Language", "Language"),
+        };
+        foreach (var culture in LanguageManager.SupportedCultures)
+            _languageBox.Items.Add(new LanguageChoice(culture));
+
+        _languageBox.SelectedIndex = Math.Max(0, Array.IndexOf(
+            LanguageManager.SupportedCultures, LanguageManager.CurrentCulture.TwoLetterISOLanguageName));
+
+        _languageBox.SelectedIndexChanged += (_, _) =>
+        {
+            if (_applyingLanguage) return;                       // our own reload, not a user choice
+            if (_languageBox.SelectedItem is not LanguageChoice choice) return;
+            LanguageManager.SetLanguage(choice.Code);            // LanguageChanged does the rest
+        };
+
+        leftCluster.Controls.Add(_languageBox);
+        buttonRow.Controls.Add(leftCluster, 0, 0);
         buttonRow.Controls.Add(buttonCluster, 1, 0);
 
         _buttonBar.Controls.Add(buttonRow);

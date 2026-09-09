@@ -150,6 +150,22 @@ public static class EnterpriseCommandLine
         "/CATALOGKEYID=",
         "/CATALOGAPPROVEDBY=",
         "/CATALOGAPPROVALREASON=",
+        // The self-update verbs. Dispatchable in ProgramVerbs and documented in CLAUDE.md, but
+        // never registered here, so both were rejected with BI7005 before they could run -- the
+        // whole Phase 11 self-update CLI surface was unreachable.
+        "/CHECKUPDATE",
+        "/UPDATE",
+        "/FEED=",
+
+        // The /PUBLISHFEED verb and its options. These dispatch correctly but were never added
+        // here, so the validator rejected them with BI7005 before the verb could run -- which made
+        // the whole publish-feed capability unreachable, including the exact
+        // `/BUILD=<project> /PUBLISHFEED=<dir>` usage the verb table documents.
+        "/PUBLISHFEED=",
+        "/CHANNEL=",
+        "/FEEDURL=",
+        "/MINVERSION=",
+        "/REPUBLISH",
         "/UPDATECHANNELFEED=",
         "/VERIFYUPDATECHANNELFEED=",
         "/CHECKUPDATECHANNEL=",

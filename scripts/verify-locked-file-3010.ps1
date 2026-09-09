@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Live verification of the locked-file / reboot-required path (tracker gate 10.M.1).
 

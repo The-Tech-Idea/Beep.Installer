@@ -31,7 +31,7 @@ public class WelcomePage : UserControl, IInstallerPage
             SizeMode = PictureBoxSizeMode.Zoom
         };
         _title = new BeepLabel { Font = new Font("Segoe UI", 18, FontStyle.Bold), Location = new Point(60, 0), AutoSize = true };
-        _versionLabel = new BeepLabel { Font = new Font("Segoe UI", 10), Location = new Point(60, 36), ForeColor = Color.Gray, AutoSize = true };
+        _versionLabel = new BeepLabel { Font = new Font("Segoe UI", 10), Location = new Point(60, 36), ForeColor = Ui.InstallerTheme.MutedText, AutoSize = true };
         _description = new BeepLabel { Location = new Point(0, 80), Size = new Size(500, 200), AutoSize = false };
         Controls.AddRange(new Control[] { _icon, _title, _versionLabel, _description });
     }

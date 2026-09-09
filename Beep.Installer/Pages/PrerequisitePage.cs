@@ -55,7 +55,7 @@ public class PrerequisitePage : UserControl, IInstallerPage
             Font = new Font("Segoe UI", 9),
             Location = new Point(0, 30),
             AutoSize = true,
-            ForeColor = Color.Gray,
+            ForeColor = Ui.InstallerTheme.MutedText,
             Text = "Checking system requirements..."
         };
 

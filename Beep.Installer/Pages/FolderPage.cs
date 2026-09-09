@@ -83,7 +83,7 @@ public class FolderPage : UserControl, IInstallerPage
         {
             Location = new Point(32, 196),
             Size = new Size(620, 30),
-            ForeColor = Color.Gray,
+            ForeColor = Ui.InstallerTheme.MutedText,
             Font = new Font("Segoe UI", 9)
         };
 
@@ -128,13 +128,13 @@ public class FolderPage : UserControl, IInstallerPage
                 var free = new DriveInfo(root).AvailableFreeSpace;
                 _spaceLabel.Text = LanguageManager.GetOrDefault("Folder_AvailableSpace", "Available space: {0}")
                     .Replace("{0}", Engine.LocaleFormatter.FormatSize(free));
-                _spaceLabel.ForeColor = Color.Gray;
+                _spaceLabel.ForeColor = Ui.InstallerTheme.MutedText;
             }
         }
         catch
         {
             _spaceLabel.Text = LanguageManager.GetOrDefault("Folder_SpaceUnknown", "Unable to check disk space.");
-            _spaceLabel.ForeColor = Color.Gray;
+            _spaceLabel.ForeColor = Ui.InstallerTheme.MutedText;
         }
     }
 

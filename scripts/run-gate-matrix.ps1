@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Runs the P2/P3/P5 gate matrix against a really-built installer and writes an evidence file.
 

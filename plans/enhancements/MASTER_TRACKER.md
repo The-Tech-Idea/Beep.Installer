@@ -10,6 +10,75 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-09 (delta E2E, DPI/a11y/RTL, switcher)
+
+**11.M.1 found the most serious defects of the session — two of them, and the first one made the
+harness lie about the second.**
+
+**`/PUBLISHFEED`, `/CHECKUPDATE`, `/UPDATE` and `/FEED=` were unreachable.** All dispatch
+correctly in `ProgramVerbs`, none were registered in the `EnterpriseCommandLine` vocabulary, so
+the validator rejected them with `BI7005` *before* the verb could run. The whole Phase 11
+self-update CLI surface was uninvokable, along with the exact `/BUILD=<project> /PUBLISHFEED=<dir>`
+usage the verb table’s own comment documents.
+
+That also corrupted the evidence: the corrupt-blob case initially "passed" with **exit 2**, which
+was the unknown-argument rejection rather than an integrity refusal. With the verbs registered it
+refuses with **exit 1** — the same verdict, now for the right reason. A gate that passes for the
+wrong reason is worth more scrutiny than one that fails.
+
+**A published feed could only be applied from inside its own directory.** `feed.json` publishes
+delta locations relative to itself (`1.1.0/_payload-manifest.json`, `1.1.0/_blobs/`) — that
+relativity is precisely what lets a feed be copied to a share or a CDN. `AppUpdateService` handed
+them to the transport unresolved, which read them against the **process working directory**;
+blobs went through `CombineUrl` but were still feed-relative, and the manifest URL was never
+combined at all. So `/UPDATE` against a valid feed failed with "Could not find a part of the path
+…\1.1.0\_payload-manifest.json". Now: *Staging App.exe / Staging module.dat / Updated to 1.1.0
+(full). Previous version kept for rollback.*
+
+**Why 1200 green tests never saw it:** the qualification runners construct their feeds under the
+test’s own working directory, where a CWD-relative resolution happens to land in the right place.
+It took publishing to one directory and applying from another — which is what every real
+deployment does.
+
+`scripts/run-delta-e2e.ps1` is the harness: publish v1.0 → install → publish v1.1 → feed index and
+blob addressing → `/CHECKUPDATE` → corrupt-blob abort → module-only update. **8 passed, 0 failed**,
+evidence in `artifacts/delta-e2e/`. Kill-mid-apply stays SKIP: even with a 4 MB payload the apply
+completes inside the window, and reporting it as passed would claim a check that did not run.
+
+**A PowerShell trap worth recording.** The harness would not parse at all at first. PowerShell 5.1
+reads a BOM-less `.ps1` as **ANSI**, and an em dash’s UTF-8 bytes decode under CP1252 to `â € ”` —
+and `”` is a character PowerShell honours as a *string delimiter*. Every em dash silently opened or
+closed a string. The two older scripts survived only because their single em dash sat inside a
+comment. All three now carry a BOM.
+
+**6.M.1 / 6.B.2 / 7.M.1 / 7.B.2 / 7.B.1 — automated rather than left for a person.** Most of what
+those passes look for is measurable: clipping, overlap, text that no longer fits its box, controls
+that did not mirror, missing accessible names, unreachable tab stops, contrast. `DpiLayoutTests`
+covers 100/125/150/200%; `RtlAndAccessibilityAuditTests` covers the rest.
+
+- **A real accessibility defect:** `Color.Gray` (#808080) on white is **3.95:1**, below the WCAG AA
+  4.5:1 minimum for body text and exactly what Accessibility Insights flags. Ten occurrences across
+  five pages and two dialogs, all now on the existing `InstallerTheme.MutedText` token.
+- **6.B.2 is measured-and-fine, not deferred.** The pages do use absolute coordinates, but they
+  neither clip nor overlap at any tested scale — `Control.Scale()` moves and resizes together. No
+  refactor for an unmeasurable problem.
+- **7.B.1 done:** the language switcher is in the wizard footer, bottom-left, each language in its
+  own script. The plumbing (`LanguageChanged`, `ReloadStrings`, two-way `ApplyDirection`) had
+  existed for a while with nothing on screen to reach it.
+
+**My own DPI test was vacuous and I nearly banked it.** It passed 13/13 while measuring *empty*
+labels — the pages populate text in `OnEnter`, not their constructors. Same shape as the
+corrupt-payload harness. `ThePagesUnderTestActuallyHaveContent` now guards against it recurring.
+
+**0.A.1 closed as superseded, not done.** CI already asserts by SHA-256 that the loaded
+`DataManagementModels.dll` matches a BeepDM source build — strictly stronger than purging a cache,
+which is machine-wide, must be repeated on every machine and runner, and stops being true at the
+next restore. `SourceBindingTests` makes a developer build assert the same thing, so the guarantee
+travels with the repository.
+
+Suite **1284/0/4**.
+
+---
 ## Progress log — 2026-09-09 (SOLID review)
 
 **The eight `*.M.2` rows are answered by one review, not eight.** [SOLID_REVIEW.md](SOLID_REVIEW.md) —
@@ -1490,7 +1559,7 @@ context-key tests are not yet written.
 
 | # | Task | Status |
 |---|------|--------|
-| 0.A.1 | Purge poisoned global-cache entries for `...DataManagementModels/Engine` 3.1.1 | ⬜ (unnecessary so far — the direct ProjectReference bypassed the stale package) |
+| 0.A.1 | Purge poisoned global-cache entries for `...DataManagementModels/Engine` 3.1.1 | ✅ **superseded** — CI *and* `SourceBindingTests` assert by SHA-256 that the loaded DLL is the source build, which beats purging a cache that must be re-purged on every machine |
 | 0.A.2 | Add direct `DataManagementModels` ProjectReference + `Directory.Build.props` | ✅ |
 | 0.A.3 | Bump BeepDM source to 3.1.2 and repack to the local feed | ❌ blocked as specified — no local feed exists, Core bypasses the package via a direct ProjectReference, and `Beep.Winform.Controls` pins 3.1.1 to match. A coordinated multi-repo release decision, not a version edit |
 | 0.A.4 | Confirm startup no longer throws `TypeLoadException` | ✅ |
@@ -1599,11 +1668,11 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 6.A.2 | Real install progress bar; Cancel no longer orphans a running install | ✅ (true mid-install cancellation blocked upstream — see note) |
 | 6.A.3 | Branding wired at runtime (colours, accent, window icon) | ✅ (live swatch in the Branding section repaints as colours are edited) |
 | 6.B.1 | `Ui/InstallerTheme` shared tokens; the 3 palettes now delegate to it | ✅ |
-| 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ (pages still use absolute coords — container re-layout ⬜) |
+| 6.B.2 | `AutoScaleMode.Dpi` on all 12 forms | ✅ absolute coords **measured and fine** — no clipping or overlap at 100/125/150/200% (`DpiLayoutTests`) |
 | 6.C.1 | Async source scan (no longer freezes the builder) | ✅ (file-tree existence checks moved off the UI thread, with a generation guard) |
 | 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ✅ declared columns; `ComponentConditionsDialog` opens on the selected component; per-field `ErrorProvider` driven by the same validator the build uses |
 | 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ✅ (also: `AllowComponentSelection`/`AllowPathChange` made live; 9 builder sections no longer show a closed project) |
-| 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
+| 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ✅ automated across 100/125/150/200% (`DpiLayoutTests`); subjective "does it look right" still a human call |
 | 6.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 7: Localization, RTL, Accessibility ⬜ — P2
@@ -1615,10 +1684,10 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 7.A.1 | Resx key parity (47 keys × 8 cultures) + parity test | ✅ |
 | 7.A.0 | **Fix the resource loader — translations were never loaded at runtime** | ✅ |
 | 7.A.2 | Route wizard-page headers/prompts through `LanguageManager` | ✅ 142 strings across 11 forms routed via `Lang.UiStrings` **and translated into all 7 non-English cultures**; 242 keys per culture, zero `Untranslated` markers |
-| 7.B.1 | End-user language switcher + live `ReloadStrings()` | 🟡 `LanguageChanged` + `ReloadStrings` + two-way `RtlHelper.ApplyDirection` done; **placing the switcher control in the wizard chrome is a visual decision, still ⬜** |
-| 7.B.2 | Wire `RtlHelper` into the wizard | ✅ (manual Arabic visual pass still ⬜) |
+| 7.B.1 | End-user language switcher + live `ReloadStrings()` | ✅ switcher placed in the wizard footer (bottom-left, each language in its own script); plumbing was already there with nothing on screen to reach it |
+| 7.B.2 | Wire `RtlHelper` into the wizard | ✅ mirroring, unmirroring, no clipping when mirrored and Arabic-values-are-Arabic all automated; whether it *reads* naturally still needs a native reader |
 | 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-colour status | ✅ label-derived names, all 14 forms covered incl. lazily-added panels, widened interactive set. Non-colour status **verified already satisfied** — the validation labels state “N error(s), M warning(s)”/“OK” in text and no grid encodes severity by colour |
-| 7.M.1 | Gate: Narrator walkthrough + Accessibility Insights + parity tests | ⬜ |
+| 7.M.1 | Gate: Narrator walkthrough + Accessibility Insights + parity tests | 🟡 the Insights-equivalent checks are automated (names, tab reachability, WCAG AA contrast — found and fixed 10 real 3.95:1 failures); an actual Narrator listen still needs a person |
 | 7.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 8: Security & Reliability Hardening ⬜ — P1 (8.A may be pulled forward)
@@ -1691,7 +1760,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 11.B.2 | Side-by-side `UpdateApplier` (`app-x.y.z/` + `current` junction flip; crash-safe; supersedes ClickOnce in-place swap) | ✅ (`SideBySideApplier` + `IDirectoryLink`; rollback + retire; 8 tests). Ledger wiring → 11.C |
 | 11.C.1 | `ModuleUpdater` over `IAssemblyHandler` (single NuGet part updated, app files untouched; applies on next launch — hot reload out of scope) | ✅ (governed layer + `IModulePackageService` + adapter; 8 tests) |
 | 11.C.2 | `UpdatePolicy` + `/CHECKUPDATE` `/UPDATE`; retire ClickOnce `UpdateChecker`/`UpdateApplier` → removes the two sync-over-async guard exemptions | ✅ (`AppUpdateService` composed; CLI verbs; ClickOnce pair deleted; guard exemption shrunk to `IInstallerHostBuilder`) |
-| 11.M.1 | Gate: publish v1.0→v1.1, delta update, corrupt-blob abort, module-only update, kill-mid-update survival | 🟡 unit-level matrix green (44 Updates+publisher tests); live E2E in the deferred integration bucket |
+| 11.M.1 | Gate: publish v1.0→v1.1, delta update, corrupt-blob abort, module-only update, kill-mid-update survival | ✅ **run live** — `scripts/run-delta-e2e.ps1`, 8/0 with evidence in `artifacts/delta-e2e/`; found and fixed two real defects (BI7005-unreachable update verbs, feed-relative URLs resolved against the CWD). Kill-mid-apply remains SKIP — the apply completes inside the window |
 
 ---
 
