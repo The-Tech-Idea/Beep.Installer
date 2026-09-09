@@ -288,8 +288,17 @@ public sealed class ResourceWizard : Form
             _ => TextEditor(input, get, set),
         };
 
-        editor.Name = input.Key;                 // found by name, not by reflecting on a field
-        editor.AccessibleName = input.Label;
+        // Name and label the control that actually takes the input, not its container.
+        //
+        // A path field is a text box beside a browse button inside a panel; naming the panel left
+        // the box anonymous to a screen reader, and made FocusField focus a Panel -- which puts the
+        // caret nowhere -- when validation reported that field.
+        var target = editor is FlowLayoutPanel host
+            ? host.Controls.OfType<TextBox>().FirstOrDefault() ?? editor
+            : editor;
+
+        target.Name = input.Key;                 // found by name, not by reflecting on a field
+        target.AccessibleName = input.Label;
         table.Controls.Add(editor, 1, row);
 
         if (!string.IsNullOrWhiteSpace(input.Help))
