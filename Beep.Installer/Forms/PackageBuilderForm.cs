@@ -1918,14 +1918,14 @@ public class PackageBuilderForm : Form
             using var dlg = new SaveFileDialog { Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*", FileName = $"build-log-{DateTime.Now:yyyyMMdd-HHmmss}.txt" };
             if (dlg.ShowDialog(this) != DialogResult.OK) return;
             try { File.WriteAllText(dlg.FileName, _buildLogBox.Text); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, L("Common_SaveFailed", "Save failed"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
         var copyBtn = new Button { Text = L("Builder_CopyAll", "Copy All"), Width = 90, Height = 28 };
         copyBtn.Click += (_, _) =>
         {
             if (_buildLogBox == null) return;
             try { Clipboard.SetText(_buildLogBox.Text); copyBtn.Text = L("Builder_Copied", "Copied!"); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Copy failed", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, L("Common_CopyFailed", "Copy failed"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
         var selectAllBtn = new Button { Text = L("Builder_SelectAll", "Select All"), Width = 90, Height = 28 };
         selectAllBtn.Click += (_, _) => { _buildLogBox?.Focus(); _buildLogBox?.SelectAll(); };
@@ -2061,12 +2061,12 @@ public class PackageBuilderForm : Form
         openBtn.Click += (_, _) =>
         {
             try { Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{r.OutputFile}\"") { UseShellExecute = true }); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, L("Common_Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
         runBtn.Click += (_, _) =>
         {
             try { Process.Start(new ProcessStartInfo(r.OutputFile) { UseShellExecute = true }); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, L("Common_Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
     }
 
@@ -2340,7 +2340,7 @@ public class PackageBuilderForm : Form
         if (!ApplyScriptEditor()) return;
         if (!_controller.HasFilePath) { SaveProjectAs(); return; }
         var (ok, err) = _controller.Save();
-        if (!ok) { MessageBox.Show(this, err, "Save", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+        if (!ok) { MessageBox.Show(this, err, L("Common_Save", "Save"), MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
         SetStatus($"Saved {Path.GetFileName(_controller.FilePath!)}");
     }
 
@@ -2358,7 +2358,7 @@ public class PackageBuilderForm : Form
         var savePath = dlg.FileName;
         if (string.IsNullOrWhiteSpace(savePath)) return;
         var (ok, err) = _controller.SaveAs(savePath);
-        if (!ok) { MessageBox.Show(this, err, "Save As", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+        if (!ok) { MessageBox.Show(this, err, L("Builder_SaveAsTitle", "Save As"), MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
         RefreshRecents();
         SetStatus($"Saved {Path.GetFileName(savePath)}");
     }
@@ -2366,7 +2366,7 @@ public class PackageBuilderForm : Form
     private void LoadProject(string path)
     {
         var (ok, err) = _controller.Open(path);
-        if (!ok) { MessageBox.Show(this, err, "Open Installer Script", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+        if (!ok) { MessageBox.Show(this, err, L("Builder_OpenScriptTitle", "Open Installer Script"), MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
         RefreshRecents();
     }
 
@@ -2463,7 +2463,7 @@ public class PackageBuilderForm : Form
     }
 
     private void PreviewWizard() { if (!ApplyScriptEditor()) return; using var f = new WizardPreviewForm(_project); f.ShowDialog(this); }
-    private void ShowAbout() { MessageBox.Show(this, "Beep Installer — Package Builder\r\nVersion 1.0.0\r\n\r\nBuild self-contained Setup.exe installers for Windows.", "About Beep Installer", MessageBoxButtons.OK, MessageBoxIcon.Information); }
+    private void ShowAbout() { MessageBox.Show(this, L("Builder_AboutBody", "Beep Installer — Package Builder\r\nVersion 1.0.0\r\n\r\nBuild self-contained Setup.exe installers for Windows."), L("Builder_AboutTitle", "About Beep Installer"), MessageBoxButtons.OK, MessageBoxIcon.Information); }
 
     private void UpdateFromTemplate()
     {
@@ -2505,7 +2505,7 @@ public class PackageBuilderForm : Form
     {
         if (_lastBuildResult == null)
         {
-            MessageBox.Show(this, "No build has been run yet.", "Beep Installer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, L("Builder_NoBuildYet", "No build has been run yet."), "Beep Installer", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         using var f = new BuildResultForm(_lastBuildResult, _project.AppName);
@@ -2515,14 +2515,14 @@ public class PackageBuilderForm : Form
     private void BuildInstaller()
     {
         if (!ApplyScriptEditor()) return;
-        if (string.IsNullOrEmpty(_project.AppName)) { MessageBox.Show(this, "Product name is required.", "Build", MessageBoxButtons.OK, MessageBoxIcon.Warning); _nav.SelectSection("identity"); return; }
-        if (!_controller.HasFilePath) { var ans = MessageBox.Show(this, "Installer script has not been saved. Save before building?", "Build", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question); if (ans == DialogResult.Cancel) return; if (ans == DialogResult.Yes) SaveProjectAs(); if (!_controller.HasFilePath) return; }
+        if (string.IsNullOrEmpty(_project.AppName)) { MessageBox.Show(this, L("Builder_ProductNameRequired", "Product name is required."), L("Builder_BuildTitle", "Build"), MessageBoxButtons.OK, MessageBoxIcon.Warning); _nav.SelectSection("identity"); return; }
+        if (!_controller.HasFilePath) { var ans = MessageBox.Show(this, L("Builder_ScriptNotSaved", "Installer script has not been saved. Save before building?"), L("Builder_BuildTitle", "Build"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question); if (ans == DialogResult.Cancel) return; if (ans == DialogResult.Yes) SaveProjectAs(); if (!_controller.HasFilePath) return; }
         if (_controller.IsDirty) SaveProject();
         var outputDir = _project.OutputDir;
         var clean = false;
         if (!string.IsNullOrEmpty(outputDir) && Directory.Exists(outputDir) && Directory.EnumerateFileSystemEntries(outputDir).Any())
         {
-            var ans = MessageBox.Show(this, $"Output directory already contains files:\r\n{outputDir}\r\n\r\nClean before building?", "Build", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            var ans = MessageBox.Show(this, string.Format(L("Builder_OutputNotEmpty", "Output directory already contains files:\r\n{0}\r\n\r\nClean before building?"), outputDir), L("Builder_BuildTitle", "Build"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
             if (ans == DialogResult.Cancel) return;
             clean = ans == DialogResult.Yes;
         }
@@ -2587,7 +2587,7 @@ public class PackageBuilderForm : Form
     private void PublishProject()
     {
         if (!ApplyScriptEditor()) return;
-        if (string.IsNullOrEmpty(_project.AppName)) { MessageBox.Show(this, "Product name is required.", "Publish", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+        if (string.IsNullOrEmpty(_project.AppName)) { MessageBox.Show(this, L("Builder_ProductNameRequired", "Product name is required."), L("Builder_PublishTitle", "Publish"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
         // A bare folder picker skipped the update URL and signing entirely, so both silently took a
         // default -- and a wrong update URL is the classic ClickOnce failure: the install works and
         // then never updates again.
@@ -2638,7 +2638,7 @@ public class PackageBuilderForm : Form
     {
         MessageBox.Show(
             this,
-            "1. Set source directory (build output of your app).\r\n2. Configure components, prerequisites, shortcuts, registry and advanced resources.\r\n3. Use Ctrl+F to search sections, Ctrl+Tab / Ctrl+Shift+Tab to move through authoring sections, F7 to validate and F5 to build.\r\n4. Save the .bsetup script.\r\n5. Build → produces a self-contained Setup.exe.",
+            L("Builder_HelpBody", "1. Set source directory (build output of your app).\r\n2. Configure components, prerequisites, shortcuts, registry and advanced resources.\r\n3. Use Ctrl+F to search sections, Ctrl+Tab / Ctrl+Shift+Tab to move through authoring sections, F7 to validate and F5 to build.\r\n4. Save the .bsetup script.\r\n5. Build → produces a self-contained Setup.exe."),
             "Beep Installer",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
@@ -2911,8 +2911,9 @@ public class PackageBuilderForm : Form
             // A scan failure must not take the builder down with it.
             SetStatus($"Scan failed: {ex.Message}");
             Engine.Diag.Warn("Builder", $"scan of '{dir}' failed", ex);
-            MessageBox.Show(this, $"Could not scan '{dir}':{Environment.NewLine}{ex.Message}",
-                "Scan failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this,
+                string.Format(L("Builder_ScanFailedBody", "Could not scan '{0}':{1}{2}"), dir, Environment.NewLine, ex.Message),
+                L("Builder_ScanFailedTitle", "Scan failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally
         {
@@ -3059,7 +3060,7 @@ public class PackageBuilderForm : Form
     private void OpenRecent(string path)
     {
         if (!_controller.ConfirmDiscardChanges(this)) return;
-        if (!File.Exists(path)) { MessageBox.Show(this, $"File not found: {path}", "Recent Script", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+        if (!File.Exists(path)) { MessageBox.Show(this, string.Format(L("Builder_FileNotFound", "File not found: {0}"), path), L("Builder_RecentScriptTitle", "Recent Script"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
         LoadProject(path);
     }
 
@@ -3075,7 +3076,7 @@ public class PackageBuilderForm : Form
             var (project, error) = InstallerScriptSerializer.Load(tempPath);
             if (project == null)
             {
-                MessageBox.Show(this, error ?? "Script could not be parsed.", "Script", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, error ?? L("Builder_ScriptParseFailed", "Script could not be parsed."), L("Builder_ScriptTitle", "Script"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
 
@@ -3088,7 +3089,7 @@ public class PackageBuilderForm : Form
             RefreshScriptPreview(force: true);
             SetStatus("Script applied.");
             if (showSuccess)
-                MessageBox.Show(this, "Script applied.", "Script", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, L("Builder_ScriptApplied", "Script applied."), L("Builder_ScriptTitle", "Script"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             return true;
         }
         finally

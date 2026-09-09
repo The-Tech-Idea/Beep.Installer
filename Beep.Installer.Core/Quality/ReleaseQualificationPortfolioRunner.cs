@@ -435,9 +435,12 @@ public sealed class ReleaseQualificationPortfolioRunner
 
     private static string GapMessage(ReleaseQualificationEvidence evidence)
     {
+        // FirstOrDefault over a record collection yields null, not an empty diagnostic, so evidence
+        // that failed without any Error-severity diagnostic used to throw here rather than fall
+        // through to the messages below.
         var diagnostic = evidence.Diagnostics.FirstOrDefault(d => d.Severity == ProjectSchemaDiagnosticSeverity.Error);
-        if (!string.IsNullOrWhiteSpace(diagnostic.Message))
-            return diagnostic.Message;
+        if (diagnostic is { Message: var diagnosticMessage } && !string.IsNullOrWhiteSpace(diagnosticMessage))
+            return diagnosticMessage;
         if (!string.IsNullOrWhiteSpace(evidence.Message))
             return evidence.Message;
         return evidence.Found

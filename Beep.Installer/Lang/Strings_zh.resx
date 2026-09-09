@@ -664,4 +664,503 @@
   <data name="Section_OptionalPackageMetadata" xml:space="preserve">
     <value>可选包元数据</value>
   </data>
+  <data name="App_FatalErrorBody" xml:space="preserve">
+    <value>严重错误：{0}{1}{1}崩溃日志已写入：{1}{2}</value>
+  </data>
+  <data name="App_FatalErrorTitle" xml:space="preserve">
+    <value>严重错误</value>
+  </data>
+  <data name="App_LogWrittenTo" xml:space="preserve">
+    <value>{0}{0}日志已写入：{0}{1}</value>
+  </data>
+  <data name="App_UnexpectedError" xml:space="preserve">
+    <value>意外错误：{0}</value>
+  </data>
+  <data name="Builder_AboutBody" xml:space="preserve">
+    <value>Beep Installer — 程序包生成器
+版本 1.0.0
+
+为 Windows 创建自包含的 Setup.exe 安装程序。</value>
+  </data>
+  <data name="Builder_AboutTitle" xml:space="preserve">
+    <value>关于 Beep Installer</value>
+  </data>
+  <data name="Builder_BrandingPreviewStep" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="Builder_BuildTitle" xml:space="preserve">
+    <value>生成</value>
+  </data>
+  <data name="Builder_FileNotFound" xml:space="preserve">
+    <value>未找到文件：{0}</value>
+  </data>
+  <data name="Builder_HelpBody" xml:space="preserve">
+    <value>1. 设置源目录（应用程序的生成输出）。
+2. 配置组件、先决条件、快捷方式、注册表和高级资源。
+3. 使用 Ctrl+F 搜索节，Ctrl+Tab / Ctrl+Shift+Tab 在编辑节之间移动，F7 验证，F5 生成。
+4. 保存 .bsetup 脚本。
+5. 生成 → 产生自包含的 Setup.exe。</value>
+  </data>
+  <data name="Builder_NoBuildYet" xml:space="preserve">
+    <value>尚未运行任何生成。</value>
+  </data>
+  <data name="Builder_OpenScriptTitle" xml:space="preserve">
+    <value>打开安装脚本</value>
+  </data>
+  <data name="Builder_OutputNotEmpty" xml:space="preserve">
+    <value>输出目录中已包含文件：
+{0}
+
+生成前是否清理？</value>
+  </data>
+  <data name="Builder_ProductNameRequired" xml:space="preserve">
+    <value>必须填写产品名称。</value>
+  </data>
+  <data name="Builder_PublishTitle" xml:space="preserve">
+    <value>发布</value>
+  </data>
+  <data name="Builder_ReadinessBlocked" xml:space="preserve">
+    <value>⛔ {0} 个阻止性问题</value>
+  </data>
+  <data name="Builder_ReadinessOk" xml:space="preserve">
+    <value>✓ 可以生成</value>
+  </data>
+  <data name="Builder_ReadinessWarn" xml:space="preserve">
+    <value>✓ 就绪 — {0} 个警告</value>
+  </data>
+  <data name="Builder_RecentScriptTitle" xml:space="preserve">
+    <value>最近的脚本</value>
+  </data>
+  <data name="Builder_SaveAsTitle" xml:space="preserve">
+    <value>另存为</value>
+  </data>
+  <data name="Builder_ScanFailedBody" xml:space="preserve">
+    <value>无法扫描“{0}”：{1}{2}</value>
+  </data>
+  <data name="Builder_ScanFailedTitle" xml:space="preserve">
+    <value>扫描失败</value>
+  </data>
+  <data name="Builder_ScriptApplied" xml:space="preserve">
+    <value>已应用脚本。</value>
+  </data>
+  <data name="Builder_ScriptNotSaved" xml:space="preserve">
+    <value>安装脚本尚未保存。生成前是否保存？</value>
+  </data>
+  <data name="Builder_ScriptParseFailed" xml:space="preserve">
+    <value>无法解析脚本。</value>
+  </data>
+  <data name="Builder_ScriptTitle" xml:space="preserve">
+    <value>脚本</value>
+  </data>
+  <data name="Common_Confirm" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="Common_CopyFailed" xml:space="preserve">
+    <value>复制失败</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Common_Info" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Common_SaveFailed" xml:space="preserve">
+    <value>保存失败</value>
+  </data>
+  <data name="Common_Validation" xml:space="preserve">
+    <value>验证</value>
+  </data>
+  <data name="Common_Warnings" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Complete_BundleTitle" xml:space="preserve">
+    <value>支持包</value>
+  </data>
+  <data name="Complete_NoBundle" xml:space="preserve">
+    <value>未生成支持包。</value>
+  </data>
+  <data name="Conditions_CannotSave" xml:space="preserve">
+    <value>无法保存 — 请先修复以下错误：</value>
+  </data>
+  <data name="Conditions_CountLabel" xml:space="preserve">
+    <value>条件</value>
+  </data>
+  <data name="Conditions_ErrorsLabel" xml:space="preserve">
+    <value>验证错误</value>
+  </data>
+  <data name="Conditions_Evaluation" xml:space="preserve">
+    <value>求值</value>
+  </data>
+  <data name="Conditions_Fail" xml:space="preserve">
+    <value>未通过</value>
+  </data>
+  <data name="Conditions_Pass" xml:space="preserve">
+    <value>通过</value>
+  </data>
+  <data name="Conditions_WarningsLabel" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Error_NoLog" xml:space="preserve">
+    <value>未生成日志文件。</value>
+  </data>
+  <data name="Error_ViewLogTitle" xml:space="preserve">
+    <value>查看日志</value>
+  </data>
+  <data name="Files_SourceRequired" xml:space="preserve">
+    <value>必须填写源路径。</value>
+  </data>
+  <data name="Grid_Description" xml:space="preserve">
+    <value>说明</value>
+  </data>
+  <data name="Grid_Id" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Grid_Name" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="Grid_Required" xml:space="preserve">
+    <value>必需</value>
+  </data>
+  <data name="Grid_Selected" xml:space="preserve">
+    <value>已选择</value>
+  </data>
+  <data name="LangMgr_CannotRemoveEnglish" xml:space="preserve">
+    <value>无法移除英语（基础语言）。</value>
+  </data>
+  <data name="LangMgr_CodeExists" xml:space="preserve">
+    <value>“{0}”已存在。</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveKey" xml:space="preserve">
+    <value>要从所有语言中移除键“{0}”吗？</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveLanguage" xml:space="preserve">
+    <value>要移除语言“{0}”及其所有翻译吗？</value>
+  </data>
+  <data name="LangMgr_CopyTemplate" xml:space="preserve">
+    <value>是否复制英文键作为模板？</value>
+  </data>
+  <data name="LangMgr_FilesSaved" xml:space="preserve">
+    <value>已保存 {0} 个语言文件。</value>
+  </data>
+  <data name="LangMgr_ImportError" xml:space="preserve">
+    <value>导入错误：{0}</value>
+  </data>
+  <data name="LangMgr_LanguageExists" xml:space="preserve">
+    <value>语言“{0}”已存在。</value>
+  </data>
+  <data name="LangMgr_SaveError" xml:space="preserve">
+    <value>保存 {0} 时出错：{1}</value>
+  </data>
+  <data name="LangMgr_Template" xml:space="preserve">
+    <value>模板</value>
+  </data>
+  <data name="License_MustAccept" xml:space="preserve">
+    <value>必须接受许可协议才能继续。</value>
+  </data>
+  <data name="Nav_Deployment" xml:space="preserve">
+    <value>部署</value>
+  </data>
+  <data name="Nav_Output" xml:space="preserve">
+    <value>输出</value>
+  </data>
+  <data name="Packaging_BadIdentity" xml:space="preserve">
+    <value>MSIX 标识必须为 3–50 个 ASCII 字母、数字、句点或连字符。</value>
+  </data>
+  <data name="Packaging_Button" xml:space="preserve">
+    <value>格式</value>
+  </data>
+  <data name="Packaging_ButtonHint" xml:space="preserve">
+    <value>选择输出格式并查看它无法承载的内容</value>
+  </data>
+  <data name="Packaging_Exe" xml:space="preserve">
+    <value>Setup.exe — 功能完整，随处可用</value>
+  </data>
+  <data name="Packaging_ExeFine" xml:space="preserve">
+    <value>此格式支持本项目中创作的所有内容。</value>
+  </data>
+  <data name="Packaging_Format" xml:space="preserve">
+    <value>输出格式</value>
+  </data>
+  <data name="Packaging_Heading" xml:space="preserve">
+    <value>生成应产出什么？</value>
+  </data>
+  <data name="Packaging_IdentityHint" xml:space="preserve">
+    <value>3–50 个 ASCII 字母、数字、句点或连字符。这是包标识，而非显示名称。</value>
+  </data>
+  <data name="Packaging_LostActions" xml:space="preserve">
+    <value>{0} 个自定义操作 — MSIX 不运行任何安装时可执行文件。</value>
+  </data>
+  <data name="Packaging_LostCatalogs" xml:space="preserve">
+    <value>{0} 个先决条件目录 — 目录展开会产生 MSIX 无法运行的资源。</value>
+  </data>
+  <data name="Packaging_LostHeading" xml:space="preserve">
+    <value>此格式无法承载以下您已创作的内容：</value>
+  </data>
+  <data name="Packaging_LostPackages" xml:space="preserve">
+    <value>{0} 个包节点 — 这些是套件/链式安装资源。</value>
+  </data>
+  <data name="Packaging_LostPrereqs" xml:space="preserve">
+    <value>{0} 个先决条件 — MSIX 无法链式调用安装程序。</value>
+  </data>
+  <data name="Packaging_LostResources" xml:space="preserve">
+    <value>{0} 个类型化资源操作 — MSIX 无法执行扩展提供程序，生成将被拒绝。</value>
+  </data>
+  <data name="Packaging_LostServices" xml:space="preserve">
+    <value>{0} 个 Windows 服务 — MSIX 输出中不表示服务注册。</value>
+  </data>
+  <data name="Packaging_Msix" xml:space="preserve">
+    <value>MSIX 包 — 应用商店与托管部署</value>
+  </data>
+  <data name="Packaging_MsixBundle" xml:space="preserve">
+    <value>MSIX 捆绑包 — 多种体系结构合于一包</value>
+  </data>
+  <data name="Packaging_MsixFine" xml:space="preserve">
+    <value>本项目不依赖 MSIX 无法表示的任何功能。</value>
+  </data>
+  <data name="Packaging_NeedPublisher" xml:space="preserve">
+    <value>MSIX 需要以证书使用者作为发布者。</value>
+  </data>
+  <data name="Packaging_SelfContained" xml:space="preserve">
+    <value>包含 .NET 运行时</value>
+  </data>
+  <data name="Packaging_SingleFile" xml:space="preserve">
+    <value>单一自包含文件</value>
+  </data>
+  <data name="Packaging_Title" xml:space="preserve">
+    <value>输出格式</value>
+  </data>
+  <data name="Publish_Folder" xml:space="preserve">
+    <value>发布到文件夹：</value>
+  </data>
+  <data name="Publish_FolderHint" xml:space="preserve">
+    <value>文件现在的写入位置 — 本地文件夹、共享或暂存目录。</value>
+  </data>
+  <data name="Publish_FolderUnreachable" xml:space="preserve">
+    <value>该文件夹的父目录不存在。</value>
+  </data>
+  <data name="Publish_Go" xml:space="preserve">
+    <value>发布</value>
+  </data>
+  <data name="Publish_Heading" xml:space="preserve">
+    <value>发布 ClickOnce 部署</value>
+  </data>
+  <data name="Publish_NeedFolder" xml:space="preserve">
+    <value>请选择要发布到的文件夹。</value>
+  </data>
+  <data name="Publish_NoCertificate" xml:space="preserve">
+    <value>尚未配置证书 — 请在“代码签名”中设置，否则仍将以未签名方式发布。</value>
+  </data>
+  <data name="Publish_Sign" xml:space="preserve">
+    <value>对清单签名</value>
+  </data>
+  <data name="Publish_Title" xml:space="preserve">
+    <value>发布</value>
+  </data>
+  <data name="Publish_UnsignedWarning" xml:space="preserve">
+    <value>未签名：Windows SmartScreen 会在运行前向用户发出警告。</value>
+  </data>
+  <data name="Publish_UpdateUrl" xml:space="preserve">
+    <value>客户端检查：</value>
+  </data>
+  <data name="Publish_WillSign" xml:space="preserve">
+    <value>将使用已配置的证书对清单签名。</value>
+  </data>
+  <data name="Quick_Button" xml:space="preserve">
+    <value>快速开始</value>
+  </data>
+  <data name="Quick_ButtonHint" xml:space="preserve">
+    <value>引导设置生成所需的字段</value>
+  </data>
+  <data name="Quick_CreateAndBuild" xml:space="preserve">
+    <value>创建</value>
+  </data>
+  <data name="Quick_NeedFolder" xml:space="preserve">
+    <value>请选择应用程序的安装位置。</value>
+  </data>
+  <data name="Quick_NeedName" xml:space="preserve">
+    <value>必须填写产品名称 — 用户在安装和卸载时会看到它。</value>
+  </data>
+  <data name="Quick_NeedSource" xml:space="preserve">
+    <value>请选择包含待安装应用程序的文件夹。</value>
+  </data>
+  <data name="Quick_NeedVersion" xml:space="preserve">
+    <value>版本号需形如 1.0 或 1.0.0 — 升级是通过比较它来决定的。</value>
+  </data>
+  <data name="Quick_PerMachine" xml:space="preserve">
+    <value>所有用户（Program Files，需要管理员）</value>
+  </data>
+  <data name="Quick_PerMachineShort" xml:space="preserve">
+    <value>所有用户</value>
+  </data>
+  <data name="Quick_PerUser" xml:space="preserve">
+    <value>仅我自己（无需管理员）</value>
+  </data>
+  <data name="Quick_PerUserShort" xml:space="preserve">
+    <value>仅我自己</value>
+  </data>
+  <data name="Quick_PickSource" xml:space="preserve">
+    <value>选择要安装的文件夹</value>
+  </data>
+  <data name="Quick_ProductExplain" xml:space="preserve">
+    <value>用户将看到的名称和版本，显示在“添加或删除程序”以及安装程序本身中。</value>
+  </data>
+  <data name="Quick_ProductHeading" xml:space="preserve">
+    <value>您要安装什么？</value>
+  </data>
+  <data name="Quick_ReviewHeading" xml:space="preserve">
+    <value>可以生成</value>
+  </data>
+  <data name="Quick_Scope" xml:space="preserve">
+    <value>范围：</value>
+  </data>
+  <data name="Quick_SourceEmpty" xml:space="preserve">
+    <value>该文件夹为空 — 安装程序将不包含任何内容。</value>
+  </data>
+  <data name="Quick_SourceHeading" xml:space="preserve">
+    <value>文件在哪里？</value>
+  </data>
+  <data name="Quick_SourceMissing" xml:space="preserve">
+    <value>该文件夹不存在。</value>
+  </data>
+  <data name="Quick_SourceSummary" xml:space="preserve">
+    <value>将打包 {0} 个文件，{1:F1} MB。</value>
+  </data>
+  <data name="Quick_SourceUnreadable" xml:space="preserve">
+    <value>无法读取该文件夹。</value>
+  </data>
+  <data name="Quick_StepOf" xml:space="preserve">
+    <value>第 {0} 步，共 {1} 步</value>
+  </data>
+  <data name="Quick_TargetHeading" xml:space="preserve">
+    <value>应安装到何处？</value>
+  </data>
+  <data name="Quick_Title" xml:space="preserve">
+    <value>新建安装程序 — 快速开始</value>
+  </data>
+  <data name="Section_CustomPageTitle" xml:space="preserve">
+    <value>其他选项</value>
+  </data>
+  <data name="Section_CustomPages" xml:space="preserve">
+    <value>自定义向导页</value>
+  </data>
+  <data name="Section_EnvironmentVariables" xml:space="preserve">
+    <value>环境变量</value>
+  </data>
+  <data name="Section_EnvironmentVariablesHelp" xml:space="preserve">
+    <value>安装时写入、卸载时移除的变量。使用 {app} 引用安装文件夹。</value>
+  </data>
+  <data name="Section_FileAssociations" xml:space="preserve">
+    <value>文件关联</value>
+  </data>
+  <data name="Section_MsixOptionalPackages" xml:space="preserve">
+    <value>MSIX 可选包</value>
+  </data>
+  <data name="Section_Packages" xml:space="preserve">
+    <value>包节点</value>
+  </data>
+  <data name="Section_PackagesHelp" xml:space="preserve">
+    <value>组合到此安装程序中的子包，来自本地路径或下载 URL。</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogs" xml:space="preserve">
+    <value>先决条件目录</value>
+  </data>
+  <data name="Section_Resources" xml:space="preserve">
+    <value>类型化资源</value>
+  </data>
+  <data name="Section_ResourcesDefaultName" xml:space="preserve">
+    <value>复制文件</value>
+  </data>
+  <data name="Section_Supersedence" xml:space="preserve">
+    <value>取代关系</value>
+  </data>
+  <data name="Section_UpdateChannels" xml:space="preserve">
+    <value>更新通道</value>
+  </data>
+  <data name="Section_WindowsServices" xml:space="preserve">
+    <value>Windows 服务</value>
+  </data>
+  <data name="Signing_Button" xml:space="preserve">
+    <value>签名</value>
+  </data>
+  <data name="Signing_ButtonHint" xml:space="preserve">
+    <value>选择此安装程序的签名方式</value>
+  </data>
+  <data name="Signing_Credential" xml:space="preserve">
+    <value>凭据：</value>
+  </data>
+  <data name="Signing_Endpoint" xml:space="preserve">
+    <value>终结点：</value>
+  </data>
+  <data name="Signing_EndpointNotAbsolute" xml:space="preserve">
+    <value>终结点必须是绝对 URL。</value>
+  </data>
+  <data name="Signing_Heading" xml:space="preserve">
+    <value>此安装程序应如何签名？</value>
+  </data>
+  <data name="Signing_KeyId" xml:space="preserve">
+    <value>密钥 ID：</value>
+  </data>
+  <data name="Signing_Method" xml:space="preserve">
+    <value>签名方式</value>
+  </data>
+  <data name="Signing_NeedEndpoint" xml:space="preserve">
+    <value>远程签名服务需要一个终结点。</value>
+  </data>
+  <data name="Signing_NeedPfx" xml:space="preserve">
+    <value>请选择用于签名的 .pfx 文件。</value>
+  </data>
+  <data name="Signing_NeedSelector" xml:space="preserve">
+    <value>请提供指纹或使用者名称 — 其中之一必须能选定证书。</value>
+  </data>
+  <data name="Signing_None" xml:space="preserve">
+    <value>不签名（SmartScreen 会警告用户）</value>
+  </data>
+  <data name="Signing_Pfx" xml:space="preserve">
+    <value>证书文件 (.pfx)</value>
+  </data>
+  <data name="Signing_PfxMissing" xml:space="preserve">
+    <value>该证书文件不存在。</value>
+  </data>
+  <data name="Signing_Provider" xml:space="preserve">
+    <value>提供程序：</value>
+  </data>
+  <data name="Signing_Remote" xml:space="preserve">
+    <value>远程签名服务或 HSM</value>
+  </data>
+  <data name="Signing_Store" xml:space="preserve">
+    <value>Windows 存储中的证书</value>
+  </data>
+  <data name="Signing_StoreLocation" xml:space="preserve">
+    <value>存储位置：</value>
+  </data>
+  <data name="Signing_StoreName" xml:space="preserve">
+    <value>存储名称：</value>
+  </data>
+  <data name="Signing_Subject" xml:space="preserve">
+    <value>或使用者名称：</value>
+  </data>
+  <data name="Signing_Thumbprint" xml:space="preserve">
+    <value>指纹：</value>
+  </data>
+  <data name="Signing_TimestampNotAbsolute" xml:space="preserve">
+    <value>时间戳 URL 必须是绝对地址，例如 http://timestamp.digicert.com。</value>
+  </data>
+  <data name="Signing_Title" xml:space="preserve">
+    <value>代码签名</value>
+  </data>
+  <data name="Wizard_ConfirmCancel" xml:space="preserve">
+    <value>确定要取消安装吗？</value>
+  </data>
+  <data name="Wizard_Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Wizard_Prerequisites" xml:space="preserve">
+    <value>先决条件</value>
+  </data>
 </root>

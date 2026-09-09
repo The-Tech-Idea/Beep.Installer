@@ -236,7 +236,7 @@ public class BuildResultForm : Form
         runBtn.Click += (_, _) =>
         {
             try { Process.Start(new ProcessStartInfo(result.OutputFile) { UseShellExecute = true }); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, L("Common_Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
         var openFolderBtn = new Button
         {
@@ -248,7 +248,7 @@ public class BuildResultForm : Form
         openFolderBtn.Click += (_, _) =>
         {
             try { Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{result.OutputFile}\"") { UseShellExecute = true }); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, L("Common_Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
         actions.Controls.AddRange(new Control[] { closeBtn, runBtn, openFolderBtn });
 

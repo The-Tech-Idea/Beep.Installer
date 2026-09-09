@@ -82,7 +82,7 @@ public class CompletePage : UserControl, IInstallerPage
             if (!string.IsNullOrWhiteSpace(SupportBundlePath) && File.Exists(SupportBundlePath))
                 Process.Start("notepad.exe", SupportBundlePath);
             else
-                MessageBox.Show(this, "No support bundle was generated.", "Support Bundle",
+                MessageBox.Show(this, LanguageManager.GetOrDefault("Complete_NoBundle", "No support bundle was generated."), LanguageManager.GetOrDefault("Complete_BundleTitle", "Support Bundle"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
 

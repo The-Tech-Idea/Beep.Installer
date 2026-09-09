@@ -218,12 +218,12 @@ public class LanguageManagerForm : Form
         code = code.Trim().ToLower();
         if (_allStrings.ContainsKey(code))
         {
-            MessageBox.Show($"Language '{code}' already exists.", "Info");
+            MessageBox.Show(string.Format(L("LangMgr_LanguageExists", "Language '{0}' already exists."), code), L("Common_Info", "Info"));
             return;
         }
 
         // Copy English strings as template (values left empty for translation)
-        var copyFromEn = MessageBox.Show("Copy English keys as template?", "Template", MessageBoxButtons.YesNo) == DialogResult.Yes;
+        var copyFromEn = MessageBox.Show(L("LangMgr_CopyTemplate", "Copy English keys as template?"), L("LangMgr_Template", "Template"), MessageBoxButtons.YesNo) == DialogResult.Yes;
         if (copyFromEn && _allStrings.TryGetValue("en", out var enStrings))
             _allStrings[code] = new Dictionary<string, string>(enStrings.ToDictionary(k => k.Key, _ => ""), StringComparer.OrdinalIgnoreCase);
         else
@@ -242,7 +242,7 @@ public class LanguageManagerForm : Form
         if (string.IsNullOrWhiteSpace(code)) return;
 
         code = code.Trim().ToLower();
-        if (_allStrings.ContainsKey(code)) { MessageBox.Show($"'{code}' already exists."); return; }
+        if (_allStrings.ContainsKey(code)) { MessageBox.Show(string.Format(L("LangMgr_CodeExists", "'{0}' already exists."), code)); return; }
 
         _allStrings[code] = new Dictionary<string, string>(_allStrings[source], StringComparer.OrdinalIgnoreCase);
         _langSelector.Items.Add(code);
@@ -253,8 +253,8 @@ public class LanguageManagerForm : Form
     private void RemoveLanguage()
     {
         var code = _langSelector.SelectedItem?.ToString();
-        if (code == null || code == "en") { MessageBox.Show("Cannot remove English (base language)."); return; }
-        if (MessageBox.Show($"Remove language '{code}' and all its translations?", "Confirm", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+        if (code == null || code == "en") { MessageBox.Show(L("LangMgr_CannotRemoveEnglish", "Cannot remove English (base language).")); return; }
+        if (MessageBox.Show(string.Format(L("LangMgr_ConfirmRemoveLanguage", "Remove language '{0}' and all its translations?"), code), L("Common_Confirm", "Confirm"), MessageBoxButtons.YesNo) != DialogResult.Yes) return;
 
         _allStrings.Remove(code);
         _langSelector.Items.Remove(code);
@@ -282,7 +282,7 @@ public class LanguageManagerForm : Form
         if (_grid.CurrentRow == null) return;
         var key = _grid.CurrentRow.Cells[0].Value?.ToString();
         if (key == null) return;
-        if (MessageBox.Show($"Remove key '{key}' from ALL languages?", "Confirm", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+        if (MessageBox.Show(string.Format(L("LangMgr_ConfirmRemoveKey", "Remove key '{0}' from ALL languages?"), key), L("Common_Confirm", "Confirm"), MessageBoxButtons.YesNo) != DialogResult.Yes) return;
 
         foreach (var lang in _allStrings.Values)
             lang.Remove(key);
@@ -314,11 +314,11 @@ public class LanguageManagerForm : Form
                 doc.Save(path);
                 saved++;
             }
-            catch (Exception ex) { MessageBox.Show($"Error saving {code}: {ex.Message}"); }
+            catch (Exception ex) { MessageBox.Show(string.Format(L("LangMgr_SaveError", "Error saving {0}: {1}"), code, ex.Message)); }
         }
 
         _statusLabel.Text = $"Saved {saved} language files.";
-        MessageBox.Show($"{saved} language files saved.", "Done");
+        MessageBox.Show(string.Format(L("LangMgr_FilesSaved", "{0} language files saved."), saved), L("Common_Done", "Done"));
     }
 
     private void ExportToCsv()
@@ -366,7 +366,7 @@ public class LanguageManagerForm : Form
             _statusLabel.Text = $"Imported from {dlg.FileName}";
             ShowLanguage(_currentLang);
         }
-        catch (Exception ex) { MessageBox.Show($"Import error: {ex.Message}"); }
+        catch (Exception ex) { MessageBox.Show(string.Format(L("LangMgr_ImportError", "Import error: {0}"), ex.Message)); }
     }
 
     private static string[] ParseCsvLine(string line)

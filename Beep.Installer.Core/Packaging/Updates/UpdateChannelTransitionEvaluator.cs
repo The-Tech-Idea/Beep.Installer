@@ -111,9 +111,9 @@ public static class UpdateChannelTransitionEvaluator
             {
                 reasons.Add($"Critical update bypasses maintenance window '{channel.MaintenanceWindow}'.");
             }
-            else if (deadlineReached)
+            else if (deadlineReached && channel.DeadlineUtc is { } deadline)
             {
-                reasons.Add($"Update deadline {channel.DeadlineUtc.Value:O} has been reached; maintenance window '{channel.MaintenanceWindow}' no longer holds the transition.");
+                reasons.Add($"Update deadline {deadline:O} has been reached; maintenance window '{channel.MaintenanceWindow}' no longer holds the transition.");
             }
             else
             {

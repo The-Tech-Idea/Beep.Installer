@@ -531,15 +531,16 @@ public static class UpdateChannelFeedPackageService
             options.CancellationToken.ThrowIfCancellationRequested();
             if (file is null) throw new IOException("Delta manifest contains a null file entry.");
             if (file.Action is not ("add" or "update")) continue;
-            var parts = (file.BlobPath ?? "").Split('/');
+            var blobPath = file.BlobPath ?? "";
+            var parts = blobPath.Split('/');
             if (parts.Length != 4 || parts[0] != "blobs" || parts[1] != "sha256"
                 || !IsTreeHash(file.TargetSha256) || parts[2] != file.TargetSha256
                 || string.IsNullOrWhiteSpace(parts[3]) || parts[3] is "." or ".."
                 || parts[3].IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
                 || parts[3].EndsWith('.') || parts[3].EndsWith(' ') || file.Size < 0)
                 throw new IOException("Delta manifest contains an invalid content-addressed blob path or size.");
-            if (!downloaded.Add(file.BlobPath)) continue;
-            var blob = Path.Combine(root, file.BlobPath.Replace('/', Path.DirectorySeparatorChar));
+            if (!downloaded.Add(blobPath)) continue;
+            var blob = Path.Combine(root, blobPath.Replace('/', Path.DirectorySeparatorChar));
             bool MatchesBlob()
             {
                 if (!File.Exists(blob)) return false;
@@ -553,7 +554,7 @@ public static class UpdateChannelFeedPackageService
                 File.Delete(blob);
                 File.Delete(blob + ".partial");
             }
-            Download(file.BlobPath, file.Size);
+            Download(blobPath, file.Size);
             if (!MatchesBlob())
             {
                 File.Delete(blob);

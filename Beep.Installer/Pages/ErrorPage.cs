@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using TheTechIdea.Beep.Winform.Controls;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Pages;
 
@@ -67,7 +68,7 @@ public class ErrorPage : UserControl, IInstallerPage
             if (!string.IsNullOrEmpty(_logPath) && File.Exists(_logPath))
                 Process.Start("notepad.exe", _logPath);
             else
-                MessageBox.Show(this, "No log file was generated.", "View Log",
+                MessageBox.Show(this, L("Error_NoLog", "No log file was generated."), L("Error_ViewLogTitle", "View Log"),
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
         _viewSupportBundleBtn = new BeepButton
@@ -83,7 +84,7 @@ public class ErrorPage : UserControl, IInstallerPage
             if (!string.IsNullOrEmpty(_supportBundlePath) && File.Exists(_supportBundlePath))
                 Process.Start("notepad.exe", _supportBundlePath);
             else
-                MessageBox.Show(this, "No support bundle was generated.", "Support Bundle",
+                MessageBox.Show(this, L("Complete_NoBundle", "No support bundle was generated."), L("Complete_BundleTitle", "Support Bundle"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
         _retryBtn = new BeepButton

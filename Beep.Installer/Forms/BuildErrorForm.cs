@@ -148,7 +148,7 @@ public class BuildErrorForm : Form
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Copy failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, ex.Message, L("Common_CopyFailed", "Copy failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         };
         var selectAllBtn = new Button
@@ -195,7 +195,7 @@ public class BuildErrorForm : Form
         try { File.WriteAllText(dlg.FileName, text); }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, ex.Message, L("Common_SaveFailed", "Save failed"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

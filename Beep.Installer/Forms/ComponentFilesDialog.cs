@@ -147,7 +147,7 @@ public class ComponentFilesDialog : Form
 
     private void AddFromEditor()
     {
-        if (string.IsNullOrWhiteSpace(_sourceBox.Text)) { MessageBox.Show(this, "Source path required."); return; }
+        if (string.IsNullOrWhiteSpace(_sourceBox.Text)) { MessageBox.Show(this, L("Files_SourceRequired", "Source path required.")); return; }
         var f = new FileCopyOperation
         {
             SourcePath = _sourceBox.Text.Trim(),

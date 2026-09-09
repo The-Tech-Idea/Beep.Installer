@@ -664,4 +664,503 @@
   <data name="Section_OptionalPackageMetadata" xml:space="preserve">
     <value>省略可能なパッケージ メタデータ</value>
   </data>
+  <data name="App_FatalErrorBody" xml:space="preserve">
+    <value>致命的なエラー: {0}{1}{1}クラッシュログの出力先:{1}{2}</value>
+  </data>
+  <data name="App_FatalErrorTitle" xml:space="preserve">
+    <value>致命的なエラー</value>
+  </data>
+  <data name="App_LogWrittenTo" xml:space="preserve">
+    <value>{0}{0}ログの出力先:{0}{1}</value>
+  </data>
+  <data name="App_UnexpectedError" xml:space="preserve">
+    <value>予期しないエラー: {0}</value>
+  </data>
+  <data name="Builder_AboutBody" xml:space="preserve">
+    <value>Beep Installer — パッケージビルダー
+バージョン 1.0.0
+
+Windows 向けの自己完結型 Setup.exe インストーラーを作成します。</value>
+  </data>
+  <data name="Builder_AboutTitle" xml:space="preserve">
+    <value>Beep Installer について</value>
+  </data>
+  <data name="Builder_BrandingPreviewStep" xml:space="preserve">
+    <value>セットアップ</value>
+  </data>
+  <data name="Builder_BuildTitle" xml:space="preserve">
+    <value>ビルド</value>
+  </data>
+  <data name="Builder_FileNotFound" xml:space="preserve">
+    <value>ファイルが見つかりません: {0}</value>
+  </data>
+  <data name="Builder_HelpBody" xml:space="preserve">
+    <value>1. ソースディレクトリ（アプリのビルド出力）を設定します。
+2. コンポーネント、前提条件、ショートカット、レジストリ、詳細リソースを構成します。
+3. Ctrl+F でセクションを検索、Ctrl+Tab / Ctrl+Shift+Tab でセクションを移動、F7 で検証、F5 でビルドします。
+4. .bsetup スクリプトを保存します。
+5. ビルド → 自己完結型の Setup.exe を生成します。</value>
+  </data>
+  <data name="Builder_NoBuildYet" xml:space="preserve">
+    <value>まだビルドが実行されていません。</value>
+  </data>
+  <data name="Builder_OpenScriptTitle" xml:space="preserve">
+    <value>インストーラースクリプトを開く</value>
+  </data>
+  <data name="Builder_OutputNotEmpty" xml:space="preserve">
+    <value>出力ディレクトリには既にファイルがあります:
+{0}
+
+ビルド前にクリーンしますか?</value>
+  </data>
+  <data name="Builder_ProductNameRequired" xml:space="preserve">
+    <value>製品名は必須です。</value>
+  </data>
+  <data name="Builder_PublishTitle" xml:space="preserve">
+    <value>発行</value>
+  </data>
+  <data name="Builder_ReadinessBlocked" xml:space="preserve">
+    <value>⛔ {0} 件のブロッキング問題</value>
+  </data>
+  <data name="Builder_ReadinessOk" xml:space="preserve">
+    <value>✓ ビルド可能</value>
+  </data>
+  <data name="Builder_ReadinessWarn" xml:space="preserve">
+    <value>✓ 準備完了 — 警告 {0} 件</value>
+  </data>
+  <data name="Builder_RecentScriptTitle" xml:space="preserve">
+    <value>最近のスクリプト</value>
+  </data>
+  <data name="Builder_SaveAsTitle" xml:space="preserve">
+    <value>名前を付けて保存</value>
+  </data>
+  <data name="Builder_ScanFailedBody" xml:space="preserve">
+    <value>'{0}' をスキャンできませんでした:{1}{2}</value>
+  </data>
+  <data name="Builder_ScanFailedTitle" xml:space="preserve">
+    <value>スキャンに失敗しました</value>
+  </data>
+  <data name="Builder_ScriptApplied" xml:space="preserve">
+    <value>スクリプトを適用しました。</value>
+  </data>
+  <data name="Builder_ScriptNotSaved" xml:space="preserve">
+    <value>インストーラースクリプトが保存されていません。ビルド前に保存しますか?</value>
+  </data>
+  <data name="Builder_ScriptParseFailed" xml:space="preserve">
+    <value>スクリプトを解析できませんでした。</value>
+  </data>
+  <data name="Builder_ScriptTitle" xml:space="preserve">
+    <value>スクリプト</value>
+  </data>
+  <data name="Common_Confirm" xml:space="preserve">
+    <value>確認</value>
+  </data>
+  <data name="Common_CopyFailed" xml:space="preserve">
+    <value>コピーに失敗しました</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="Common_Info" xml:space="preserve">
+    <value>情報</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Common_SaveFailed" xml:space="preserve">
+    <value>保存に失敗しました</value>
+  </data>
+  <data name="Common_Validation" xml:space="preserve">
+    <value>検証</value>
+  </data>
+  <data name="Common_Warnings" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Complete_BundleTitle" xml:space="preserve">
+    <value>サポートバンドル</value>
+  </data>
+  <data name="Complete_NoBundle" xml:space="preserve">
+    <value>サポートバンドルは生成されませんでした。</value>
+  </data>
+  <data name="Conditions_CannotSave" xml:space="preserve">
+    <value>保存できません — 次のエラーを先に修正してください:</value>
+  </data>
+  <data name="Conditions_CountLabel" xml:space="preserve">
+    <value>条件</value>
+  </data>
+  <data name="Conditions_ErrorsLabel" xml:space="preserve">
+    <value>検証エラー</value>
+  </data>
+  <data name="Conditions_Evaluation" xml:space="preserve">
+    <value>評価</value>
+  </data>
+  <data name="Conditions_Fail" xml:space="preserve">
+    <value>失敗</value>
+  </data>
+  <data name="Conditions_Pass" xml:space="preserve">
+    <value>成功</value>
+  </data>
+  <data name="Conditions_WarningsLabel" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Error_NoLog" xml:space="preserve">
+    <value>ログファイルは生成されませんでした。</value>
+  </data>
+  <data name="Error_ViewLogTitle" xml:space="preserve">
+    <value>ログを表示</value>
+  </data>
+  <data name="Files_SourceRequired" xml:space="preserve">
+    <value>ソースパスは必須です。</value>
+  </data>
+  <data name="Grid_Description" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="Grid_Id" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Grid_Name" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="Grid_Required" xml:space="preserve">
+    <value>必須</value>
+  </data>
+  <data name="Grid_Selected" xml:space="preserve">
+    <value>選択済み</value>
+  </data>
+  <data name="LangMgr_CannotRemoveEnglish" xml:space="preserve">
+    <value>英語 (基本言語) は削除できません。</value>
+  </data>
+  <data name="LangMgr_CodeExists" xml:space="preserve">
+    <value>'{0}' は既に存在します。</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveKey" xml:space="preserve">
+    <value>キー '{0}' をすべての言語から削除しますか?</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveLanguage" xml:space="preserve">
+    <value>言語 '{0}' とそのすべての翻訳を削除しますか?</value>
+  </data>
+  <data name="LangMgr_CopyTemplate" xml:space="preserve">
+    <value>英語のキーをテンプレートとしてコピーしますか?</value>
+  </data>
+  <data name="LangMgr_FilesSaved" xml:space="preserve">
+    <value>{0} 件の言語ファイルを保存しました。</value>
+  </data>
+  <data name="LangMgr_ImportError" xml:space="preserve">
+    <value>インポートエラー: {0}</value>
+  </data>
+  <data name="LangMgr_LanguageExists" xml:space="preserve">
+    <value>言語 '{0}' は既に存在します。</value>
+  </data>
+  <data name="LangMgr_SaveError" xml:space="preserve">
+    <value>{0} の保存エラー: {1}</value>
+  </data>
+  <data name="LangMgr_Template" xml:space="preserve">
+    <value>テンプレート</value>
+  </data>
+  <data name="License_MustAccept" xml:space="preserve">
+    <value>続行するにはライセンスに同意する必要があります。</value>
+  </data>
+  <data name="Nav_Deployment" xml:space="preserve">
+    <value>デプロイ</value>
+  </data>
+  <data name="Nav_Output" xml:space="preserve">
+    <value>出力</value>
+  </data>
+  <data name="Packaging_BadIdentity" xml:space="preserve">
+    <value>MSIX ID は 3〜50 文字の ASCII 英字、数字、ピリオド、ハイフンで指定してください。</value>
+  </data>
+  <data name="Packaging_Button" xml:space="preserve">
+    <value>形式</value>
+  </data>
+  <data name="Packaging_ButtonHint" xml:space="preserve">
+    <value>出力形式を選び、その形式で扱えないものを確認します</value>
+  </data>
+  <data name="Packaging_Exe" xml:space="preserve">
+    <value>Setup.exe — 全機能、どこでも動作</value>
+  </data>
+  <data name="Packaging_ExeFine" xml:space="preserve">
+    <value>このプロジェクトで作成した内容はすべてこの形式でサポートされます。</value>
+  </data>
+  <data name="Packaging_Format" xml:space="preserve">
+    <value>出力形式</value>
+  </data>
+  <data name="Packaging_Heading" xml:space="preserve">
+    <value>ビルドで何を生成しますか?</value>
+  </data>
+  <data name="Packaging_IdentityHint" xml:space="preserve">
+    <value>3〜50 文字の ASCII 英字、数字、ピリオド、ハイフン。これは表示名ではなくパッケージ ID です。</value>
+  </data>
+  <data name="Packaging_LostActions" xml:space="preserve">
+    <value>{0} 件のカスタムアクション — MSIX はインストール時に実行ファイルを実行しません。</value>
+  </data>
+  <data name="Packaging_LostCatalogs" xml:space="preserve">
+    <value>{0} 件の前提条件カタログ — カタログ展開は MSIX が実行できないリソースを生成します。</value>
+  </data>
+  <data name="Packaging_LostHeading" xml:space="preserve">
+    <value>この形式では、作成済みの次の内容を扱えません:</value>
+  </data>
+  <data name="Packaging_LostPackages" xml:space="preserve">
+    <value>{0} 件のパッケージノード — これらはスイート/チェイナーのリソースです。</value>
+  </data>
+  <data name="Packaging_LostPrereqs" xml:space="preserve">
+    <value>{0} 件の前提条件 — MSIX はインストーラーを連鎖実行できません。</value>
+  </data>
+  <data name="Packaging_LostResources" xml:space="preserve">
+    <value>{0} 件の型付きリソース操作 — MSIX は拡張プロバイダーを実行できず、ビルドは拒否されます。</value>
+  </data>
+  <data name="Packaging_LostServices" xml:space="preserve">
+    <value>{0} 件の Windows サービス — サービス登録は MSIX 出力では表現されません。</value>
+  </data>
+  <data name="Packaging_Msix" xml:space="preserve">
+    <value>MSIX パッケージ — ストアおよび管理された配布</value>
+  </data>
+  <data name="Packaging_MsixBundle" xml:space="preserve">
+    <value>MSIX バンドル — 複数のアーキテクチャを 1 つのパッケージに</value>
+  </data>
+  <data name="Packaging_MsixFine" xml:space="preserve">
+    <value>このプロジェクトには MSIX で表現できない機能への依存はありません。</value>
+  </data>
+  <data name="Packaging_NeedPublisher" xml:space="preserve">
+    <value>MSIX には発行者として証明書のサブジェクトが必要です。</value>
+  </data>
+  <data name="Packaging_SelfContained" xml:space="preserve">
+    <value>.NET ランタイムを含める</value>
+  </data>
+  <data name="Packaging_SingleFile" xml:space="preserve">
+    <value>単一の自己完結型ファイル</value>
+  </data>
+  <data name="Packaging_Title" xml:space="preserve">
+    <value>出力形式</value>
+  </data>
+  <data name="Publish_Folder" xml:space="preserve">
+    <value>発行先フォルダー:</value>
+  </data>
+  <data name="Publish_FolderHint" xml:space="preserve">
+    <value>ファイルの書き込み先 — ローカルフォルダー、共有、またはステージングディレクトリ。</value>
+  </data>
+  <data name="Publish_FolderUnreachable" xml:space="preserve">
+    <value>そのフォルダーの親が存在しません。</value>
+  </data>
+  <data name="Publish_Go" xml:space="preserve">
+    <value>発行</value>
+  </data>
+  <data name="Publish_Heading" xml:space="preserve">
+    <value>ClickOnce 配置を発行</value>
+  </data>
+  <data name="Publish_NeedFolder" xml:space="preserve">
+    <value>発行先のフォルダーを選択してください。</value>
+  </data>
+  <data name="Publish_NoCertificate" xml:space="preserve">
+    <value>証明書がまだ構成されていません — コード署名で設定してください。設定しない場合は署名なしで発行されます。</value>
+  </data>
+  <data name="Publish_Sign" xml:space="preserve">
+    <value>マニフェストに署名する</value>
+  </data>
+  <data name="Publish_Title" xml:space="preserve">
+    <value>発行</value>
+  </data>
+  <data name="Publish_UnsignedWarning" xml:space="preserve">
+    <value>署名なし: 実行前に Windows SmartScreen が警告します。</value>
+  </data>
+  <data name="Publish_UpdateUrl" xml:space="preserve">
+    <value>クライアントの確認先:</value>
+  </data>
+  <data name="Publish_WillSign" xml:space="preserve">
+    <value>マニフェストは構成済みの証明書で署名されます。</value>
+  </data>
+  <data name="Quick_Button" xml:space="preserve">
+    <value>クイックスタート</value>
+  </data>
+  <data name="Quick_ButtonHint" xml:space="preserve">
+    <value>ビルドに必要な項目をガイド付きで設定</value>
+  </data>
+  <data name="Quick_CreateAndBuild" xml:space="preserve">
+    <value>作成</value>
+  </data>
+  <data name="Quick_NeedFolder" xml:space="preserve">
+    <value>アプリケーションのインストール先を選択してください。</value>
+  </data>
+  <data name="Quick_NeedName" xml:space="preserve">
+    <value>製品名は必須です — インストールおよびアンインストール時にユーザーに表示されます。</value>
+  </data>
+  <data name="Quick_NeedSource" xml:space="preserve">
+    <value>インストールするアプリケーションが入ったフォルダーを選択してください。</value>
+  </data>
+  <data name="Quick_NeedVersion" xml:space="preserve">
+    <value>バージョンは 1.0 または 1.0.0 の形式にしてください — アップグレードは比較で判断されます。</value>
+  </data>
+  <data name="Quick_PerMachine" xml:space="preserve">
+    <value>すべてのユーザー (Program Files、管理者が必要)</value>
+  </data>
+  <data name="Quick_PerMachineShort" xml:space="preserve">
+    <value>すべてのユーザー</value>
+  </data>
+  <data name="Quick_PerUser" xml:space="preserve">
+    <value>自分のみ (管理者不要)</value>
+  </data>
+  <data name="Quick_PerUserShort" xml:space="preserve">
+    <value>自分のみ</value>
+  </data>
+  <data name="Quick_PickSource" xml:space="preserve">
+    <value>インストールするフォルダーを選択</value>
+  </data>
+  <data name="Quick_ProductExplain" xml:space="preserve">
+    <value>ユーザーに表示される名前とバージョン（プログラムの追加と削除、およびインストーラー自体）。</value>
+  </data>
+  <data name="Quick_ProductHeading" xml:space="preserve">
+    <value>何をインストールしますか?</value>
+  </data>
+  <data name="Quick_ReviewHeading" xml:space="preserve">
+    <value>ビルドの準備完了</value>
+  </data>
+  <data name="Quick_Scope" xml:space="preserve">
+    <value>範囲:</value>
+  </data>
+  <data name="Quick_SourceEmpty" xml:space="preserve">
+    <value>そのフォルダーは空です — インストーラーには何も含まれません。</value>
+  </data>
+  <data name="Quick_SourceHeading" xml:space="preserve">
+    <value>ファイルはどこにありますか?</value>
+  </data>
+  <data name="Quick_SourceMissing" xml:space="preserve">
+    <value>そのフォルダーは存在しません。</value>
+  </data>
+  <data name="Quick_SourceSummary" xml:space="preserve">
+    <value>{0} ファイル、{1:F1} MB がパッケージ化されます。</value>
+  </data>
+  <data name="Quick_SourceUnreadable" xml:space="preserve">
+    <value>そのフォルダーを読み取れませんでした。</value>
+  </data>
+  <data name="Quick_StepOf" xml:space="preserve">
+    <value>ステップ {0}/{1}</value>
+  </data>
+  <data name="Quick_TargetHeading" xml:space="preserve">
+    <value>どこにインストールしますか?</value>
+  </data>
+  <data name="Quick_Title" xml:space="preserve">
+    <value>新しいインストーラー — クイックスタート</value>
+  </data>
+  <data name="Section_CustomPageTitle" xml:space="preserve">
+    <value>追加オプション</value>
+  </data>
+  <data name="Section_CustomPages" xml:space="preserve">
+    <value>カスタムウィザードページ</value>
+  </data>
+  <data name="Section_EnvironmentVariables" xml:space="preserve">
+    <value>環境変数</value>
+  </data>
+  <data name="Section_EnvironmentVariablesHelp" xml:space="preserve">
+    <value>インストール時に書き込まれ、アンインストール時に削除される変数。インストールフォルダーは {app} で参照します。</value>
+  </data>
+  <data name="Section_FileAssociations" xml:space="preserve">
+    <value>ファイルの関連付け</value>
+  </data>
+  <data name="Section_MsixOptionalPackages" xml:space="preserve">
+    <value>MSIX オプションパッケージ</value>
+  </data>
+  <data name="Section_Packages" xml:space="preserve">
+    <value>パッケージノード</value>
+  </data>
+  <data name="Section_PackagesHelp" xml:space="preserve">
+    <value>このインストーラーに組み込むサブパッケージ（ローカルパスまたはダウンロード URL から）。</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogs" xml:space="preserve">
+    <value>前提条件カタログ</value>
+  </data>
+  <data name="Section_Resources" xml:space="preserve">
+    <value>型付きリソース</value>
+  </data>
+  <data name="Section_ResourcesDefaultName" xml:space="preserve">
+    <value>ファイルをコピー</value>
+  </data>
+  <data name="Section_Supersedence" xml:space="preserve">
+    <value>置き換え</value>
+  </data>
+  <data name="Section_UpdateChannels" xml:space="preserve">
+    <value>更新チャネル</value>
+  </data>
+  <data name="Section_WindowsServices" xml:space="preserve">
+    <value>Windows サービス</value>
+  </data>
+  <data name="Signing_Button" xml:space="preserve">
+    <value>署名</value>
+  </data>
+  <data name="Signing_ButtonHint" xml:space="preserve">
+    <value>このインストーラーの署名方法を選択します</value>
+  </data>
+  <data name="Signing_Credential" xml:space="preserve">
+    <value>資格情報:</value>
+  </data>
+  <data name="Signing_Endpoint" xml:space="preserve">
+    <value>エンドポイント:</value>
+  </data>
+  <data name="Signing_EndpointNotAbsolute" xml:space="preserve">
+    <value>エンドポイントは絶対 URL である必要があります。</value>
+  </data>
+  <data name="Signing_Heading" xml:space="preserve">
+    <value>このインストーラーはどのように署名しますか?</value>
+  </data>
+  <data name="Signing_KeyId" xml:space="preserve">
+    <value>キー ID:</value>
+  </data>
+  <data name="Signing_Method" xml:space="preserve">
+    <value>署名方法</value>
+  </data>
+  <data name="Signing_NeedEndpoint" xml:space="preserve">
+    <value>リモート署名サービスにはエンドポイントが必要です。</value>
+  </data>
+  <data name="Signing_NeedPfx" xml:space="preserve">
+    <value>署名に使用する .pfx ファイルを選択してください。</value>
+  </data>
+  <data name="Signing_NeedSelector" xml:space="preserve">
+    <value>拇印またはサブジェクト名を指定してください — いずれかで証明書を選択する必要があります。</value>
+  </data>
+  <data name="Signing_None" xml:space="preserve">
+    <value>署名しない (SmartScreen がユーザーに警告します)</value>
+  </data>
+  <data name="Signing_Pfx" xml:space="preserve">
+    <value>証明書ファイル (.pfx)</value>
+  </data>
+  <data name="Signing_PfxMissing" xml:space="preserve">
+    <value>その証明書ファイルは存在しません。</value>
+  </data>
+  <data name="Signing_Provider" xml:space="preserve">
+    <value>プロバイダー:</value>
+  </data>
+  <data name="Signing_Remote" xml:space="preserve">
+    <value>リモート署名サービスまたは HSM</value>
+  </data>
+  <data name="Signing_Store" xml:space="preserve">
+    <value>Windows ストア内の証明書</value>
+  </data>
+  <data name="Signing_StoreLocation" xml:space="preserve">
+    <value>ストアの場所:</value>
+  </data>
+  <data name="Signing_StoreName" xml:space="preserve">
+    <value>ストア名:</value>
+  </data>
+  <data name="Signing_Subject" xml:space="preserve">
+    <value>またはサブジェクト名:</value>
+  </data>
+  <data name="Signing_Thumbprint" xml:space="preserve">
+    <value>拇印:</value>
+  </data>
+  <data name="Signing_TimestampNotAbsolute" xml:space="preserve">
+    <value>タイムスタンプ URL は絶対 URL である必要があります (例: http://timestamp.digicert.com)。</value>
+  </data>
+  <data name="Signing_Title" xml:space="preserve">
+    <value>コード署名</value>
+  </data>
+  <data name="Wizard_ConfirmCancel" xml:space="preserve">
+    <value>インストールをキャンセルしてもよろしいですか?</value>
+  </data>
+  <data name="Wizard_Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Wizard_Prerequisites" xml:space="preserve">
+    <value>前提条件</value>
+  </data>
 </root>

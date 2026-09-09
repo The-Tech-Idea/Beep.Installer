@@ -126,6 +126,26 @@ public class BeepModernInstallerForm : BeepiFormPro
                 catch (Exception ex) { Engine.Diag.Debug("Language", $"{page.GetType().Name} could not reload strings", ex); }
             }
 
+            // Re-sync the selector. The language can be set from outside this form -- the standalone
+            // translation editor (/LANGMGR) and LanguageManager.SetLanguage both raise this event --
+            // and the combo would otherwise go on showing the language that is no longer in use.
+            //
+            // Assigning SelectedIndex re-enters SelectedIndexChanged, which would call SetLanguage
+            // again; that is what _applyingLanguage exists to suppress. It was read there and never
+            // assigned anywhere, so it had never actually guarded anything.
+            if (_languageBox is { } box)
+            {
+                var index = Array.IndexOf(LanguageManager.SupportedCultures,
+                    LanguageManager.CurrentCulture.TwoLetterISOLanguageName);
+
+                if (index >= 0 && index != box.SelectedIndex)
+                {
+                    _applyingLanguage = true;
+                    try { box.SelectedIndex = index; }
+                    finally { _applyingLanguage = false; }
+                }
+            }
+
             Refresh();
         }
         catch (Exception ex)
@@ -460,8 +480,8 @@ public class BeepModernInstallerForm : BeepiFormPro
     {
         if (_installComplete || _previewMode) return true;
         var r = MessageBox.Show(this,
-            "Are you sure you want to cancel the installation?",
-            "Cancel", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            LanguageManager.GetOrDefault("Wizard_ConfirmCancel", "Are you sure you want to cancel the installation?"),
+            LanguageManager.GetOrDefault("Btn_Cancel", "Cancel"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         return r == DialogResult.Yes;
     }
 
@@ -499,10 +519,29 @@ public class BeepModernInstallerForm : BeepiFormPro
         };
         _pages.Add(_errorPage);
 
-        // This used to index _pages[1] on the assumption that License is always second. With the
-        // welcome page suppressible that index can be a different page entirely, so find it.
-        if (_pages.OfType<LicensePage>().FirstOrDefault() is { } lic)
-            lic.ValidityChanged += (_, ok) => _nextBtn.Enabled = ok;
+        // Every page reports validity through ValidityChanged, and the Next button has to follow
+        // whichever page is on screen.
+        //
+        // Only LicensePage was ever subscribed (and before that, by indexing _pages[1] on the
+        // assumption License is always second -- wrong as soon as the welcome page became
+        // suppressible). FolderPage, StartMenuPage, PrerequisitePage, ComponentSelectionPage and
+        // AdditionalTasksPage all raised the event into the void: clearing the install folder left
+        // Next enabled until the click was refused, which is the failure landing somewhere other
+        // than where the mistake was made.
+        foreach (var page in _pages)
+        {
+            // ErrorPage repurposes the same event to mean "retry"; that is wired above.
+            if (ReferenceEquals(page, _errorPage)) continue;
+
+            var subject = page;
+            subject.ValidityChanged += (_, ok) =>
+            {
+                // A page that is not on screen must not touch the button.
+                if (_currentPage < 0 || _currentPage >= _pages.Count) return;
+                if (!ReferenceEquals(_pages[_currentPage], subject)) return;
+                _nextBtn.Enabled = ok;
+            };
+        }
     }
 
     /// <summary>
@@ -757,7 +796,7 @@ public class BeepModernInstallerForm : BeepiFormPro
 
         if (!_ctx.AcceptLicense)
         {
-            MessageBox.Show(this, "You must accept the license to continue.", "Beep Installer",
+            MessageBox.Show(this, LanguageManager.GetOrDefault("License_MustAccept", "You must accept the license to continue."), "Beep Installer",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }

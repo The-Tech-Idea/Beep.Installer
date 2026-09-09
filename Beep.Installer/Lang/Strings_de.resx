@@ -664,4 +664,503 @@
   <data name="Section_OptionalPackageMetadata" xml:space="preserve">
     <value>Optionale Paketmetadaten</value>
   </data>
+  <data name="App_FatalErrorBody" xml:space="preserve">
+    <value>Schwerwiegender Fehler: {0}{1}{1}Ein Absturzprotokoll wurde geschrieben nach:{1}{2}</value>
+  </data>
+  <data name="App_FatalErrorTitle" xml:space="preserve">
+    <value>Schwerwiegender Fehler</value>
+  </data>
+  <data name="App_LogWrittenTo" xml:space="preserve">
+    <value>{0}{0}Protokoll geschrieben nach:{0}{1}</value>
+  </data>
+  <data name="App_UnexpectedError" xml:space="preserve">
+    <value>Unerwarteter Fehler: {0}</value>
+  </data>
+  <data name="Builder_AboutBody" xml:space="preserve">
+    <value>Beep Installer — Paket-Generator
+Version 1.0.0
+
+Erstellt eigenständige Setup.exe-Installationsprogramme für Windows.</value>
+  </data>
+  <data name="Builder_AboutTitle" xml:space="preserve">
+    <value>Über Beep Installer</value>
+  </data>
+  <data name="Builder_BrandingPreviewStep" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="Builder_BuildTitle" xml:space="preserve">
+    <value>Erstellen</value>
+  </data>
+  <data name="Builder_FileNotFound" xml:space="preserve">
+    <value>Datei nicht gefunden: {0}</value>
+  </data>
+  <data name="Builder_HelpBody" xml:space="preserve">
+    <value>1. Quellverzeichnis festlegen (Build-Ausgabe Ihrer Anwendung).
+2. Komponenten, Voraussetzungen, Verknüpfungen, Registrierung und erweiterte Ressourcen konfigurieren.
+3. Mit Strg+F Abschnitte suchen, mit Strg+Tab / Strg+Umschalt+Tab zwischen Abschnitten wechseln, F7 zum Prüfen und F5 zum Erstellen.
+4. Das .bsetup-Skript speichern.
+5. Erstellen → erzeugt eine eigenständige Setup.exe.</value>
+  </data>
+  <data name="Builder_NoBuildYet" xml:space="preserve">
+    <value>Es wurde noch kein Build ausgeführt.</value>
+  </data>
+  <data name="Builder_OpenScriptTitle" xml:space="preserve">
+    <value>Installationsskript öffnen</value>
+  </data>
+  <data name="Builder_OutputNotEmpty" xml:space="preserve">
+    <value>Das Ausgabeverzeichnis enthält bereits Dateien:
+{0}
+
+Vor dem Erstellen bereinigen?</value>
+  </data>
+  <data name="Builder_ProductNameRequired" xml:space="preserve">
+    <value>Ein Produktname ist erforderlich.</value>
+  </data>
+  <data name="Builder_PublishTitle" xml:space="preserve">
+    <value>Veröffentlichen</value>
+  </data>
+  <data name="Builder_ReadinessBlocked" xml:space="preserve">
+    <value>⛔ {0} blockierende(s) Problem(e)</value>
+  </data>
+  <data name="Builder_ReadinessOk" xml:space="preserve">
+    <value>✓ Bereit zum Erstellen</value>
+  </data>
+  <data name="Builder_ReadinessWarn" xml:space="preserve">
+    <value>✓ Bereit — {0} Warnung(en)</value>
+  </data>
+  <data name="Builder_RecentScriptTitle" xml:space="preserve">
+    <value>Zuletzt verwendetes Skript</value>
+  </data>
+  <data name="Builder_SaveAsTitle" xml:space="preserve">
+    <value>Speichern unter</value>
+  </data>
+  <data name="Builder_ScanFailedBody" xml:space="preserve">
+    <value>'{0}' konnte nicht geprüft werden:{1}{2}</value>
+  </data>
+  <data name="Builder_ScanFailedTitle" xml:space="preserve">
+    <value>Prüfung fehlgeschlagen</value>
+  </data>
+  <data name="Builder_ScriptApplied" xml:space="preserve">
+    <value>Skript angewendet.</value>
+  </data>
+  <data name="Builder_ScriptNotSaved" xml:space="preserve">
+    <value>Das Installationsskript wurde nicht gespeichert. Vor dem Erstellen speichern?</value>
+  </data>
+  <data name="Builder_ScriptParseFailed" xml:space="preserve">
+    <value>Das Skript konnte nicht analysiert werden.</value>
+  </data>
+  <data name="Builder_ScriptTitle" xml:space="preserve">
+    <value>Skript</value>
+  </data>
+  <data name="Common_Confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="Common_CopyFailed" xml:space="preserve">
+    <value>Kopieren fehlgeschlagen</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>Fertig</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="Common_Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Common_SaveFailed" xml:space="preserve">
+    <value>Speichern fehlgeschlagen</value>
+  </data>
+  <data name="Common_Validation" xml:space="preserve">
+    <value>Validierung</value>
+  </data>
+  <data name="Common_Warnings" xml:space="preserve">
+    <value>Warnungen</value>
+  </data>
+  <data name="Complete_BundleTitle" xml:space="preserve">
+    <value>Support-Paket</value>
+  </data>
+  <data name="Complete_NoBundle" xml:space="preserve">
+    <value>Es wurde kein Support-Paket erstellt.</value>
+  </data>
+  <data name="Conditions_CannotSave" xml:space="preserve">
+    <value>Speichern nicht möglich — beheben Sie zuerst die folgenden Fehler:</value>
+  </data>
+  <data name="Conditions_CountLabel" xml:space="preserve">
+    <value>Bedingungen</value>
+  </data>
+  <data name="Conditions_ErrorsLabel" xml:space="preserve">
+    <value>Validierungsfehler</value>
+  </data>
+  <data name="Conditions_Evaluation" xml:space="preserve">
+    <value>Auswertung</value>
+  </data>
+  <data name="Conditions_Fail" xml:space="preserve">
+    <value>FEHLER</value>
+  </data>
+  <data name="Conditions_Pass" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Conditions_WarningsLabel" xml:space="preserve">
+    <value>Warnungen</value>
+  </data>
+  <data name="Error_NoLog" xml:space="preserve">
+    <value>Es wurde keine Protokolldatei erstellt.</value>
+  </data>
+  <data name="Error_ViewLogTitle" xml:space="preserve">
+    <value>Protokoll anzeigen</value>
+  </data>
+  <data name="Files_SourceRequired" xml:space="preserve">
+    <value>Ein Quellpfad ist erforderlich.</value>
+  </data>
+  <data name="Grid_Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="Grid_Id" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Grid_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Grid_Required" xml:space="preserve">
+    <value>Erforderlich</value>
+  </data>
+  <data name="Grid_Selected" xml:space="preserve">
+    <value>Ausgewählt</value>
+  </data>
+  <data name="LangMgr_CannotRemoveEnglish" xml:space="preserve">
+    <value>Englisch (Basissprache) kann nicht entfernt werden.</value>
+  </data>
+  <data name="LangMgr_CodeExists" xml:space="preserve">
+    <value>'{0}' ist bereits vorhanden.</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveKey" xml:space="preserve">
+    <value>Schlüssel '{0}' aus ALLEN Sprachen entfernen?</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveLanguage" xml:space="preserve">
+    <value>Sprache '{0}' und alle zugehörigen Übersetzungen entfernen?</value>
+  </data>
+  <data name="LangMgr_CopyTemplate" xml:space="preserve">
+    <value>Englische Schlüssel als Vorlage kopieren?</value>
+  </data>
+  <data name="LangMgr_FilesSaved" xml:space="preserve">
+    <value>{0} Sprachdateien gespeichert.</value>
+  </data>
+  <data name="LangMgr_ImportError" xml:space="preserve">
+    <value>Importfehler: {0}</value>
+  </data>
+  <data name="LangMgr_LanguageExists" xml:space="preserve">
+    <value>Die Sprache '{0}' ist bereits vorhanden.</value>
+  </data>
+  <data name="LangMgr_SaveError" xml:space="preserve">
+    <value>Fehler beim Speichern von {0}: {1}</value>
+  </data>
+  <data name="LangMgr_Template" xml:space="preserve">
+    <value>Vorlage</value>
+  </data>
+  <data name="License_MustAccept" xml:space="preserve">
+    <value>Sie müssen die Lizenz akzeptieren, um fortzufahren.</value>
+  </data>
+  <data name="Nav_Deployment" xml:space="preserve">
+    <value>Bereitstellung</value>
+  </data>
+  <data name="Nav_Output" xml:space="preserve">
+    <value>Ausgabe</value>
+  </data>
+  <data name="Packaging_BadIdentity" xml:space="preserve">
+    <value>Die MSIX-Identität muss aus 3–50 ASCII-Buchstaben, Ziffern, Punkten oder Bindestrichen bestehen.</value>
+  </data>
+  <data name="Packaging_Button" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="Packaging_ButtonHint" xml:space="preserve">
+    <value>Ausgabeformat wählen und sehen, was es nicht abbilden kann</value>
+  </data>
+  <data name="Packaging_Exe" xml:space="preserve">
+    <value>Setup.exe — voller Funktionsumfang, überall lauffähig</value>
+  </data>
+  <data name="Packaging_ExeFine" xml:space="preserve">
+    <value>Alles in diesem Projekt wird von diesem Format unterstützt.</value>
+  </data>
+  <data name="Packaging_Format" xml:space="preserve">
+    <value>Ausgabeformat</value>
+  </data>
+  <data name="Packaging_Heading" xml:space="preserve">
+    <value>Was soll der Build erzeugen?</value>
+  </data>
+  <data name="Packaging_IdentityHint" xml:space="preserve">
+    <value>3–50 ASCII-Buchstaben, Ziffern, Punkte oder Bindestriche. Dies ist die Paketidentität, kein Anzeigename.</value>
+  </data>
+  <data name="Packaging_LostActions" xml:space="preserve">
+    <value>{0} benutzerdefinierte Aktion(en) — MSIX führt keine Programme zur Installationszeit aus.</value>
+  </data>
+  <data name="Packaging_LostCatalogs" xml:space="preserve">
+    <value>{0} Voraussetzungskatalog(e) — die Katalogerweiterung erzeugt Ressourcen, die MSIX nicht ausführen kann.</value>
+  </data>
+  <data name="Packaging_LostHeading" xml:space="preserve">
+    <value>Dieses Format kann Folgendes, das Sie erstellt haben, nicht abbilden:</value>
+  </data>
+  <data name="Packaging_LostPackages" xml:space="preserve">
+    <value>{0} Paketknoten — dies sind Suite-/Chainer-Ressourcen.</value>
+  </data>
+  <data name="Packaging_LostPrereqs" xml:space="preserve">
+    <value>{0} Voraussetzung(en) — MSIX kann keine Installationsprogramme verketten.</value>
+  </data>
+  <data name="Packaging_LostResources" xml:space="preserve">
+    <value>{0} typisierte Ressourcenoperation(en) — MSIX kann keine Erweiterungsanbieter ausführen, und der Build wird abgelehnt.</value>
+  </data>
+  <data name="Packaging_LostServices" xml:space="preserve">
+    <value>{0} Windows-Dienst(e) — die Dienstregistrierung ist in der MSIX-Ausgabe nicht abgebildet.</value>
+  </data>
+  <data name="Packaging_Msix" xml:space="preserve">
+    <value>MSIX-Paket — Store und verwaltete Bereitstellung</value>
+  </data>
+  <data name="Packaging_MsixBundle" xml:space="preserve">
+    <value>MSIX-Bundle — mehrere Architekturen in einem Paket</value>
+  </data>
+  <data name="Packaging_MsixFine" xml:space="preserve">
+    <value>Nichts in diesem Projekt hängt von Funktionen ab, die MSIX nicht abbilden kann.</value>
+  </data>
+  <data name="Packaging_NeedPublisher" xml:space="preserve">
+    <value>MSIX benötigt den Zertifikatsantragsteller als Herausgeber.</value>
+  </data>
+  <data name="Packaging_SelfContained" xml:space="preserve">
+    <value>.NET-Runtime einschließen</value>
+  </data>
+  <data name="Packaging_SingleFile" xml:space="preserve">
+    <value>Einzelne eigenständige Datei</value>
+  </data>
+  <data name="Packaging_Title" xml:space="preserve">
+    <value>Ausgabeformat</value>
+  </data>
+  <data name="Publish_Folder" xml:space="preserve">
+    <value>In Ordner veröffentlichen:</value>
+  </data>
+  <data name="Publish_FolderHint" xml:space="preserve">
+    <value>Wohin die Dateien jetzt geschrieben werden — ein lokaler Ordner, eine Freigabe oder ein Staging-Verzeichnis.</value>
+  </data>
+  <data name="Publish_FolderUnreachable" xml:space="preserve">
+    <value>Das übergeordnete Verzeichnis dieses Ordners existiert nicht.</value>
+  </data>
+  <data name="Publish_Go" xml:space="preserve">
+    <value>Veröffentlichen</value>
+  </data>
+  <data name="Publish_Heading" xml:space="preserve">
+    <value>Eine ClickOnce-Bereitstellung veröffentlichen</value>
+  </data>
+  <data name="Publish_NeedFolder" xml:space="preserve">
+    <value>Wählen Sie einen Ordner zum Veröffentlichen.</value>
+  </data>
+  <data name="Publish_NoCertificate" xml:space="preserve">
+    <value>Es ist noch kein Zertifikat konfiguriert — legen Sie eines unter Codesignatur fest, sonst wird ohnehin unsigniert veröffentlicht.</value>
+  </data>
+  <data name="Publish_Sign" xml:space="preserve">
+    <value>Manifeste signieren</value>
+  </data>
+  <data name="Publish_Title" xml:space="preserve">
+    <value>Veröffentlichen</value>
+  </data>
+  <data name="Publish_UnsignedWarning" xml:space="preserve">
+    <value>Unsigniert: Windows SmartScreen warnt Benutzer, bevor dies ausgeführt wird.</value>
+  </data>
+  <data name="Publish_UpdateUrl" xml:space="preserve">
+    <value>Clients prüfen:</value>
+  </data>
+  <data name="Publish_WillSign" xml:space="preserve">
+    <value>Die Manifeste werden mit dem konfigurierten Zertifikat signiert.</value>
+  </data>
+  <data name="Quick_Button" xml:space="preserve">
+    <value>Schnellstart</value>
+  </data>
+  <data name="Quick_ButtonHint" xml:space="preserve">
+    <value>Geführtes Einrichten der Felder, die ein Build benötigt</value>
+  </data>
+  <data name="Quick_CreateAndBuild" xml:space="preserve">
+    <value>Erstellen</value>
+  </data>
+  <data name="Quick_NeedFolder" xml:space="preserve">
+    <value>Wählen Sie, wohin die Anwendung installiert werden soll.</value>
+  </data>
+  <data name="Quick_NeedName" xml:space="preserve">
+    <value>Ein Produktname ist erforderlich — er wird Benutzern beim Installieren und Deinstallieren angezeigt.</value>
+  </data>
+  <data name="Quick_NeedSource" xml:space="preserve">
+    <value>Wählen Sie den Ordner mit der zu installierenden Anwendung.</value>
+  </data>
+  <data name="Quick_NeedVersion" xml:space="preserve">
+    <value>Die Version muss wie 1.0 oder 1.0.0 aussehen — Upgrades werden durch Vergleich entschieden.</value>
+  </data>
+  <data name="Quick_PerMachine" xml:space="preserve">
+    <value>Alle Benutzer (Programme, erfordert Administrator)</value>
+  </data>
+  <data name="Quick_PerMachineShort" xml:space="preserve">
+    <value>Alle Benutzer</value>
+  </data>
+  <data name="Quick_PerUser" xml:space="preserve">
+    <value>Nur ich (kein Administrator erforderlich)</value>
+  </data>
+  <data name="Quick_PerUserShort" xml:space="preserve">
+    <value>Nur ich</value>
+  </data>
+  <data name="Quick_PickSource" xml:space="preserve">
+    <value>Zu installierenden Ordner auswählen</value>
+  </data>
+  <data name="Quick_ProductExplain" xml:space="preserve">
+    <value>Name und Version, die Ihre Benutzer sehen — unter „Programme hinzufügen oder entfernen“ und im Installationsprogramm selbst.</value>
+  </data>
+  <data name="Quick_ProductHeading" xml:space="preserve">
+    <value>Was installieren Sie?</value>
+  </data>
+  <data name="Quick_ReviewHeading" xml:space="preserve">
+    <value>Bereit zum Erstellen</value>
+  </data>
+  <data name="Quick_Scope" xml:space="preserve">
+    <value>Bereich:</value>
+  </data>
+  <data name="Quick_SourceEmpty" xml:space="preserve">
+    <value>Dieser Ordner ist leer — das Installationsprogramm würde nichts enthalten.</value>
+  </data>
+  <data name="Quick_SourceHeading" xml:space="preserve">
+    <value>Wo befinden sich die Dateien?</value>
+  </data>
+  <data name="Quick_SourceMissing" xml:space="preserve">
+    <value>Dieser Ordner existiert nicht.</value>
+  </data>
+  <data name="Quick_SourceSummary" xml:space="preserve">
+    <value>{0} Dateien, {1:F1} MB werden verpackt.</value>
+  </data>
+  <data name="Quick_SourceUnreadable" xml:space="preserve">
+    <value>Dieser Ordner konnte nicht gelesen werden.</value>
+  </data>
+  <data name="Quick_StepOf" xml:space="preserve">
+    <value>Schritt {0} von {1}</value>
+  </data>
+  <data name="Quick_TargetHeading" xml:space="preserve">
+    <value>Wohin soll installiert werden?</value>
+  </data>
+  <data name="Quick_Title" xml:space="preserve">
+    <value>Neues Installationsprogramm — Schnellstart</value>
+  </data>
+  <data name="Section_CustomPageTitle" xml:space="preserve">
+    <value>Zusätzliche Optionen</value>
+  </data>
+  <data name="Section_CustomPages" xml:space="preserve">
+    <value>Benutzerdefinierte Assistentenseiten</value>
+  </data>
+  <data name="Section_EnvironmentVariables" xml:space="preserve">
+    <value>Umgebungsvariablen</value>
+  </data>
+  <data name="Section_EnvironmentVariablesHelp" xml:space="preserve">
+    <value>Variablen, die bei der Installation geschrieben und bei der Deinstallation entfernt werden. Verwenden Sie {app} für den Installationsordner.</value>
+  </data>
+  <data name="Section_FileAssociations" xml:space="preserve">
+    <value>Dateizuordnungen</value>
+  </data>
+  <data name="Section_MsixOptionalPackages" xml:space="preserve">
+    <value>Optionale MSIX-Pakete</value>
+  </data>
+  <data name="Section_Packages" xml:space="preserve">
+    <value>Paketknoten</value>
+  </data>
+  <data name="Section_PackagesHelp" xml:space="preserve">
+    <value>Unterpakete, die in dieses Installationsprogramm eingebunden werden — aus einem lokalen Pfad oder einer Download-URL.</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogs" xml:space="preserve">
+    <value>Voraussetzungskataloge</value>
+  </data>
+  <data name="Section_Resources" xml:space="preserve">
+    <value>Typisierte Ressourcen</value>
+  </data>
+  <data name="Section_ResourcesDefaultName" xml:space="preserve">
+    <value>Eine Datei kopieren</value>
+  </data>
+  <data name="Section_Supersedence" xml:space="preserve">
+    <value>Ablösung</value>
+  </data>
+  <data name="Section_UpdateChannels" xml:space="preserve">
+    <value>Updatekanäle</value>
+  </data>
+  <data name="Section_WindowsServices" xml:space="preserve">
+    <value>Windows-Dienste</value>
+  </data>
+  <data name="Signing_Button" xml:space="preserve">
+    <value>Signierung</value>
+  </data>
+  <data name="Signing_ButtonHint" xml:space="preserve">
+    <value>Wählen Sie, wie dieses Installationsprogramm signiert wird</value>
+  </data>
+  <data name="Signing_Credential" xml:space="preserve">
+    <value>Anmeldeinformationen:</value>
+  </data>
+  <data name="Signing_Endpoint" xml:space="preserve">
+    <value>Endpunkt:</value>
+  </data>
+  <data name="Signing_EndpointNotAbsolute" xml:space="preserve">
+    <value>Der Endpunkt muss eine absolute URL sein.</value>
+  </data>
+  <data name="Signing_Heading" xml:space="preserve">
+    <value>Wie soll dieses Installationsprogramm signiert werden?</value>
+  </data>
+  <data name="Signing_KeyId" xml:space="preserve">
+    <value>Schlüssel-ID:</value>
+  </data>
+  <data name="Signing_Method" xml:space="preserve">
+    <value>Signaturmethode</value>
+  </data>
+  <data name="Signing_NeedEndpoint" xml:space="preserve">
+    <value>Ein Remote-Signaturdienst benötigt einen Endpunkt.</value>
+  </data>
+  <data name="Signing_NeedPfx" xml:space="preserve">
+    <value>Wählen Sie die .pfx-Datei zum Signieren.</value>
+  </data>
+  <data name="Signing_NeedSelector" xml:space="preserve">
+    <value>Geben Sie einen Fingerabdruck oder einen Antragstellernamen an — eines davon muss das Zertifikat auswählen.</value>
+  </data>
+  <data name="Signing_None" xml:space="preserve">
+    <value>Nicht signieren (SmartScreen warnt Benutzer)</value>
+  </data>
+  <data name="Signing_Pfx" xml:space="preserve">
+    <value>Eine Zertifikatsdatei (.pfx)</value>
+  </data>
+  <data name="Signing_PfxMissing" xml:space="preserve">
+    <value>Diese Zertifikatsdatei existiert nicht.</value>
+  </data>
+  <data name="Signing_Provider" xml:space="preserve">
+    <value>Anbieter:</value>
+  </data>
+  <data name="Signing_Remote" xml:space="preserve">
+    <value>Ein Remote-Signaturdienst oder HSM</value>
+  </data>
+  <data name="Signing_Store" xml:space="preserve">
+    <value>Ein Zertifikat im Windows-Speicher</value>
+  </data>
+  <data name="Signing_StoreLocation" xml:space="preserve">
+    <value>Speicherort:</value>
+  </data>
+  <data name="Signing_StoreName" xml:space="preserve">
+    <value>Speichername:</value>
+  </data>
+  <data name="Signing_Subject" xml:space="preserve">
+    <value>Oder Antragstellername:</value>
+  </data>
+  <data name="Signing_Thumbprint" xml:space="preserve">
+    <value>Fingerabdruck:</value>
+  </data>
+  <data name="Signing_TimestampNotAbsolute" xml:space="preserve">
+    <value>Die Zeitstempel-URL muss absolut sein, z. B. http://timestamp.digicert.com.</value>
+  </data>
+  <data name="Signing_Title" xml:space="preserve">
+    <value>Codesignatur</value>
+  </data>
+  <data name="Wizard_ConfirmCancel" xml:space="preserve">
+    <value>Möchten Sie die Installation wirklich abbrechen?</value>
+  </data>
+  <data name="Wizard_Language" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="Wizard_Prerequisites" xml:space="preserve">
+    <value>Voraussetzungen</value>
+  </data>
 </root>

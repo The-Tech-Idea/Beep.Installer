@@ -20,6 +20,7 @@ using TheTechIdea.Beep.Installer;
 using TheTechIdea.Beep.Installer.Steps;
 using TheTechIdea.Beep.SetUp;
 using TheTechIdea.Beep.Winform.Controls.ThemeManagement;
+using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer;
 
@@ -108,9 +109,9 @@ internal static partial class Program
             {
                 try
                 {
-                    MessageBox.Show($"Fatal error: {ex.Message}{Environment.NewLine}{Environment.NewLine}" +
-                                    $"A crash log was written to:{Environment.NewLine}{crashLog}",
-                                    "Beep Installer — Fatal Error",
+                    MessageBox.Show(string.Format(L("App_FatalErrorBody", "Fatal error: {0}{1}{1}A crash log was written to:{1}{2}"),
+                                        ex.Message, Environment.NewLine, crashLog),
+                                    "Beep Installer — " + L("App_FatalErrorTitle", "Fatal Error"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception mbx) { Engine.Diag.Debug("Program", "fatal-error MessageBox failed", mbx); }
@@ -4014,7 +4015,7 @@ internal static partial class Program
     {
         var ex = e.ExceptionObject as Exception;
         Console.Error.WriteLine($"Unhandled: {ex}");
-        try { MessageBox.Show($"Unexpected error: {ex?.Message}", "Beep Installer",
+        try { MessageBox.Show(string.Format(L("App_UnexpectedError", "Unexpected error: {0}"), ex?.Message), "Beep Installer",
             MessageBoxButtons.OK, MessageBoxIcon.Error); }
         catch (Exception mbx) { Engine.Diag.Debug("Program", "unhandled-exception MessageBox failed", mbx); }
     }
@@ -4031,7 +4032,7 @@ internal static partial class Program
         Console.Error.WriteLine($"Warning: crash log write failed ({logEx.GetType().Name}: {logEx.Message})");
     }
     // Try to show a dialog (may fail if WinForms init already blew up).
-    try { MessageBox.Show(message + $"{Environment.NewLine}{Environment.NewLine}Log written to:{Environment.NewLine}{crashLog}", "Beep Installer — Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+    try { MessageBox.Show(message + string.Format(L("App_LogWrittenTo", "{0}{0}Log written to:{0}{1}"), Environment.NewLine, crashLog), "Beep Installer — " + L("Common_Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error); }
     catch (Exception mbx) { Engine.Diag.Debug("Program", "ShowFatalMessage dialog failed", mbx); }
 }
 

@@ -664,4 +664,503 @@
   <data name="Section_OptionalPackageMetadata" xml:space="preserve">
     <value>بيانات وصفية اختيارية للحزمة</value>
   </data>
+  <data name="App_FatalErrorBody" xml:space="preserve">
+    <value>خطأ فادح: {0}{1}{1}تمت كتابة سجل الأعطال إلى:{1}{2}</value>
+  </data>
+  <data name="App_FatalErrorTitle" xml:space="preserve">
+    <value>خطأ فادح</value>
+  </data>
+  <data name="App_LogWrittenTo" xml:space="preserve">
+    <value>{0}{0}تمت كتابة السجل إلى:{0}{1}</value>
+  </data>
+  <data name="App_UnexpectedError" xml:space="preserve">
+    <value>خطأ غير متوقع: {0}</value>
+  </data>
+  <data name="Builder_AboutBody" xml:space="preserve">
+    <value>Beep Installer — منشئ الحزم
+الإصدار 1.0.0
+
+إنشاء مثبّتات Setup.exe مستقلة لنظام Windows.</value>
+  </data>
+  <data name="Builder_AboutTitle" xml:space="preserve">
+    <value>حول Beep Installer</value>
+  </data>
+  <data name="Builder_BrandingPreviewStep" xml:space="preserve">
+    <value>الإعداد</value>
+  </data>
+  <data name="Builder_BuildTitle" xml:space="preserve">
+    <value>إنشاء</value>
+  </data>
+  <data name="Builder_FileNotFound" xml:space="preserve">
+    <value>الملف غير موجود: {0}</value>
+  </data>
+  <data name="Builder_HelpBody" xml:space="preserve">
+    <value>1. حدّد مجلد المصدر (ناتج بناء تطبيقك).
+2. اضبط المكوّنات والمتطلبات والاختصارات والسجل والموارد المتقدمة.
+3. استخدم Ctrl+F للبحث في الأقسام، وCtrl+Tab / Ctrl+Shift+Tab للتنقل بين أقسام التأليف، وF7 للتحقق وF5 للبناء.
+4. احفظ ملف ‎.bsetup‎.
+5. البناء ← يُنتج ملف Setup.exe مستقلاً.</value>
+  </data>
+  <data name="Builder_NoBuildYet" xml:space="preserve">
+    <value>لم يتم تنفيذ أي عملية بناء بعد.</value>
+  </data>
+  <data name="Builder_OpenScriptTitle" xml:space="preserve">
+    <value>فتح برنامج التثبيت النصي</value>
+  </data>
+  <data name="Builder_OutputNotEmpty" xml:space="preserve">
+    <value>مجلد الإخراج يحتوي بالفعل على ملفات:
+{0}
+
+هل تريد تنظيفه قبل البناء؟</value>
+  </data>
+  <data name="Builder_ProductNameRequired" xml:space="preserve">
+    <value>اسم المنتج مطلوب.</value>
+  </data>
+  <data name="Builder_PublishTitle" xml:space="preserve">
+    <value>نشر</value>
+  </data>
+  <data name="Builder_ReadinessBlocked" xml:space="preserve">
+    <value>⛔ {0} مشكلة تمنع البناء</value>
+  </data>
+  <data name="Builder_ReadinessOk" xml:space="preserve">
+    <value>✓ جاهز للبناء</value>
+  </data>
+  <data name="Builder_ReadinessWarn" xml:space="preserve">
+    <value>✓ جاهز — {0} تحذير</value>
+  </data>
+  <data name="Builder_RecentScriptTitle" xml:space="preserve">
+    <value>برنامج نصي حديث</value>
+  </data>
+  <data name="Builder_SaveAsTitle" xml:space="preserve">
+    <value>حفظ باسم</value>
+  </data>
+  <data name="Builder_ScanFailedBody" xml:space="preserve">
+    <value>تعذّر فحص ‎'{0}'‎:{1}{2}</value>
+  </data>
+  <data name="Builder_ScanFailedTitle" xml:space="preserve">
+    <value>فشل الفحص</value>
+  </data>
+  <data name="Builder_ScriptApplied" xml:space="preserve">
+    <value>تم تطبيق البرنامج النصي.</value>
+  </data>
+  <data name="Builder_ScriptNotSaved" xml:space="preserve">
+    <value>لم يتم حفظ برنامج التثبيت النصي. هل تريد الحفظ قبل البناء؟</value>
+  </data>
+  <data name="Builder_ScriptParseFailed" xml:space="preserve">
+    <value>تعذّر تحليل البرنامج النصي.</value>
+  </data>
+  <data name="Builder_ScriptTitle" xml:space="preserve">
+    <value>برنامج نصي</value>
+  </data>
+  <data name="Common_Confirm" xml:space="preserve">
+    <value>تأكيد</value>
+  </data>
+  <data name="Common_CopyFailed" xml:space="preserve">
+    <value>فشل النسخ</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>تم</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>خطأ</value>
+  </data>
+  <data name="Common_Info" xml:space="preserve">
+    <value>معلومات</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Common_SaveFailed" xml:space="preserve">
+    <value>فشل الحفظ</value>
+  </data>
+  <data name="Common_Validation" xml:space="preserve">
+    <value>التحقق</value>
+  </data>
+  <data name="Common_Warnings" xml:space="preserve">
+    <value>تحذيرات</value>
+  </data>
+  <data name="Complete_BundleTitle" xml:space="preserve">
+    <value>حزمة الدعم</value>
+  </data>
+  <data name="Complete_NoBundle" xml:space="preserve">
+    <value>لم يتم إنشاء أي حزمة دعم.</value>
+  </data>
+  <data name="Conditions_CannotSave" xml:space="preserve">
+    <value>تعذّر الحفظ — صحّح الأخطاء التالية أولاً:</value>
+  </data>
+  <data name="Conditions_CountLabel" xml:space="preserve">
+    <value>الشروط</value>
+  </data>
+  <data name="Conditions_ErrorsLabel" xml:space="preserve">
+    <value>أخطاء التحقق</value>
+  </data>
+  <data name="Conditions_Evaluation" xml:space="preserve">
+    <value>التقييم</value>
+  </data>
+  <data name="Conditions_Fail" xml:space="preserve">
+    <value>فشل</value>
+  </data>
+  <data name="Conditions_Pass" xml:space="preserve">
+    <value>نجح</value>
+  </data>
+  <data name="Conditions_WarningsLabel" xml:space="preserve">
+    <value>تحذيرات</value>
+  </data>
+  <data name="Error_NoLog" xml:space="preserve">
+    <value>لم يتم إنشاء أي ملف سجل.</value>
+  </data>
+  <data name="Error_ViewLogTitle" xml:space="preserve">
+    <value>عرض السجل</value>
+  </data>
+  <data name="Files_SourceRequired" xml:space="preserve">
+    <value>مسار المصدر مطلوب.</value>
+  </data>
+  <data name="Grid_Description" xml:space="preserve">
+    <value>الوصف</value>
+  </data>
+  <data name="Grid_Id" xml:space="preserve">
+    <value>المعرّف</value>
+  </data>
+  <data name="Grid_Name" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="Grid_Required" xml:space="preserve">
+    <value>مطلوب</value>
+  </data>
+  <data name="Grid_Selected" xml:space="preserve">
+    <value>محدد</value>
+  </data>
+  <data name="LangMgr_CannotRemoveEnglish" xml:space="preserve">
+    <value>لا يمكن إزالة الإنجليزية (اللغة الأساسية).</value>
+  </data>
+  <data name="LangMgr_CodeExists" xml:space="preserve">
+    <value>‎'{0}'‎ موجود بالفعل.</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveKey" xml:space="preserve">
+    <value>هل تريد إزالة المفتاح ‎'{0}'‎ من جميع اللغات؟</value>
+  </data>
+  <data name="LangMgr_ConfirmRemoveLanguage" xml:space="preserve">
+    <value>هل تريد إزالة اللغة ‎'{0}'‎ وجميع ترجماتها؟</value>
+  </data>
+  <data name="LangMgr_CopyTemplate" xml:space="preserve">
+    <value>هل تريد نسخ المفاتيح الإنجليزية كقالب؟</value>
+  </data>
+  <data name="LangMgr_FilesSaved" xml:space="preserve">
+    <value>تم حفظ {0} من ملفات اللغات.</value>
+  </data>
+  <data name="LangMgr_ImportError" xml:space="preserve">
+    <value>خطأ في الاستيراد: {0}</value>
+  </data>
+  <data name="LangMgr_LanguageExists" xml:space="preserve">
+    <value>اللغة ‎'{0}'‎ موجودة بالفعل.</value>
+  </data>
+  <data name="LangMgr_SaveError" xml:space="preserve">
+    <value>خطأ في حفظ {0}: {1}</value>
+  </data>
+  <data name="LangMgr_Template" xml:space="preserve">
+    <value>قالب</value>
+  </data>
+  <data name="License_MustAccept" xml:space="preserve">
+    <value>يجب قبول الترخيص للمتابعة.</value>
+  </data>
+  <data name="Nav_Deployment" xml:space="preserve">
+    <value>النشر</value>
+  </data>
+  <data name="Nav_Output" xml:space="preserve">
+    <value>الإخراج</value>
+  </data>
+  <data name="Packaging_BadIdentity" xml:space="preserve">
+    <value>يجب أن يتكون معرّف MSIX من 3–50 حرفاً لاتينياً أو رقماً أو نقطة أو شرطة.</value>
+  </data>
+  <data name="Packaging_Button" xml:space="preserve">
+    <value>التنسيق</value>
+  </data>
+  <data name="Packaging_ButtonHint" xml:space="preserve">
+    <value>اختر تنسيق الإخراج واطّلع على ما لا يمكنه حمله</value>
+  </data>
+  <data name="Packaging_Exe" xml:space="preserve">
+    <value>Setup.exe — إمكانات كاملة، يعمل في كل مكان</value>
+  </data>
+  <data name="Packaging_ExeFine" xml:space="preserve">
+    <value>كل ما تم تأليفه في هذا المشروع مدعوم بهذا التنسيق.</value>
+  </data>
+  <data name="Packaging_Format" xml:space="preserve">
+    <value>تنسيق الإخراج</value>
+  </data>
+  <data name="Packaging_Heading" xml:space="preserve">
+    <value>ما الذي يجب أن ينتجه البناء؟</value>
+  </data>
+  <data name="Packaging_IdentityHint" xml:space="preserve">
+    <value>من 3 إلى 50 حرفاً لاتينياً أو رقماً أو نقطة أو شرطة. هذا معرّف الحزمة وليس اسم العرض.</value>
+  </data>
+  <data name="Packaging_LostActions" xml:space="preserve">
+    <value>{0} إجراء مخصص — MSIX لا يشغّل أي ملفات تنفيذية أثناء التثبيت.</value>
+  </data>
+  <data name="Packaging_LostCatalogs" xml:space="preserve">
+    <value>{0} فهرس متطلبات — توسيع الفهرس ينتج موارد لا يستطيع MSIX تشغيلها.</value>
+  </data>
+  <data name="Packaging_LostHeading" xml:space="preserve">
+    <value>لا يستطيع هذا التنسيق حمل ما يلي، وقد قمت بتأليفه:</value>
+  </data>
+  <data name="Packaging_LostPackages" xml:space="preserve">
+    <value>{0} عقدة حزمة — هذه موارد مجموعات/تسلسل.</value>
+  </data>
+  <data name="Packaging_LostPrereqs" xml:space="preserve">
+    <value>{0} متطلب مسبق — MSIX لا يستطيع تسلسل المثبّتات.</value>
+  </data>
+  <data name="Packaging_LostResources" xml:space="preserve">
+    <value>{0} عملية موارد مُصنّفة — MSIX لا يستطيع تنفيذ موفّري الامتدادات، وسيرفض البناء.</value>
+  </data>
+  <data name="Packaging_LostServices" xml:space="preserve">
+    <value>{0} خدمة Windows — تسجيل الخدمات غير ممثَّل في مخرجات MSIX.</value>
+  </data>
+  <data name="Packaging_Msix" xml:space="preserve">
+    <value>حزمة MSIX — للمتجر والنشر المُدار</value>
+  </data>
+  <data name="Packaging_MsixBundle" xml:space="preserve">
+    <value>حزمة MSIX مجمّعة — عدة معماريات في حزمة واحدة</value>
+  </data>
+  <data name="Packaging_MsixFine" xml:space="preserve">
+    <value>لا شيء في هذا المشروع يعتمد على ميزات لا يستطيع MSIX تمثيلها.</value>
+  </data>
+  <data name="Packaging_NeedPublisher" xml:space="preserve">
+    <value>يحتاج MSIX إلى موضوع الشهادة كناشر له.</value>
+  </data>
+  <data name="Packaging_SelfContained" xml:space="preserve">
+    <value>تضمين وقت تشغيل ‎.NET‎</value>
+  </data>
+  <data name="Packaging_SingleFile" xml:space="preserve">
+    <value>ملف واحد مستقل</value>
+  </data>
+  <data name="Packaging_Title" xml:space="preserve">
+    <value>تنسيق الإخراج</value>
+  </data>
+  <data name="Publish_Folder" xml:space="preserve">
+    <value>النشر إلى مجلد:</value>
+  </data>
+  <data name="Publish_FolderHint" xml:space="preserve">
+    <value>حيث تُكتب الملفات الآن — مجلد محلي أو مشاركة شبكة أو دليل مرحلي.</value>
+  </data>
+  <data name="Publish_FolderUnreachable" xml:space="preserve">
+    <value>المجلد الأصل لهذا المسار غير موجود.</value>
+  </data>
+  <data name="Publish_Go" xml:space="preserve">
+    <value>نشر</value>
+  </data>
+  <data name="Publish_Heading" xml:space="preserve">
+    <value>نشر توزيع ClickOnce</value>
+  </data>
+  <data name="Publish_NeedFolder" xml:space="preserve">
+    <value>اختر مجلداً للنشر فيه.</value>
+  </data>
+  <data name="Publish_NoCertificate" xml:space="preserve">
+    <value>لم يتم إعداد أي شهادة بعد — عيّن واحدة في توقيع التعليمات البرمجية، وإلا فسيتم النشر بدون توقيع.</value>
+  </data>
+  <data name="Publish_Sign" xml:space="preserve">
+    <value>توقيع البيانات الوصفية</value>
+  </data>
+  <data name="Publish_Title" xml:space="preserve">
+    <value>نشر</value>
+  </data>
+  <data name="Publish_UnsignedWarning" xml:space="preserve">
+    <value>بدون توقيع: سيحذّر Windows SmartScreen المستخدمين قبل التشغيل.</value>
+  </data>
+  <data name="Publish_UpdateUrl" xml:space="preserve">
+    <value>يتحقق العملاء من:</value>
+  </data>
+  <data name="Publish_WillSign" xml:space="preserve">
+    <value>سيتم توقيع البيانات الوصفية بالشهادة المُعدّة.</value>
+  </data>
+  <data name="Quick_Button" xml:space="preserve">
+    <value>بداية سريعة</value>
+  </data>
+  <data name="Quick_ButtonHint" xml:space="preserve">
+    <value>إعداد موجّه للحقول التي يتطلبها البناء</value>
+  </data>
+  <data name="Quick_CreateAndBuild" xml:space="preserve">
+    <value>إنشاء</value>
+  </data>
+  <data name="Quick_NeedFolder" xml:space="preserve">
+    <value>اختر المكان الذي يجب تثبيت التطبيق فيه.</value>
+  </data>
+  <data name="Quick_NeedName" xml:space="preserve">
+    <value>اسم المنتج مطلوب — فهو ما يراه المستخدمون عند التثبيت وإلغاء التثبيت.</value>
+  </data>
+  <data name="Quick_NeedSource" xml:space="preserve">
+    <value>اختر المجلد الذي يحتوي على التطبيق المراد تثبيته.</value>
+  </data>
+  <data name="Quick_NeedVersion" xml:space="preserve">
+    <value>يجب أن يكون الإصدار على شكل 1.0 أو 1.0.0 — تُحدَّد الترقيات بمقارنته.</value>
+  </data>
+  <data name="Quick_PerMachine" xml:space="preserve">
+    <value>لجميع المستخدمين (Program Files، يتطلب مسؤولاً)</value>
+  </data>
+  <data name="Quick_PerMachineShort" xml:space="preserve">
+    <value>جميع المستخدمين</value>
+  </data>
+  <data name="Quick_PerUser" xml:space="preserve">
+    <value>أنا فقط (لا يتطلب مسؤولاً)</value>
+  </data>
+  <data name="Quick_PerUserShort" xml:space="preserve">
+    <value>أنا فقط</value>
+  </data>
+  <data name="Quick_PickSource" xml:space="preserve">
+    <value>حدّد المجلد المراد تثبيته</value>
+  </data>
+  <data name="Quick_ProductExplain" xml:space="preserve">
+    <value>الاسم والإصدار اللذان سيراهما المستخدمون في "إضافة أو إزالة البرامج" وفي المثبّت نفسه.</value>
+  </data>
+  <data name="Quick_ProductHeading" xml:space="preserve">
+    <value>ما الذي تقوم بتثبيته؟</value>
+  </data>
+  <data name="Quick_ReviewHeading" xml:space="preserve">
+    <value>جاهز للبناء</value>
+  </data>
+  <data name="Quick_Scope" xml:space="preserve">
+    <value>النطاق:</value>
+  </data>
+  <data name="Quick_SourceEmpty" xml:space="preserve">
+    <value>هذا المجلد فارغ — لن يحتوي المثبّت على أي شيء.</value>
+  </data>
+  <data name="Quick_SourceHeading" xml:space="preserve">
+    <value>أين توجد الملفات؟</value>
+  </data>
+  <data name="Quick_SourceMissing" xml:space="preserve">
+    <value>هذا المجلد غير موجود.</value>
+  </data>
+  <data name="Quick_SourceSummary" xml:space="preserve">
+    <value>سيتم تعبئة {0} ملف بحجم {1:F1} ميجابايت.</value>
+  </data>
+  <data name="Quick_SourceUnreadable" xml:space="preserve">
+    <value>تعذّرت قراءة هذا المجلد.</value>
+  </data>
+  <data name="Quick_StepOf" xml:space="preserve">
+    <value>الخطوة {0} من {1}</value>
+  </data>
+  <data name="Quick_TargetHeading" xml:space="preserve">
+    <value>أين يجب التثبيت؟</value>
+  </data>
+  <data name="Quick_Title" xml:space="preserve">
+    <value>مثبّت جديد — بداية سريعة</value>
+  </data>
+  <data name="Section_CustomPageTitle" xml:space="preserve">
+    <value>خيارات إضافية</value>
+  </data>
+  <data name="Section_CustomPages" xml:space="preserve">
+    <value>صفحات معالج مخصصة</value>
+  </data>
+  <data name="Section_EnvironmentVariables" xml:space="preserve">
+    <value>متغيرات البيئة</value>
+  </data>
+  <data name="Section_EnvironmentVariablesHelp" xml:space="preserve">
+    <value>متغيرات تُكتب عند التثبيت وتُزال عند إلغاء التثبيت. استخدم ‎{app}‎ للإشارة إلى مجلد التثبيت.</value>
+  </data>
+  <data name="Section_FileAssociations" xml:space="preserve">
+    <value>اقترانات الملفات</value>
+  </data>
+  <data name="Section_MsixOptionalPackages" xml:space="preserve">
+    <value>حزم MSIX الاختيارية</value>
+  </data>
+  <data name="Section_Packages" xml:space="preserve">
+    <value>عُقد الحزم</value>
+  </data>
+  <data name="Section_PackagesHelp" xml:space="preserve">
+    <value>حزم فرعية مدمجة في هذا المثبّت، من مسار محلي أو عنوان تنزيل.</value>
+  </data>
+  <data name="Section_PrerequisiteCatalogs" xml:space="preserve">
+    <value>فهارس المتطلبات المسبقة</value>
+  </data>
+  <data name="Section_Resources" xml:space="preserve">
+    <value>موارد مُصنّفة</value>
+  </data>
+  <data name="Section_ResourcesDefaultName" xml:space="preserve">
+    <value>نسخ ملف</value>
+  </data>
+  <data name="Section_Supersedence" xml:space="preserve">
+    <value>الإحلال</value>
+  </data>
+  <data name="Section_UpdateChannels" xml:space="preserve">
+    <value>قنوات التحديث</value>
+  </data>
+  <data name="Section_WindowsServices" xml:space="preserve">
+    <value>خدمات Windows</value>
+  </data>
+  <data name="Signing_Button" xml:space="preserve">
+    <value>التوقيع</value>
+  </data>
+  <data name="Signing_ButtonHint" xml:space="preserve">
+    <value>اختر كيفية توقيع هذا المثبّت</value>
+  </data>
+  <data name="Signing_Credential" xml:space="preserve">
+    <value>بيانات الاعتماد:</value>
+  </data>
+  <data name="Signing_Endpoint" xml:space="preserve">
+    <value>نقطة النهاية:</value>
+  </data>
+  <data name="Signing_EndpointNotAbsolute" xml:space="preserve">
+    <value>يجب أن تكون نقطة النهاية عنوان URL مطلقاً.</value>
+  </data>
+  <data name="Signing_Heading" xml:space="preserve">
+    <value>كيف يجب توقيع هذا المثبّت؟</value>
+  </data>
+  <data name="Signing_KeyId" xml:space="preserve">
+    <value>معرّف المفتاح:</value>
+  </data>
+  <data name="Signing_Method" xml:space="preserve">
+    <value>طريقة التوقيع</value>
+  </data>
+  <data name="Signing_NeedEndpoint" xml:space="preserve">
+    <value>تحتاج خدمة التوقيع البعيدة إلى نقطة نهاية.</value>
+  </data>
+  <data name="Signing_NeedPfx" xml:space="preserve">
+    <value>اختر ملف ‎.pfx‎ للتوقيع به.</value>
+  </data>
+  <data name="Signing_NeedSelector" xml:space="preserve">
+    <value>أدخل بصمة أو اسم موضوع — يجب أن يحدّد أحدهما الشهادة.</value>
+  </data>
+  <data name="Signing_None" xml:space="preserve">
+    <value>عدم التوقيع (سيحذّر SmartScreen المستخدمين)</value>
+  </data>
+  <data name="Signing_Pfx" xml:space="preserve">
+    <value>ملف شهادة (‎.pfx‎)</value>
+  </data>
+  <data name="Signing_PfxMissing" xml:space="preserve">
+    <value>ملف الشهادة هذا غير موجود.</value>
+  </data>
+  <data name="Signing_Provider" xml:space="preserve">
+    <value>الموفّر:</value>
+  </data>
+  <data name="Signing_Remote" xml:space="preserve">
+    <value>خدمة توقيع بعيدة أو HSM</value>
+  </data>
+  <data name="Signing_Store" xml:space="preserve">
+    <value>شهادة في مخزن Windows</value>
+  </data>
+  <data name="Signing_StoreLocation" xml:space="preserve">
+    <value>موقع المخزن:</value>
+  </data>
+  <data name="Signing_StoreName" xml:space="preserve">
+    <value>اسم المخزن:</value>
+  </data>
+  <data name="Signing_Subject" xml:space="preserve">
+    <value>أو اسم الموضوع:</value>
+  </data>
+  <data name="Signing_Thumbprint" xml:space="preserve">
+    <value>البصمة:</value>
+  </data>
+  <data name="Signing_TimestampNotAbsolute" xml:space="preserve">
+    <value>يجب أن يكون عنوان الطابع الزمني مطلقاً، مثل http://timestamp.digicert.com.</value>
+  </data>
+  <data name="Signing_Title" xml:space="preserve">
+    <value>توقيع التعليمات البرمجية</value>
+  </data>
+  <data name="Wizard_ConfirmCancel" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد إلغاء التثبيت؟</value>
+  </data>
+  <data name="Wizard_Language" xml:space="preserve">
+    <value>اللغة</value>
+  </data>
+  <data name="Wizard_Prerequisites" xml:space="preserve">
+    <value>المتطلبات المسبقة</value>
+  </data>
 </root>

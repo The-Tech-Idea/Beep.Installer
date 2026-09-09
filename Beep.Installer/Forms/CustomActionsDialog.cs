@@ -82,7 +82,7 @@ public class CustomActionsDialog : Form
             RowHeadersVisible = false
         };
         // After auto-generation, hide the INotifyPropertyChanged-bound list column
-        if (_grid.Columns.Contains("SizeBytes")) _grid.Columns["SizeBytes"].Visible = false;
+        if (_grid.Columns["SizeBytes"] is { } sizeColumn) sizeColumn.Visible = false;
 
         var buttonRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3 };
         buttonRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
@@ -226,14 +226,14 @@ public class CustomActionsDialog : Form
         if (errors.Count > 0)
         {
             var msg = "Cannot save - fix the following errors first:\n\n" + string.Join("\n", errors.Select(e => " - " + e.Key + ": " + e.Message));
-            MessageBox.Show(this, msg, "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, msg, L("Common_Validation", "Validation"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
         var warnings = issues.Where(i => !i.IsError).ToList();
         if (warnings.Count > 0)
         {
             var msg = "There are warnings. Save anyway?\n\n" + string.Join("\n", warnings.Select(w => " - " + w.Key + ": " + w.Message));
-            if (MessageBox.Show(this, msg, "Warnings", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+            if (MessageBox.Show(this, msg, L("Common_Warnings", "Warnings"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
                 return;
         }
         DialogResult = DialogResult.OK;

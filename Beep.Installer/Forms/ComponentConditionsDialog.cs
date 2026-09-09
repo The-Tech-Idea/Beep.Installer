@@ -279,10 +279,10 @@ public class ComponentConditionsDialog : Form
         var errors = issues.Count(i => i.Severity == ConditionListValidator.IssueSeverity.Error);
         var warnings = issues.Count - errors;
         MessageBox.Show(this,
-            $"Evaluation: {(ok ? "PASS" : "FAIL")}\n" +
-            $"Conditions: {CurrentComponent.Conditions.Count}\n" +
-            $"Validation errors: {errors}, warnings: {warnings}",
-            "Test all", MessageBoxButtons.OK,
+            $"{L("Conditions_Evaluation", "Evaluation")}: {(ok ? L("Conditions_Pass", "PASS") : L("Conditions_Fail", "FAIL"))}\n" +
+            $"{L("Conditions_CountLabel", "Conditions")}: {CurrentComponent.Conditions.Count}\n" +
+            $"{L("Conditions_ErrorsLabel", "Validation errors")}: {errors}, {L("Conditions_WarningsLabel", "warnings")}: {warnings}",
+            L("Conditions_TestAll", "Test all"), MessageBoxButtons.OK,
             ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
     }
 
@@ -294,8 +294,8 @@ public class ComponentConditionsDialog : Form
         var errors = issues.Where(i => i.Severity == ConditionListValidator.IssueSeverity.Error).ToList();
         if (errors.Count > 0)
         {
-            var msg = "Cannot save — fix the following errors first:\n\n" + string.Join("\n", errors.Select(e => $" • #{e.Index + 1}: {e.Message}"));
-            MessageBox.Show(this, msg, "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            var msg = L("Conditions_CannotSave", "Cannot save — fix the following errors first:") + "\n\n" + string.Join("\n", errors.Select(e => $" • #{e.Index + 1}: {e.Message}"));
+            MessageBox.Show(this, msg, L("Common_Validation", "Validation"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
         DialogResult = DialogResult.OK;
