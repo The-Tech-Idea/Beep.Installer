@@ -10,6 +10,50 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-09 (SOLID review)
+
+**The eight `*.M.2` rows are answered by one review, not eight.** [SOLID_REVIEW.md](SOLID_REVIEW.md) —
+the codebase is one system and its design pressures cross phase boundaries, so eight separate
+write-ups would have been padding. Findings are tagged with the phase whose row they answer and
+every claim is tied to something measurable rather than to taste.
+
+Headline: **DIP and OCP are in good shape and were clearly designed for; SRP is the weak axis;**
+and there is **one Liskov violation that actually shipped**.
+
+- **L — the interesting one.** `IResourceProvider.Apply` is contracted to report failure by
+  *returning* `Failed`, because `ResourcePlanExecutor` decides rollback from the return value.
+  `FileCopyResourceProvider` threw instead, and the exception surfaced two layers up as "Failed
+  to checkpoint typed resource journal" — naming the wrong component entirely. Nothing in the
+  type system says "does not throw", so the compiler was content and every unit test passed; it
+  took a live install against a locked file to find it.
+- **S — measured.** `Program.cs` 4220 LOC with **63 verb handlers**, `MsiPackageExporter` 3934,
+  `PackageBuilderForm` 2788, `InstallerScriptSerializer` 2561. The consistent shape is that *the
+  dispatch layer was extracted and the implementations were left behind* — `ProgramVerbs` holds
+  the verb table while all 63 handlers stayed in `Program`, exactly as `BuildPipeline` had
+  fifteen extracted helpers and inline orchestration until this session. Not an argument for
+  splitting by line count: `MsiPackageExporter` is one coherent job at 3934 lines and splitting
+  it would add coupling. `Program.cs` is different — its 63 handlers share only a file.
+- **O — works where designed, and the gaps show up as duplicated rules.** Sixteen resource
+  providers, and a seventeenth needs no change to the executor, journal or graph. Where there
+  was no extension point, rules multiplied instead: two validators that disagreed about the same
+  project, two version parsers that disagreed about `"1"`.
+- **I — no action.** `IResourceProvider`’s six members look like a fat interface and are not:
+  a provider that cannot roll back still has to *say so*, and `Skipped` with a reason is a real
+  answer. Splitting it would move that decision to the caller, which is worse.
+- **D — strong.** 27 interfaces, and the load-bearing ones earn it: `IInstallerHostBuilder` is
+  the reason the build suite runs without spawning the SDK. The one deliberate absence is `Diag`
+  as a static sink bridged via `UseLog(IBeepLog)`; the tracker’s "logger injection" item should
+  be closed as **decided against** rather than left as debt.
+
+**Acted on the review’s own top recommendation rather than only filing it.** The no-throw
+expectation is now stated on `IResourceProvider.Apply`, and `ResourcePlanExecutor` wraps the call
+so a provider that breaches the contract is reported as **that provider** failing (new `BI3020`)
+instead of unwinding into whichever `catch` happens to be in the stack. Three tests, including
+one driving a deliberately-throwing provider through the executor.
+
+Suite **1257/0/3**.
+
+---
 ## Progress log — 2026-09-09 (policy binding + P8 matrix)
 
 **The wizard ignored `/POLICY=`, and the comment above it said it did not.** The interactive
@@ -1469,7 +1513,7 @@ context-key tests are not yet written.
 | 1.B.3 | Drop `InstallationTypeEx`/`UpdateModeEx` duplicate enums | ✅ |
 | 1.C.1 | Single `PerUser` decision (`InstallScopeResolver.IsPerUser`); emit `install-config.json` at build | ✅ |
 | 1.M.1 | **Gate: `/SELFTEST` passes ✅, `/VALIDATE` round-trips ✅** | ✅ the `/S` E2E blocker is closed — CI runs `/SELFTEST` (install→verify→uninstall) against the built artifact, twice |
-| 1.M.2 | SOLID review | ⬜ |
+| 1.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 **P1 notes.** 10 new tests in `InstallContextBridgeTests` assert the projection and — critically —
 that `PerUser`/`IsSelfContained` are stored as *boxed booleans*, since the steps read them with
@@ -1496,7 +1540,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 2.C.2 | Payload SHA-256 verification before copy | ✅ (2026-09-07 — remote archive verified before extraction; `IPayloadFetcher` seam; 7 tests) |
 | 2.C.3 | (D3) Extend `InstallConfig` with the 5 runtime fields | ✅ (2026-09-07 — + `ResolvePayloadRoot` stops hardcoding "payload"; 7 tests) |
 | 2.M.1 | Gate: per-user + per-machine installs, failure-injection rollback, corrupt-payload abort | ✅ **run live, elevated** — `scripts/run-gate-matrix.ps1`, evidence in `artifacts/gate-matrix/` |
-| 2.M.2 | SOLID review | ⬜ |
+| 2.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 3: Authoring Core — Extract to `Beep.Installer.Core` ⬜ — P1
 
@@ -1517,7 +1561,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 3.C.1 | Single `InstallerProjectValidator`; delete both old validation paths | ✅ `/BUILD` now runs the schema validator too — validation was not a gate on the build at all |
 | 3.C.2 | Delete old `BuildPipeline`; thread CTS from UI/CLI | ✅ only one pipeline exists (row was stale); the UI Cancel button was inert and is now wired end to end |
 | 3.M.1 | Gate: golden `.bsetup` round-trip, `/BUILD`→`/S`→`/UNINSTALL`, cancel test | ✅ **run live** — deterministic canonical JSON, repeatable `/WRITE`, full install cycle; cancel unit-covered by `BuildCancellationTests` |
-| 3.M.2 | SOLID review | ⬜ |
+| 3.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 4: Packaging Consolidation (ClickOnce / MSIX / Signing) ⬜ — P2
 
@@ -1530,7 +1574,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 4.A.4 | `ClickOncePublisher : IInstallerPublisher`; rewire `/PUBLISH`; delete `Engine/ClickOnce` | ✅ |
 | 4.B.1 | Replace PowerShell shortcut shelling with COM | ✅ |
 | 4.M.1 | Gate: publish + ClickOnce + Msix + update suites green | ✅ all four suites present and green |
-| 4.M.2 | SOLID review | ⬜ |
+| 4.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 5: Thin Shell — DI Composition Root ✅ — P1
 
@@ -1543,7 +1587,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 5.B.1 | Core-owned `Hosting/InstallWizardGraph` + `StepIds` — one graph, four consumers | ✅ |
 | 5.B.2 | Structured-logging adoption | ✅ (2026-09-07 — `Diag.UseLog(IBeepLog)`; `IBeepLog`, not the legacy `IDMLogger`, and `Diag` is kept as the local ring, see log) |
 | 5.M.1 | Gate: CLI parity, `/S`, `/UNINSTALL`, `/SELFTEST`, suite | ✅ **run live** — `/SELFTEST`, usage parity and non-zero exit on a missing script |
-| 5.M.2 | SOLID review | ⬜ |
+| 5.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 6: UI/UX Overhaul ⬜ — P1
 
@@ -1560,7 +1604,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 6.C.2 | Explicit grid columns; contextual dialogs; inline validation | ✅ declared columns; `ComponentConditionsDialog` opens on the selected component; per-field `ErrorProvider` driven by the same validator the build uses |
 | 6.C.3 | Dead-UI removal; WizardPages checklist actually drives pages | ✅ (also: `AllowComponentSelection`/`AllowPathChange` made live; 9 builder sections no longer show a closed project) |
 | 6.M.1 | Gate: DPI matrix (100/150/200), custom-branding E2E, suite | ⬜ |
-| 6.M.2 | SOLID review | ⬜ |
+| 6.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 7: Localization, RTL, Accessibility ⬜ — P2
 
@@ -1575,7 +1619,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 7.B.2 | Wire `RtlHelper` into the wizard | ✅ (manual Arabic visual pass still ⬜) |
 | 7.C.1 | Accessibility: Beep-control names, builder/dialog coverage, tab order, non-colour status | ✅ label-derived names, all 14 forms covered incl. lazily-added panels, widened interactive set. Non-colour status **verified already satisfied** — the validation labels state “N error(s), M warning(s)”/“OK” in text and no grid encodes severity by colour |
 | 7.M.1 | Gate: Narrator walkthrough + Accessibility Insights + parity tests | ⬜ |
-| 7.M.2 | SOLID review | ⬜ |
+| 7.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 8: Security & Reliability Hardening ⬜ — P1 (8.A may be pulled forward)
 
@@ -1590,7 +1634,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 8.B.2 | Autosave snapshot fix + race stress test | ✅ (`WriteAutoSaveSnapshot` + `AutoSaveRaceTests`) |
 | 8.B.3 | Sync-over-async sweep | ✅ (16 sites reviewed; 2 real — `SdkPackagePublisher` adopted `InstallHelpers.RunProcess`, `MageManifestTool` drain bounded) |
 | 8.M.1 | Gate: security test matrix + full suite | 🟡 sweep gates enforced (`SilentFailureGuardTests`, now covering the shell too) + policy matrix covered (`RuntimePolicyBindingTests`) + the wizard now binds policy; the P8 `Prompt` consent mode and the secret-normalization review remain |
-| 8.M.2 | SOLID review | ⬜ |
+| 8.M.2 | SOLID review | ✅ [SOLID_REVIEW.md](SOLID_REVIEW.md) — one review across all phases; findings tagged by phase |
 
 ## Phase 9: Test Consolidation & Regression 🟡 — P0 gate
 

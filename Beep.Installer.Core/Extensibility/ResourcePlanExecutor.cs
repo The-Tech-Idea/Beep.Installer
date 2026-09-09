@@ -172,7 +172,28 @@ public sealed class ResourcePlanExecutor
                 continue;
             }
 
-            var apply = provider.Apply(operation, context);
+            // A provider is contracted to report failure by returning Failed. One that throws is
+            // still a bug in that provider, but it must be reported as *that provider* failing --
+            // not swallowed miles away by whichever catch happens to be in the call stack, which is
+            // exactly how a locked file came to be blamed on the journal.
+            ResourceProviderResult apply;
+            try
+            {
+                apply = provider.Apply(operation, context);
+            }
+            catch (Exception ex)
+            {
+                apply = new ResourceProviderResult
+                {
+                    Code = ResourceProviderResultCode.Failed,
+                    Message = $"Provider '{provider.ResourceType}' threw instead of returning a result for {operation.Id}: {ex.Message}",
+                    Diagnostics = new List<ProjectSchemaDiagnostic>
+                    {
+                        new(ProjectSchemaDiagnosticSeverity.Error, "BI3020", operation.Id,
+                            $"Provider '{provider.ResourceType}' violated the Apply contract by throwing {ex.GetType().Name}: {ex.Message}")
+                    }
+                };
+            }
             AddEntry(journal, options, Entry(
                 operation,
                 ResourceExecutionAction.Apply,

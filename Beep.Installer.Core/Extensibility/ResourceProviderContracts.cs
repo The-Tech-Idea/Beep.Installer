@@ -81,6 +81,18 @@ public interface IResourceProvider
     ResourceDetectionResult Detect(CompiledInstallOperation operation, ResourceProviderContext context);
     ResourceProviderResult Validate(CompiledInstallOperation operation, ResourceProviderContext context);
     ResourcePlanResult Plan(CompiledInstallOperation operation, ResourceDetectionResult detection, ResourceProviderContext context);
+    /// <summary>
+    /// Performs the operation.
+    ///
+    /// **Report failure by returning a <see cref="ResourceProviderResultCode.Failed"/> result, not
+    /// by throwing.** <see cref="ResourcePlanExecutor"/> decides rollback from the returned value; a
+    /// provider that throws is not substitutable for one that returns, and the exception surfaces
+    /// wherever it happens to be caught rather than as this provider failing.
+    ///
+    /// This is not hypothetical: <c>FileCopyResourceProvider</c> once let an <c>IOException</c> from
+    /// its pre-copy backup escape, and a locked file was reported to users as "Failed to checkpoint
+    /// typed resource journal" — pointing at the wrong component entirely.
+    /// </summary>
     ResourceProviderResult Apply(CompiledInstallOperation operation, ResourceProviderContext context);
     ResourceProviderResult Rollback(CompiledInstallOperation operation, ResourceProviderContext context);
     ResourceProviderResult Verify(CompiledInstallOperation operation, ResourceProviderContext context);
