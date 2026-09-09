@@ -10,6 +10,42 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 
 ---
 
+## Progress log — 2026-09-09 (policy binding + P8 matrix)
+
+**The wizard ignored `/POLICY=`, and the comment above it said it did not.** The interactive
+path built its context through the same `InstallContextBuilder` as `/S`, under a comment reading
+"Same builder the silent/CLI paths use, so both produce an identical context" — and then set
+neither `ResourcePolicy` nor the custom-action consent decision. `Setup.exe /POLICY=corp.json`
+was honoured; the same command without `/S` silently dropped the same file.
+
+**Correcting my own first reading of this:** I initially called it a policy bypass. It is not.
+`InstallerPolicyResolver` only reads paths supplied on the command line — there is no ambient
+machine location it probes — so a plain double-click had no policy to ignore. The real defect is
+narrower: an explicitly supplied policy honoured on one path and dropped on the other. Worth
+fixing because two paths that claim parity and diverge on exactly the security-relevant keys is
+how most of the interesting defects in this project started, not because of ambient exposure.
+
+New `Engine/RuntimePolicyBinder` does the resolve → evaluate → bind, the wizard calls it, and the
+launch site threads the command line into the form. The decision itself was already shared —
+both paths call `ScriptCommandConsent.Decide` — so only the plumbing was duplicated, and there is
+now one copy of it for the interactive path rather than none.
+
+**8.M.1 policy matrix.** `RuntimePolicyBindingTests` covers the combinations P8 names: no flag and
+no policy records nothing (silence is not refusal, or every existing deployment relying on its own
+custom actions breaks); policy can refuse; the deployer can refuse without a policy file; an
+explicit `/ALLOWSCRIPTCMDS` outranks policy (how a managed machine runs a package whose actions
+are genuinely needed, without editing policy); and a permissive policy is *not* an allow. Plus a
+source guard that the wizard keeps binding at all. Verified it bites by removing the binder call.
+
+**Deliberately not done: the `Prompt` mode.** P8 designs `ScriptCommandPolicy { Allow, Prompt,
+Skip }` with interactive default = Prompt — one consolidated consent dialog per script. The
+implementation is a tri-state allow/refuse/none and has no dialog. Adding one puts a consent
+prompt in front of every interactive install of any package declaring custom actions: a
+user-visible product decision, not a defect fix, so it is flagged rather than decided here.
+
+Suite **1254/0/3**.
+
+---
 ## Progress log — 2026-09-08 (gates run live)
 
 **The four 🟡 gates are now run, not inferred.** `scripts/run-gate-matrix.ps1` drives the shipped exe
@@ -1553,7 +1589,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 8.B.1 | Swallowed-exception sweep (Core **and** shell) + permanent source guards | ✅ |
 | 8.B.2 | Autosave snapshot fix + race stress test | ✅ (`WriteAutoSaveSnapshot` + `AutoSaveRaceTests`) |
 | 8.B.3 | Sync-over-async sweep | ✅ (16 sites reviewed; 2 real — `SdkPackagePublisher` adopted `InstallHelpers.RunProcess`, `MageManifestTool` drain bounded) |
-| 8.M.1 | Gate: security test matrix + full suite | 🟡 five security suites green; a recorded matrix run remains |
+| 8.M.1 | Gate: security test matrix + full suite | 🟡 sweep gates enforced (`SilentFailureGuardTests`, now covering the shell too) + policy matrix covered (`RuntimePolicyBindingTests`) + the wizard now binds policy; the P8 `Prompt` consent mode and the secret-normalization review remain |
 | 8.M.2 | SOLID review | ⬜ |
 
 ## Phase 9: Test Consolidation & Regression 🟡 — P0 gate
