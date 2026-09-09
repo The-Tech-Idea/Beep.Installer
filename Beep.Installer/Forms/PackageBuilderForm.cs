@@ -308,7 +308,7 @@ public class PackageBuilderForm : Form
         {
             NewButton(), OpenButton(), SaveButton(), SaveAsButton(),
             new ToolStripSeparator(), RecentButton(), new ToolStripSeparator(),
-            PreviewButton(), BuildButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
+            QuickStartButton(), PreviewButton(), BuildButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
             new ToolStripSeparator(), LangButton(), HelpButton(), AboutButton()
         });
 
@@ -430,9 +430,23 @@ public class PackageBuilderForm : Form
         _nav.AddItem(g, "branding", "Branding", "Theme, banner, logo and installer branding");
         _nav.AddItem(g, "wizardpages", "Wizard Pages", "Custom wizard pages and unattended properties");
 
+        // Output shape and packaging. Every one of these sections was already written and wired
+        // into OnSectionSelected -- and none of them had a nav item, so there was no way to reach
+        // code signing, MSIX, compression or the output settings from the UI at all. The features
+        // were implemented and simply unreachable.
+        g = _nav.AddSection("output", L("Nav_Output", "Output"));
+        _nav.AddItem(g, "output", "Output", "Output directory, setup file name and install-type defaults");
+        _nav.AddItem(g, "payload", "Payload", "Payload folder, single-file, self-contained and download URL");
+        _nav.AddItem(g, "compression", "Compression", "Method, level and solid compression");
+        _nav.AddItem(g, "package", "Package Format", "EXE, MSI, MSIX and store readiness");
+        _nav.AddItem(g, "codesign", "Code Signing", "Certificate, timestamp URL and signing policy");
+        _nav.AddItem(g, "msix", "MSIX", "Identity, publisher and optional packages");
+
         g = _nav.AddSection("build", L("Nav_Build", "Build"));
         _nav.AddItem(g, "script", "Script", "Canonical .bsetup script preview and editor");
         _nav.AddItem(g, "build", "Build Workflow", "Validation, plan hash, package build and diagnostics");
+        _nav.AddItem(g, "log", "Build Log", "Full output from the last build");
+        _nav.AddItem(g, "result", "Last Result", "Artifacts, sizes and warnings from the last build");
     }
 
     private void OnSectionSelected(object? sender, string id)
@@ -2010,6 +2024,20 @@ public class PackageBuilderForm : Form
     private ToolStripButton SaveButton() => MakeButton("Save", "Save installer script", (_, _) => SaveProject());
     private ToolStripButton SaveAsButton() => MakeButton("Save As", "Save installer script as", (_, _) => SaveProjectAs());
     private ToolStripDropDownButton RecentButton() { RefreshRecents(); return _recentsBtn; }
+    private ToolStripButton QuickStartButton() => MakeButton(
+        L("Quick_Button", "Quick Start"),
+        L("Quick_ButtonHint", "Guided setup of the fields a build requires"),
+        (_, _) =>
+        {
+            using var quickStart = new QuickStartWizard(_controller.Project);
+            if (quickStart.ShowDialog(this) != DialogResult.OK) return;
+
+            _controller.Project.MarkDirty();
+            BindProject();
+            InvalidateAllContent();
+            if (_activeSectionId is { } section) OnSectionSelected(this, section);
+        });
+
     private ToolStripButton PreviewButton() => MakeButton("Preview", "Preview the install wizard", (_, _) => PreviewWizard());
     private ToolStripButton BuildButton() => MakeButton("Build", "Build the Setup.exe", (_, _) => BuildInstaller());
     private ToolStripButton PublishButton() => MakeButton("Publish", "Publish as ClickOnce", (_, _) => PublishProject());
@@ -2042,12 +2070,37 @@ public class PackageBuilderForm : Form
     //  Commands
     // ═══════════════════════════════════════════
 
-    private void NewProject()
+    private void NewProject() => NewProject(guided: true);
+
+    /// <summary>
+    /// Starts a new project, guided by default.
+    /// </summary>
+    /// <param name="guided">
+    /// Run the quick-start wizard first. The builder presents thirty optional sections in no
+    /// particular order and nothing marks the four a build actually requires, so a first project
+    /// usually ends in a validation failure on a field the author did not know existed. The wizard
+    /// asks for exactly those, in dependency order, and hands the rest to the builder unchanged.
+    /// </param>
+    private void NewProject(bool guided)
     {
         if (!_controller.ConfirmDiscardChanges(this)) return;
+
         using var dlg = new ProjectNewDialog();
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
         _controller.New(dlg.TemplateId, dlg.ProductName, dlg.Version, dlg.Publisher, dlg.SourceDirectory);
+        if (!guided) return;
+
+        // The wizard edits the project the controller just created, so cancelling it leaves a
+        // perfectly usable project rather than nothing.
+        using var quickStart = new QuickStartWizard(_controller.Project);
+        if (quickStart.ShowDialog(this) == DialogResult.OK)
+        {
+            _controller.Project.MarkDirty();
+            BindProject();
+            InvalidateAllContent();
+            if (_activeSectionId is { } section) OnSectionSelected(this, section);
+        }
     }
 
     private void OpenProject()
