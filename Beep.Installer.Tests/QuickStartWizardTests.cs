@@ -20,6 +20,12 @@ namespace Beep.Installer.Tests;
 /// order the answers depend on each other, and validates each step where it was answered rather
 /// than at build time.
 /// </summary>
+// Shares the "Language" collection with the other classes that touch LanguageManager: the wizard
+// reads every caption through L(...) while it is being constructed, and xUnit runs different
+// collections in parallel. A class that switches the language mid-construction would otherwise leave
+// this one asserting against whichever language won the race -- the same defect that made
+// LocalizationTests and LanguageSwitchTests flaky earlier.
+[Collection("Language")]
 public class QuickStartWizardTests
 {
     private static InstallProject Blank() => new();

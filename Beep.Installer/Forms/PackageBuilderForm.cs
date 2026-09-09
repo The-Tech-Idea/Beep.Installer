@@ -80,6 +80,16 @@ public class PackageBuilderForm : Form
     private Panel? _contentIisAppPools;
     private Panel? _contentIisSites;
     private Panel? _contentWebDeployPackages;
+    private Panel? _contentEnvironmentVariables;
+    private Panel? _contentFileAssociations;
+    private Panel? _contentWindowsServices;
+    private Panel? _contentUpdateChannels;
+    private Panel? _contentPackages;
+    private Panel? _contentPrerequisiteCatalogs;
+    private Panel? _contentMsixOptionalPackages;
+    private Panel? _contentSupersedence;
+    private Panel? _contentCustomPages;
+    private Panel? _contentResources;
 
     private TextBox _sourceDirBox = null!;
     private TreeView _fileTree = null!;
@@ -182,6 +192,7 @@ public class PackageBuilderForm : Form
         // project's data.
         if (_activeSectionId is { } section) OnSectionSelected(this, section);
 
+        RefreshReadiness();
         HideWelcome();
     }
 
@@ -209,6 +220,7 @@ public class PackageBuilderForm : Form
         {
             timer.Stop();
             ValidateFieldsInline();
+            RefreshReadiness();
         };
         // No designer container on this form, so the timer is disposed with the form explicitly.
         Disposed += (_, _) => timer.Dispose();
@@ -308,7 +320,7 @@ public class PackageBuilderForm : Form
         {
             NewButton(), OpenButton(), SaveButton(), SaveAsButton(),
             new ToolStripSeparator(), RecentButton(), new ToolStripSeparator(),
-            QuickStartButton(), PreviewButton(), BuildButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
+            QuickStartButton(), PreviewButton(), BuildButton(), PackagingButton(), SigningButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
             new ToolStripSeparator(), LangButton(), HelpButton(), AboutButton()
         });
 
@@ -361,7 +373,19 @@ public class PackageBuilderForm : Form
         _buildResultLabel = new ToolStripStatusLabel { Text = "", IsLink = true, ForeColor = AccentColor };
         _buildResultLabel.Click += (_, _) => OpenLastBuild();
         _progress = new ToolStripProgressBar { Size = new Size(180, 16), Visible = false };
-        _status.Items.AddRange(new ToolStripItem[] { _statusLabel, _dirtyLabel, _buildResultLabel, _progress });
+        // Whether the project can build, visible at all times.
+        //
+        // Answering "can I build this yet?" previously meant pressing Build and reading a dialog --
+        // the answer existed the whole time and was only offered as the result of an action that
+        // takes a minute. Inline validation marks the field that is wrong, but only on the section
+        // being looked at, so a problem three sections away stayed invisible.
+        _readinessLabel = new ToolStripStatusLabel
+        {
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 0, 12, 0),
+        };
+
+        _status.Items.AddRange(new ToolStripItem[] { _statusLabel, _readinessLabel, _dirtyLabel, _buildResultLabel, _progress });
 
         Controls.Add(split);
         Controls.Add(_toolbar);
@@ -425,10 +449,15 @@ public class PackageBuilderForm : Form
         _nav.AddItem(g, "iisapppools", "IIS App Pools", "Runtime, pipeline, identity and ownership settings");
         _nav.AddItem(g, "iissites", "IIS Sites", "Physical path, application pool, bindings and ownership");
         _nav.AddItem(g, "webdeploy", "Web Deploy", "msdeploy packages, IIS site target and parameters");
+        _nav.AddItem(g, "environment", "Environment", "Variables written at install and removed at uninstall");
+        _nav.AddItem(g, "fileassociations", "File Associations", "Extensions, ProgIds and the verbs that open them");
+        _nav.AddItem(g, "windowsservices", "Windows Services", "Service identity, start mode and install behaviour");
+        _nav.AddItem(g, "resources", "Typed Resources", "Operations run by the extension resource providers");
 
         g = _nav.AddSection("customize", L("Nav_Customize", "Customize"));
         _nav.AddItem(g, "branding", "Branding", "Theme, banner, logo and installer branding");
-        _nav.AddItem(g, "wizardpages", "Wizard Pages", "Custom wizard pages and unattended properties");
+        _nav.AddItem(g, "wizardpages", "Wizard Pages", "Which built-in wizard pages the installer shows");
+        _nav.AddItem(g, "custompages", "Custom Pages", "Extra pages and fields shown during install");
 
         // Output shape and packaging. Every one of these sections was already written and wired
         // into OnSectionSelected -- and none of them had a nav item, so there was no way to reach
@@ -441,6 +470,13 @@ public class PackageBuilderForm : Form
         _nav.AddItem(g, "package", "Package Format", "EXE, MSI, MSIX and store readiness");
         _nav.AddItem(g, "codesign", "Code Signing", "Certificate, timestamp URL and signing policy");
         _nav.AddItem(g, "msix", "MSIX", "Identity, publisher and optional packages");
+        _nav.AddItem(g, "msixoptional", "MSIX Optional", "Optional packages in this application's MSIX family");
+        _nav.AddItem(g, "packages", "Package Nodes", "Sub-packages composed into this installer");
+
+        g = _nav.AddSection("deployment", L("Nav_Deployment", "Deployment"));
+        _nav.AddItem(g, "updatechannels", "Update Channels", "Release rings, feeds and rollout percentage");
+        _nav.AddItem(g, "prereqcatalogs", "Prerequisite Catalogs", "Signed prerequisite catalogs and trusted keys");
+        _nav.AddItem(g, "supersedence", "Supersedence", "Earlier products this installer replaces (Intune/ConfigMgr)");
 
         g = _nav.AddSection("build", L("Nav_Build", "Build"));
         _nav.AddItem(g, "script", "Script", "Canonical .bsetup script preview and editor");
@@ -486,6 +522,16 @@ public class PackageBuilderForm : Form
             "iisapppools" => GetOrCreate(ref _contentIisAppPools, BuildIisAppPoolsSection),
             "iissites" => GetOrCreate(ref _contentIisSites, BuildIisSitesSection),
             "webdeploy" => GetOrCreate(ref _contentWebDeployPackages, BuildWebDeployPackagesSection),
+            "environment" => GetOrCreate(ref _contentEnvironmentVariables, BuildEnvironmentVariablesSection),
+            "fileassociations" => GetOrCreate(ref _contentFileAssociations, BuildFileAssociationsSection),
+            "windowsservices" => GetOrCreate(ref _contentWindowsServices, BuildWindowsServicesSection),
+            "updatechannels" => GetOrCreate(ref _contentUpdateChannels, BuildUpdateChannelsSection),
+            "packages" => GetOrCreate(ref _contentPackages, BuildPackagesSection),
+            "prereqcatalogs" => GetOrCreate(ref _contentPrerequisiteCatalogs, BuildPrerequisiteCatalogsSection),
+            "msixoptional" => GetOrCreate(ref _contentMsixOptionalPackages, BuildMsixOptionalPackagesSection),
+            "supersedence" => GetOrCreate(ref _contentSupersedence, BuildDeploymentSupersedenceSection),
+            "custompages" => GetOrCreate(ref _contentCustomPages, BuildCustomPagesSection),
+            "resources" => GetOrCreate(ref _contentResources, BuildResourcesSection),
             _ => null
         };
         if (_activeContent != null)
@@ -1016,6 +1062,156 @@ public class PackageBuilderForm : Form
                 Trigger = ScheduledTaskTrigger.OnLogon,
                 Enabled = true,
                 StopOnUninstall = true
+            });
+
+    // ── Sections for collections that had no UI at all ──────────────────────
+    //
+    // Every one of these round-trips through the serializer and is honoured at install time; none
+    // of them had anywhere to be authored, so the only way to use them was to hand-edit the
+    // .bsetup. A model capability with no way to reach it is indistinguishable from a missing
+    // feature for anyone using the tool.
+    //
+    // Defaults are seeded from the project rather than left blank: an empty row tells the author
+    // nothing about what the field wants, and the shape of a plausible value does.
+
+    private Panel BuildEnvironmentVariablesSection()
+        => BuildAdvancedResourceSection(
+            L("Section_EnvironmentVariables", "Environment Variables"),
+            L("Section_EnvironmentVariablesHelp",
+                "Variables written at install and removed at uninstall. Use {app} to refer to the install folder."),
+            _project.EnvironmentVariables,
+            () => new EnvironmentVariableOp
+            {
+                Name = SafeIdentifier(_project.AppName).ToUpperInvariant() + "_HOME",
+                Value = "{app}"
+            });
+
+    private Panel BuildFileAssociationsSection()
+        => BuildAdvancedResourceSection(
+            L("Section_FileAssociations", "File Associations"),
+            L("Section_FileAssociationsHelp",
+                "File types this application opens. The ProgId must be unique to the product, or another "
+                + "installer's uninstall can take the association with it."),
+            _project.FileAssociations,
+            () => new FileAssociationDefinition
+            {
+                Extension = ".myapp",
+                ProgId = $"{SafeIdentifier(_project.AppName)}.Document",
+                Description = $"{_project.AppName} document",
+                ExecutablePath = DefaultMainExecutableReference(),
+                Arguments = "\"%1\""
+            });
+
+    private Panel BuildWindowsServicesSection()
+        => BuildAdvancedResourceSection(
+            L("Section_WindowsServices", "Windows Services"),
+            L("Section_WindowsServicesHelp",
+                "Services registered at install. A service needs a per-machine install: it cannot be "
+                + "registered from a per-user one."),
+            _project.WindowsServices,
+            () => new WindowsServiceDefinition
+            {
+                Name = SafeIdentifier(_project.AppName) + "Svc",
+                DisplayName = $"{_project.AppName} Service",
+                Description = $"Background service for {_project.AppName}.",
+                ExecutablePath = DefaultMainExecutableReference(),
+                StartAfterInstall = true
+            });
+
+    private Panel BuildUpdateChannelsSection()
+        => BuildAdvancedResourceSection(
+            L("Section_UpdateChannels", "Update Channels"),
+            L("Section_UpdateChannelsHelp",
+                "Named release rings and their feeds. Rollout percentage staggers who is offered a build; "
+                + "the feed URL is what installed clients actually check."),
+            _project.UpdateChannels,
+            () => new UpdateChannelDefinition
+            {
+                Id = "stable",
+                Name = "Stable",
+                Ring = "stable",
+                FeedUrl = _project.AppUpdatesURL,
+                RolloutPercentage = 100
+            });
+
+    private Panel BuildPackagesSection()
+        => BuildAdvancedResourceSection(
+            L("Section_Packages", "Package Nodes"),
+            L("Section_PackagesHelp",
+                "Sub-packages composed into this installer, from a local path or a download URL."),
+            _project.Packages,
+            () => new PackageNodeDefinition
+            {
+                Id = SafeIdentifier(_project.AppName).ToLowerInvariant() + "-core",
+                Name = $"{_project.AppName} core"
+            });
+
+    private Panel BuildPrerequisiteCatalogsSection()
+        => BuildAdvancedResourceSection(
+            L("Section_PrerequisiteCatalogs", "Prerequisite Catalogs"),
+            L("Section_PrerequisiteCatalogsHelp",
+                "Signed catalogs of prerequisite definitions. A catalog without a trusted key is read but "
+                + "not trusted, so pin the publisher key you expect."),
+            _project.PrerequisiteCatalogs,
+            () => new PrerequisiteCatalogReference { Required = false });
+
+    private Panel BuildMsixOptionalPackagesSection()
+        => BuildAdvancedResourceSection(
+            L("Section_MsixOptionalPackages", "MSIX Optional Packages"),
+            L("Section_MsixOptionalPackagesHelp",
+                "Optional packages that join this application's MSIX family. Publisher must match the main "
+                + "package exactly or Windows refuses the relationship."),
+            _project.MsixOptionalPackages,
+            () => new MsixOptionalPackageDefinition
+            {
+                Name = SafeIdentifier(_project.AppName) + ".Optional",
+                Publisher = _project.MsixPublisher,
+                Version = _project.AppVersion
+            });
+
+    private Panel BuildDeploymentSupersedenceSection()
+        => BuildAdvancedResourceSection(
+            L("Section_Supersedence", "Supersedence"),
+            L("Section_SupersedenceHelp",
+                "Earlier products this installer replaces, for Intune and ConfigMgr. The version range decides "
+                + "which installs are superseded rather than left alongside."),
+            _project.DeploymentSupersedence,
+            () => new DeploymentSupersedenceRule
+            {
+                PackageId = _project.AppId,
+                DisplayName = _project.AppName,
+                MinimumVersion = "0.0.0",
+                MaximumVersion = _project.AppVersion
+            });
+
+    private Panel BuildResourcesSection()
+        => BuildAdvancedResourceSection(
+            L("Section_Resources", "Typed Resources"),
+            L("Section_ResourcesHelp",
+                "Operations executed by the typed resource providers at install time. These need explicit "
+                + "extension directories and the EXE host — a build refuses otherwise, because MSIX cannot "
+                + "execute providers."),
+            _project.Resources,
+            () => new Beep.Installer.Engine.CompiledInstallOperation
+            {
+                Id = $"file.copy:{_project.Resources.Count + 1}",
+                Type = "file.copy",
+                DisplayName = L("Section_ResourcesDefaultName", "Copy a file"),
+                RollbackSupported = true
+            });
+
+    private Panel BuildCustomPagesSection()
+        => BuildAdvancedResourceSection(
+            L("Section_CustomPages", "Custom Wizard Pages"),
+            L("Section_CustomPagesHelp",
+                "Extra pages shown during install, with fields whose answers reach the install context. "
+                + "Order decides where a page appears in the wizard."),
+            _project.CustomPages,
+            () => new CustomWizardPage
+            {
+                Id = "page" + (_project.CustomPages.Count + 1),
+                Title = L("Section_CustomPageTitle", "Additional options"),
+                Order = _project.CustomPages.Count + 1
             });
 
     private Panel BuildFirewallRulesSection()
@@ -2024,6 +2220,34 @@ public class PackageBuilderForm : Form
     private ToolStripButton SaveButton() => MakeButton("Save", "Save installer script", (_, _) => SaveProject());
     private ToolStripButton SaveAsButton() => MakeButton("Save As", "Save installer script as", (_, _) => SaveProjectAs());
     private ToolStripDropDownButton RecentButton() { RefreshRecents(); return _recentsBtn; }
+    private ToolStripButton PackagingButton() => MakeButton(
+        L("Packaging_Button", "Format"),
+        L("Packaging_ButtonHint", "Choose the output format and see what it cannot carry"),
+        (_, _) =>
+        {
+            using var wizard = new PackagingWizard(_controller.Project);
+            if (wizard.ShowDialog(this) != DialogResult.OK) return;
+
+            _controller.Project.MarkDirty();
+            BindProject();
+            InvalidateAllContent();
+            if (_activeSectionId is { } section) OnSectionSelected(this, section);
+        });
+
+    private ToolStripButton SigningButton() => MakeButton(
+        L("Signing_Button", "Signing"),
+        L("Signing_ButtonHint", "Choose how this installer is signed"),
+        (_, _) =>
+        {
+            using var wizard = new CodeSigningWizard(_controller.Project);
+            if (wizard.ShowDialog(this) != DialogResult.OK) return;
+
+            _controller.Project.MarkDirty();
+            BindProject();
+            InvalidateAllContent();
+            if (_activeSectionId is { } section) OnSectionSelected(this, section);
+        });
+
     private ToolStripButton QuickStartButton() => MakeButton(
         L("Quick_Button", "Quick Start"),
         L("Quick_ButtonHint", "Guided setup of the fields a build requires"),
@@ -2364,7 +2588,10 @@ public class PackageBuilderForm : Form
     {
         if (!ApplyScriptEditor()) return;
         if (string.IsNullOrEmpty(_project.AppName)) { MessageBox.Show(this, "Product name is required.", "Publish", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-        using var dlg = new FolderBrowserDialog { Description = "ClickOnce publish folder" };
+        // A bare folder picker skipped the update URL and signing entirely, so both silently took a
+        // default -- and a wrong update URL is the classic ClickOnce failure: the install works and
+        // then never updates again.
+        using var dlg = new PublishWizard(_project);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         if (_controller.IsDirty) SaveProject();
         var projectName = _project.AppName;
@@ -2373,7 +2600,7 @@ public class PackageBuilderForm : Form
         _progress.Visible = true;
         Task.Run(() =>
         {
-            var result = _controller.Publish(dlg.SelectedPath);
+            var result = _controller.Publish(dlg.PublishFolder, dlg.UpdateUrl, dlg.Sign);
             BeginInvoke((Action)(() =>
             {
                 _progress.Visible = false;
@@ -2514,6 +2741,56 @@ public class PackageBuilderForm : Form
     private int _fileTreeGeneration;
 
     private Panel? _brandingPreview;
+    private ToolStripStatusLabel? _readinessLabel;
+
+    /// <summary>
+    /// Recomputes the "can this build?" indicator.
+    ///
+    /// Deliberately the same <see cref="ProjectSchemaService"/> the build runs, so the status bar
+    /// cannot disagree with what pressing Build would do -- the split that once let `/VALIDATE`
+    /// reject a project `/BUILD` accepted is exactly the shape to avoid repeating in the UI.
+    /// </summary>
+    private void RefreshReadiness()
+    {
+        if (_readinessLabel is null) return;
+
+        try
+        {
+            var validation = ProjectSchemaService.Validate(_project);
+            var errors = validation.Diagnostics.Count(d => d.Severity == ProjectSchemaDiagnosticSeverity.Error);
+            var warnings = validation.Diagnostics.Count(d => d.Severity == ProjectSchemaDiagnosticSeverity.Warning);
+
+            if (errors > 0)
+            {
+                _readinessLabel.Text = string.Format(L("Builder_ReadinessBlocked", "⛔ {0} blocking problem(s)"), errors);
+                _readinessLabel.ForeColor = Color.FromArgb(168, 32, 32);
+                _readinessLabel.ToolTipText = string.Join(Environment.NewLine,
+                    validation.Diagnostics
+                        .Where(d => d.Severity == ProjectSchemaDiagnosticSeverity.Error)
+                        .Take(8)
+                        .Select(d => $"{d.Code} {d.Path}: {d.Message}"));
+                return;
+            }
+
+            _readinessLabel.Text = warnings > 0
+                ? string.Format(L("Builder_ReadinessWarn", "✓ Ready — {0} warning(s)"), warnings)
+                : L("Builder_ReadinessOk", "✓ Ready to build");
+            _readinessLabel.ForeColor = warnings > 0 ? Color.FromArgb(150, 90, 0) : Color.FromArgb(24, 118, 60);
+            _readinessLabel.ToolTipText = warnings > 0
+                ? string.Join(Environment.NewLine,
+                    validation.Diagnostics
+                        .Where(d => d.Severity == ProjectSchemaDiagnosticSeverity.Warning)
+                        .Take(8)
+                        .Select(d => $"{d.Code} {d.Path}: {d.Message}"))
+                : "";
+        }
+        catch
+        {
+            // A status indicator must never be the thing that takes the builder down.
+            _readinessLabel.Text = "";
+            _readinessLabel.ToolTipText = "";
+        }
+    }
 
     /// <summary>
     /// Draws the wizard's sidebar, title and accent using the authored colours, so the effect of a

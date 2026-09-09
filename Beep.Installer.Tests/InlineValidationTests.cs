@@ -22,6 +22,39 @@ public class InlineValidationTests
         => InstallerProjectFactory.CreateNew("FieldApp", "1.0.0", "ACME", sourceDir);
 
     [Fact]
+    public void TheReadinessIndicatorUsesTheSameValidatorAsTheBuild()
+    {
+        // The status bar answers "can I build this yet?" continuously. If it used a different
+        // validator from the build it would eventually disagree with it -- which is precisely the
+        // split that once let /VALIDATE reject a project /BUILD accepted.
+        var source = ReadRepoFile(System.IO.Path.Combine("Beep.Installer", "Forms", "PackageBuilderForm.cs"));
+        var readiness = Between(source, "private void RefreshReadiness()", "private Panel BuildIdentitySection");
+
+        readiness.Should().Contain("ProjectSchemaService.Validate(_project)",
+            "the indicator must agree with what pressing Build would do");
+        readiness.Should().Contain("ProjectSchemaDiagnosticSeverity.Error",
+            "only errors block a build; warnings must not be reported as blocking");
+    }
+
+    private static string Between(string source, string start, string end)
+    {
+        var from = source.IndexOf(start, StringComparison.Ordinal);
+        from.Should().BeGreaterThan(-1, $"'{start}' should exist");
+        var to = source.IndexOf(end, from, StringComparison.Ordinal);
+        return to > from ? source[from..to] : source[from..];
+    }
+
+    private static string ReadRepoFile(string relativePath)
+    {
+        var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !System.IO.File.Exists(System.IO.Path.Combine(dir.FullName, "Beep.Installer.slnx")))
+            dir = dir.Parent;
+
+        dir.Should().NotBeNull("the test must be able to find the repository root");
+        return System.IO.File.ReadAllText(System.IO.Path.Combine(dir!.FullName, relativePath));
+    }
+
+    [Fact]
     public void SchemaDiagnosticsNameThePropertyTheyAreAbout()
     {
         // This is the seam inline validation relies on: a path of "Setup.<Property>", whose last
