@@ -112,6 +112,11 @@ public sealed class LeftNavPanel : Panel
             {
                 _selIdx = i;
                 _selectedSectionId = id;
+
+                // A collapsed group hides its rows, so EnsureVisible would scroll to something the
+                // user cannot see. Open the owning group first.
+                ExpandGroupFor(id);
+
                 _list.Items[i].Selected = true;
                 _list.Items[i].EnsureVisible();
                 SectionSelected?.Invoke(this, id);
@@ -206,11 +211,55 @@ public sealed class LeftNavPanel : Panel
     private static bool Contains(string value, string pattern)
         => value?.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0;
 
+    /// <summary>
+    /// Adds a collapsible group header.
+    ///
+    /// The nav grew to forty items across eight groups, and a flat Details list showed all of them
+    /// at once -- roughly fifty rows in a narrow column, so finding anything meant scrolling past
+    /// everything. Groups are collapsible, and everything except the group holding the current
+    /// section starts collapsed, so the menu opens as eight headers rather than one long list.
+    ///
+    /// While a filter is active the groups stay expanded: the point of typing is to see the matches.
+    /// </summary>
     private ListViewGroup AddListGroup(string id, string label)
     {
-        var group = new ListViewGroup(id, label);
+        var group = new ListViewGroup(id, label)
+        {
+            CollapsedState = ExpandByDefault(id)
+                ? ListViewGroupCollapsedState.Expanded
+                : ListViewGroupCollapsedState.Collapsed,
+        };
+
         _list.Groups.Add(group);
         return group;
+    }
+
+    /// <summary>Which group opens expanded: the one being searched in, or the one in use.</summary>
+    private bool ExpandByDefault(string sectionId)
+    {
+        if (!string.IsNullOrWhiteSpace(_filterText))
+            return true;
+
+        // The group holding the selected section, so the current place stays visible.
+        var owner = _items.FirstOrDefault(i => string.Equals(i.Id, _selectedSectionId, StringComparison.Ordinal));
+        if (owner != null)
+            return string.Equals(owner.SectionId, sectionId, StringComparison.Ordinal);
+
+        // Nothing selected yet: open the first group so the panel is not a wall of headers.
+        return _sections.Count > 0 && string.Equals(_sections[0].Id, sectionId, StringComparison.Ordinal);
+    }
+
+    /// <summary>Expands the group that owns a section, so selecting it can actually show it.</summary>
+    private void ExpandGroupFor(string sectionId)
+    {
+        var owner = _items.FirstOrDefault(i => string.Equals(i.Id, sectionId, StringComparison.Ordinal));
+        if (owner == null) return;
+
+        foreach (ListViewGroup group in _list.Groups)
+        {
+            if (string.Equals(group.Name, owner.SectionId, StringComparison.Ordinal))
+                group.CollapsedState = ListViewGroupCollapsedState.Expanded;
+        }
     }
 
     private void AddListItem(ListViewGroup group, string id, string label, string hint)
