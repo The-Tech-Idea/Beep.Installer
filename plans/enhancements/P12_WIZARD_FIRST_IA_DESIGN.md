@@ -1,6 +1,6 @@
 # Phase 12: Wizard-First IA + Shared Editing ViewModel — Design Document
 
-**Status:** 🟡 12.A, 12.C.1, 12.D.1, 12.D.2, 12.D.3 shipped · 12.C.2, 12.D.4, 12.E not started · **Priority:** P1
+**Status:** ✅ 12.A–12.D.4 shipped · 12.E opportunistic, ongoing · **Priority:** P1
 **Depends on:** P6 (theme tokens, dead-UI cleanup)
 **Tracker:** [MASTER_TRACKER.md](MASTER_TRACKER.md)
 
@@ -258,10 +258,14 @@ below is aimed at the target in §3, not at a local symptom.
    `CustomActionsDialog` (the two sites that actually had the duplicate — see §3.3 for why this
    differs from the original sketch). `BuilderSectionCacheTests`-style regression coverage via new
    `ValidationCountsTests`. Commit `49ce0c4`.
-2. **12.C.2** ⬜ — Not started. Was scoped as "convert Components/Shortcuts/Registry list editors to
-   a shared ViewModel"; now that 12.C.1 shipped `ValidationCounts` instead of `SectionViewModel<T>`,
-   this needs its own concrete-duplication check first (per §3.3's method: read the actual code
-   before designing the abstraction), not an assumption that the original sketch still applies.
+2. **12.C.2** ✅ — The concrete-duplication check (§3.3's method) found Prerequisites/Shortcuts/
+   Registry hand-rolled the same `BindingSource` + grid + `PropertyGrid` + Add/Remove wiring
+   `BuildAdvancedResourceSection<T>` already provides — same collection type
+   (`ObservableCollection<T>`), same generic clone — so they were routed through it directly rather
+   than through a new `SectionViewModel<T>`. Removed ~90 lines and 9 dead fields; fixed two latent
+   gaps (unhidden list-typed columns, unhandled `DataError`) as a side effect. Commit `1e17c64`.
+   Components itself stays hand-rolled — its extra typed columns, Scan Source, and Move Up/Down
+   buttons are genuinely section-specific, not a copy of this pattern.
 3. **12.D.1** ✅ — `Forms/BuilderWizardForm`: stepper shell hosting the 9 steps in §3.2, re-parenting
    panels from a hidden `PackageBuilderForm` instance, `Next` gated by the new
    `PackageBuilderForm.ActiveSectionHasErrors()`. `BuilderWizardFormTests` covers gating, step
@@ -276,10 +280,12 @@ below is aimed at the target in §3, not at a local symptom.
    alive throughout. Commit `c488eb4`, which also fixed a real gap: `BuilderWizardForm.cs`'s own
    twelve `L()` strings (New Project step fields + all `Wizard_*` chrome) had no resx entry in any
    of the 8 languages — `StringResourceCoverageTests` caught it on the first full run after 12.D.1.
-6. **12.D.4** (new, split out of the original "Required to reach Build?" column in §3.2) ⬜ — Per-step
-   required-vs-skippable gating (e.g. Components step should require at least one selected component,
-   not just "no field-level error"). Deferred because `ActiveSectionHasErrors()`'s uniform gating
-   shipped first and works; this refines it, it does not block anything already shipped.
+6. **12.D.4** (new, split out of the original "Required to reach Build?" column in §3.2) ✅ — One
+   concrete rule shipped rather than a generic per-step rule engine: Next/the stepper strip refuse
+   to leave the Components step with zero components (that check cannot come from
+   `ActiveSectionHasErrors()`, since a `DataGridView`'s row count isn't a named field). No other
+   golden-path step got a section-specific rule — field-level validation already covers Identity/
+   Source/Output, and Shortcuts/Registry/Code signing are genuinely optional. Commit `4b767bb`.
 7. **12.E** ⬜ — Opportunistic: apply `Ui.ValidationCounts`/`Ui.BindingSourceRow<T>` to any further
    hand-rolled duplicate found in the remaining ~28 advanced-only sections, as they are next touched
    for any other reason. Not a blocker for anything above — Advanced mode already works today for

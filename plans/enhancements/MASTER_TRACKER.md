@@ -1842,12 +1842,20 @@ chrome) had no resx entry in any of the 8 languages since 12.D.1 shipped — `St
 caught it on the first full run after 12.D.1, not before, since targeted test runs during that
 session never included that suite.
 
-**Still open:** 12.C.2 (concrete-duplication check for the golden-path list editors, not yet done),
-12.D.4 (per-step required-vs-skippable gating — today every step gates uniformly on "no field
-error," not on section-specific rules like "Components needs at least one"), 12.E (opportunistic,
-unblocked). See P12 §5 for the full list.
+**P12 complete through 12.D.4.** 12.C.2 (`1e17c64`): the concrete-duplication check found
+Prerequisites/Shortcuts/Registry hand-rolled the same wiring `BuildAdvancedResourceSection<T>`
+already provides for the 17 typed-resource sections — routed through it directly, removing ~90
+lines and 9 dead fields, and fixing two latent bugs (unhidden list-typed grid columns, unhandled
+`DataError`) as a side effect. 12.D.4 (`4b767bb`): Next now refuses to leave the Components step
+empty — the one concrete per-step rule that couldn't come from field-level validation, since a
+`DataGridView`'s row count isn't a named control. Only 12.E remains, explicitly opportunistic and
+unbounded by design (apply the shared helpers to the remaining ~28 advanced-only sections as they
+are next touched for any other reason) — not a blocker, not scheduled as a sweep.
 
-Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipped.
+Full suite: 1496 passed, 0 failed, 4 skipped, 2m41s (environment note: a pile of stray `dotnet`/
+`testhost` processes — some hours old — had been silently contending for CPU/disk for much of this
+session, making every build and test run far slower than normal; clearing them brought a full run
+back down from 11 minutes to under 3).
 
 ---
 
@@ -1867,7 +1875,7 @@ Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipp
 | 9 | Test consolidation & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
 | 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
 | 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | 🟡 feature-complete (live E2E deferred) | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
-| 12 | Wizard-first IA + shared editing ViewModel | P1 | 🟡 12.A, 12.C.1, 12.D.1–12.D.3 shipped | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
+| 12 | Wizard-first IA + shared editing ViewModel | P1 | ✅ 12.A–12.D.4 shipped; 12.E opportunistic | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
 
 **Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
 highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and
