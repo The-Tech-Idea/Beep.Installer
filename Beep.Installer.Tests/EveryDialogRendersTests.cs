@@ -197,7 +197,14 @@ public sealed class EveryDialogRendersTests
             // modal ThreadExceptionDialog, and a modal in a test run blocks forever. That is exactly
             // how ComponentConditionsDialog threw on every open without anything noticing: the run
             // stopped rather than reported. Rethrowing makes a broken form a failing test.
-            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+            //
+            // This call itself can throw (SetUnhandledExceptionMode requires no window handle has
+            // been created yet on this thread, and the full suite runs many WinForms tests before
+            // this one). Left unguarded, that throw happens on a background thread with nothing
+            // above it to catch it, which crashes the whole test host process rather than failing
+            // one test -- exactly what took the full suite down.
+            try { Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException); }
+            catch { /* best-effort; a hang is still possible but the process survives */ }
 
             try { action(); }
             catch (Exception ex) { failure = ex; }
