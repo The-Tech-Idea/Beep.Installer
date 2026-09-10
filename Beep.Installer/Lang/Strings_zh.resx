@@ -1463,4 +1463,46 @@
   <data name="Conditions_QuickX64" xml:space="preserve">
     <value>x64 规则</value>
   </data>
+  <data name="Toolbar_Guided" xml:space="preserve">
+    <value>引导式</value>
+  </data>
+  <data name="Toolbar_GuidedHint" xml:space="preserve">
+    <value>切换到引导式分步视图</value>
+  </data>
+  <data name="NewProject_Template" xml:space="preserve">
+    <value>模板:</value>
+  </data>
+  <data name="NewProject_ProductName" xml:space="preserve">
+    <value>产品名称:</value>
+  </data>
+  <data name="NewProject_Version" xml:space="preserve">
+    <value>版本:</value>
+  </data>
+  <data name="NewProject_Publisher" xml:space="preserve">
+    <value>发布者:</value>
+  </data>
+  <data name="NewProject_SourceDirectory" xml:space="preserve">
+    <value>源目录:</value>
+  </data>
+  <data name="Wizard_Back" xml:space="preserve">
+    <value>&lt; 上一步</value>
+  </data>
+  <data name="Wizard_BeepInstaller" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Finish" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Wizard_FixErrorsBeforeContinuing" xml:space="preserve">
+    <value>请先修正此步骤中的错误，然后再继续。</value>
+  </data>
+  <data name="Wizard_Next" xml:space="preserve">
+    <value>下一步 &gt;</value>
+  </data>
+  <data name="Wizard_OpenFullEditor" xml:space="preserve">
+    <value>打开完整编辑器</value>
+  </data>
+  <data name="Wizard_StepNewProject" xml:space="preserve">
+    <value>新建项目</value>
+  </data>
 </root>

@@ -320,7 +320,7 @@ public class PackageBuilderForm : Form
         {
             NewButton(), OpenButton(), SaveButton(), SaveAsButton(),
             new ToolStripSeparator(), RecentButton(), new ToolStripSeparator(),
-            QuickStartButton(), PreviewButton(), BuildButton(), PackagingButton(), SigningButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
+            GuideButton(), QuickStartButton(), PreviewButton(), BuildButton(), PackagingButton(), SigningButton(), PublishButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(),
             new ToolStripSeparator(), LangButton(), HelpButton(), AboutButton()
         });
 
@@ -2323,6 +2323,29 @@ public class PackageBuilderForm : Form
             if (_activeSectionId is { } section) OnSectionSelected(this, section);
         });
 
+    /// <summary>
+    /// Advanced -> Guided (P12 12.D.3). Reuses this same instance as the wizard's hidden section
+    /// source (<see cref="BuilderWizardForm(InstallerController, PackageBuilderForm)"/>) rather than
+    /// constructing a second PackageBuilderForm against the same controller. Hiding rather than
+    /// closing this form means whichever window Application.Run is actually watching keeps running
+    /// either way; the wizard's own "Open full editor" reverses this by re-showing this instance and
+    /// closing the wizard.
+    /// </summary>
+    private ToolStripButton GuideButton() => MakeButton(
+        L("Toolbar_Guided", "Guided"),
+        L("Toolbar_GuidedHint", "Switch to the guided step-by-step view"),
+        (_, _) =>
+        {
+            var wizard = new BuilderWizardForm(_controller, this);
+            wizard.AdvancedRequested += (_, _) =>
+            {
+                Show();
+                wizard.Close();
+            };
+            Hide();
+            wizard.Show();
+        });
+
     private ToolStripButton QuickStartButton() => MakeButton(
         L("Quick_Button", "Quick Start"),
         L("Quick_ButtonHint", "Guided setup of the fields a build requires"),
@@ -2727,6 +2750,9 @@ public class PackageBuilderForm : Form
 
     /// <summary>The panel currently on screen for the selected section, if any.</summary>
     internal Control? ActiveSection => _activeContent;
+
+    /// <summary>The id of the section currently on screen, if any (e.g. "identity").</summary>
+    internal string? ActiveSectionId => _activeSectionId;
 
     /// <summary>
     /// Whether any control in the active section currently carries a validation error, per the same

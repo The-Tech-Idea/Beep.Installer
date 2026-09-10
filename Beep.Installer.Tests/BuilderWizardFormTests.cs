@@ -146,6 +146,40 @@ public sealed class BuilderWizardFormTests
         });
     }
 
+    [Fact]
+    public void ReusesAnExistingAdvancedFormInsteadOfConstructingASecondOne()
+    {
+        // Advanced mode's own "Guided" button (P12 12.D.3) must not leave two PackageBuilderForm
+        // instances both subscribed to the same InstallerController's events.
+        RunSta(() =>
+        {
+            var controller = new InstallerController();
+            using var advanced = new PackageBuilderForm(controller);
+            advanced.OpenSection("components");
+
+            using var wizard = new BuilderWizardForm(controller, advanced);
+
+            wizard.AdvancedForm.Should().BeSameAs(advanced);
+        });
+    }
+
+    [Fact]
+    public void StartsOnTheStepMatchingWhereAdvancedModeWas()
+    {
+        RunSta(() =>
+        {
+            var controller = new InstallerController();
+            using var advanced = new PackageBuilderForm(controller);
+            advanced.OpenSection("components");
+
+            using var wizard = new BuilderWizardForm(controller, advanced);
+            wizard.Show();
+
+            var componentsBtn = Descendants(wizard).OfType<Button>().First(b => b.Text == "Components");
+            componentsBtn.FlatStyle.Should().Be(FlatStyle.Popup, "the step matching Advanced mode's current section should be the one shown, not Identity");
+        });
+    }
+
     /// <summary>WinForms needs a single-threaded apartment; xUnit threads are MTA.</summary>
     private static void RunSta(Action action)
     {

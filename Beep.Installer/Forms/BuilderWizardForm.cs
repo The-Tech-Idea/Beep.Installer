@@ -58,14 +58,28 @@ public sealed class BuilderWizardForm : Form
     /// <summary>Raised once the user asks for the full section browser + toolbar instead.</summary>
     public event EventHandler? AdvancedRequested;
 
-    public BuilderWizardForm(InstallerController controller)
+    public BuilderWizardForm(InstallerController controller) : this(controller, new PackageBuilderForm(controller))
+    {
+    }
+
+    /// <summary>
+    /// Reuses an already-open <see cref="PackageBuilderForm"/> as the hidden section-panel source
+    /// instead of constructing a second one against the same controller -- what Advanced mode's own
+    /// "Guided" button (P12 12.D.3) needs: switching from Advanced to Guided must not leave two
+    /// PackageBuilderForm instances both subscribed to the same InstallerController's events.
+    /// </summary>
+    public BuilderWizardForm(InstallerController controller, PackageBuilderForm existingAdvanced)
     {
         _controller = controller;
-        _advanced = new PackageBuilderForm(controller);
+        _advanced = existingAdvanced;
         _projectCreated = HasRealProject(controller.Project);
 
         InitializeUi();
-        GoTo(_projectCreated ? 0 : -1);
+
+        // Coming from Advanced mode's own "Guided" button: land on the matching step instead of
+        // always restarting at Identity, so switching views does not lose where the user was.
+        var startIndex = Array.FindIndex(GoldenPath, s => s.Id == existingAdvanced.ActiveSectionId);
+        GoTo(startIndex >= 0 ? startIndex : (_projectCreated ? 0 : -1));
     }
 
     /// <summary>A controller from CreateColdStartController's reopen-most-recent path already has a

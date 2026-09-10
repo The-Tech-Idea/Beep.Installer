@@ -1463,4 +1463,46 @@ Cree instaladores Setup.exe autónomos para Windows.</value>
   <data name="Conditions_QuickX64" xml:space="preserve">
     <value>Regla x64</value>
   </data>
+  <data name="Toolbar_Guided" xml:space="preserve">
+    <value>Guiado</value>
+  </data>
+  <data name="Toolbar_GuidedHint" xml:space="preserve">
+    <value>Cambiar a la vista guiada paso a paso</value>
+  </data>
+  <data name="NewProject_Template" xml:space="preserve">
+    <value>Plantilla:</value>
+  </data>
+  <data name="NewProject_ProductName" xml:space="preserve">
+    <value>Nombre del producto:</value>
+  </data>
+  <data name="NewProject_Version" xml:space="preserve">
+    <value>Versión:</value>
+  </data>
+  <data name="NewProject_Publisher" xml:space="preserve">
+    <value>Editor:</value>
+  </data>
+  <data name="NewProject_SourceDirectory" xml:space="preserve">
+    <value>Directorio de origen:</value>
+  </data>
+  <data name="Wizard_Back" xml:space="preserve">
+    <value>&lt; Atrás</value>
+  </data>
+  <data name="Wizard_BeepInstaller" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Finish" xml:space="preserve">
+    <value>Finalizar</value>
+  </data>
+  <data name="Wizard_FixErrorsBeforeContinuing" xml:space="preserve">
+    <value>Corrija los errores de este paso antes de continuar.</value>
+  </data>
+  <data name="Wizard_Next" xml:space="preserve">
+    <value>Siguiente &gt;</value>
+  </data>
+  <data name="Wizard_OpenFullEditor" xml:space="preserve">
+    <value>Abrir editor completo</value>
+  </data>
+  <data name="Wizard_StepNewProject" xml:space="preserve">
+    <value>Nuevo proyecto</value>
+  </data>
 </root>

@@ -1463,4 +1463,46 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Conditions_QuickX64" xml:space="preserve">
     <value>x64 ルール</value>
   </data>
+  <data name="Toolbar_Guided" xml:space="preserve">
+    <value>ガイド付き</value>
+  </data>
+  <data name="Toolbar_GuidedHint" xml:space="preserve">
+    <value>ガイド付きのステップバイステップ表示に切り替えます</value>
+  </data>
+  <data name="NewProject_Template" xml:space="preserve">
+    <value>テンプレート:</value>
+  </data>
+  <data name="NewProject_ProductName" xml:space="preserve">
+    <value>製品名:</value>
+  </data>
+  <data name="NewProject_Version" xml:space="preserve">
+    <value>バージョン:</value>
+  </data>
+  <data name="NewProject_Publisher" xml:space="preserve">
+    <value>発行者:</value>
+  </data>
+  <data name="NewProject_SourceDirectory" xml:space="preserve">
+    <value>ソース ディレクトリ:</value>
+  </data>
+  <data name="Wizard_Back" xml:space="preserve">
+    <value>&lt; 戻る</value>
+  </data>
+  <data name="Wizard_BeepInstaller" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Finish" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Wizard_FixErrorsBeforeContinuing" xml:space="preserve">
+    <value>続行する前に、この手順のエラーを修正してください。</value>
+  </data>
+  <data name="Wizard_Next" xml:space="preserve">
+    <value>次へ &gt;</value>
+  </data>
+  <data name="Wizard_OpenFullEditor" xml:space="preserve">
+    <value>フル エディターを開く</value>
+  </data>
+  <data name="Wizard_StepNewProject" xml:space="preserve">
+    <value>新しいプロジェクト</value>
+  </data>
 </root>

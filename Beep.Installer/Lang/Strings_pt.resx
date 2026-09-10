@@ -1463,4 +1463,46 @@ Limpar antes de compilar?</value>
   <data name="Conditions_QuickX64" xml:space="preserve">
     <value>Regra x64</value>
   </data>
+  <data name="Toolbar_Guided" xml:space="preserve">
+    <value>Guiado</value>
+  </data>
+  <data name="Toolbar_GuidedHint" xml:space="preserve">
+    <value>Mudar para a vista guiada passo a passo</value>
+  </data>
+  <data name="NewProject_Template" xml:space="preserve">
+    <value>Modelo:</value>
+  </data>
+  <data name="NewProject_ProductName" xml:space="preserve">
+    <value>Nome do produto:</value>
+  </data>
+  <data name="NewProject_Version" xml:space="preserve">
+    <value>Versão:</value>
+  </data>
+  <data name="NewProject_Publisher" xml:space="preserve">
+    <value>Editor:</value>
+  </data>
+  <data name="NewProject_SourceDirectory" xml:space="preserve">
+    <value>Diretório de origem:</value>
+  </data>
+  <data name="Wizard_Back" xml:space="preserve">
+    <value>&lt; Voltar</value>
+  </data>
+  <data name="Wizard_BeepInstaller" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Finish" xml:space="preserve">
+    <value>Concluir</value>
+  </data>
+  <data name="Wizard_FixErrorsBeforeContinuing" xml:space="preserve">
+    <value>Corrija os erros nesta etapa antes de continuar.</value>
+  </data>
+  <data name="Wizard_Next" xml:space="preserve">
+    <value>Seguinte &gt;</value>
+  </data>
+  <data name="Wizard_OpenFullEditor" xml:space="preserve">
+    <value>Abrir editor completo</value>
+  </data>
+  <data name="Wizard_StepNewProject" xml:space="preserve">
+    <value>Novo projeto</value>
+  </data>
 </root>

@@ -1463,4 +1463,46 @@ Nettoyer avant de générer ?</value>
   <data name="Conditions_QuickX64" xml:space="preserve">
     <value>Règle x64</value>
   </data>
+  <data name="Toolbar_Guided" xml:space="preserve">
+    <value>Guidé</value>
+  </data>
+  <data name="Toolbar_GuidedHint" xml:space="preserve">
+    <value>Passer à la vue guidée étape par étape</value>
+  </data>
+  <data name="NewProject_Template" xml:space="preserve">
+    <value>Modèle :</value>
+  </data>
+  <data name="NewProject_ProductName" xml:space="preserve">
+    <value>Nom du produit :</value>
+  </data>
+  <data name="NewProject_Version" xml:space="preserve">
+    <value>Version :</value>
+  </data>
+  <data name="NewProject_Publisher" xml:space="preserve">
+    <value>Éditeur :</value>
+  </data>
+  <data name="NewProject_SourceDirectory" xml:space="preserve">
+    <value>Répertoire source :</value>
+  </data>
+  <data name="Wizard_Back" xml:space="preserve">
+    <value>&lt; Précédent</value>
+  </data>
+  <data name="Wizard_BeepInstaller" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Finish" xml:space="preserve">
+    <value>Terminer</value>
+  </data>
+  <data name="Wizard_FixErrorsBeforeContinuing" xml:space="preserve">
+    <value>Corrigez les erreurs de cette étape avant de continuer.</value>
+  </data>
+  <data name="Wizard_Next" xml:space="preserve">
+    <value>Suivant &gt;</value>
+  </data>
+  <data name="Wizard_OpenFullEditor" xml:space="preserve">
+    <value>Ouvrir l'éditeur complet</value>
+  </data>
+  <data name="Wizard_StepNewProject" xml:space="preserve">
+    <value>Nouveau projet</value>
+  </data>
 </root>

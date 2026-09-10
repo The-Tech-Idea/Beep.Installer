@@ -1473,4 +1473,46 @@ Clean before building?</value>
   <data name="Conditions_QuickX64" xml:space="preserve">
     <value>x64 rule</value>
   </data>
+  <data name="Toolbar_Guided" xml:space="preserve">
+    <value>Guided</value>
+  </data>
+  <data name="Toolbar_GuidedHint" xml:space="preserve">
+    <value>Switch to the guided step-by-step view</value>
+  </data>
+  <data name="NewProject_Template" xml:space="preserve">
+    <value>Template:</value>
+  </data>
+  <data name="NewProject_ProductName" xml:space="preserve">
+    <value>Product name:</value>
+  </data>
+  <data name="NewProject_Version" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="NewProject_Publisher" xml:space="preserve">
+    <value>Publisher:</value>
+  </data>
+  <data name="NewProject_SourceDirectory" xml:space="preserve">
+    <value>Source directory:</value>
+  </data>
+  <data name="Wizard_Back" xml:space="preserve">
+    <value>&lt; Back</value>
+  </data>
+  <data name="Wizard_BeepInstaller" xml:space="preserve">
+    <value>Beep Installer</value>
+  </data>
+  <data name="Wizard_Finish" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="Wizard_FixErrorsBeforeContinuing" xml:space="preserve">
+    <value>Fix the errors on this step before continuing.</value>
+  </data>
+  <data name="Wizard_Next" xml:space="preserve">
+    <value>Next &gt;</value>
+  </data>
+  <data name="Wizard_OpenFullEditor" xml:space="preserve">
+    <value>Open full editor</value>
+  </data>
+  <data name="Wizard_StepNewProject" xml:space="preserve">
+    <value>New project</value>
+  </data>
 </root>
