@@ -72,6 +72,7 @@ public class CustomActionsDialog : Form
 
         _grid = new DataGridView
         {
+            AccessibleName = L("Actions_GridName", "Custom actions"),
             Dock = DockStyle.Fill,
             DataSource = _binding,
             AutoGenerateColumns = true,

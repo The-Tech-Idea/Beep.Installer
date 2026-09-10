@@ -175,6 +175,14 @@ public sealed class EverySectionRendersTests
 
         var thread = new Thread(() =>
         {
+            // Fail, do not hang.
+            //
+            // WinForms' default handler turns an exception thrown while a form is coming up into a
+            // modal ThreadExceptionDialog, and a modal in a test run blocks forever. That is exactly
+            // how ComponentConditionsDialog threw on every open without anything noticing: the run
+            // stopped rather than reported. Rethrowing makes a broken form a failing test.
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+
             try { action(); }
             catch (Exception ex) { failure = ex; }
         });

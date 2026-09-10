@@ -48,6 +48,7 @@ public class ComponentFilesDialog : Form
         _binding = new BindingSource { DataSource = _files };
         _grid = new DataGridView
         {
+            AccessibleName = L("Files_GridName", "Files in this component"),
             Dock = DockStyle.Fill,
             DataSource = _binding,
             AutoGenerateColumns = true,

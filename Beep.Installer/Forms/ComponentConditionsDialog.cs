@@ -43,7 +43,18 @@ public class ComponentConditionsDialog : Form
     {
         _components = (components ?? new System.Collections.Generic.List<InstallComponent>()).Cast<InstallComponent>().ToList();
         _initial = initial;
-        _binding = new BindingSource();
+        // The item type has to be known before anything binds to a property of it.
+        //
+        // The editor binds _typeBox/_valueBox/_operatorBox/_value2Box to Type, Value, Operator and
+        // Value2 while DataSource is still empty. A BindingSource with no source cannot say what its
+        // items look like, so the first of those bindings threw
+        // ArgumentException("Cannot bind to the property or column Type on the DataSource") the
+        // moment the form was shown -- every single time this dialog was opened. WinForms turned
+        // that into its own modal error dialog, which is what the user was seeing.
+        //
+        // Handing it the type up front lets the bindings resolve with zero rows; Rebind then swaps
+        // in the real list.
+        _binding = new BindingSource { DataSource = typeof(InstallCondition) };
         _binding.ListChanged += (_, _) => RefreshValidation();
 
         Text = L("Conditions_ComponentConditionBuilder", "Component Condition Builder");
@@ -126,6 +137,7 @@ public class ComponentConditionsDialog : Form
 
         _grid = new DataGridView
         {
+            AccessibleName = L("Conditions_GridName", "Conditions for the selected component"),
             Dock = DockStyle.Fill,
             AutoGenerateColumns = true,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,

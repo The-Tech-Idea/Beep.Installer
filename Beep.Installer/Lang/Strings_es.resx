@@ -1373,4 +1373,22 @@ Cree instaladores Setup.exe autónomos para Windows.</value>
   <data name="ResType_WebDeploy_Summary" xml:space="preserve">
     <value>Ejecuta msdeploy sobre un paquete .zip.</value>
   </data>
+  <data name="Actions_GridName" xml:space="preserve">
+    <value>Acciones personalizadas</value>
+  </data>
+  <data name="Conditions_GridName" xml:space="preserve">
+    <value>Condiciones del componente seleccionado</value>
+  </data>
+  <data name="Files_GridName" xml:space="preserve">
+    <value>Archivos de este componente</value>
+  </data>
+  <data name="LangMgr_GridName" xml:space="preserve">
+    <value>Traducciones del idioma seleccionado</value>
+  </data>
+  <data name="LangMgr_PickerName" xml:space="preserve">
+    <value>Idioma que se está editando</value>
+  </data>
+  <data name="Template_GridName" xml:space="preserve">
+    <value>Diferencias que aplicaría esta actualización</value>
+  </data>
 </root>

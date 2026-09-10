@@ -1373,4 +1373,22 @@
   <data name="ResType_WebDeploy_Summary" xml:space="preserve">
     <value>يشغّل msdeploy على حزمة ‎.zip‎.</value>
   </data>
+  <data name="Actions_GridName" xml:space="preserve">
+    <value>الإجراءات المخصصة</value>
+  </data>
+  <data name="Conditions_GridName" xml:space="preserve">
+    <value>شروط المكوّن المحدد</value>
+  </data>
+  <data name="Files_GridName" xml:space="preserve">
+    <value>ملفات هذا المكوّن</value>
+  </data>
+  <data name="LangMgr_GridName" xml:space="preserve">
+    <value>ترجمات اللغة المحددة</value>
+  </data>
+  <data name="LangMgr_PickerName" xml:space="preserve">
+    <value>اللغة قيد التحرير</value>
+  </data>
+  <data name="Template_GridName" xml:space="preserve">
+    <value>الاختلافات التي سيطبقها هذا التحديث</value>
+  </data>
 </root>

@@ -1373,4 +1373,22 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="ResType_WebDeploy_Summary" xml:space="preserve">
     <value>.zip パッケージに対して msdeploy を実行します。</value>
   </data>
+  <data name="Actions_GridName" xml:space="preserve">
+    <value>カスタム アクション</value>
+  </data>
+  <data name="Conditions_GridName" xml:space="preserve">
+    <value>選択したコンポーネントの条件</value>
+  </data>
+  <data name="Files_GridName" xml:space="preserve">
+    <value>このコンポーネントのファイル</value>
+  </data>
+  <data name="LangMgr_GridName" xml:space="preserve">
+    <value>選択した言語の翻訳</value>
+  </data>
+  <data name="LangMgr_PickerName" xml:space="preserve">
+    <value>編集中の言語</value>
+  </data>
+  <data name="Template_GridName" xml:space="preserve">
+    <value>この更新で適用される差分</value>
+  </data>
 </root>

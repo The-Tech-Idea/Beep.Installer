@@ -70,6 +70,7 @@ public sealed class TemplateUpdateDialog : Form
 
         _diffGrid = new DataGridView
         {
+            AccessibleName = L("Template_GridName", "Differences this update would apply"),
             Dock = DockStyle.Fill,
             ReadOnly = true,
             AllowUserToAddRows = false,

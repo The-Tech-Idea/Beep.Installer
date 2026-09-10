@@ -1373,4 +1373,22 @@
   <data name="ResType_WebDeploy_Summary" xml:space="preserve">
     <value>对 .zip 包运行 msdeploy。</value>
   </data>
+  <data name="Actions_GridName" xml:space="preserve">
+    <value>自定义操作</value>
+  </data>
+  <data name="Conditions_GridName" xml:space="preserve">
+    <value>所选组件的条件</value>
+  </data>
+  <data name="Files_GridName" xml:space="preserve">
+    <value>此组件中的文件</value>
+  </data>
+  <data name="LangMgr_GridName" xml:space="preserve">
+    <value>所选语言的翻译</value>
+  </data>
+  <data name="LangMgr_PickerName" xml:space="preserve">
+    <value>正在编辑的语言</value>
+  </data>
+  <data name="Template_GridName" xml:space="preserve">
+    <value>此更新将应用的差异</value>
+  </data>
 </root>

@@ -47,7 +47,7 @@ public class LanguageManagerForm : Form
         // ── Top toolbar ──────────────────────────────────────
         var toolbar = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = Color.FromArgb(240, 240, 240) };
 
-        _langSelector = new ComboBox { Location = new Point(8, 8), Size = new Size(150, 24), DropDownStyle = ComboBoxStyle.DropDownList };
+        _langSelector = new ComboBox { Location = new Point(8, 8), Size = new Size(150, 24), DropDownStyle = ComboBoxStyle.DropDownList, AccessibleName = L("LangMgr_PickerName", "Language being edited") };
         _langSelector.SelectedIndexChanged += (_, _) => ShowLanguage(_langSelector.SelectedItem?.ToString() ?? "en");
 
         _addLangBtn = new Button { Text = L("LangMgr_Language", "+ Language"), Location = new Point(165, 7), Size = new Size(95, 26) };
@@ -79,6 +79,7 @@ public class LanguageManagerForm : Form
         // ── Main grid ────────────────────────────────────────
         _grid = new DataGridView
         {
+            AccessibleName = L("LangMgr_GridName", "Translations for the selected language"),
             Dock = DockStyle.Fill,
             AllowUserToAddRows = true,
             AllowUserToDeleteRows = true,

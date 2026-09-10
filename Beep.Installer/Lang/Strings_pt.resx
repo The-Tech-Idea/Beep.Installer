@@ -1373,4 +1373,22 @@ Limpar antes de compilar?</value>
   <data name="ResType_WebDeploy_Summary" xml:space="preserve">
     <value>Executa o msdeploy sobre um pacote .zip.</value>
   </data>
+  <data name="Actions_GridName" xml:space="preserve">
+    <value>Ações personalizadas</value>
+  </data>
+  <data name="Conditions_GridName" xml:space="preserve">
+    <value>Condições do componente selecionado</value>
+  </data>
+  <data name="Files_GridName" xml:space="preserve">
+    <value>Ficheiros neste componente</value>
+  </data>
+  <data name="LangMgr_GridName" xml:space="preserve">
+    <value>Traduções do idioma selecionado</value>
+  </data>
+  <data name="LangMgr_PickerName" xml:space="preserve">
+    <value>Idioma a ser editado</value>
+  </data>
+  <data name="Template_GridName" xml:space="preserve">
+    <value>Diferenças que esta atualização aplicaria</value>
+  </data>
 </root>
