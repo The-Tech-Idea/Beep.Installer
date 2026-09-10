@@ -250,11 +250,7 @@ public class CustomActionsDialog : Form
     private void ValidateAll()
     {
         var issues = InstallProject.ValidateCustomActions(_actions);
-        var errors = issues.Count(i => i.IsError);
-        var warnings = issues.Count - errors;
-        _validationLabel.Text = errors == 0 && warnings == 0
-            ? $"{_actions.Count} action(s) - OK"
-            : $"{_actions.Count} action(s) - {errors} error(s), {warnings} warning(s).";
-        _validationLabel.ForeColor = errors > 0 ? Color.DarkRed : (warnings > 0 ? Color.DarkOrange : Color.DarkGreen);
+        Ui.ValidationCounts.From(issues, i => i.IsError)
+            .Apply(_validationLabel, $"{_actions.Count} action(s) -", "OK");
     }
 }

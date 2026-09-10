@@ -324,12 +324,9 @@ public class ComponentConditionsDialog : Form
     {
         if (CurrentComponent == null) { _validationLabel.Text = ""; _previewBox.Text = ""; return; }
         var issues = ConditionListValidator.Validate(CurrentComponent.Conditions);
-        var errors = issues.Count(i => i.Severity == ConditionListValidator.IssueSeverity.Error);
-        var warnings = issues.Count - errors;
-        _validationLabel.Text = errors == 0 && warnings == 0
-            ? $"Component '{CurrentComponent.Id}' — {CurrentComponent.Conditions.Count} condition(s) — OK"
-            : $"Component '{CurrentComponent.Id}' — {errors} error(s), {warnings} warning(s).";
-        _validationLabel.ForeColor = errors > 0 ? Color.DarkRed : (warnings > 0 ? Color.DarkOrange : Color.DarkGreen);
+        Ui.ValidationCounts
+            .From(issues, i => i.Severity == ConditionListValidator.IssueSeverity.Error)
+            .Apply(_validationLabel, $"Component '{CurrentComponent.Id}' —", $"{CurrentComponent.Conditions.Count} condition(s) — OK");
         _previewBox.Text = BuildConditionPreview(CurrentComponent, issues);
     }
 
