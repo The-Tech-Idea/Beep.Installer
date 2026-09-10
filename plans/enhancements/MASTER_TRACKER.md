@@ -1798,10 +1798,16 @@ to the real `%APPDATA%\BeepInstaller\recent.json` with no seam to redirect it in
 `RunDefaultMode`'s windowed branch was already outside coverage (`Application.Run` blocks) —
 verified by code review and the full suite staying green, not a screenshot.
 
-**Still open:** how far the guided path extends past project creation — see P12 §2.3 for the
-options considered (a Guided/Advanced toggle re-sequencing the existing 40 sections into a
-stepper is the recommended direction) and why it is a separate, not-yet-started design pass
-rather than folded into this fix.
+**Still open:** how far the guided path extends past project creation. A same-day first attempt
+patched it without rearchitecting — a dismissible banner above the section content, listing six
+"golden path" steps — built, verified green, then **discarded** at the product owner's explicit
+instruction ("i dont want patching"): they asked instead for a detailed rewrite plan. P12 now
+carries that full plan (§3–§7): a `BuilderWizardForm` stepper shell mirroring
+`BeepModernInstallerForm`'s already-proven gated-navigation pattern, absorbing `ProjectNewDialog`/
+`QuickStartWizard` as its own first steps, with today's `PackageBuilderForm` kept unmodified as an
+explicitly-reached "Advanced" mode, plus a `SectionViewModel<T>` layer (built on
+`Ui.BindingSourceRow<T>`) so list-editing sections stop each hand-rolling the same wiring. Not yet
+implemented — sub-tasks 12.C–12.E in the design doc.
 
 Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipped.
 
@@ -1823,7 +1829,7 @@ Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipp
 | 9 | Test consolidation & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
 | 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
 | 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | 🟡 feature-complete (live E2E deferred) | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
-| 12 | Wizard-first IA + shared editing ViewModel | P1 | 🟡 started (12.A) | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
+| 12 | Wizard-first IA + shared editing ViewModel | P1 | 🟡 12.A shipped; 12.C–12.E planned | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
 
 **Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
 highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and
