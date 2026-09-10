@@ -1,6 +1,6 @@
 # Phase 12: Wizard-First IA + Shared Editing ViewModel — Design Document
 
-**Status:** 🟡 12.A, 12.C.1, 12.D.1, 12.D.2 shipped · 12.C.2, 12.D.3, 12.E not started · **Priority:** P1
+**Status:** 🟡 12.A, 12.C.1, 12.D.1, 12.D.2, 12.D.3 shipped · 12.C.2, 12.D.4, 12.E not started · **Priority:** P1
 **Depends on:** P6 (theme tokens, dead-UI cleanup)
 **Tracker:** [MASTER_TRACKER.md](MASTER_TRACKER.md)
 
@@ -223,11 +223,16 @@ too, but is not invented ahead of one.
   the current step's panel back into it before showing it for real (§3.1). A returning user with a
   valid recent project still reopens straight into Advanced, unchanged since 12.A.3 — no wizard walk
   for a project that already has everything filled in.
-- **Not yet shipped (12.D.3):** a way back from Advanced to Guided (e.g. a toolbar "Guided" button).
-  Today Advanced → Guided requires closing and relaunching. `File > New`'s existing
-  `NewProject(guided: true)` (`ProjectNewDialog` → `QuickStartWizard`, both still intact, unabsorbed)
-  is also untouched — it is a separate, pre-existing on-ramp reachable from inside Advanced mode, not
-  the same code path as `BuilderWizardForm`.
+- **Advanced → Guided, shipped (12.D.3):** a toolbar "Guided" button on `PackageBuilderForm`
+  constructs a `BuilderWizardForm` over a new two-arg constructor
+  (`BuilderWizardForm(controller, existingAdvanced)`) that reuses *this same instance* as the
+  wizard's hidden section source instead of constructing a second `PackageBuilderForm` against the
+  same controller (two instances both subscribed to the same `InstallerController` events was the
+  risk flagged in the original design). Hides this form, shows the wizard; the wizard's "Open full
+  editor" reverses it, same handoff as cold start. The wizard opens on whichever golden-path step
+  matches `ActiveSectionId` (new), not always Identity — switching views does not lose place.
+  `File > New`'s existing `NewProject(guided: true)` (`ProjectNewDialog` → `QuickStartWizard`, both
+  still intact, unabsorbed) remains a separate, pre-existing on-ramp, not the same code path.
 - **Both modes share the same `InstallerController`/`InstallProject`.** Switching modes never
   reloads or duplicates state — `BuilderWizardForm` owns a `PackageBuilderForm` instance
   (`_advanced`) constructed against the same controller, shown for real only on handoff.
@@ -264,10 +269,13 @@ below is aimed at the target in §3, not at a local symptom.
    unreachable-by-tests production bug along the way (`_contentHost` disposal, `7b47bba` — see §3.1).
 4. **12.D.2** ✅ — `Program.RunColdStart` opens `BuilderWizardForm` on a genuinely fresh cold start;
    a valid recent project still reopens straight into Advanced mode, unchanged. Commit `c6ada65`.
-5. **12.D.3** ⬜ — Not started. A toolbar "Guided" button on `PackageBuilderForm` (Advanced mode)
-   that opens a new `BuilderWizardForm` over the same controller, so Advanced → Guided doesn't
-   require closing the app. Needs the same `Application.Run` lifetime care `RunColdStart` used
-   (§ `c6ada65`'s commit message) generalized to "whichever of the two windows is currently primary."
+5. **12.D.3** ✅ — `PackageBuilderForm.GuideButton()` + `BuilderWizardForm`'s new two-arg
+   constructor, reusing the current instance rather than constructing a second one. Hide/Show, not
+   `Application.Run` juggling — both forms are simply shown/hidden non-modally, never closed until
+   the user actually closes one, so whichever form `Application.Run` originally started with stays
+   alive throughout. Commit `c488eb4`, which also fixed a real gap: `BuilderWizardForm.cs`'s own
+   twelve `L()` strings (New Project step fields + all `Wizard_*` chrome) had no resx entry in any
+   of the 8 languages — `StringResourceCoverageTests` caught it on the first full run after 12.D.1.
 6. **12.D.4** (new, split out of the original "Required to reach Build?" column in §3.2) ⬜ — Per-step
    required-vs-skippable gating (e.g. Components step should require at least one selected component,
    not just "no field-level error"). Deferred because `ActiveSectionHasErrors()`'s uniform gating
