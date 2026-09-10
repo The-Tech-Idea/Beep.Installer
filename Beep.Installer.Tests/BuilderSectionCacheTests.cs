@@ -20,10 +20,16 @@ namespace Beep.Installer.Tests;
 /// </summary>
 public class BuilderSectionCacheTests
 {
+    // _contentHost is deliberately excluded: it is the live container the cached panels dock into,
+    // not one of them, and the "_content" prefix convention matches its name too. Disposing and
+    // nulling it here crashed the very next line of OnProjectReloaded (HideWelcome's
+    // _contentHost.Controls.Clear()) the moment a second project loaded into an already-open builder.
     private static FieldInfo[] SectionPanelFields =>
         typeof(PackageBuilderForm)
             .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-            .Where(f => f.FieldType == typeof(Panel) && f.Name.StartsWith("_content", StringComparison.Ordinal))
+            .Where(f => f.FieldType == typeof(Panel)
+                        && f.Name.StartsWith("_content", StringComparison.Ordinal)
+                        && f.Name != "_contentHost")
             .ToArray();
 
     [Fact]
@@ -70,5 +76,19 @@ public class BuilderSectionCacheTests
         // Guards the reflection predicate itself: a rename of the _content prefix would otherwise
         // turn this whole mechanism into a silent no-op and the tests above into vacuous truths.
         SectionPanelFields.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void ContentHostItselfIsNeverInvalidated()
+    {
+        // Regression: _contentHost matched the same "_content" prefix as every cached section panel,
+        // so InvalidateAllContent disposed and nulled the live container itself, not just the panels
+        // docked into it -- crashing the next line of OnProjectReloaded on the very first project
+        // reload against an already-open builder (e.g. File > Open with a project already open).
+        var cached = (FieldInfo[])typeof(PackageBuilderForm)
+            .GetField("CachedSectionPanelFields", BindingFlags.Static | BindingFlags.NonPublic)!
+            .GetValue(null)!;
+
+        cached.Select(f => f.Name).Should().NotContain("_contentHost");
     }
 }

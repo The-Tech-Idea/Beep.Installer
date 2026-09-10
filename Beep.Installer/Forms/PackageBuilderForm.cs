@@ -576,10 +576,23 @@ public class PackageBuilderForm : Form
         }
     }
 
+    /// <summary>
+    /// Every cached section panel field (<c>_contentIdentity</c>, <c>_contentLayout</c>, ...) --
+    /// found by name convention rather than listed, per <see cref="InvalidateAllContent"/>'s own
+    /// reasoning. That convention also matches <c>_contentHost</c>, the live container those panels
+    /// get docked into, not a cached one of them: nulling and disposing it here left the builder with
+    /// no content area at all, crashing the next line in <c>OnProjectReloaded</c>
+    /// (<c>HideWelcome</c>'s <c>_contentHost.Controls.Clear()</c>) the moment a second project loaded
+    /// into an already-open builder -- e.g. File &gt; Open while a project is already open. Excluded
+    /// by exact name rather than tightening the prefix, since every real cached-panel field already
+    /// names its section (<c>_contentIdentity</c>, never bare <c>_content...</c>).
+    /// </summary>
     private static readonly System.Reflection.FieldInfo[] CachedSectionPanelFields =
         typeof(PackageBuilderForm)
             .GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            .Where(f => f.FieldType == typeof(Panel) && f.Name.StartsWith("_content", StringComparison.Ordinal))
+            .Where(f => f.FieldType == typeof(Panel)
+                        && f.Name.StartsWith("_content", StringComparison.Ordinal)
+                        && f.Name != "_contentHost")
             .ToArray();
 
     // ═══════════════════════════════════════════
