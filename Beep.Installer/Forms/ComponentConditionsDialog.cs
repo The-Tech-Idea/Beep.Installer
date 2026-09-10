@@ -151,9 +151,9 @@ public class ComponentConditionsDialog : Form
         for (var i = 0; i < 6; i++)
             row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
         _addBtn = new Button { Text = L("Common_Add", "Add"), Dock = DockStyle.Fill };
-        var x64Btn = new Button { Text = "x64 rule", Dock = DockStyle.Fill };
-        var adminBtn = new Button { Text = "Admin rule", Dock = DockStyle.Fill };
-        var fileBtn = new Button { Text = "File rule", Dock = DockStyle.Fill };
+        var x64Btn = new Button { Text = L("Conditions_QuickX64", "x64 rule"), Dock = DockStyle.Fill };
+        var adminBtn = new Button { Text = L("Conditions_QuickAdmin", "Admin rule"), Dock = DockStyle.Fill };
+        var fileBtn = new Button { Text = L("Conditions_QuickFile", "File rule"), Dock = DockStyle.Fill };
         _removeBtn = new Button { Text = L("Common_Remove", "Remove"), Dock = DockStyle.Fill };
         _testBtn = new Button { Text = L("Conditions_TestAll", "Test all"), Dock = DockStyle.Fill };
         _addBtn.Click += (_, _) => OnAdd();

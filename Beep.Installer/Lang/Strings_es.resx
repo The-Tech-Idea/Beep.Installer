@@ -1454,4 +1454,13 @@ Cree instaladores Setup.exe autónomos para Windows.</value>
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>Ver y aplicar una actualización de plantilla integrada</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>Regla de administrador</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>Regla de archivo</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>Regla x64</value>
+  </data>
 </root>

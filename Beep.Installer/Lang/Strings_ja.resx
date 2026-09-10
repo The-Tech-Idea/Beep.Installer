@@ -1454,4 +1454,13 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>組み込みテンプレートの更新をプレビューして適用</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>管理者ルール</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>ファイル ルール</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>x64 ルール</value>
+  </data>
 </root>

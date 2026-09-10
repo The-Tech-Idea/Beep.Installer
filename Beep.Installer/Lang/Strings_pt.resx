@@ -1454,4 +1454,13 @@ Limpar antes de compilar?</value>
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>Pré-visualizar e aplicar uma atualização de modelo incorporada</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>Regra de administrador</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>Regra de ficheiro</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>Regra x64</value>
+  </data>
 </root>

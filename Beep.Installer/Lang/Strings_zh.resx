@@ -1454,4 +1454,13 @@
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>预览并应用内置模板更新</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>管理员规则</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>文件规则</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>x64 规则</value>
+  </data>
 </root>

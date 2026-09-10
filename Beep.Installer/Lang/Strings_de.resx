@@ -1454,4 +1454,13 @@ Vor dem Erstellen bereinigen?</value>
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>Ein integriertes Vorlagenupdate ansehen und anwenden</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>Administratorregel</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>Dateiregel</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>x64-Regel</value>
+  </data>
 </root>

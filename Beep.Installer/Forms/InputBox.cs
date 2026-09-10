@@ -2,6 +2,8 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
+using static Beep.Installer.Lang.UiStrings;
+
 namespace Beep.Installer.Forms;
 
 /// <summary>Lightweight single-field prompt used in place of Microsoft.VisualBasic.Interaction.InputBox.</summary>
@@ -24,8 +26,8 @@ public static class InputBox
 
         var lbl = new Label { Text = prompt, Location = new Point(12, 12), AutoSize = true, MaximumSize = new Size(400, 0) };
         var box = new TextBox { Location = new Point(12, 50), Size = new Size(400, 24), Text = defaultValue };
-        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(252, 86), Size = new Size(75, 28) };
-        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(337, 86), Size = new Size(75, 28) };
+        var ok = new Button { Text = L("Common_OK", "OK"), DialogResult = DialogResult.OK, Location = new Point(252, 86), Size = new Size(75, 28) };
+        var cancel = new Button { Text = L("Common_Cancel", "Cancel"), DialogResult = DialogResult.Cancel, Location = new Point(337, 86), Size = new Size(75, 28) };
 
         dlg.AcceptButton = ok;
         dlg.CancelButton = cancel;

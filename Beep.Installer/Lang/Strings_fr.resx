@@ -1454,4 +1454,13 @@ Nettoyer avant de générer ?</value>
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>Prévisualiser et appliquer une mise à jour de modèle intégrée</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>Règle administrateur</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>Règle de fichier</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>Règle x64</value>
+  </data>
 </root>

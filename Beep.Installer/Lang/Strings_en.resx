@@ -1464,4 +1464,13 @@ Clean before building?</value>
   <data name="Toolbar_TemplatesHint" xml:space="preserve">
     <value>Preview and apply a built-in template update</value>
   </data>
+  <data name="Conditions_QuickAdmin" xml:space="preserve">
+    <value>Admin rule</value>
+  </data>
+  <data name="Conditions_QuickFile" xml:space="preserve">
+    <value>File rule</value>
+  </data>
+  <data name="Conditions_QuickX64" xml:space="preserve">
+    <value>x64 rule</value>
+  </data>
 </root>
