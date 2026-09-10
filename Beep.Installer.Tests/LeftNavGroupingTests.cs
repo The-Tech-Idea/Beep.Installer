@@ -8,12 +8,9 @@ using Xunit;
 namespace Beep.Installer.Tests;
 
 /// <summary>
-/// The section menu opens as a short list of groups, not forty rows.
-///
-/// The nav grew to forty items across eight groups while staying a flat <c>View.Details</c> list, so
-/// everything was on screen at once — roughly fifty rows in a narrow column, and finding anything
-/// meant scrolling past everything else. Groups are now collapsible and start collapsed, except the
-/// one holding the current section.
+/// The section menu groups its forty items into eight collapsible headers, but every group starts
+/// open: collapsing all but the current one forced browsing them one at a time, which is worse than
+/// the flat list it replaced. Collapsing is a per-header opt-out, not the default.
 /// </summary>
 public sealed class LeftNavGroupingTests
 {
@@ -51,14 +48,16 @@ public sealed class LeftNavGroupingTests
     }
 
     [Fact]
-    public void OnlyOneGroupStartsOpen()
+    public void AllGroupsStartOpen()
     {
+        // Collapsing every group but the current one forces the user to open the rest by hand, one
+        // at a time, just to see what's in them. Groups start open; collapsing is opt-in.
         using var nav = BuiltNav();
 
-        var expanded = List(nav).Groups.Cast<ListViewGroup>()
-            .Count(g => g.CollapsedState == ListViewGroupCollapsedState.Expanded);
-
-        expanded.Should().Be(1, "the menu should open as headers plus one open group, not one long list");
+        var groups = List(nav).Groups.Cast<ListViewGroup>().ToList();
+        groups.Should().NotBeEmpty();
+        groups.Should().OnlyContain(g => g.CollapsedState == ListViewGroupCollapsedState.Expanded,
+            "the menu should open with every group visible, not one at a time");
     }
 
     [Fact]
@@ -91,17 +90,16 @@ public sealed class LeftNavGroupingTests
     }
 
     [Fact]
-    public void ClearingTheFilterCollapsesBackDown()
+    public void ClearingTheFilterKeepsEveryGroupOpen()
     {
         using var nav = BuiltNav();
         nav.SelectSection("identity");
         nav.FilterText = "e";
         nav.FilterText = "";
 
-        var expanded = List(nav).Groups.Cast<ListViewGroup>()
-            .Count(g => g.CollapsedState == ListViewGroupCollapsedState.Expanded);
-
-        expanded.Should().Be(1, "clearing the search returns to the compact menu");
+        var groups = List(nav).Groups.Cast<ListViewGroup>().ToList();
+        groups.Should().OnlyContain(g => g.CollapsedState == ListViewGroupCollapsedState.Expanded,
+            "clearing the search returns to the default menu, which is fully open");
     }
 
     [Fact]
