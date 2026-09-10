@@ -151,6 +151,44 @@ public sealed class EveryDialogRendersTests
 
     [Theory]
     [MemberData(nameof(DialogNames))]
+    public void RemovingWithNothingSelectedDoesNotThrow(string name)
+    {
+        // ItsOwnInPlaceButtonsDoNotThrow presses every safe button in control-tree order, which is
+        // Add before Remove for every list-editing dialog -- so it always exercises Remove against a
+        // list that Add just populated, never a genuinely empty one. That gap hid the exact bug
+        // BindingSource.Current has: it throws IndexOutOfRangeException on an empty list instead of
+        // returning null, so Remove/Duplicate on a list nobody has added to yet crashes. This presses
+        // only the Remove/Duplicate buttons, first, on a dialog whose lists start empty.
+        var failures = new List<string>();
+
+        RunSta(() =>
+        {
+            using var form = Create(name);
+            form.ShowInTaskbar = false;
+            form.Opacity = 0;
+            form.Show();
+            Application.DoEvents();
+
+            foreach (var button in Descendants(form).OfType<Button>().Where(IsRemoveOrDuplicate).ToList())
+            {
+                try
+                {
+                    button.PerformClick();
+                    Application.DoEvents();
+                }
+                catch (Exception ex)
+                {
+                    failures.Add($"'{button.Text}': {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+        });
+
+        failures.Should().BeEmpty($"{name} must survive Remove/Duplicate with nothing selected:{Environment.NewLine}"
+                                  + string.Join(Environment.NewLine, failures));
+    }
+
+    [Theory]
+    [MemberData(nameof(DialogNames))]
     public void ItsControlsAreNamedForAScreenReader(string name)
     {
         var unnamed = new List<string>();
@@ -181,6 +219,16 @@ public sealed class EveryDialogRendersTests
 
         return text.Contains("Add", StringComparison.OrdinalIgnoreCase)
                || text.Contains("Remove", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Duplicate", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsRemoveOrDuplicate(Button button)
+    {
+        var text = button.Text ?? "";
+
+        if (text.Contains("...", StringComparison.Ordinal) || text.Contains('\u2026')) return false;
+
+        return text.Contains("Remove", StringComparison.OrdinalIgnoreCase)
                || text.Contains("Duplicate", StringComparison.OrdinalIgnoreCase);
     }
 

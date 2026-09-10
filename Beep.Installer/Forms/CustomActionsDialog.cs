@@ -31,6 +31,7 @@ public class CustomActionsDialog : Form
     private Button _cancelBtn = null!;
     private Label _validationLabel = null!;
     private BindingSource _binding = null!;
+    private Ui.BindingSourceRow<CustomAction> _row = null!;
     private BindingList<CustomAction> _actions = null!;
 
     public CustomActionsDialog(System.Collections.IList actions)
@@ -69,6 +70,7 @@ public class CustomActionsDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
 
         _binding = new BindingSource { DataSource = _actions };
+        _row = new Ui.BindingSourceRow<CustomAction>(_binding);
 
         _grid = new DataGridView
         {
@@ -101,6 +103,7 @@ public class CustomActionsDialog : Form
 
         panel.Controls.Add(_grid, 0, 0);
         panel.Controls.Add(buttonRow, 0, 1);
+        _row.WireRowButtons(_removeBtn);
         return panel;
     }
 
@@ -196,7 +199,10 @@ public class CustomActionsDialog : Form
     {
         // The DataBindings on each editor control handle population and writeback.
         // Enable/disable editors based on whether a row is selected.
-        bool hasCurrent = _binding.Current != null;
+        //
+        // _row.HasRow, not _binding.Current != null: BindingSource.Current throws on an empty list
+        // instead of returning null (see Ui.BindingSourceRow).
+        bool hasCurrent = _row.HasRow;
         _pathBox.Enabled = hasCurrent;
         _argsBox.Enabled = hasCurrent;
         _workDirBox.Enabled = hasCurrent;
@@ -217,7 +223,7 @@ public class CustomActionsDialog : Form
 
     private void OnRemove()
     {
-        if (_binding.Current is CustomAction a) _actions.Remove(a);
+        if (_row.Current is { } a) _actions.Remove(a);
     }
 
     private void OnOk()

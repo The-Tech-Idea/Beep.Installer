@@ -24,6 +24,7 @@ public class ComponentFilesDialog : Form
     private Button _cancelBtn = null!;
     private Label _sizeLabel = null!;
     private BindingSource _binding = null!;
+    private Ui.BindingSourceRow<FileCopyOperation> _row = null!;
     private BindingList<FileCopyOperation> _files = null!;
 
     public System.Collections.Generic.IList<FileCopyOperation> ResultFiles => _files;
@@ -46,6 +47,7 @@ public class ComponentFilesDialog : Form
         var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 250 };
 
         _binding = new BindingSource { DataSource = _files };
+        _row = new Ui.BindingSourceRow<FileCopyOperation>(_binding);
         _grid = new DataGridView
         {
             AccessibleName = L("Files_GridName", "Files in this component"),
@@ -63,8 +65,11 @@ public class ComponentFilesDialog : Form
         _removeBtn = new Button { Text = L("Files_RemoveSelected", "Remove selected") };
         _removeBtn.Click += (_, _) =>
         {
-            if (_binding.Current is FileCopyOperation f) _files.Remove(f);
+            // _row.Current, not _binding.Current: BindingSource.Current throws on an empty list
+            // instead of returning null (see Ui.BindingSourceRow).
+            if (_row.Current is { } f) _files.Remove(f);
         };
+        _row.WireRowButtons(_removeBtn);
         var dropHint = new Label
         {
             Text = L("Files_TipDragFilesOr", "Tip: drag files or folders from Explorer onto the list above"),

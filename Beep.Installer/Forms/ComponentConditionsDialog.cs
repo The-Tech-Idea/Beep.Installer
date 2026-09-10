@@ -32,6 +32,7 @@ public class ComponentConditionsDialog : Form
     private Button _cancelBtn = null!;
     private Label _validationLabel = null!;
     private BindingSource _binding = null!;
+    private Ui.BindingSourceRow<InstallCondition> _row = null!;
 
     /// <param name="initial">
     /// The component the user already selected in the builder. The dialog opens on it instead of
@@ -56,6 +57,7 @@ public class ComponentConditionsDialog : Form
         // in the real list.
         _binding = new BindingSource { DataSource = typeof(InstallCondition) };
         _binding.ListChanged += (_, _) => RefreshValidation();
+        _row = new Ui.BindingSourceRow<InstallCondition>(_binding);
 
         Text = L("Conditions_ComponentConditionBuilder", "Component Condition Builder");
         Size = new Size(1040, 640);
@@ -170,6 +172,7 @@ public class ComponentConditionsDialog : Form
         row.Controls.Add(_testBtn, 5, 0);
         panel.Controls.Add(_grid, 0, 0);
         panel.Controls.Add(row, 0, 1);
+        _row.WireRowButtons(_removeBtn);
         return panel;
     }
 
@@ -279,7 +282,10 @@ public class ComponentConditionsDialog : Form
 
     private void OnRemove()
     {
-        if (CurrentComponent?.Conditions != null && _binding.Current is InstallCondition c)
+        // BindingSource.Current throws on an empty list rather than returning null -- see
+        // Ui.BindingSourceRow. Reading the row by position instead means Remove on an empty list is a
+        // no-op (the button is also disabled in that state), not a crash.
+        if (CurrentComponent?.Conditions != null && _row.Current is { } c)
             CurrentComponent.Conditions.Remove(c);
     }
 

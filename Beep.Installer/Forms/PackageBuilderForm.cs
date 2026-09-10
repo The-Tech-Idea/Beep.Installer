@@ -1414,16 +1414,7 @@ public class PackageBuilderForm : Form
             }
         };
 
-        // BindingSource.Current THROWS on an empty list.
-        //
-        // CurrencyManager.Current does not return null when there is no current row -- it throws
-        // IndexOutOfRangeException("Index -1 does not have a value"). Every `binding.Current is not
-        // T` guard below therefore never got the chance to run, and Duplicate and Remove blew up on
-        // any section whose collection was empty. That was seventeen sections, which is to say most
-        // of the builder on a new project.
-        T? CurrentItem() => binding.Position >= 0 && binding.Position < binding.Count
-            ? binding[binding.Position] as T
-            : null;
+        var row = new Ui.BindingSourceRow<T>(binding);
 
         var props = new PropertyGrid { Dock = DockStyle.Fill, HelpVisible = true };
         props.DataBindings.Add("SelectedObject", binding, "", true, DataSourceUpdateMode.OnPropertyChanged);
@@ -1442,7 +1433,7 @@ public class PackageBuilderForm : Form
         };
         duplicateBtn.Click += (_, _) =>
         {
-            if (CurrentItem() is not { } current)
+            if (row.Current is not { } current)
                 return;
             var item = CloneAdvancedResource(current);
             collection.Add(item);
@@ -1451,7 +1442,7 @@ public class PackageBuilderForm : Form
         };
         removeBtn.Click += (_, _) =>
         {
-            if (CurrentItem() is not { } current)
+            if (row.Current is not { } current)
                 return;
             collection.Remove(current);
             _project.MarkDirty();
@@ -1460,16 +1451,7 @@ public class PackageBuilderForm : Form
 
         // Nothing selected means nothing to duplicate or remove. Disabling says that plainly, rather
         // than offering a button that does nothing when pressed.
-        void RefreshRowButtons()
-        {
-            var hasRow = binding.Position >= 0 && binding.Position < binding.Count;
-            duplicateBtn.Enabled = hasRow;
-            removeBtn.Enabled = hasRow;
-        }
-
-        binding.PositionChanged += (_, _) => RefreshRowButtons();
-        binding.ListChanged += (_, _) => RefreshRowButtons();
-        RefreshRowButtons();
+        row.WireRowButtons(duplicateBtn, removeBtn);
 
         // A guided path, where one exists. Typed resources are the case that needs it: "Add" gives a
         // blank operation whose arguments are a raw string dictionary, so the only way to fill it in
@@ -1492,7 +1474,7 @@ public class PackageBuilderForm : Form
             var editBtn = new Button { Text = L("Builder_EditGuided", "Edit in wizard..."), AutoSize = true };
             editBtn.Click += (_, _) =>
             {
-                if (CurrentItem() is not { } current) return;
+                if (row.Current is not { } current) return;
                 if (editGuided(current) is not { } replacement) return;
 
                 var index = collection.IndexOf(current);
