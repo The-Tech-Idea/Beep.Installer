@@ -180,6 +180,34 @@ public sealed class BuilderWizardFormTests
         });
     }
 
+    [Fact]
+    public void NextRefusesToLeaveComponentsEmpty()
+    {
+        // Field-level validation (ActiveSectionHasErrors) cannot see "the Components grid has zero
+        // rows" -- that grid isn't a named TextBox/ComboBox/NumericUpDown. 12.D.4 adds this one rule
+        // directly since it is the step most commonly needing at least one row.
+        RunSta(() =>
+        {
+            var controller = new InstallerController();
+            using var wizard = new BuilderWizardForm(controller);
+            wizard.Show();
+
+            Descendants(wizard).OfType<TextBox>().First().Text = "Contoso App";
+            FindButton(wizard, "Next >").PerformClick(); // step 0 -> identity
+            FindButton(wizard, "Next >").PerformClick(); // identity -> source
+            FindButton(wizard, "Next >").PerformClick(); // source -> components
+
+            FindButton(wizard, "Next >").PerformClick(); // components -> should stay put: empty
+
+            FindButton(wizard, "Components").FlatStyle.Should().Be(FlatStyle.Popup, "Next must refuse to leave Components empty");
+
+            controller.Project.Components.Add(new TheTechIdea.Beep.Installer.InstallComponent { Id = "core", Name = "Core" });
+            FindButton(wizard, "Next >").PerformClick(); // components -> shortcuts, now allowed
+
+            FindButton(wizard, "Shortcuts").FlatStyle.Should().Be(FlatStyle.Popup);
+        });
+    }
+
     /// <summary>WinForms needs a single-threaded apartment; xUnit threads are MTA.</summary>
     private static void RunSta(Action action)
     {

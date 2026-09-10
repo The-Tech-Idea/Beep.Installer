@@ -1523,4 +1523,7 @@ Cree instaladores Setup.exe autónomos para Windows.</value>
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>Accesos directos del escritorio, del menú Inicio y de inicio creados durante la instalación.</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>Añada al menos un componente antes de continuar.</value>
+  </data>
 </root>

@@ -1533,4 +1533,7 @@ Clean before building?</value>
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>Desktop, Start Menu and Startup shortcuts created at install.</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>Add at least one component before continuing.</value>
+  </data>
 </root>

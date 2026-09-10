@@ -1523,4 +1523,7 @@ Vor dem Erstellen bereinigen?</value>
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>Desktop-, Startmenü- und Autostart-Verknüpfungen, die bei der Installation erstellt werden.</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>Fügen Sie mindestens eine Komponente hinzu, bevor Sie fortfahren.</value>
+  </data>
 </root>

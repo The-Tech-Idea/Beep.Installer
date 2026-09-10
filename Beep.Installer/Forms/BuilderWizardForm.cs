@@ -163,7 +163,11 @@ public sealed class BuilderWizardForm : Form
         {
             // Jumping directly (not just Next/Back) is always allowed to an already-reached step, or
             // backward; jumping forward past an invalid step is blocked the same way Next is.
-            if (index > _stepIndex && _advanced.ActiveSectionHasErrors()) return;
+            if (index > _stepIndex && !CanAdvancePastCurrentStep(out var reason))
+            {
+                _stepValidationLabel.Text = reason;
+                return;
+            }
             GoTo(index);
         };
         return button;
@@ -181,13 +185,39 @@ public sealed class BuilderWizardForm : Form
             return;
         }
 
-        if (_advanced.ActiveSectionHasErrors())
+        if (!CanAdvancePastCurrentStep(out var reason))
         {
-            _stepValidationLabel.Text = L("Wizard_FixErrorsBeforeContinuing", "Fix the errors on this step before continuing.");
+            _stepValidationLabel.Text = reason;
             return;
         }
 
         GoTo(_stepIndex + 1);
+    }
+
+    /// <summary>
+    /// 12.D.4: gates forward movement (Next, or a stepper-strip jump past the current step).
+    /// <see cref="PackageBuilderForm.ActiveSectionHasErrors"/> only catches named
+    /// TextBox/ComboBox/NumericUpDown controls -- it cannot see "the Components grid has zero rows,"
+    /// since that is a DataGridView, so that one rule is checked here instead. A build with no
+    /// components selected is not actually broken (some installers are files-only), so this is a
+    /// nudge on the step that most commonly needs at least one, not a hard project rule for every step.
+    /// </summary>
+    private bool CanAdvancePastCurrentStep(out string reason)
+    {
+        if (_advanced.ActiveSectionHasErrors())
+        {
+            reason = L("Wizard_FixErrorsBeforeContinuing", "Fix the errors on this step before continuing.");
+            return false;
+        }
+
+        if (_stepIndex >= 0 && GoldenPath[_stepIndex].Id == "components" && _controller.Project.Components.Count == 0)
+        {
+            reason = L("Wizard_NoComponentsYet", "Add at least one component before continuing.");
+            return false;
+        }
+
+        reason = "";
+        return true;
     }
 
     private void GoTo(int index)

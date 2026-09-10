@@ -1523,4 +1523,7 @@ Nettoyer avant de générer ?</value>
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>Raccourcis Bureau, menu Démarrer et Démarrage créés lors de l'installation.</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>Ajoutez au moins un composant avant de continuer.</value>
+  </data>
 </root>

@@ -1523,4 +1523,7 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>インストール時に作成されるデスクトップ、スタート メニュー、スタートアップのショートカット。</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>続行する前に、少なくとも 1 つのコンポーネントを追加してください。</value>
+  </data>
 </root>

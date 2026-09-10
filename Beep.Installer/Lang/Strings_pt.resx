@@ -1523,4 +1523,7 @@ Limpar antes de compilar?</value>
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>Atalhos do ambiente de trabalho, menu Iniciar e arranque criados durante a instalação.</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>Adicione pelo menos um componente antes de continuar.</value>
+  </data>
 </root>

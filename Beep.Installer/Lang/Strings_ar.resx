@@ -1523,4 +1523,7 @@
   <data name="Shortcuts_Description" xml:space="preserve">
     <value>اختصارات سطح المكتب وقائمة ابدأ والبدء التي يتم إنشاؤها عند التثبيت.</value>
   </data>
+  <data name="Wizard_NoComponentsYet" xml:space="preserve">
+    <value>أضف مكونًا واحدًا على الأقل قبل المتابعة.</value>
+  </data>
 </root>
