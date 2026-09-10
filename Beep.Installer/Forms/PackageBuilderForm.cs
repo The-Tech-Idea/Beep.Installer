@@ -2728,6 +2728,27 @@ public class PackageBuilderForm : Form
     /// <summary>The panel currently on screen for the selected section, if any.</summary>
     internal Control? ActiveSection => _activeContent;
 
+    /// <summary>
+    /// Whether any control in the active section currently carries a validation error, per the same
+    /// <see cref="_fieldErrors"/> provider <see cref="ValidateFieldsInline"/> already populates on
+    /// every section switch and on every debounced edit. Used by <see cref="BuilderWizardForm"/> to
+    /// gate its Next button without re-implementing field-to-diagnostic matching a second time.
+    /// </summary>
+    internal bool ActiveSectionHasErrors()
+    {
+        if (_activeContent is null) return false;
+
+        bool HasError(Control root)
+        {
+            if (!string.IsNullOrEmpty(_fieldErrors.GetError(root))) return true;
+            foreach (Control child in root.Controls)
+                if (HasError(child)) return true;
+            return false;
+        }
+
+        return HasError(_activeContent);
+    }
+
     internal static string KeyboardWalkthroughText()
         => """
            Keyboard-only authoring path
