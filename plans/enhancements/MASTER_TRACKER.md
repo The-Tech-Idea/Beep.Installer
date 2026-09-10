@@ -1762,6 +1762,49 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 11.C.2 | `UpdatePolicy` + `/CHECKUPDATE` `/UPDATE`; retire ClickOnce `UpdateChecker`/`UpdateApplier` → removes the two sync-over-async guard exemptions | ✅ (`AppUpdateService` composed; CLI verbs; ClickOnce pair deleted; guard exemption shrunk to `IInstallerHostBuilder`) |
 | 11.M.1 | Gate: publish v1.0→v1.1, delta update, corrupt-blob abort, module-only update, kill-mid-update survival | ✅ **run live** — `scripts/run-delta-e2e.ps1`, 8/0 with evidence in `artifacts/delta-e2e/`; found and fixed two real defects (BI7005-unreachable update verbs, feed-relative URLs resolved against the CWD). Kill-mid-apply remains SKIP — the apply completes inside the window |
 
+### The section menu, and three dialogs that crashed on an empty list (2026-09-10)
+
+Two reports from the product owner, both real, tracked as [P12](P12_WIZARD_FIRST_IA_DESIGN.md).
+
+**The section menu forced browsing one group at a time.** The P6 collapse-by-default change
+(`33bf94c`) made every group but the current one start collapsed — trading "scroll past 40
+rows" for "click through 7 headers one at a time to see anything in them," which is worse for
+someone actually browsing. Groups now start expanded (`5b829a8`); collapsing one is still
+available, just not forced.
+
+**`BindingSource.Current` throws on an empty list, and the fix for it had only landed in one
+of four places.** `33bf94c` fixed this exact defect in `BuildAdvancedResourceSection<T>` —
+`CurrencyManager.Current` throws `IndexOutOfRangeException` instead of returning null on an
+empty list. `ComponentConditionsDialog.OnRemove`, `CustomActionsDialog` (`OnRemove` and
+`BindEditorToCurrent`), and `ComponentFilesDialog`'s remove handler all had the same
+`binding.Current is T` pattern, unfixed — so Remove crashes on Conditions, Custom Actions, or a
+component's file list whenever that list is still empty, which is the normal state for a
+freshly added component. `EveryDialogRendersTests` never caught it because it presses every
+safe button in control-tree order (Add before Remove for all three), so Remove was always
+tested against a list Add had just populated. Extracted the fix into `Ui.BindingSourceRow<T>` —
+a safe `Current`/`HasRow` plus `WireRowButtons` — and applied it at all four sites instead of
+the fifth ad hoc copy; added `RemovingWithNothingSelectedDoesNotThrow`, which presses
+Remove/Duplicate *before* Add specifically to close that coverage gap.
+
+**Cold start skipped the guided on-ramp entirely.** `QuickStartWizard` already exists and
+already runs by default after `File > New` (`NewProject(guided: true)`), but launching
+`Beep.Installer.exe` with no arguments went straight to `PackageBuilderForm` on a blank, unsaved
+project — the flat 40-section nav plus a dozen popup dialogs, with nothing marking what a build
+needs. `Program.CreateColdStartController()` now reopens the most recent project silently when
+one exists (a returning user sees no change), and otherwise runs `ProjectNewDialog` →
+`QuickStartWizard` before the builder window ever appears — the same guided path "File > New"
+already took, now also the default for a fresh run. Not unit-tested: `RecentProjects` persists
+to the real `%APPDATA%\BeepInstaller\recent.json` with no seam to redirect it in tests, and
+`RunDefaultMode`'s windowed branch was already outside coverage (`Application.Run` blocks) —
+verified by code review and the full suite staying green, not a screenshot.
+
+**Still open:** how far the guided path extends past project creation — see P12 §2.3 for the
+options considered (a Guided/Advanced toggle re-sequencing the existing 40 sections into a
+stepper is the recommended direction) and why it is a separate, not-yet-started design pass
+rather than folded into this fix.
+
+Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipped.
+
 ---
 
 ## Summary
@@ -1780,6 +1823,7 @@ that would relocate existing installations, so it is flagged for P2 instead.
 | 9 | Test consolidation & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
 | 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
 | 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | 🟡 feature-complete (live E2E deferred) | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
+| 12 | Wizard-first IA + shared editing ViewModel | P1 | 🟡 started (12.A) | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
 
 **Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
 highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and
