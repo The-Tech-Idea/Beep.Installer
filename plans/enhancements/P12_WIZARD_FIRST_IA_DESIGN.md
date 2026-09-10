@@ -1,6 +1,6 @@
 # Phase 12: Wizard-First IA + Shared Editing ViewModel — Design Document
 
-**Status:** 🟡 12.A shipped (foundation fixes) · 12.B–12.E planned, not started · **Priority:** P1
+**Status:** 🟡 12.A, 12.C.1, 12.D.1, 12.D.2 shipped · 12.C.2, 12.D.3, 12.E not started · **Priority:** P1
 **Depends on:** P6 (theme tokens, dead-UI cleanup)
 **Tracker:** [MASTER_TRACKER.md](MASTER_TRACKER.md)
 
@@ -110,7 +110,8 @@ unaffected by anything below (they do not touch the wizard shell being added).
 
 1. **One shared editing layer.** No section or dialog hand-rolls `BindingSource` wiring,
    add/duplicate/remove, or validation again. A new list editor is built on
-   `Ui.BindingSourceRow<T>` and a new `SectionViewModel<T>` (§3.3), not a fifth copy.
+   `Ui.BindingSourceRow<T>` (row access) and `Ui.ValidationCounts` (error/warning summary), not a
+   fifth or sixth hand-rolled copy (§3.3).
 2. **A real wizard is the default, primary experience**, not a banner or a pre-dialog in front of
    the old shape. Cold start and `File > New` open a stepper shell with gated forward navigation
    (mirroring `BeepModernInstallerForm`'s existing, proven pattern), walking the sections a build
@@ -123,106 +124,113 @@ unaffected by anything below (they do not touch the wizard shell being added).
 
 ## 3. Target architecture
 
-### 3.1 The wizard shell — reuse the pattern, not the class
+### 3.1 The wizard shell — reuse the pattern, not the class (shipped, 12.D.1)
 
 `BeepModernInstallerForm` already proves the pattern this needs: a stepper generated from a page
-list, `Next` blocked until the current page's `Validate()` passes, `Back` always free. The new
-`Forms/BuilderWizardForm` (working name) is a *sibling* of that pattern for the authoring side, not
-a shared base class with it — the runtime wizard installs an app; this one edits a `.bsetup` project,
-and their page contracts differ enough (runtime pages read `SetupContext`; builder steps read
-`InstallProject` directly through a ViewModel) that forcing a shared type would be the kind of
-premature abstraction that costs more than it saves. What *is* shared is the shape: an ordered step
-list, a stepper sidebar/header showing them, `Next`/`Back`, and per-step validation gating.
+list, `Next` blocked until the current page's `Validate()` passes, `Back` always free.
+`Forms/BuilderWizardForm.cs` is a *sibling* of that pattern for the authoring side, not a shared
+base class with it — the runtime wizard installs an app; this one edits a `.bsetup` project, and
+their page contracts differ enough (runtime pages read `SetupContext`; builder steps read
+`InstallProject` directly) that forcing a shared type would be the kind of premature abstraction
+that costs more than it saves. What is shared is the shape: an ordered step list, a stepper strip,
+`Next`/`Back`, and per-step validation gating.
 
-```
-Forms/BuilderWizardForm.cs        # the stepper shell: Next/Back, step list, hosts one step at a time
-ViewModels/BuilderStep.cs         # { Id, Title, Func<Panel> Build, Func<ValidationResult> Validate }
-```
+Each step 1+ hosts **the exact same `Panel` `PackageBuilderForm`'s own `Build*Section()` methods
+already produce** — no section's own UI was rewritten. Concretely: `BuilderWizardForm` constructs a
+`PackageBuilderForm` instance it owns but never shows (`_advanced`); each step calls
+`_advanced.OpenSection(id)` (the same internal seam `EverySectionRendersTests` already uses) and
+re-parents `_advanced.ActiveSection` out of `_advanced`'s own content host into the wizard's step
+host. Re-parenting a `Control` is idempotent — adding it to a new parent silently detaches it from
+whichever one it was in — so "Open full editor" simply re-opens the current step's id on `_advanced`
+(pulling its panel back) and shows that same instance for real. `Next`/step-strip forward movement
+is gated by a new `PackageBuilderForm.ActiveSectionHasErrors()`, reading the same `_fieldErrors`
+`ValidateFieldsInline()` already populates on every section switch — no second validation path.
 
-Each `BuilderStep.Build` returns **the exact same `Panel` the existing `Build*Section()` methods on
-`PackageBuilderForm` already produce** — no section's own UI is rewritten by this phase. The wizard
-shell is a new way to sequence and gate existing panels, exactly as the discarded banner prototype
-already established was the low-risk way to do this (§0); what changes from that prototype is that
-the shell *is* the primary window instead of a strip glued onto the old one, and forward movement is
-actually gated on validity instead of freely clickable.
+**Real bug found and fixed while building this (`7b47bba`):** `InvalidateAllContent()`'s reflection
+filter (every private `Panel` field named `_content*`) also matched `_contentHost` itself, the live
+container the cached section panels dock into. `OnProjectReloaded` disposed and nulled it along
+with the real cache on every project reload, then crashed the very next line
+(`HideWelcome`'s `_contentHost.Controls.Clear()`). Reachable in the shipped app already — `File >
+Open` a second project into an already-open builder hits the same path — not something this phase
+introduced, just the first thing to exercise it. Fixed by excluding `_contentHost` by exact name.
 
-### 3.2 Step order (the "golden path")
+### 3.2 Step order (the "golden path", shipped 12.D.1/12.D.2)
 
 The wizard shell's default steps, in order, replacing the three-window
 `ProjectNewDialog → QuickStartWizard → PackageBuilderForm` chain the discarded patch used:
 
-| # | Step | Backing section(s) | Required to reach Build? |
-|---|------|---------------------|---------------------------|
-| 0 | New project | `ProjectNewDialog`'s fields (template, product name, version, publisher, source dir) — absorbed, not a separate window | Yes |
-| 1 | Identity | `identity` | Yes |
-| 2 | Source | `source`, `includes` | Yes |
-| 3 | Components | `components` | Yes (at least one) |
-| 4 | Shortcuts | `shortcuts` | No — skippable |
-| 5 | Registry | `registry` | No — skippable |
-| 6 | Output | `output`, `compression`, `package` | Yes |
-| 7 | Code signing | `codesign` | No — skippable, matches today's optional signing |
-| 8 | Build | `build` (runs the existing build pipeline) | — terminal step |
+| # | Step | Backing section id |
+|---|------|---------------------|
+| 0 | New project | absorbed inline (template, product name, version, publisher, source dir — mirrors `ProjectNewDialog`'s fields; not a separate window) |
+| 1 | Identity | `identity` |
+| 2 | Source | `source` |
+| 3 | Components | `components` |
+| 4 | Shortcuts | `shortcuts` |
+| 5 | Registry | `registry` |
+| 6 | Output | `output` |
+| 7 | Code signing | `codesign` |
+| 8 | Build | `build` — terminal step, no Next; hosts the existing Build button/pipeline |
 
-Every other section (Prerequisites, Branding, WizardPages, CustomPages, the ten "Advanced
-Resources" sections, MSIX\*, UpdateChannels, PrerequisiteCatalogs, Supersedence, Packages, Script,
-Log, Result) stays exactly where it is today: inside Advanced mode's `LeftNavPanel`, unchanged,
-unremoved. This is a curated subset by design — the wizard is a *path through the common case*, not
-a re-hosting of all 40 sections; forcing everything into a linear order would recreate the "40 rows"
-problem P6 already fixed once, in stepper form this time.
+Every step's Next is gated uniformly by `ActiveSectionHasErrors()` (§3.1) — shipped simpler than the
+original "Required to reach Build?" column above sketched (per-step required-vs-skippable rules,
+e.g. forcing at least one component). Uniform gating was the lower-risk first cut; differentiating
+which steps are truly required is deferred, not designed away — see §5, 12.D.4 (new). `includes`,
+`compression`, and `package` are not separate or bundled steps; they stay reachable only from
+Advanced mode, same as everything below.
 
-### 3.3 The ViewModel layer
+Every other section (Prerequisites, Includes, Compression, Package Format, Branding, WizardPages,
+CustomPages, the ten "Advanced Resources" sections, MSIX\*, UpdateChannels, PrerequisiteCatalogs,
+Supersedence, Packages, Script, Log, Result) stays exactly where it is today: inside Advanced mode's
+`LeftNavPanel`, unchanged, unremoved. This is a curated subset by design — the wizard is a *path
+through the common case*, not a re-hosting of all 40 sections; forcing everything into a linear
+order would recreate the "40 rows" problem P6 already fixed once, in stepper form this time.
 
-```csharp
-namespace Beep.Installer.ViewModels;
+### 3.3 The shared editing layer (shipped 12.C.1, revised from the original sketch)
 
-// Builds on Ui.BindingSourceRow<T> (12.A.1) rather than replacing it.
-public sealed class SectionViewModel<T> where T : class
-{
-    public BindingSource Binding { get; }
-    public BindingSourceRow<T> Row { get; }          // safe current-row access (already shipped)
-    public IReadOnlyList<string> FieldNames { get; }  // for per-step validation filtering, see below
+The original design for this section sketched a single `SectionViewModel<T>` combining row access,
+CRUD, and validation. Building 12.C.1 against the real code (not the sketch) found the actual
+duplication was narrower and a different shape, so what shipped is two small, independent pieces
+instead of one speculative one — consistent with the project's own convention
+(`Ui/BindingSourceRow.cs`) of "wrap the one unsafe operation, wire the one repeated behavior," not
+"replace WinForms binding" with a framework:
 
-    public void Add(T item);
-    public void Duplicate();                          // no-op, not an exception, with nothing selected
-    public void Remove();                              // same
-    public event EventHandler? Changed;                // list OR position changed — one event to redraw from
+- **`Ui.BindingSourceRow<T>`** (12.A.1, already shipped before this phase) — safe `Current`/`HasRow`
+  + `WireRowButtons`, used at all four `BindingSource`-backed list-editing sites
+  (`BuildAdvancedResourceSection<T>`'s 17 call sites, `ComponentConditionsDialog`,
+  `CustomActionsDialog`, `ComponentFilesDialog`).
+- **`Ui.ValidationCounts`** (12.C.1) — the *other* real duplicate, found by reading each of those
+  four sites rather than assumed: `ComponentConditionsDialog` and `CustomActionsDialog` each
+  hand-rolled "count errors, treat the rest as warnings, set a label's text and color" against two
+  differently-shaped issue types (`ConditionListValidator.Issue`'s `Severity` enum vs
+  `CustomActionIssue`'s bool `IsError`). `ValidationCounts.From(issues, isError)` takes a predicate
+  instead of assuming a shared issue interface. `BuildAdvancedResourceSection<T>` and
+  `ComponentFilesDialog` have no equivalent validation-summary label — confirmed by reading each,
+  not assumed — so nothing to extract there.
 
-    // Filters ProjectSchemaService.Validate(project) down to this section's own field names —
-    // the same validator PackageBuilderForm.ValidateFieldsInline already calls today, just scoped.
-    public ValidationResult Validate(InstallProject project);
-}
-```
-
-This is deliberately small. It does not become a full MVVM framework with `ICommand`/relay-command
-machinery — WinForms data-binding via `BindingSource` already does most of the work, and the
-project's own convention (`Ui/BindingSourceRow.cs`) is "wrap the one unsafe operation, wire the one
-repeated behavior," not "replace WinForms binding." `SectionViewModel<T>.Validate` is the new piece:
-it is what lets the wizard shell (§3.1) ask "is step N allowed to advance" without the shell knowing
-anything about what step N contains — the same separation `IInstallerPage.Validate()` already gives
-the runtime wizard.
-
-Sections that are single-value editors, not lists (Identity, Layout, Output naming) do not need
-`SectionViewModel<T>` — they already just bind `PropertyGrid`/named `TextBox`es directly to
-`InstallProject` properties, which is fine as-is. The ViewModel layer's job is specifically the
-~20 places that hand-roll list-editing (`BuildAdvancedResourceSection<T>`'s 17 call sites,
-`ComponentConditionsDialog`, `CustomActionsDialog`, `ComponentFilesDialog`, and any future one),
-where the duplication actually lives.
+Per-step "is this step allowed to advance" (§3.1) is **not** provided by either of these — it reuses
+`PackageBuilderForm.ValidateFieldsInline()`'s existing per-field `ErrorProvider` state via
+`ActiveSectionHasErrors()`, since that already runs the same `ProjectSchemaService.Validate(project)`
+the whole builder uses. A `SectionViewModel<T>.Validate()` scoped to list-editing sections
+specifically remains a reasonable idea for 12.C.2/12.E if a concrete duplicate need shows up there
+too, but is not invented ahead of one.
 
 ### 3.4 Mode switch: Guided (default) vs Advanced
 
-- **Guided** = `BuilderWizardForm`. This is what cold start and `File > New` open.
-- **Advanced** = today's `PackageBuilderForm`, byte-for-byte unchanged in its own behavior. Reached
-  from one explicit action inside `BuilderWizardForm` ("Open full editor" / similar), and from the
-  wizard's own "Build" terminal step ("continue editing" after a successful or failed build).
-  Once in Advanced, the user can return to Guided from the toolbar (a "Guided" button, the same idea
-  the discarded prototype's toggle had, kept because the destination — Advanced mode's toolbar — is
-  exactly where "separate forms are for advanced" tools already live: Actions, Conditions, Signing,
-  Packaging, Publish, Templates, Languages).
+- **Guided** = `BuilderWizardForm`. Shipped (12.D.2): cold start with nothing to resume opens it
+  directly, as the primary window — not a pre-dialog in front of `PackageBuilderForm`.
+- **Advanced** = today's `PackageBuilderForm`, byte-for-byte unchanged in its own behavior. Shipped:
+  reached from one explicit action inside `BuilderWizardForm` ("Open full editor"), which re-parents
+  the current step's panel back into it before showing it for real (§3.1). A returning user with a
+  valid recent project still reopens straight into Advanced, unchanged since 12.A.3 — no wizard walk
+  for a project that already has everything filled in.
+- **Not yet shipped (12.D.3):** a way back from Advanced to Guided (e.g. a toolbar "Guided" button).
+  Today Advanced → Guided requires closing and relaunching. `File > New`'s existing
+  `NewProject(guided: true)` (`ProjectNewDialog` → `QuickStartWizard`, both still intact, unabsorbed)
+  is also untouched — it is a separate, pre-existing on-ramp reachable from inside Advanced mode, not
+  the same code path as `BuilderWizardForm`.
 - **Both modes share the same `InstallerController`/`InstallProject`.** Switching modes never
-  reloads or duplicates state — `BuilderWizardForm` and `PackageBuilderForm` are two views over the
-  same controller, exactly as the discarded cold-start patch already established for the
-  `ProjectNewDialog`/`QuickStartWizard` hand-off, just generalized to the whole session instead of
-  only the first launch.
+  reloads or duplicates state — `BuilderWizardForm` owns a `PackageBuilderForm` instance
+  (`_advanced`) constructed against the same controller, shown for real only on handoff.
 
 ## 4. What stays from 12.A, what the discarded patch does not carry forward
 
@@ -231,7 +239,7 @@ where the duplication actually lives.
 | `Ui.BindingSourceRow<T>` (12.A.1) | **Kept, extended.** `SectionViewModel<T>` (§3.3) is built on it. |
 | Fix for the 3 unguarded `.Current` sites (12.A.2) | **Kept.** Already correct; nothing to redo. |
 | Section-menu groups start expanded (`5b829a8`) | **Kept.** Unrelated to IA, a straightforward UX correctness fix. |
-| Cold-start runs `QuickStartWizard` before `PackageBuilderForm` (12.A.3, `d59eda6`) | **Superseded** by §3.1/§3.4 — cold start opens `BuilderWizardForm` directly; the `ProjectNewDialog` → `QuickStartWizard` → `PackageBuilderForm` chain goes away in favor of the wizard shell owning steps 0–8 itself. |
+| Cold-start runs `QuickStartWizard` before `PackageBuilderForm` (12.A.3, `d59eda6`) | **Superseded, code replaced** (`c6ada65`, 12.D.2) — cold start now opens `BuilderWizardForm` directly; the `ProjectNewDialog` → `QuickStartWizard` → `PackageBuilderForm` chain no longer runs from cold start (both dialogs are untouched and still reachable from `File > New` inside Advanced mode). |
 | `startOnFirstSection` constructor flag, `GuidedStepBanner` (prototyped, uncommitted) | **Discarded.** Built, tested green, removed at the product owner's instruction against patching. Recorded here so it is not reinvented: a banner glued above the existing content host was the lower-risk, lower-value version of §3.1; §3.1 is the version actually being built. |
 
 ## 5. Sub-task execution order
@@ -241,46 +249,56 @@ that don't add up to this architecture*, not "one unreviewable commit." A rewrit
 needs staged, verifiable delivery; what changes from the discarded first attempt is that every step
 below is aimed at the target in §3, not at a local symptom.
 
-1. **12.C.1** — `ViewModels/SectionViewModel<T>`. Convert the four sites `Ui.BindingSourceRow<T>`
-   already touched (`BuildAdvancedResourceSection<T>`, `ComponentConditionsDialog`,
-   `CustomActionsDialog`, `ComponentFilesDialog`) to use it for validation too, not just safe-row
-   access. Verify: existing tests for these four unchanged; new tests for `Validate()` scoping.
-2. **12.C.2** — Convert the golden-path sections' list editors (Components, Shortcuts, Registry) to
-   `SectionViewModel<T>`. Identity/Source/Output stay direct-bound (§3.3, no list to wrap).
-3. **12.D.1** — `Forms/BuilderWizardForm` + `ViewModels/BuilderStep`: stepper shell hosting the
-   9 steps in §3.2, `Next` gated on `SectionViewModel.Validate`/existing field validation, `Back`
-   always free. No new section UI — steps host the existing `Build*Section()` panels via a small
-   adapter that constructs them against the shared `InstallerController`.
-4. **12.D.2** — Step 0 (new project) absorbs `ProjectNewDialog`'s fields directly into the shell
-   instead of launching it as a separate window. `Program.RunDefaultMode`/`CreateColdStartController`
-   changed to open `BuilderWizardForm` on cold start (recent project still reopens silently and
-   skips straight to Advanced mode — a returning user is not walked through steps 0–8 again for a
-   project that already has all of it filled in).
-5. **12.D.3** — "Open full editor" action wires Guided → Advanced; a toolbar "Guided" button wires
-   Advanced → Guided. Verify: full existing suite green with zero test changes required in
-   `EverySectionRendersTests`/`EveryDialogRendersTests` (they construct `PackageBuilderForm`
-   directly and never touch `BuilderWizardForm`, so this is the regression gate).
-6. **12.E** — Opportunistic: convert remaining list-editing sections (Prerequisites, the ten
-   Advanced Resources sections, Packages, MSIX Optional Packages) to `SectionViewModel<T>` as they
-   are next touched for any other reason, rather than as one big sweep. Not a blocker for 12.D
-   shipping — Advanced mode already works today for all of them.
+1. **12.C.1** ✅ — `Ui.ValidationCounts`, applied to `ComponentConditionsDialog` and
+   `CustomActionsDialog` (the two sites that actually had the duplicate — see §3.3 for why this
+   differs from the original sketch). `BuilderSectionCacheTests`-style regression coverage via new
+   `ValidationCountsTests`. Commit `49ce0c4`.
+2. **12.C.2** ⬜ — Not started. Was scoped as "convert Components/Shortcuts/Registry list editors to
+   a shared ViewModel"; now that 12.C.1 shipped `ValidationCounts` instead of `SectionViewModel<T>`,
+   this needs its own concrete-duplication check first (per §3.3's method: read the actual code
+   before designing the abstraction), not an assumption that the original sketch still applies.
+3. **12.D.1** ✅ — `Forms/BuilderWizardForm`: stepper shell hosting the 9 steps in §3.2, re-parenting
+   panels from a hidden `PackageBuilderForm` instance, `Next` gated by the new
+   `PackageBuilderForm.ActiveSectionHasErrors()`. `BuilderWizardFormTests` covers gating, step
+   revisits, and the Advanced handoff. Commit `85f4f26`. Found and fixed a real, previously
+   unreachable-by-tests production bug along the way (`_contentHost` disposal, `7b47bba` — see §3.1).
+4. **12.D.2** ✅ — `Program.RunColdStart` opens `BuilderWizardForm` on a genuinely fresh cold start;
+   a valid recent project still reopens straight into Advanced mode, unchanged. Commit `c6ada65`.
+5. **12.D.3** ⬜ — Not started. A toolbar "Guided" button on `PackageBuilderForm` (Advanced mode)
+   that opens a new `BuilderWizardForm` over the same controller, so Advanced → Guided doesn't
+   require closing the app. Needs the same `Application.Run` lifetime care `RunColdStart` used
+   (§ `c6ada65`'s commit message) generalized to "whichever of the two windows is currently primary."
+6. **12.D.4** (new, split out of the original "Required to reach Build?" column in §3.2) ⬜ — Per-step
+   required-vs-skippable gating (e.g. Components step should require at least one selected component,
+   not just "no field-level error"). Deferred because `ActiveSectionHasErrors()`'s uniform gating
+   shipped first and works; this refines it, it does not block anything already shipped.
+7. **12.E** ⬜ — Opportunistic: apply `Ui.ValidationCounts`/`Ui.BindingSourceRow<T>` to any further
+   hand-rolled duplicate found in the remaining ~28 advanced-only sections, as they are next touched
+   for any other reason. Not a blocker for anything above — Advanced mode already works today for
+   all of them.
 
 ## 6. Risks
 
-| Risk | Mitigation |
-|------|------------|
-| `BuilderWizardForm` duplicates validation logic already in `PackageBuilderForm.ValidateFieldsInline` | `SectionViewModel.Validate` calls the same `ProjectSchemaService.Validate(_project)` the builder already uses (§3.3) — one validator, two presentations of its output, not two validators |
-| Absorbing `ProjectNewDialog`/`QuickStartWizard`'s fields into step 0/steps 1–3 changes their tested behavior | Their *field logic* (template application, default naming) moves, their *UI* does not need to — extract the field-handling into a method both the old dialog (kept for `File > New` inside Advanced mode, if wanted) and the new step call, rather than rewriting it twice |
-| `BuildAdvancedResourceSection<T>` (17 call sites) is genuinely load-bearing; changing its validation path wrong breaks Typed Resources broadly | 12.C.1 lands it alone, verified against all 17 resource kinds, before anything in 12.D depends on it |
-| Scope creep back into "convert all 40 sections to ViewModels before shipping the wizard" | 12.E is explicitly opportunistic and unblocked from 12.D; the wizard's 9 steps in §3.2 do not require it |
+| Risk | Mitigation | Status |
+|------|------------|--------|
+| `BuilderWizardForm` duplicates validation logic already in `PackageBuilderForm.ValidateFieldsInline` | `ActiveSectionHasErrors()` reads the same `_fieldErrors` provider `ValidateFieldsInline` already populates (§3.1) — one validator, one state, two ways to ask about it | Shipped as designed |
+| Re-parenting section panels between the hidden `_advanced` and the wizard's step host corrupts state or throws | `BuilderWizardFormTests.EveryGoldenPathStepOpensWithoutThrowing` walks all 9 steps; `.NET` re-parenting is inherently idempotent (add-to-new-parent detaches from old) | Verified in tests |
+| Revisiting step 0 after project creation re-runs `InstallerController.New()`, silently discarding edits | Found in review before shipping (not by a test) — fixed by only creating on first visit; regression test added | Fixed, tested |
+| `PackageBuilderForm.InvalidateAllContent()`'s reflection filter matches unintended fields by name convention | Found by this phase's new code path, not by existing coverage — fixed (`_contentHost` excluded) plus a named regression test; the filter is inherently fragile to a future field named `_content*` for a non-cached purpose, worth remembering if one is ever added | Fixed, tested |
+| Scope creep back into "convert all 40 sections before shipping anything" | 12.E is explicitly opportunistic; 12.D shipped without it | Holding |
 
 ## 7. Verification
 
-- Full suite green after every sub-task, not just at the end.
-- `EverySectionRendersTests`/`EveryDialogRendersTests` require zero changes through 12.D — that is
-  the proof Advanced mode is untouched.
-- New: `BuilderWizardFormTests` — each of the 9 steps opens; `Next` is blocked on an empty required
-  step and unblocked once filled; `Back` is always enabled except on step 0; "Open full editor"
-  hands off to a `PackageBuilderForm` on the same `InstallerController` with the same data.
-- Manual: cold start with no recent project → wizard shell, not Advanced; cold start with a valid
-  recent project → Advanced directly, no steps re-walked (§5.4).
+- Targeted test runs after each change during development (full suite before each commit gates the
+  actual merge) — `dotnet test --filter` on the touched classes; full suite for changes touching
+  `PackageBuilderForm.cs` given its ~90-test blast radius (§1.4).
+- `EverySectionRendersTests`/`EveryDialogRendersTests` required zero changes through 12.D.2 — that
+  is the proof Advanced mode is untouched. Confirmed, not just planned.
+- `BuilderWizardFormTests` (5 tests): step-0 gating on an empty name, revisiting step 0 does not
+  reset an already-created project (named regression), every golden-path step opens without
+  throwing, "Open full editor" hands the current section back to Advanced mode with the same
+  `InstallProject` reference.
+- `ValidationCountsTests` (5 tests) and a new `BuilderSectionCacheTests.ContentHostItselfIsNeverInvalidated`
+  regression test.
+- Manual (not yet performed): cold start with no recent project → wizard shell, not Advanced; cold
+  start with a valid recent project → Advanced directly, no steps re-walked.

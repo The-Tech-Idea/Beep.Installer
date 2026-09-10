@@ -1798,16 +1798,44 @@ to the real `%APPDATA%\BeepInstaller\recent.json` with no seam to redirect it in
 `RunDefaultMode`'s windowed branch was already outside coverage (`Application.Run` blocks) —
 verified by code review and the full suite staying green, not a screenshot.
 
-**Still open:** how far the guided path extends past project creation. A same-day first attempt
-patched it without rearchitecting — a dismissible banner above the section content, listing six
-"golden path" steps — built, verified green, then **discarded** at the product owner's explicit
-instruction ("i dont want patching"): they asked instead for a detailed rewrite plan. P12 now
-carries that full plan (§3–§7): a `BuilderWizardForm` stepper shell mirroring
-`BeepModernInstallerForm`'s already-proven gated-navigation pattern, absorbing `ProjectNewDialog`/
-`QuickStartWizard` as its own first steps, with today's `PackageBuilderForm` kept unmodified as an
-explicitly-reached "Advanced" mode, plus a `SectionViewModel<T>` layer (built on
-`Ui.BindingSourceRow<T>`) so list-editing sections stop each hand-rolling the same wiring. Not yet
-implemented — sub-tasks 12.C–12.E in the design doc.
+**How far the guided path extends past project creation — built, not just planned (2026-09-10,
+continued).** A same-day first attempt patched this without rearchitecting — a dismissible banner
+above the section content, listing six "golden path" steps — built, verified green, then
+**discarded** at the product owner's explicit instruction ("i dont want patching"): they asked
+instead for a detailed rewrite plan, then, once it existed, to proceed with it ("proceed").
+
+Shipped: `Ui.ValidationCounts` (12.C.1, `49ce0c4`) — the other real hand-rolled duplicate found by
+reading `ComponentConditionsDialog`/`CustomActionsDialog` rather than assuming the original design
+sketch's `SectionViewModel<T>` shape still applied once actually checked against the code.
+`Forms/BuilderWizardForm.cs` (12.D.1, `85f4f26`) — a Next/Back stepper over the nine sections a
+build actually needs, hosting the exact same section panels `PackageBuilderForm`'s Advanced mode
+uses (built by a hidden `PackageBuilderForm` instance, re-parented per step), gated by a new
+`PackageBuilderForm.ActiveSectionHasErrors()`. `Program.RunColdStart` (12.D.2, `c6ada65`) now opens
+`BuilderWizardForm` directly on a genuinely fresh cold start, superseding 12.A.3's
+`ProjectNewDialog` → `QuickStartWizard` → `PackageBuilderForm` chain; a returning user with a valid
+recent project still reopens straight into Advanced mode, unchanged.
+
+**Found and fixed a real, previously-unreachable-by-tests production bug along the way
+(`7b47bba`):** `InvalidateAllContent()`'s reflection filter matches every private `Panel` field
+named `_content*` to know which cached section panels to drop on a project reload — and that
+convention also matched `_contentHost`, the live container itself, not one of the cached panels.
+`OnProjectReloaded` disposed and nulled it along with the real cache, then crashed the next line
+(`HideWelcome`'s `_contentHost.Controls.Clear()`). This is reachable in the shipped app already —
+`File > Open` a second project into an already-open builder hits the same path — `BuilderWizardForm`
+was just the first thing to exercise `InstallerController.New()` against an already-constructed
+`PackageBuilderForm` and surface it. Fixed by excluding `_contentHost` by exact name; regression
+test added to `BuilderSectionCacheTests`.
+
+Also caught and fixed in review before it shipped: `BuilderWizardForm.OnNext` originally re-ran
+`InstallerController.New()` every time step 0 was revisited (Back, or the stepper strip), silently
+discarding whatever the user had already edited on Identity/Source. Fixed to only create on the
+first visit; named regression test in `BuilderWizardFormTests`.
+
+**Still open:** 12.C.2 (concrete-duplication check for the golden-path list editors, not yet done),
+12.D.3 (a way back from Advanced to Guided without closing the app), 12.D.4 (per-step
+required-vs-skippable gating — today every step gates uniformly on "no field error," not on
+section-specific rules like "Components needs at least one"), 12.E (opportunistic, unblocked). See
+P12 §5 for the full list.
 
 Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipped.
 
@@ -1829,7 +1857,7 @@ Suite 1471+ passed (baseline before this session's additions), 0 failed, 4 skipp
 | 9 | Test consolidation & regression | P0 gate | 🟡 compiling | [P9](P9_REGRESSION_DESIGN.md) |
 | 10 | Commercial-grade parity (upgrade/repair/3010/log/silent grammar) | P1 | ⬜ | [Design](P10_COMMERCIAL_PARITY_DESIGN.md) · [Tasks](P10_COMMERCIAL_PARITY.md) |
 | 11 | Updates, deltas & NuGet module channel | P1 (D10/D11) | 🟡 feature-complete (live E2E deferred) | [Design](P11_UPDATES_AND_PARTIAL_UPDATES_DESIGN.md) · [Tasks](P11_UPDATES_AND_PARTIAL_UPDATES.md) |
-| 12 | Wizard-first IA + shared editing ViewModel | P1 | 🟡 12.A shipped; 12.C–12.E planned | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
+| 12 | Wizard-first IA + shared editing ViewModel | P1 | 🟡 12.A, 12.C.1, 12.D.1, 12.D.2 shipped | [P12](P12_WIZARD_FIRST_IA_DESIGN.md) |
 
 **Sequencing.** P0 → P1 are strictly ordered and unlock everything else. **P3.B.2 is now the
 highest-leverage remaining item**: decomposing the publish stage unblocks roughly 30 tests and
