@@ -160,44 +160,39 @@ internal static partial class Program
 
         // Resolved from the composition root when there is one; constructed directly only when the
         // shell is driven in-process by a test, which never goes through Main.
-        Application.Run(Services?.GetService(typeof(PackageBuilderForm)) is PackageBuilderForm form
-            ? form
-            : new PackageBuilderForm(CreateColdStartController(), args));
+        if (Services?.GetService(typeof(PackageBuilderForm)) is PackageBuilderForm form)
+            Application.Run(form);
+        else
+            RunColdStart(args);
         return 0;
     }
 
     /// <summary>
-    /// A cold start with no project to resume used to land straight on a blank, unsaved project
-    /// inside the full builder -- thirty-plus sections in no particular order, nothing marking what a
-    /// build actually needs. "File > New" already runs the guided on-ramp first
-    /// (<c>PackageBuilderForm.NewProject(guided: true)</c>, which asks the four questions a build
-    /// cannot proceed without and hands the rest to the builder unchanged); this makes that the
-    /// default first thing a fresh run shows too, instead of only something a menu item offers.
-    ///
-    /// A returning user is not interrupted: if a project was opened before, this reopens it silently,
-    /// same as always. The wizard only runs when there is nothing to resume, and cancelling either
-    /// step falls back to the blank builder rather than leaving no window at all.
+    /// Cold start (P12 §3.4, §5 12.D.2). A returning user with a valid recent project reopens it
+    /// straight into Advanced mode -- unchanged from before this project ever had a wizard shell, no
+    /// re-walk of steps already filled in. A genuinely fresh start opens <see cref="BuilderWizardForm"/>
+    /// as the primary window instead of the flat 40-section builder: it absorbs the fields
+    /// <see cref="ProjectNewDialog"/>/<see cref="QuickStartWizard"/> used to collect across two separate
+    /// popup windows, and "Open full editor" swaps to the same <see cref="PackageBuilderForm"/> Advanced
+    /// mode the returning-user path already uses, sharing the same <see cref="InstallerController"/>.
     /// </summary>
-    private static InstallerController CreateColdStartController()
+    private static void RunColdStart(string[] args)
     {
         var mostRecent = RecentProjects.Load().FirstOrDefault();
         if (mostRecent is { Path.Length: > 0 } && System.IO.File.Exists(mostRecent.Path))
         {
             var controller = new InstallerController();
             var (ok, _) = controller.Open(mostRecent.Path);
-            if (ok) return controller;
+            if (ok) { Application.Run(new PackageBuilderForm(controller, args)); return; }
         }
 
-        using var projectDlg = new ProjectNewDialog();
-        if (projectDlg.ShowDialog() != DialogResult.OK)
-            return new InstallerController();
-
-        var fresh = new InstallerController();
-        fresh.New(projectDlg.TemplateId, projectDlg.ProductName, projectDlg.Version, projectDlg.Publisher, projectDlg.SourceDirectory);
-
-        using var quickStart = new QuickStartWizard(fresh.Project);
-        quickStart.ShowDialog();
-
-        return fresh;
+        var wizard = new BuilderWizardForm(new InstallerController());
+        wizard.AdvancedRequested += (_, _) =>
+        {
+            wizard.Hide();
+            wizard.AdvancedForm.Show();
+            wizard.AdvancedForm.FormClosed += (_, _) => wizard.Close();
+        };
+        Application.Run(wizard);
     }
 }
