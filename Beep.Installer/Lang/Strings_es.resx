@@ -1391,4 +1391,67 @@ Cree instaladores Setup.exe autónomos para Windows.</value>
   <data name="Template_GridName" xml:space="preserve">
     <value>Diferencias que aplicaría esta actualización</value>
   </data>
+  <data name="Toolbar_About" xml:space="preserve">
+    <value>Acerca de</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>Acciones</value>
+  </data>
+  <data name="Toolbar_ActionsHint" xml:space="preserve">
+    <value>Editar las acciones personalizadas</value>
+  </data>
+  <data name="Toolbar_BuildHint" xml:space="preserve">
+    <value>Compilar el Setup.exe</value>
+  </data>
+  <data name="Toolbar_Conditions" xml:space="preserve">
+    <value>Condiciones</value>
+  </data>
+  <data name="Toolbar_ConditionsHint" xml:space="preserve">
+    <value>Editar las condiciones de los componentes</value>
+  </data>
+  <data name="Toolbar_Help" xml:space="preserve">
+    <value>Ayuda</value>
+  </data>
+  <data name="Toolbar_HelpHint" xml:space="preserve">
+    <value>Mostrar la ayuda</value>
+  </data>
+  <data name="Toolbar_Languages" xml:space="preserve">
+    <value>Idiomas</value>
+  </data>
+  <data name="Toolbar_LanguagesHint" xml:space="preserve">
+    <value>Abrir el administrador de idiomas</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>Nuevo</value>
+  </data>
+  <data name="Toolbar_NewHint" xml:space="preserve">
+    <value>Nuevo script del instalador</value>
+  </data>
+  <data name="Toolbar_Open" xml:space="preserve">
+    <value>Abrir</value>
+  </data>
+  <data name="Toolbar_OpenHint" xml:space="preserve">
+    <value>Abrir script del instalador</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>Vista previa</value>
+  </data>
+  <data name="Toolbar_PreviewHint" xml:space="preserve">
+    <value>Vista previa del asistente de instalación</value>
+  </data>
+  <data name="Toolbar_PublishHint" xml:space="preserve">
+    <value>Publicar como ClickOnce</value>
+  </data>
+  <data name="Toolbar_SaveAsHint" xml:space="preserve">
+    <value>Guardar el script del instalador como</value>
+  </data>
+  <data name="Toolbar_SaveHint" xml:space="preserve">
+    <value>Guardar el script del instalador</value>
+  </data>
+  <data name="Toolbar_Templates" xml:space="preserve">
+    <value>Plantillas</value>
+  </data>
+  <data name="Toolbar_TemplatesHint" xml:space="preserve">
+    <value>Ver y aplicar una actualización de plantilla integrada</value>
+  </data>
 </root>

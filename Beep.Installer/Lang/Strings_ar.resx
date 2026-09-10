@@ -1391,4 +1391,67 @@
   <data name="Template_GridName" xml:space="preserve">
     <value>الاختلافات التي سيطبقها هذا التحديث</value>
   </data>
+  <data name="Toolbar_About" xml:space="preserve">
+    <value>حول</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>الإجراءات</value>
+  </data>
+  <data name="Toolbar_ActionsHint" xml:space="preserve">
+    <value>تحرير الإجراءات المخصصة</value>
+  </data>
+  <data name="Toolbar_BuildHint" xml:space="preserve">
+    <value>إنشاء ملف Setup.exe</value>
+  </data>
+  <data name="Toolbar_Conditions" xml:space="preserve">
+    <value>الشروط</value>
+  </data>
+  <data name="Toolbar_ConditionsHint" xml:space="preserve">
+    <value>تحرير شروط المكوّنات</value>
+  </data>
+  <data name="Toolbar_Help" xml:space="preserve">
+    <value>تعليمات</value>
+  </data>
+  <data name="Toolbar_HelpHint" xml:space="preserve">
+    <value>عرض التعليمات</value>
+  </data>
+  <data name="Toolbar_Languages" xml:space="preserve">
+    <value>اللغات</value>
+  </data>
+  <data name="Toolbar_LanguagesHint" xml:space="preserve">
+    <value>فتح مدير اللغات</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>جديد</value>
+  </data>
+  <data name="Toolbar_NewHint" xml:space="preserve">
+    <value>برنامج تثبيت نصي جديد</value>
+  </data>
+  <data name="Toolbar_Open" xml:space="preserve">
+    <value>فتح</value>
+  </data>
+  <data name="Toolbar_OpenHint" xml:space="preserve">
+    <value>فتح برنامج تثبيت نصي</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>معاينة</value>
+  </data>
+  <data name="Toolbar_PreviewHint" xml:space="preserve">
+    <value>معاينة معالج التثبيت</value>
+  </data>
+  <data name="Toolbar_PublishHint" xml:space="preserve">
+    <value>النشر بصيغة ClickOnce</value>
+  </data>
+  <data name="Toolbar_SaveAsHint" xml:space="preserve">
+    <value>حفظ برنامج التثبيت النصي باسم</value>
+  </data>
+  <data name="Toolbar_SaveHint" xml:space="preserve">
+    <value>حفظ برنامج التثبيت النصي</value>
+  </data>
+  <data name="Toolbar_Templates" xml:space="preserve">
+    <value>القوالب</value>
+  </data>
+  <data name="Toolbar_TemplatesHint" xml:space="preserve">
+    <value>معاينة تحديث قالب مدمج وتطبيقه</value>
+  </data>
 </root>

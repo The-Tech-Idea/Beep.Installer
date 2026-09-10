@@ -1391,4 +1391,67 @@ Limpar antes de compilar?</value>
   <data name="Template_GridName" xml:space="preserve">
     <value>Diferenças que esta atualização aplicaria</value>
   </data>
+  <data name="Toolbar_About" xml:space="preserve">
+    <value>Acerca de</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>Ações</value>
+  </data>
+  <data name="Toolbar_ActionsHint" xml:space="preserve">
+    <value>Editar as ações personalizadas</value>
+  </data>
+  <data name="Toolbar_BuildHint" xml:space="preserve">
+    <value>Compilar o Setup.exe</value>
+  </data>
+  <data name="Toolbar_Conditions" xml:space="preserve">
+    <value>Condições</value>
+  </data>
+  <data name="Toolbar_ConditionsHint" xml:space="preserve">
+    <value>Editar as condições dos componentes</value>
+  </data>
+  <data name="Toolbar_Help" xml:space="preserve">
+    <value>Ajuda</value>
+  </data>
+  <data name="Toolbar_HelpHint" xml:space="preserve">
+    <value>Mostrar a ajuda</value>
+  </data>
+  <data name="Toolbar_Languages" xml:space="preserve">
+    <value>Idiomas</value>
+  </data>
+  <data name="Toolbar_LanguagesHint" xml:space="preserve">
+    <value>Abrir o gestor de idiomas</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>Novo</value>
+  </data>
+  <data name="Toolbar_NewHint" xml:space="preserve">
+    <value>Novo script do instalador</value>
+  </data>
+  <data name="Toolbar_Open" xml:space="preserve">
+    <value>Abrir</value>
+  </data>
+  <data name="Toolbar_OpenHint" xml:space="preserve">
+    <value>Abrir script do instalador</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>Pré-visualizar</value>
+  </data>
+  <data name="Toolbar_PreviewHint" xml:space="preserve">
+    <value>Pré-visualizar o assistente de instalação</value>
+  </data>
+  <data name="Toolbar_PublishHint" xml:space="preserve">
+    <value>Publicar como ClickOnce</value>
+  </data>
+  <data name="Toolbar_SaveAsHint" xml:space="preserve">
+    <value>Guardar o script do instalador como</value>
+  </data>
+  <data name="Toolbar_SaveHint" xml:space="preserve">
+    <value>Guardar o script do instalador</value>
+  </data>
+  <data name="Toolbar_Templates" xml:space="preserve">
+    <value>Modelos</value>
+  </data>
+  <data name="Toolbar_TemplatesHint" xml:space="preserve">
+    <value>Pré-visualizar e aplicar uma atualização de modelo incorporada</value>
+  </data>
 </root>

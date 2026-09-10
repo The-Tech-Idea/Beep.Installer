@@ -1391,4 +1391,67 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Template_GridName" xml:space="preserve">
     <value>この更新で適用される差分</value>
   </data>
+  <data name="Toolbar_About" xml:space="preserve">
+    <value>バージョン情報</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>アクション</value>
+  </data>
+  <data name="Toolbar_ActionsHint" xml:space="preserve">
+    <value>カスタム アクションを編集</value>
+  </data>
+  <data name="Toolbar_BuildHint" xml:space="preserve">
+    <value>Setup.exe をビルド</value>
+  </data>
+  <data name="Toolbar_Conditions" xml:space="preserve">
+    <value>条件</value>
+  </data>
+  <data name="Toolbar_ConditionsHint" xml:space="preserve">
+    <value>コンポーネントの条件を編集</value>
+  </data>
+  <data name="Toolbar_Help" xml:space="preserve">
+    <value>ヘルプ</value>
+  </data>
+  <data name="Toolbar_HelpHint" xml:space="preserve">
+    <value>ヘルプを表示</value>
+  </data>
+  <data name="Toolbar_Languages" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Toolbar_LanguagesHint" xml:space="preserve">
+    <value>言語マネージャーを開く</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>新規</value>
+  </data>
+  <data name="Toolbar_NewHint" xml:space="preserve">
+    <value>新しいインストーラー スクリプト</value>
+  </data>
+  <data name="Toolbar_Open" xml:space="preserve">
+    <value>開く</value>
+  </data>
+  <data name="Toolbar_OpenHint" xml:space="preserve">
+    <value>インストーラー スクリプトを開く</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Toolbar_PreviewHint" xml:space="preserve">
+    <value>インストール ウィザードをプレビュー</value>
+  </data>
+  <data name="Toolbar_PublishHint" xml:space="preserve">
+    <value>ClickOnce として発行</value>
+  </data>
+  <data name="Toolbar_SaveAsHint" xml:space="preserve">
+    <value>インストーラー スクリプトに名前を付けて保存</value>
+  </data>
+  <data name="Toolbar_SaveHint" xml:space="preserve">
+    <value>インストーラー スクリプトを保存</value>
+  </data>
+  <data name="Toolbar_Templates" xml:space="preserve">
+    <value>テンプレート</value>
+  </data>
+  <data name="Toolbar_TemplatesHint" xml:space="preserve">
+    <value>組み込みテンプレートの更新をプレビューして適用</value>
+  </data>
 </root>

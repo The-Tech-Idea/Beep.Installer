@@ -2295,10 +2295,10 @@ public class PackageBuilderForm : Form
     //  Toolbar
     // ═══════════════════════════════════════════
 
-    private ToolStripButton NewButton() => MakeButton("New", "New installer script", (_, _) => NewProject());
-    private ToolStripButton OpenButton() => MakeButton("Open", "Open installer script", (_, _) => OpenProject());
-    private ToolStripButton SaveButton() => MakeButton("Save", "Save installer script", (_, _) => SaveProject());
-    private ToolStripButton SaveAsButton() => MakeButton("Save As", "Save installer script as", (_, _) => SaveProjectAs());
+    private ToolStripButton NewButton() => MakeButton(L("Toolbar_New", "New"), L("Toolbar_NewHint", "New installer script"), (_, _) => NewProject());
+    private ToolStripButton OpenButton() => MakeButton(L("Toolbar_Open", "Open"), L("Toolbar_OpenHint", "Open installer script"), (_, _) => OpenProject());
+    private ToolStripButton SaveButton() => MakeButton(L("Common_Save", "Save"), L("Toolbar_SaveHint", "Save installer script"), (_, _) => SaveProject());
+    private ToolStripButton SaveAsButton() => MakeButton(L("Builder_SaveAsTitle", "Save As"), L("Toolbar_SaveAsHint", "Save installer script as"), (_, _) => SaveProjectAs());
     private ToolStripDropDownButton RecentButton() { RefreshRecents(); return _recentsBtn; }
     private ToolStripButton PackagingButton() => MakeButton(
         L("Packaging_Button", "Format"),
@@ -2342,20 +2342,20 @@ public class PackageBuilderForm : Form
             if (_activeSectionId is { } section) OnSectionSelected(this, section);
         });
 
-    private ToolStripButton PreviewButton() => MakeButton("Preview", "Preview the install wizard", (_, _) => PreviewWizard());
-    private ToolStripButton BuildButton() => MakeButton("Build", "Build the Setup.exe", (_, _) => BuildInstaller());
-    private ToolStripButton PublishButton() => MakeButton("Publish", "Publish as ClickOnce", (_, _) => PublishProject());
+    private ToolStripButton PreviewButton() => MakeButton(L("Toolbar_Preview", "Preview"), L("Toolbar_PreviewHint", "Preview the install wizard"), (_, _) => PreviewWizard());
+    private ToolStripButton BuildButton() => MakeButton(L("Builder_BuildTitle", "Build"), L("Toolbar_BuildHint", "Build the Setup.exe"), (_, _) => BuildInstaller());
+    private ToolStripButton PublishButton() => MakeButton(L("Builder_PublishTitle", "Publish"), L("Toolbar_PublishHint", "Publish as ClickOnce"), (_, _) => PublishProject());
     private ToolStripButton UpdatesButton() => MakeButton(Lang.LanguageManager.T("Update_Title"), Lang.LanguageManager.T("Update_Instructions"), (_, _) =>
     {
         using var form = global::Beep.Installer.Program.CreateUpdateCenter(_project, _runtimeArgs);
         form.ShowDialog(this);
     });
-    private ToolStripButton TemplateButton() => MakeButton("Templates", "Preview and apply a built-in template update", (_, _) => UpdateFromTemplate());
-    private ToolStripButton ActionsButton() => MakeButton("Actions", "Edit custom actions", (_, _) => EditCustomActions());
-    private ToolStripButton ConditionsButton() => MakeButton("Conditions", "Edit component conditions", (_, _) => EditComponentConditions());
-    private ToolStripButton LangButton() => MakeButton("Languages", "Open Language Manager", (_, _) => { using var f = new LanguageManagerForm(); f.ShowDialog(this); });
-    private ToolStripButton AboutButton() => MakeButton("About", "About Beep Installer", (_, _) => ShowAbout());
-    private new ToolStripButton HelpButton() => MakeButton("Help", "Show help", (_, _) => ShowHelp());
+    private ToolStripButton TemplateButton() => MakeButton(L("Toolbar_Templates", "Templates"), L("Toolbar_TemplatesHint", "Preview and apply a built-in template update"), (_, _) => UpdateFromTemplate());
+    private ToolStripButton ActionsButton() => MakeButton(L("Toolbar_Actions", "Actions"), L("Toolbar_ActionsHint", "Edit custom actions"), (_, _) => EditCustomActions());
+    private ToolStripButton ConditionsButton() => MakeButton(L("Toolbar_Conditions", "Conditions"), L("Toolbar_ConditionsHint", "Edit component conditions"), (_, _) => EditComponentConditions());
+    private ToolStripButton LangButton() => MakeButton(L("Toolbar_Languages", "Languages"), L("Toolbar_LanguagesHint", "Open Language Manager"), (_, _) => { using var f = new LanguageManagerForm(); f.ShowDialog(this); });
+    private ToolStripButton AboutButton() => MakeButton(L("Toolbar_About", "About"), L("Builder_AboutTitle", "About Beep Installer"), (_, _) => ShowAbout());
+    private new ToolStripButton HelpButton() => MakeButton(L("Toolbar_Help", "Help"), L("Toolbar_HelpHint", "Show help"), (_, _) => ShowHelp());
     private static ToolStripButton MakeButton(string text, string tip, EventHandler handler)
     {
         var b = new ToolStripButton(text)

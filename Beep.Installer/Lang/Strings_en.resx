@@ -1401,4 +1401,67 @@ Clean before building?</value>
   <data name="Template_GridName" xml:space="preserve">
     <value>Differences this update would apply</value>
   </data>
+  <data name="Toolbar_About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Toolbar_ActionsHint" xml:space="preserve">
+    <value>Edit custom actions</value>
+  </data>
+  <data name="Toolbar_BuildHint" xml:space="preserve">
+    <value>Build the Setup.exe</value>
+  </data>
+  <data name="Toolbar_Conditions" xml:space="preserve">
+    <value>Conditions</value>
+  </data>
+  <data name="Toolbar_ConditionsHint" xml:space="preserve">
+    <value>Edit component conditions</value>
+  </data>
+  <data name="Toolbar_Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="Toolbar_HelpHint" xml:space="preserve">
+    <value>Show help</value>
+  </data>
+  <data name="Toolbar_Languages" xml:space="preserve">
+    <value>Languages</value>
+  </data>
+  <data name="Toolbar_LanguagesHint" xml:space="preserve">
+    <value>Open Language Manager</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Toolbar_NewHint" xml:space="preserve">
+    <value>New installer script</value>
+  </data>
+  <data name="Toolbar_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Toolbar_OpenHint" xml:space="preserve">
+    <value>Open installer script</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Toolbar_PreviewHint" xml:space="preserve">
+    <value>Preview the install wizard</value>
+  </data>
+  <data name="Toolbar_PublishHint" xml:space="preserve">
+    <value>Publish as ClickOnce</value>
+  </data>
+  <data name="Toolbar_SaveAsHint" xml:space="preserve">
+    <value>Save installer script as</value>
+  </data>
+  <data name="Toolbar_SaveHint" xml:space="preserve">
+    <value>Save installer script</value>
+  </data>
+  <data name="Toolbar_Templates" xml:space="preserve">
+    <value>Templates</value>
+  </data>
+  <data name="Toolbar_TemplatesHint" xml:space="preserve">
+    <value>Preview and apply a built-in template update</value>
+  </data>
 </root>

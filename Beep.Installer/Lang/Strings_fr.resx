@@ -1391,4 +1391,67 @@ Nettoyer avant de générer ?</value>
   <data name="Template_GridName" xml:space="preserve">
     <value>Différences que cette mise à jour appliquerait</value>
   </data>
+  <data name="Toolbar_About" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Toolbar_ActionsHint" xml:space="preserve">
+    <value>Modifier les actions personnalisées</value>
+  </data>
+  <data name="Toolbar_BuildHint" xml:space="preserve">
+    <value>Générer le Setup.exe</value>
+  </data>
+  <data name="Toolbar_Conditions" xml:space="preserve">
+    <value>Conditions</value>
+  </data>
+  <data name="Toolbar_ConditionsHint" xml:space="preserve">
+    <value>Modifier les conditions des composants</value>
+  </data>
+  <data name="Toolbar_Help" xml:space="preserve">
+    <value>Aide</value>
+  </data>
+  <data name="Toolbar_HelpHint" xml:space="preserve">
+    <value>Afficher l’aide</value>
+  </data>
+  <data name="Toolbar_Languages" xml:space="preserve">
+    <value>Langues</value>
+  </data>
+  <data name="Toolbar_LanguagesHint" xml:space="preserve">
+    <value>Ouvrir le gestionnaire de langues</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>Nouveau</value>
+  </data>
+  <data name="Toolbar_NewHint" xml:space="preserve">
+    <value>Nouveau script d’installation</value>
+  </data>
+  <data name="Toolbar_Open" xml:space="preserve">
+    <value>Ouvrir</value>
+  </data>
+  <data name="Toolbar_OpenHint" xml:space="preserve">
+    <value>Ouvrir un script d’installation</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="Toolbar_PreviewHint" xml:space="preserve">
+    <value>Aperçu de l’assistant d’installation</value>
+  </data>
+  <data name="Toolbar_PublishHint" xml:space="preserve">
+    <value>Publier en ClickOnce</value>
+  </data>
+  <data name="Toolbar_SaveAsHint" xml:space="preserve">
+    <value>Enregistrer le script d’installation sous</value>
+  </data>
+  <data name="Toolbar_SaveHint" xml:space="preserve">
+    <value>Enregistrer le script d’installation</value>
+  </data>
+  <data name="Toolbar_Templates" xml:space="preserve">
+    <value>Modèles</value>
+  </data>
+  <data name="Toolbar_TemplatesHint" xml:space="preserve">
+    <value>Prévisualiser et appliquer une mise à jour de modèle intégrée</value>
+  </data>
 </root>
