@@ -1505,4 +1505,22 @@
   <data name="Wizard_StepNewProject" xml:space="preserve">
     <value>مشروع جديد</value>
   </data>
+  <data name="Nav_Prerequisites" xml:space="preserve">
+    <value>المتطلبات الأساسية</value>
+  </data>
+  <data name="Nav_Registry" xml:space="preserve">
+    <value>السجل</value>
+  </data>
+  <data name="Nav_Shortcuts" xml:space="preserve">
+    <value>الاختصارات</value>
+  </data>
+  <data name="Prereq_Description" xml:space="preserve">
+    <value>حزم وقت التشغيل والتبعيات التي يجب التحقق منها أو تثبيتها قبل هذا التطبيق.</value>
+  </data>
+  <data name="Registry_Description" xml:space="preserve">
+    <value>مفاتيح وقيم السجل التي تتم كتابتها عند التثبيت.</value>
+  </data>
+  <data name="Shortcuts_Description" xml:space="preserve">
+    <value>اختصارات سطح المكتب وقائمة ابدأ والبدء التي يتم إنشاؤها عند التثبيت.</value>
+  </data>
 </root>

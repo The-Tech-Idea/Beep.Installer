@@ -1505,4 +1505,22 @@ Vor dem Erstellen bereinigen?</value>
   <data name="Wizard_StepNewProject" xml:space="preserve">
     <value>Neues Projekt</value>
   </data>
+  <data name="Nav_Prerequisites" xml:space="preserve">
+    <value>Voraussetzungen</value>
+  </data>
+  <data name="Nav_Registry" xml:space="preserve">
+    <value>Registrierung</value>
+  </data>
+  <data name="Nav_Shortcuts" xml:space="preserve">
+    <value>Verknüpfungen</value>
+  </data>
+  <data name="Prereq_Description" xml:space="preserve">
+    <value>Laufzeitpakete und Abhängigkeiten, die vor dieser App geprüft oder installiert werden.</value>
+  </data>
+  <data name="Registry_Description" xml:space="preserve">
+    <value>Registrierungsschlüssel und -werte, die bei der Installation geschrieben werden.</value>
+  </data>
+  <data name="Shortcuts_Description" xml:space="preserve">
+    <value>Desktop-, Startmenü- und Autostart-Verknüpfungen, die bei der Installation erstellt werden.</value>
+  </data>
 </root>

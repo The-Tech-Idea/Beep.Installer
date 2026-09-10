@@ -99,15 +99,6 @@ public class PackageBuilderForm : Form
     private DataGridView _componentsGrid = null!;
     private PropertyGrid _componentProps = null!;
     private BindingSource _componentsBinding = null!;
-    private DataGridView _prereqGrid = null!;
-    private PropertyGrid _prereqProps = null!;
-    private BindingSource _prereqsBinding = null!;
-    private DataGridView _shortcutsGrid = null!;
-    private PropertyGrid _shortcutProps = null!;
-    private BindingSource _shortcutsBinding = null!;
-    private DataGridView _registryGrid = null!;
-    private PropertyGrid _registryProps = null!;
-    private BindingSource _registryBinding = null!;
     private CheckedListBox _wizardPagesList = null!;
     private bool _loadingWizardPages;
 
@@ -179,9 +170,6 @@ public class PackageBuilderForm : Form
         _project = _controller.Project;
         BindProject();
         if (_componentsBinding != null) _componentsBinding.DataSource = _project.Components;
-        if (_prereqsBinding != null) _prereqsBinding.DataSource = _project.Prerequisites;
-        if (_shortcutsBinding != null) _shortcutsBinding.DataSource = _project.Shortcuts;
-        if (_registryBinding != null) _registryBinding.DataSource = _project.RegistryEntries;
         if (_includeList != null) _includeList.DataSource = _project.SourceIncludes;
         if (_excludeList != null) _excludeList.DataSource = _project.SourceExcludes;
         InvalidateAllContent();
@@ -962,104 +950,34 @@ public class PackageBuilderForm : Form
         return p;
     }
 
+    // 12.C.2: Prerequisites/Shortcuts/Registry used to hand-roll the same BindingSource + grid +
+    // PropertyGrid + Add/Remove wiring BuildAdvancedResourceSection<T> already provides for the 17
+    // typed-resource sections -- same collection type (ObservableCollection<T>), same reflection-based
+    // clone already generic over T. Reusing it here removes ~90 lines of duplicate wiring and fixes
+    // two latent gaps those hand-rolled copies had: AutoGenerateColumns with no list-property hiding
+    // (Prerequisite/ShortcutDefinition/RegistryOperation could have rendered a raw
+    // "ObservableCollection`1" column exactly like the Components section's own doc comment warns
+    // about) and no DataError handler (a bad cell edit could throw instead of being ignored).
     private Panel BuildPrerequisitesSection()
-    {
-        var p = new Panel { Dock = DockStyle.Fill };
-        var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 480 };
-
-        _prereqsBinding = new BindingSource { DataSource = _project.Prerequisites };
-        _prereqGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            DataSource = _prereqsBinding,
-            AutoGenerateColumns = true,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-
-        _prereqProps = new PropertyGrid { Dock = DockStyle.Fill, HelpVisible = false };
-        _prereqProps.DataBindings.Add("SelectedObject", _prereqsBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
-
-        var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        var addBtn = new Button { Text = L("Btn_Add", "Add") }; var remBtn = new Button { Text = L("Btn_Remove", "Remove") };
-        addBtn.Click += (_, _) => _project.Prerequisites.Add(new Prerequisite { Id = $"prereq{_project.Prerequisites.Count + 1}", Name = "New prerequisite" });
-        remBtn.Click += (_, _) => { if (_prereqGrid.SelectedRows.Count > 0 && _prereqGrid.SelectedRows[0].DataBoundItem is Prerequisite pr) _project.Prerequisites.Remove(pr); };
-        btnPanel.Controls.AddRange(new Control[] { addBtn, remBtn });
-
-        var left = new Panel { Dock = DockStyle.Fill };
-        left.Controls.Add(_prereqGrid);
-        left.Controls.Add(btnPanel);
-        split.Panel1.Controls.Add(left);
-        split.Panel2.Controls.Add(_prereqProps);
-        p.Controls.Add(split);
-        return p;
-    }
+        => BuildAdvancedResourceSection(
+            L("Nav_Prerequisites", "Prerequisites"),
+            L("Prereq_Description", "Runtime packages and dependencies to check or install before this app."),
+            _project.Prerequisites,
+            () => new Prerequisite { Id = $"prereq{_project.Prerequisites.Count + 1}", Name = "New prerequisite" });
 
     private Panel BuildShortcutsSection()
-    {
-        var p = new Panel { Dock = DockStyle.Fill };
-        var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 470 };
-
-        _shortcutsBinding = new BindingSource { DataSource = _project.Shortcuts };
-        _shortcutsGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            DataSource = _shortcutsBinding,
-            AutoGenerateColumns = true,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-
-        _shortcutProps = new PropertyGrid { Dock = DockStyle.Fill, HelpVisible = false };
-        _shortcutProps.DataBindings.Add("SelectedObject", _shortcutsBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
-
-        var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        var addBtn = new Button { Text = L("Btn_Add", "Add") }; var remBtn = new Button { Text = L("Btn_Remove", "Remove") };
-        addBtn.Click += (_, _) => _project.Shortcuts.Add(new ShortcutDefinition { Name = _project.AppName });
-        remBtn.Click += (_, _) => { if (_shortcutsGrid.SelectedRows.Count > 0 && _shortcutsGrid.SelectedRows[0].DataBoundItem is ShortcutDefinition s) _project.Shortcuts.Remove(s); };
-        btnPanel.Controls.AddRange(new Control[] { addBtn, remBtn });
-
-        var left = new Panel { Dock = DockStyle.Fill };
-        left.Controls.Add(_shortcutsGrid);
-        left.Controls.Add(btnPanel);
-        split.Panel1.Controls.Add(left);
-        split.Panel2.Controls.Add(_shortcutProps);
-        p.Controls.Add(split);
-        return p;
-    }
+        => BuildAdvancedResourceSection(
+            L("Nav_Shortcuts", "Shortcuts"),
+            L("Shortcuts_Description", "Desktop, Start Menu and Startup shortcuts created at install."),
+            _project.Shortcuts,
+            () => new ShortcutDefinition { Name = _project.AppName });
 
     private Panel BuildRegistrySection()
-    {
-        var p = new Panel { Dock = DockStyle.Fill };
-        var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 570 };
-
-        _registryBinding = new BindingSource { DataSource = _project.RegistryEntries };
-        _registryGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            DataSource = _registryBinding,
-            AutoGenerateColumns = true,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-
-        _registryProps = new PropertyGrid { Dock = DockStyle.Fill, HelpVisible = false };
-        _registryProps.DataBindings.Add("SelectedObject", _registryBinding, "", true, DataSourceUpdateMode.OnPropertyChanged);
-
-        var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 32 };
-        var addBtn = new Button { Text = L("Btn_Add", "Add") }; var remBtn = new Button { Text = L("Btn_Remove", "Remove") };
-        addBtn.Click += (_, _) => _project.RegistryEntries.Add(new RegistryOperation { KeyPath = $@"SOFTWARE\{_project.AppPublisher}\{_project.AppName}", ValueName = "Version", Value = _project.AppVersion });
-        remBtn.Click += (_, _) => { if (_registryGrid.SelectedRows.Count > 0 && _registryGrid.SelectedRows[0].DataBoundItem is RegistryOperation r) _project.RegistryEntries.Remove(r); };
-        btnPanel.Controls.AddRange(new Control[] { addBtn, remBtn });
-
-        var left = new Panel { Dock = DockStyle.Fill };
-        left.Controls.Add(_registryGrid);
-        left.Controls.Add(btnPanel);
-        split.Panel1.Controls.Add(left);
-        split.Panel2.Controls.Add(_registryProps);
-        p.Controls.Add(split);
-        return p;
-    }
+        => BuildAdvancedResourceSection(
+            L("Nav_Registry", "Registry"),
+            L("Registry_Description", "Registry keys and values written at install."),
+            _project.RegistryEntries,
+            () => new RegistryOperation { KeyPath = $@"SOFTWARE\{_project.AppPublisher}\{_project.AppName}", ValueName = "Version", Value = _project.AppVersion });
 
     private Panel BuildScheduledTasksSection()
         => BuildAdvancedResourceSection(

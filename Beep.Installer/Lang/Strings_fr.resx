@@ -1505,4 +1505,22 @@ Nettoyer avant de générer ?</value>
   <data name="Wizard_StepNewProject" xml:space="preserve">
     <value>Nouveau projet</value>
   </data>
+  <data name="Nav_Prerequisites" xml:space="preserve">
+    <value>Prérequis</value>
+  </data>
+  <data name="Nav_Registry" xml:space="preserve">
+    <value>Registre</value>
+  </data>
+  <data name="Nav_Shortcuts" xml:space="preserve">
+    <value>Raccourcis</value>
+  </data>
+  <data name="Prereq_Description" xml:space="preserve">
+    <value>Paquets d'exécution et dépendances à vérifier ou installer avant cette application.</value>
+  </data>
+  <data name="Registry_Description" xml:space="preserve">
+    <value>Clés et valeurs de registre écrites lors de l'installation.</value>
+  </data>
+  <data name="Shortcuts_Description" xml:space="preserve">
+    <value>Raccourcis Bureau, menu Démarrer et Démarrage créés lors de l'installation.</value>
+  </data>
 </root>

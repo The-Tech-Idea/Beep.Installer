@@ -1505,4 +1505,22 @@ Limpar antes de compilar?</value>
   <data name="Wizard_StepNewProject" xml:space="preserve">
     <value>Novo projeto</value>
   </data>
+  <data name="Nav_Prerequisites" xml:space="preserve">
+    <value>Pré-requisitos</value>
+  </data>
+  <data name="Nav_Registry" xml:space="preserve">
+    <value>Registo</value>
+  </data>
+  <data name="Nav_Shortcuts" xml:space="preserve">
+    <value>Atalhos</value>
+  </data>
+  <data name="Prereq_Description" xml:space="preserve">
+    <value>Pacotes de runtime e dependências a verificar ou instalar antes desta aplicação.</value>
+  </data>
+  <data name="Registry_Description" xml:space="preserve">
+    <value>Chaves e valores de registo escritos durante a instalação.</value>
+  </data>
+  <data name="Shortcuts_Description" xml:space="preserve">
+    <value>Atalhos do ambiente de trabalho, menu Iniciar e arranque criados durante a instalação.</value>
+  </data>
 </root>

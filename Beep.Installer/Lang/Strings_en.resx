@@ -1515,4 +1515,22 @@ Clean before building?</value>
   <data name="Wizard_StepNewProject" xml:space="preserve">
     <value>New project</value>
   </data>
+  <data name="Nav_Prerequisites" xml:space="preserve">
+    <value>Prerequisites</value>
+  </data>
+  <data name="Nav_Registry" xml:space="preserve">
+    <value>Registry</value>
+  </data>
+  <data name="Nav_Shortcuts" xml:space="preserve">
+    <value>Shortcuts</value>
+  </data>
+  <data name="Prereq_Description" xml:space="preserve">
+    <value>Runtime packages and dependencies to check or install before this app.</value>
+  </data>
+  <data name="Registry_Description" xml:space="preserve">
+    <value>Registry keys and values written at install.</value>
+  </data>
+  <data name="Shortcuts_Description" xml:space="preserve">
+    <value>Desktop, Start Menu and Startup shortcuts created at install.</value>
+  </data>
 </root>
