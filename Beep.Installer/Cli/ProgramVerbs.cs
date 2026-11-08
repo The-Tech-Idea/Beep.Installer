@@ -31,9 +31,13 @@ internal static partial class Program
         // Runtime maintenance — used by the SHIPPED installer and by Add/Remove Programs.
         // /VERYSILENT and /SUPPRESSMSGBOXES are Inno Setup's grammar; accepting them means
         // deployment scripts written for Inno (Intune/SCCM/winget) work unchanged.
-        CliVerb.Flag(RunSilentInstallVerb, tokens: new[] { "/S", "/SILENT", "/VERYSILENT" }),
+        //
+        // These sit ahead of the silent-install verb on purpose: the ARP QuietUninstallString is
+        // "<setup>.exe" /UNINSTALL /S. Matching in table order meant /S won and "uninstall"
+        // silently reinstalled the product.
         CliVerb.Flag(o => LoadRuntimeProject(o.Args) is { } p ? RunUninstall(p, o.Args) : 2, tokens: new[] { "/UNINSTALL" }),
         CliVerb.Flag(o => LoadRuntimeProject(o.Args) is { } p ? RunRepair(p, o.Args) : 2, tokens: new[] { "/REPAIR" }),
+        CliVerb.Flag(RunSilentInstallVerb, tokens: new[] { "/S", "/SILENT", "/VERYSILENT" }),
         CliVerb.Flag(_ => RunSelfTest(), tokens: new[] { "/SELFTEST" }),
 
         // App self-update — thin wrappers over the BeepDM IAppUpdateService.

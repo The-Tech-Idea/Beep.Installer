@@ -26,8 +26,24 @@ internal static class AtomicFileWriter
                 stream.Write(contents);
                 stream.Flush(flushToDisk: true);
             }
-            if (File.Exists(path)) File.Replace(temporary, path, null);
-            else File.Move(temporary, path);
+            if (File.Exists(path))
+            {
+                try
+                {
+                    File.Replace(temporary, path, null);
+                }
+                catch (IOException)
+                {
+                    // ReplaceFile can fail after it has already renamed the destination (for example
+                    // when an antivirus scanner or the uninstaller briefly holds the checkpoint).
+                    // A same-volume overwrite move is the safe fallback and keeps the checkpoint usable.
+                    File.Move(temporary, path, overwrite: true);
+                }
+            }
+            else
+            {
+                File.Move(temporary, path);
+            }
         }
         finally
         {

@@ -93,16 +93,37 @@ public sealed class ResourceProviderStep : ISetupStep
         journalPath = ResourceProviderRuntimeSupport.ResolveJournalPath(context, installPath, project);
         var journalStore = new ResourceExecutionJournalStore(journalPath);
         ResourceExecutionJournal? existingJournal = null;
+        var rebasedForUpgrade = false;
         var load = journalStore.TryLoad();
         if (load.Success)
         {
-            var metadataError = ResourceJournalRecoveryService.ValidateMetadata(load.Journal!.Metadata, compile.Plan);
-            if (!string.IsNullOrWhiteSpace(metadataError))
-                return StepErrorHelpers.Fail(metadataError);
+            var journalVersion = load.Journal!.Metadata.ProductVersion;
+            if (!string.Equals(journalVersion, compile.Plan.ProductVersion, StringComparison.Ordinal))
+            {
+                // In-place upgrade: the journal describes the previous version's plan. Rebasing the
+                // metadata to the new plan while carrying forward the applied resources keeps uninstall
+                // coverage for resources the new plan leaves unchanged (shortcuts, registry values) and
+                // for resources the new version removes. Resume is disabled so the new payload is still
+                // copied over files whose operation ids are unchanged.
+                //
+                // Rollback safety comes from UpgradeStep's install backup: the backup holds the old
+                // journal, and a failed upgrade restores the whole install directory from it.
+                existingJournal = ResourceJournalRecoveryService.RebaseForUpgrade(load.Journal, compile.Plan, installPath);
+                rebasedForUpgrade = true;
+                context.Properties[InstallContextKeys.ResourceExecutionAttemptId] = existingJournal.Metadata.AttemptId;
+                StepErrorHelpers.Report(progress, 25,
+                    $"Upgrading the typed resource journal from {journalVersion} to {compile.Plan.ProductVersion}…");
+            }
+            else
+            {
+                var metadataError = ResourceJournalRecoveryService.ValidateMetadata(load.Journal.Metadata, compile.Plan);
+                if (!string.IsNullOrWhiteSpace(metadataError))
+                    return StepErrorHelpers.Fail(metadataError);
 
-            existingJournal = load.Journal;
-            context.Properties[InstallContextKeys.ResourceExecutionAttemptId] = existingJournal.Metadata.AttemptId;
-            StepErrorHelpers.Report(progress, 25, "Resuming typed resource journal…");
+                existingJournal = load.Journal;
+                context.Properties[InstallContextKeys.ResourceExecutionAttemptId] = existingJournal.Metadata.AttemptId;
+                StepErrorHelpers.Report(progress, 25, "Resuming typed resource journal…");
+            }
         }
         else if (load.Status != ResourceExecutionJournalLoadStatus.Missing)
         {
@@ -129,7 +150,7 @@ public sealed class ResourceProviderStep : ISetupStep
                 new ResourceExecutionOptions
                 {
                     ExistingJournal = existingJournal,
-                    ResumeCompletedOperations = executionMode == "install",
+                    ResumeCompletedOperations = executionMode == "install" && !rebasedForUpgrade,
                     Checkpoint = SaveCheckpoint
                 });
         }

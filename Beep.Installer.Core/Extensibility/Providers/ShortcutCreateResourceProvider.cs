@@ -183,6 +183,7 @@ public sealed class ShortcutCreateResourceProvider : IResourceProvider
         }
 
         _store.Delete(state.LinkPath);
+        RemoveStartMenuFolder(operation, context);
         return new ResourceProviderResult { Message = $"Removed shortcut '{Input(operation, "name")}'." };
     }
 
@@ -194,10 +195,46 @@ public sealed class ShortcutCreateResourceProvider : IResourceProvider
 
         var linkPath = ResolveLinkPath(operation, context);
         _store.Delete(linkPath);
+        RemoveStartMenuFolder(operation, context);
         return new ResourceProviderResult
         {
             Message = $"Replay rollback removed shortcut '{Input(operation, "name")}'."
         };
+    }
+
+    /// <summary>
+    /// Removes the Start Menu product folder once its last shortcut is gone. Only the folder this
+    /// operation created is considered — <c>Programs</c> itself is never deleted.
+    /// </summary>
+    private void RemoveStartMenuFolder(CompiledInstallOperation operation, ResourceProviderContext context)
+    {
+        var location = Enum.TryParse<ShortcutLocation>(Input(operation, "location"), ignoreCase: true, out var parsed)
+            ? parsed
+            : ShortcutLocation.StartMenu;
+        if (location != ShortcutLocation.StartMenu)
+            return;
+
+        var linkPath = ResolveLinkPath(operation, context);
+        var folder = Path.GetDirectoryName(linkPath);
+        var programsRoot = Folder(context.PerUser ? Environment.SpecialFolder.Programs : Environment.SpecialFolder.CommonPrograms);
+        if (string.IsNullOrWhiteSpace(folder) || string.IsNullOrWhiteSpace(programsRoot))
+            return;
+
+        try
+        {
+            var fullFolder = Path.GetFullPath(folder);
+            var fullRoot = Path.GetFullPath(programsRoot).TrimEnd(Path.DirectorySeparatorChar);
+            if (string.Equals(fullFolder, fullRoot, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (Directory.Exists(fullFolder) && !Directory.EnumerateFileSystemEntries(fullFolder).Any())
+                Directory.Delete(fullFolder, recursive: false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            // Best effort: a leftover empty folder is cosmetic, and the shortcut itself is gone.
+            System.Diagnostics.Debug.WriteLine($"Shortcut folder cleanup skipped for '{folder}': {ex.Message}");
+        }
     }
 
     private string ResolveLinkPath(CompiledInstallOperation operation, ResourceProviderContext context)
@@ -311,7 +348,57 @@ public sealed class WindowsInstallerShortcutStore : IInstallerShortcutStore
         => File.Exists(path);
 
     public ShortcutSnapshot Read(string linkPath)
-        => File.Exists(linkPath) ? new ShortcutSnapshot(true) : new ShortcutSnapshot(false);
+    {
+        if (!File.Exists(linkPath))
+            return new ShortcutSnapshot(false);
+
+        if (!OperatingSystem.IsWindows())
+            return new ShortcutSnapshot(true);
+
+        Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
+        if (shellType == null)
+            return new ShortcutSnapshot(true);
+
+        object? shell = null;
+        object? shortcut = null;
+        try
+        {
+            shell = Activator.CreateInstance(shellType);
+            if (shell == null)
+                return new ShortcutSnapshot(true);
+
+            dynamic shellApi = shell;
+            shortcut = shellApi.CreateShortcut(linkPath);
+            if (shortcut == null)
+                return new ShortcutSnapshot(true);
+
+            dynamic link = shortcut;
+            return new ShortcutSnapshot(
+                true,
+                ((string?)link.TargetPath) ?? "",
+                ((string?)link.Arguments) ?? "",
+                ((string?)link.WorkingDirectory) ?? "",
+                ((string?)link.IconLocation) ?? "");
+        }
+        catch (Exception ex) when (
+            ex is COMException
+                or InvalidCastException
+                or ArgumentException
+                or NotSupportedException
+                or PlatformNotSupportedException)
+        {
+            // The link exists but its properties could not be read. Report existence only;
+            // callers comparing the target will treat this as a mismatch instead of crashing.
+            return new ShortcutSnapshot(true);
+        }
+        finally
+        {
+            if (shortcut != null)
+                Marshal.FinalReleaseComObject(shortcut);
+            if (shell != null)
+                Marshal.FinalReleaseComObject(shell);
+        }
+    }
 
     public void Write(string linkPath, string targetPath, string arguments, string workingDirectory, string iconPath)
     {

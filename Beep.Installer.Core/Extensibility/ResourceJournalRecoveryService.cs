@@ -108,6 +108,49 @@ public static class ResourceJournalRecoveryService
         }
     }
 
+    /// <summary>
+    /// Rebases a journal written by an older product version onto the current plan.
+    ///
+    /// The journal is version- and plan-hash-bound, so an in-place upgrade could not reuse the
+    /// previous version's file: validation rejected it before a single resource was applied.
+    /// The rebase keeps every applied resource (so uninstall still removes shortcuts, registry
+    /// values and files the new plan leaves untouched or drops) and retags the journal with the
+    /// new plan. New operations are appended by the executor; callers must disable resume so the
+    /// new payload still overwrites files whose operation ids are unchanged.
+    /// </summary>
+    public static ResourceExecutionJournal RebaseForUpgrade(
+        ResourceExecutionJournal previous,
+        CompiledInstallPlan plan,
+        string installRoot)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        ArgumentNullException.ThrowIfNull(plan);
+
+        var carried = previous.Entries
+            .Where(entry => entry.Action == ResourceExecutionAction.Apply
+                            && entry.ResultCode == ResourceProviderResultCode.Succeeded
+                            && entry.Operation is not null)
+            .ToList();
+
+        return new ResourceExecutionJournal
+        {
+            Metadata = new ResourceExecutionJournalMetadata
+            {
+                InstallRoot = installRoot,
+                ProductName = plan.ProductName,
+                AppId = plan.AppId,
+                Publisher = plan.Publisher,
+                ProductVersion = plan.ProductVersion,
+                PlanHash = plan.PlanHash,
+                InstallScope = plan.InstallScope,
+                AttemptId = Guid.NewGuid().ToString("N"),
+                ExecutionMode = "update",
+                StartedAt = DateTimeOffset.UtcNow
+            },
+            Entries = carried
+        };
+    }
+
     public static string ValidateMetadata(
         ResourceExecutionJournalMetadata metadata,
         CompiledInstallPlan plan)

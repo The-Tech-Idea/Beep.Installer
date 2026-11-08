@@ -1,4 +1,5 @@
 using Beep.Installer.Extensibility;
+using Beep.Installer.Engine;
 using Beep.Installer.Engine.Updates;
 using FluentAssertions;
 using Xunit;
@@ -28,6 +29,61 @@ public sealed class JournalPersistenceTests
             store.TryLoad().Journal!.Metadata.ProductName.Should().Be("second");
         }
         finally { root.Delete(true); }
+    }
+
+    [Fact]
+    public void RebaseForUpgrade_RetagsMetadataAndKeepsAppliedResources()
+    {
+        const string appId = "8e5e7e2b-6a7c-4b3e-9b8f-4c7d5a1e2f30";
+        var applied = new ResourceExecutionJournalEntry
+        {
+            OperationId = "file:core:app.dll",
+            OperationType = "file.copy",
+            Action = ResourceExecutionAction.Apply,
+            ResultCode = ResourceProviderResultCode.Succeeded,
+            Operation = new CompiledInstallOperation { Id = "file:core:app.dll", Type = "file.copy" }
+        };
+        var rolledBack = new ResourceExecutionJournalEntry
+        {
+            OperationId = "file:core:app.dll",
+            OperationType = "file.copy",
+            Action = ResourceExecutionAction.Rollback,
+            ResultCode = ResourceProviderResultCode.Succeeded
+        };
+        var previous = new ResourceExecutionJournal
+        {
+            Metadata = new()
+            {
+                InstallRoot = @"C:\Apps\Beep",
+                ProductName = "Beep ERP Desktop",
+                AppId = appId,
+                Publisher = "TheTechIdea",
+                ProductVersion = "0.1.0",
+                PlanHash = "old-plan",
+                InstallScope = "machine",
+                AttemptId = "previous-attempt"
+            },
+            Entries = new() { applied, rolledBack }
+        };
+        var plan = new CompiledInstallPlan
+        {
+            ProductName = "Beep ERP Desktop",
+            AppId = appId,
+            Publisher = "TheTechIdea",
+            ProductVersion = "0.1.1",
+            InstallScope = "machine",
+            PlanHash = "new-plan"
+        };
+
+        var rebased = ResourceJournalRecoveryService.RebaseForUpgrade(previous, plan, @"C:\Apps\Beep");
+
+        rebased.Metadata.ProductVersion.Should().Be("0.1.1");
+        rebased.Metadata.PlanHash.Should().Be("new-plan");
+        rebased.Metadata.ExecutionMode.Should().Be("update");
+        rebased.Metadata.AttemptId.Should().NotBe("previous-attempt");
+        rebased.Entries.Should().ContainSingle("only successfully applied resources are carried forward")
+            .Which.OperationId.Should().Be("file:core:app.dll");
+        ResourceJournalRecoveryService.ValidateMetadata(rebased.Metadata, plan).Should().BeEmpty();
     }
 
     [Fact]

@@ -1,8 +1,10 @@
 using Beep.Installer.Engine;
 using Beep.Installer.Extensibility;
 using Beep.Installer.Models;
+using Microsoft.Win32;
 using TheTechIdea.Beep.Addin;
 using TheTechIdea.Beep.ConfigUtil;
+using TheTechIdea.Beep.Installer;
 using TheTechIdea.Beep.SetUp;
 
 namespace Beep.Installer.Steps;
@@ -132,8 +134,46 @@ public sealed class ResourceProviderUninstallStep : ISetupStep
         if (errors.Count > 0)
             return StepErrorHelpers.Fail($"Typed resource uninstall completed with {errors.Count} errors: {string.Join("; ", errors)}");
 
-        CleanupRuntimeArtifacts(installPath, journalPath, ResourceExecutionJournalStore.LocationPath(installPath, project.AppId), progress);
+        CleanupRuntimeArtifacts(installPath, journalPath, ResourceExecutionJournalStore.LocationPath(installPath, project.AppId), project, progress);
+        UnregisterInstallation(context, project, progress);
+        RemoveArpRegistration(context, project, progress);
         return StepErrorHelpers.Ok($"Typed resource uninstall complete. {completed} operations replayed.");
+    }
+
+    /// <summary>
+    /// Removes the <c>SOFTWARE\TheTechIdea\Installations</c> registration so a later install of an
+    /// older version is not refused as a downgrade against a product that is no longer installed.
+    /// The legacy manifest uninstaller did this; the provider-based graph did not, which left a
+    /// ghost registration behind and blocked reinstalling a lower version.
+    /// </summary>
+    private static void UnregisterInstallation(
+        SetupContext context,
+        InstallProject project,
+        IProgress<PassedArgs>? progress)
+    {
+        try
+        {
+            var config = context.TryGetProperty<InstallConfig>(InstallContextKeys.InstallConfig);
+            if (config != null)
+            {
+                using var baseKey = InstallScope.OpenBaseKey(context, config);
+                new UpgradeEngine().UnregisterInstall(config.AppId, baseKey);
+                return;
+            }
+
+            var perUser = context.Properties.TryGetValue(InstallContextKeys.PerUser, out var value)
+                          && value is bool flag
+                          && flag;
+            using var hive = RegistryKey.OpenBaseKey(
+                perUser ? RegistryHive.CurrentUser : RegistryHive.LocalMachine,
+                RegistryView.Default);
+            new UpgradeEngine().UnregisterInstall(project.AppId, hive);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
+        {
+            // Best effort: a failed unregister must not turn a clean file uninstall into a failure.
+            progress?.Report(new PassedArgs { Messege = $"Uninstall registration could not be removed: {ex.Message}" });
+        }
     }
 
     private static ResourceExecutionJournalEntry Entry(
@@ -171,6 +211,7 @@ public sealed class ResourceProviderUninstallStep : ISetupStep
         string installPath,
         string journalPath,
         string locationPath,
+        InstallProject project,
         IProgress<PassedArgs>? progress)
     {
         TryDeleteFile(Path.Combine(installPath, "install-manifest.json"), progress);
@@ -180,6 +221,8 @@ public sealed class ResourceProviderUninstallStep : ISetupStep
         var journalDirectory = Path.GetDirectoryName(journalPath);
         if (!string.IsNullOrWhiteSpace(journalDirectory))
             TryDeleteEmptyDirectory(journalDirectory, progress);
+
+        RemoveStagedInstaller(installPath, project, progress);
 
         if (!Directory.Exists(installPath))
             return;
@@ -192,6 +235,95 @@ public sealed class ResourceProviderUninstallStep : ISetupStep
         }
 
         TryDeleteEmptyDirectory(installPath, progress);
+    }
+
+    /// <summary>
+    /// Removes the installer copy staged by <see cref="InstallerSelfCopyStep"/>.
+    ///
+    /// When uninstall is run from that copy, Windows cannot delete the running image; the
+    /// removal is queued with <c>MoveFileEx(DELAY_UNTIL_REBOOT)</c> instead of being silently
+    /// left behind. When uninstall is run from the original download the copy is deleted now.
+    /// </summary>
+    private static void RemoveStagedInstaller(
+        string installPath,
+        InstallProject project,
+        IProgress<PassedArgs>? progress)
+    {
+        string staged;
+        try { staged = InstallerSelfCopyStep.StagedInstallerPath(project, installPath); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            progress?.Report(new PassedArgs { Messege = $"ResourceProviderUninstallStep: cannot resolve staged uninstaller: {ex.Message}" });
+            return;
+        }
+
+        if (!File.Exists(staged))
+            return;
+
+        var running = Environment.ProcessPath;
+        if (running != null
+            && string.Equals(Path.GetFullPath(running), Path.GetFullPath(staged), StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (InstallHelpers.ScheduleFileForRestart(staged, null))
+                {
+                    progress?.Report(new PassedArgs { Messege = $"Uninstaller will be removed at next restart: {staged}" });
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                progress?.Report(new PassedArgs { Messege = $"ResourceProviderUninstallStep: cannot schedule uninstaller removal: {ex.Message}" });
+                return;
+            }
+
+            progress?.Report(new PassedArgs { Messege = $"ResourceProviderUninstallStep: leaving staged uninstaller (delete it manually): {staged}" });
+            return;
+        }
+
+        TryDeleteFile(staged, progress);
+    }
+
+    /// <summary>
+    /// Deletes the Apps &amp; Features key itself. Replaying the registry operations removes the
+    /// values they wrote, but the key lingers empty; a clean uninstall must leave no ARP shell.
+    /// </summary>
+    private static void RemoveArpRegistration(
+        SetupContext context,
+        InstallProject project,
+        IProgress<PassedArgs>? progress)
+    {
+        try
+        {
+            var config = context.TryGetProperty<InstallConfig>(InstallContextKeys.InstallConfig);
+            var keyPath = InstallationRegistration.UninstallKeyPath(project.AppId);
+
+            if (config != null)
+            {
+                using var baseKey = InstallScope.OpenBaseKey(context, config);
+                baseKey.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false);
+                return;
+            }
+
+            var perUser = context.Properties.TryGetValue(InstallContextKeys.PerUser, out var value)
+                          && value is bool flag
+                          && flag;
+            var views = Environment.Is64BitOperatingSystem
+                ? new[] { RegistryView.Registry64, RegistryView.Registry32 }
+                : new[] { RegistryView.Registry32 };
+            foreach (var view in views)
+            {
+                using var hive = RegistryKey.OpenBaseKey(
+                    perUser ? RegistryHive.CurrentUser : RegistryHive.LocalMachine,
+                    view);
+                hive.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
+        {
+            progress?.Report(new PassedArgs { Messege = $"Apps & Features registration could not be removed: {ex.Message}" });
+        }
     }
 
     private static void TryDeleteFile(string path, IProgress<PassedArgs>? progress)
