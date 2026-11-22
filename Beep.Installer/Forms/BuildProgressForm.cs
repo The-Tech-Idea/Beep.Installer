@@ -92,6 +92,14 @@ public class BuildProgressForm : Form
 
     public void SetCancellationSource(CancellationTokenSource cts) => _cts = cts;
 
+    public void DisableCancellation(string explanation)
+    {
+        _cancelBtn.Enabled = false;
+        _cancelBtn.AccessibleDescription = explanation;
+        _statusLabel.Text = explanation;
+        ControlBox = false;
+    }
+
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         if (e.CloseReason == CloseReason.UserClosing && !_cancelled)

@@ -90,7 +90,11 @@ public class PrerequisitePage : UserControl, IInstallerPage
         _subtitle.Text = "Checking system requirements...";
 
         var isSelfContained = ctx.Bag.TryGetValue("IsSelfContained", out var sc) && sc is true;
-        _results = PrerequisiteDetector.CheckAll(ctx.Project, isSelfContained);
+        _results = ctx.PreviewOnly
+            ? new[] { new Prerequisite { Id = "dotnet-runtime", Name = ".NET Runtime", IsMandatory = !isSelfContained } }
+                .Concat(ctx.Project.Prerequisites).Select(config => new PrerequisiteDetector.PrerequisiteResult
+                    { Config = config, StatusText = LanguageManager.GetOrDefault("Preview_PrerequisitesNotChecked", "Preview: prerequisite checks and installation actions are not run.") }).ToList()
+            : PrerequisiteDetector.CheckAll(ctx.Project, isSelfContained);
 
         var y = 0;
         foreach (var result in _results)
@@ -150,7 +154,7 @@ public class PrerequisitePage : UserControl, IInstallerPage
             {
                 var downloadBtn = new BeepButton
                 {
-                    Text = "Download",
+                    Text = "Download", Enabled = !_ctx.PreviewOnly,
                     ImagePath = IconPath("download"),
                     Location = new Point(btnX, 10),
                     Size = new Size(90, 28),
@@ -158,7 +162,7 @@ public class PrerequisitePage : UserControl, IInstallerPage
                 };
                 var url = result.Config.DownloadUrl;
                 downloadBtn.Click += (_, _) =>
-                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                { if (!_ctx.PreviewOnly) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); };
                 row.Controls.Add(downloadBtn);
                 btnX += 100;
             }
@@ -167,7 +171,7 @@ public class PrerequisitePage : UserControl, IInstallerPage
             {
                 var installBtn = new BeepButton
                 {
-                    Text = "Install",
+                    Text = "Install", Enabled = !_ctx.PreviewOnly,
                     ImagePath = IconPath("file-download"),
                     Location = new Point(btnX, 10),
                     Size = new Size(80, 28),
@@ -189,6 +193,7 @@ public class PrerequisitePage : UserControl, IInstallerPage
 
     private async Task InstallPrerequisiteAsync(PrerequisiteDetector.PrerequisiteResult result)
     {
+        if (_ctx.PreviewOnly) return;
         if (string.IsNullOrWhiteSpace(result.Config.DownloadUrl)) return;
 
         try
@@ -252,6 +257,12 @@ public class PrerequisitePage : UserControl, IInstallerPage
 
     private void UpdateCanGoNext()
     {
+        if (_ctx.PreviewOnly)
+        {
+            _canGoNext = true;
+            _subtitle.Text = LanguageManager.GetOrDefault("Preview_PrerequisitesNotChecked", "Preview: prerequisite checks and installation actions are not run.");
+            FireValidityChanged(); return;
+        }
         _canGoNext = _results.All(r => r.Detected || !r.IsMandatory);
 
         if (_canGoNext)
@@ -264,6 +275,14 @@ public class PrerequisitePage : UserControl, IInstallerPage
 
     private void FireValidityChanged()
         => ValidityChanged?.Invoke(this, _canGoNext);
+
+    public void ReloadStrings()
+    {
+        if (!_ctx.PreviewOnly) return;
+        foreach (var result in _results)
+            result.StatusText = LanguageManager.GetOrDefault("Preview_PrerequisitesNotChecked", "Preview: prerequisite checks and installation actions are not run.");
+        RebuildList(); UpdateCanGoNext();
+    }
 
     public new bool Validate() => _canGoNext;
 

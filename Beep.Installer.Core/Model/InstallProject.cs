@@ -55,7 +55,9 @@ namespace Beep.Installer.Models
     {
         Exe,
         Msix,
-        MsixBundle
+        MsixBundle,
+        Msi,
+        ClickOnce
     }
 
     public enum MsixRelatedPackageKind

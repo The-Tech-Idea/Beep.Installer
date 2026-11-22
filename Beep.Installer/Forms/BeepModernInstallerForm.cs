@@ -58,6 +58,22 @@ public class BeepModernInstallerForm : BeepiFormPro
     private readonly bool _previewMode;
     private readonly InstallProject _project;
 
+    internal IReadOnlyList<string> PreviewPageTitles => Array.AsReadOnly(_pages.Select(page => page.PageTitle).ToArray());
+    internal int PreviewCurrentPage => _currentPage;
+    internal bool SelectPreviewPage(int index)
+    {
+        if (!_previewMode || index < 0 || index >= _pages.Count) return false;
+        CapturePageState(); _installComplete = false;
+        if (_pages[index] is CompletePage)
+        {
+            _completePage!.SetResult(true, LanguageManager.GetOrDefault("Runtime_Preview", "Preview only: no installation changes were applied."));
+            _completePage.SetLocalizedMessage("Runtime_Preview");
+        }
+        else if (_pages[index] is ErrorPage)
+            _errorPage!.SetError(LanguageManager.GetOrDefault("Preview_SimulatedFailure", "Simulated failure for layout review. No installation was run."));
+        NavigateTo(index); return true;
+    }
+
     private const string IconNs = "Beep.Installer.Resources.Icons";
     private const int SidebarWidth = 260;
 
@@ -126,6 +142,9 @@ public class BeepModernInstallerForm : BeepiFormPro
                 catch (Exception ex) { Engine.Diag.Debug("Language", $"{page.GetType().Name} could not reload strings", ex); }
             }
 
+            if (_previewMode && _currentPage >= 0 && _pages[_currentPage] is ErrorPage)
+                _errorPage!.SetError(LanguageManager.GetOrDefault("Preview_SimulatedFailure", "Simulated failure for layout review. No installation was run."));
+
             // Re-sync the selector. The language can be set from outside this form -- the standalone
             // translation editor (/LANGMGR) and LanguageManager.SetLanguage both raise this event --
             // and the combo would otherwise go on showing the language that is no longer in use.
@@ -146,6 +165,7 @@ public class BeepModernInstallerForm : BeepiFormPro
                 }
             }
 
+            ApplyButtonText();
             Refresh();
         }
         catch (Exception ex)
@@ -190,6 +210,7 @@ public class BeepModernInstallerForm : BeepiFormPro
         // that is already open rather than only the next one.
         LanguageManager.LanguageChanged += OnLanguageChanged;
         _ctx.Project = project;
+        _ctx.PreviewOnly = previewMode;
         _ctx.InstallPath = project.DefaultDirName;
         _ctx.StartMenuFolder = project.DefaultGroupName;
 
@@ -686,7 +707,7 @@ public class BeepModernInstallerForm : BeepiFormPro
             _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Next", "Next >");
         else if (_pages[_currentPage] is ReadyPage)
             _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Install", "Install");
-        else if (_currentPage == _pages.Count - 1)
+        else if (_pages[_currentPage] is CompletePage or ErrorPage)
             _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Finish", "Finish");
         else
             _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Next", "Next >");
@@ -695,6 +716,7 @@ public class BeepModernInstallerForm : BeepiFormPro
     private async void OnNextClicked(object? sender, EventArgs e)
     {
         if (_installComplete) { Close(); return; }
+        if (_previewMode && _pages[_currentPage] is CompletePage) { Close(); return; }
 
         if (_pages[_currentPage] is ReadyPage)
         {
@@ -817,8 +839,8 @@ public class BeepModernInstallerForm : BeepiFormPro
         if (_previewMode)
         {
             for (int p = 0; p <= 100; p += 5) { await Task.Delay(40); }
-            _completePage?.SetResult(true, "(Preview) Installation would proceed here.");
-            ShowCompletePage();
+            ShowCompletePage(message: LanguageManager.GetOrDefault("Runtime_Preview", "Preview only: no installation changes were applied."));
+            _completePage?.SetLocalizedMessage("Runtime_Preview");
             return;
         }
 
@@ -827,6 +849,9 @@ public class BeepModernInstallerForm : BeepiFormPro
         var (progressHost, headline, bar, detail) = BuildProgressPanel();
         _content.Controls.Add(progressHost);
 
+        RuntimeOperationOutcome? outcome = null;
+        SetupContext? runtimeContext = null;
+        InstallLogger? runtimeLogger = null;
         try
         {
             var customValues = new Dictionary<string, string>();
@@ -834,12 +859,17 @@ public class BeepModernInstallerForm : BeepiFormPro
                 if (kv.Key.StartsWith("Custom:"))
                     customValues[kv.Key["Custom:".Length..]] = kv.Value?.ToString() ?? "";
 
-            var rollback = new RollbackManager();
+            // Share the log with recovery so failed revert actions have reviewable evidence.
+            var installLogger = new InstallLogger();
+            runtimeLogger = installLogger;
+            installLogger.Info("Install", $"{_project.AppName} {_project.AppVersion} → {_ctx.InstallPath} (perUser={_ctx.PerUser})");
+            var rollback = new RollbackManager(installLogger);
 
             // Same builder the silent/CLI paths use, so both produce an identical context
             // (notably the InstallConfig the BeepDM steps require).
             var context = Engine.InstallContextBuilder.ForInstall(
                 _project, _ctx.InstallPath, _ctx.PerUser, rollback, payloadRoot: null, customValues);
+            runtimeContext = context;
             context.Properties[InstallContextKeys.ResourceExecutionMode] = "install";
 
             // Same policy and consent binding the silent path applies. Without this the comment
@@ -871,9 +901,6 @@ public class BeepModernInstallerForm : BeepiFormPro
             var stepsDone = 0;
 
             // Same install log the silent path writes; "View installation log" points here.
-            var installLogger = new InstallLogger();
-            installLogger.Info("Install", $"{_project.AppName} {_project.AppVersion} → {_ctx.InstallPath} (perUser={_ctx.PerUser})");
-
             var progress = new Progress<PassedArgs>(args =>
             {
                 if (IsDisposed) return;
@@ -906,15 +933,32 @@ public class BeepModernInstallerForm : BeepiFormPro
                 using var operationLock = Engine.InstallationOperationLock.Acquire(_ctx.InstallPath);
                 wizard.Run(context, progress);
                 var completedReport = wizard.GetReport();
+                var restart = context.Properties.TryGetValue("RebootRequired", out var rebootFlag) && rebootFlag is true;
+                outcome = new RuntimeOperationOutcome(completedReport.Succeeded, restart);
                 if (completedReport.Succeeded) rollback.Commit();
                 else
                 {
-                    rollback.Rollback();
+                    outcome = outcome with { RollbackAttempted = true, RollbackActionsRequested = rollback.ActionCount };
+                    var reverted = rollback.Rollback();
+                    outcome = outcome with { RollbackActionsCompleted = reverted };
 
                     // Restore the previous version before releasing the installation lease.
                     var backup = context.TryGetProperty<string>(UpgradeStep.BackupPathKey);
                     if (!string.IsNullOrWhiteSpace(backup))
-                        new UpgradeEngine().RestoreFromBackup(backup!, _ctx.InstallPath, CancellationToken.None);
+                    {
+                        outcome = outcome with { BackupRecovery = BackupRecoveryState.Unknown };
+                        try
+                        {
+                            var restored = new UpgradeEngine().RestoreFromBackup(backup!, _ctx.InstallPath, CancellationToken.None);
+                            outcome = outcome with { BackupRecovery = restored ? BackupRecoveryState.Restored : BackupRecoveryState.Failed };
+                        }
+                        catch (Exception recoveryError)
+                        {
+                            outcome = outcome with { BackupRecovery = BackupRecoveryState.Failed };
+                            installLogger.Error("Recovery", recoveryError.Message);
+                            Engine.Diag.Warn("Wizard", "Previous-version file backup recovery failed.", recoveryError, "BI2435");
+                        }
+                    }
                 }
                 return completedReport;
             });
@@ -926,35 +970,39 @@ public class BeepModernInstallerForm : BeepiFormPro
             var supportBundlePath = CreateWizardSupportBundle(
                 context,
                 report.Succeeded,
-                report.Succeeded ? 0 : 1,
+                Hosting.ExitCodes.ForInstallResult(report.Succeeded, context, noRestart: false),
                 report.Succeeded ? "Interactive installation completed." : report.StepResults.LastOrDefault(r => !r.Succeeded)?.Message ?? "Interactive installation failed.",
                 logPath,
-                runCorrelationId);
+                runCorrelationId, outcome);
 
             if (report.Succeeded)
             {
                 ShowCompletePage(report.Succeeded,
-                    $"{_ctx.Project.AppName} has been installed to {_ctx.InstallPath}.",
+                    string.Format(LanguageManager.GetOrDefault("Runtime_Installed", "{0} has been installed to {1}."), _ctx.Project.AppName, _ctx.InstallPath),
                     logPath,
-                    supportBundlePath);
+                    supportBundlePath, outcome);
+                _completePage?.SetLocalizedMessage("Runtime_Installed", _ctx.Project.AppName, _ctx.InstallPath);
             }
             else
             {
-                ShowErrorPage(report, supportBundlePath: supportBundlePath);
+                ShowErrorPage(report, supportBundlePath: supportBundlePath, logPath: logPath, outcome: outcome);
             }
         }
         catch (Exception ex)
         {
             Engine.Diag.Warn("Wizard", $"Interactive install crashed: {ex.Message}", ex, "BI2435");
-            var context = Engine.InstallContextBuilder.ForInstall(
+            var context = runtimeContext ?? Engine.InstallContextBuilder.ForInstall(
                 _project,
                 _ctx.InstallPath,
                 _ctx.PerUser,
                 rollback: null,
                 payloadRoot: null,
                 customValues: null);
-            var supportBundlePath = CreateWizardSupportBundle(context, false, 1, ex.Message, null, runCorrelationId);
-            ShowErrorPage(null, ex.Message, supportBundlePath);
+            var logPath = runtimeLogger is not null && File.Exists(runtimeLogger.LogFilePath) ? runtimeLogger.LogFilePath : null;
+            outcome ??= new RuntimeOperationOutcome(false, context.Properties.TryGetValue("RebootRequired", out var reboot) && reboot is true);
+            outcome = outcome with { Succeeded = false };
+            var supportBundlePath = CreateWizardSupportBundle(context, false, 1, ex.Message, logPath, runCorrelationId, outcome);
+            ShowErrorPage(null, ex.Message, supportBundlePath, logPath, outcome);
         }
     }
 
@@ -964,7 +1012,7 @@ public class BeepModernInstallerForm : BeepiFormPro
         int exitCode,
         string message,
         string? logPath,
-        string correlationId)
+        string correlationId, RuntimeOperationOutcome? outcome = null)
     {
         try
         {
@@ -978,6 +1026,7 @@ public class BeepModernInstallerForm : BeepiFormPro
                 Message = message,
                 LogPath = logPath ?? "",
                 Context = context,
+                Outcome = outcome,
                 OutputPath = null,
                 CorrelationId = correlationId,
                 PreviewOnly = true,
@@ -992,10 +1041,12 @@ public class BeepModernInstallerForm : BeepiFormPro
         }
     }
 
-    private void ShowErrorPage(SetupReport? report = null, string? detail = null, string? supportBundlePath = null)
+    private void ShowErrorPage(SetupReport? report = null, string? detail = null, string? supportBundlePath = null,
+        string? logPath = null, RuntimeOperationOutcome? outcome = null)
     {
-        var msg = detail ?? $"Installation failed at step: {report?.StepResults.LastOrDefault(r => !r.Succeeded)?.Message ?? "unknown"}";
-        _errorPage?.SetError(msg, null, supportBundlePath);
+        var msg = detail ?? string.Format(LanguageManager.GetOrDefault("Runtime_FailedStep", "Installation failed at step: {0}"),
+            report?.StepResults.LastOrDefault(r => !r.Succeeded)?.Message ?? LanguageManager.GetOrDefault("Complete_Failure", "There was a problem during installation."));
+        _errorPage?.SetError(msg, logPath, supportBundlePath, outcome);
         NavigateTo(_pages.Count - 1);
         _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Finish", "Finish");
         _nextBtn.Enabled = false;
@@ -1008,20 +1059,22 @@ public class BeepModernInstallerForm : BeepiFormPro
         _cancelBtn.ToolTipText = "";
     }
 
-    private void ShowCompletePage(bool success = true, string? message = null, string? logPath = null, string? supportBundlePath = null)
+    private void ShowCompletePage(bool success = true, string? message = null, string? logPath = null, string? supportBundlePath = null,
+        RuntimeOperationOutcome? outcome = null)
     {
-        _content.Controls.Clear();
-        _completePage?.SetResult(success, message ?? "", logPath, supportBundlePath);
+        _completePage?.SetResult(success, message ?? "", logPath, supportBundlePath, outcome);
         if (_completePage != null)
         {
-            _completePage.Dock = DockStyle.Fill;
-            _content.Controls.Add(_completePage);
+            var completeIndex = _pages.IndexOf(_completePage);
+            if (completeIndex >= 0) NavigateTo(completeIndex);
         }
 
         _cancelBtn.ToolTipText = "";
         _nextBtn.Text = LanguageManager.GetOrDefault("Btn_Finish", "Finish");
         _nextBtn.Enabled = true;
         _installComplete = true;
+        _backBtn.Enabled = false;
+        _nextBtn.Focus();
     }
 
     private void OnFormKeyDown(object? sender, KeyEventArgs e)

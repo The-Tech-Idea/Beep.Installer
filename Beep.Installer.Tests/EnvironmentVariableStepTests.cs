@@ -32,7 +32,9 @@ public class EnvironmentVariableStepTests : IDisposable
 
     public void Dispose()
     {
-        try { Environment.SetEnvironmentVariable(_varName, null, EnvironmentVariableTarget.User); } catch { }
+        // Only remove this fixture's uniquely named persisted value; runtime notification
+        // behavior is exercised by the step, not by an unrelated desktop-wide cleanup broadcast.
+        try { using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("Environment", writable: true); key?.DeleteValue(_varName, throwOnMissingValue: false); } catch { }
         try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); } catch { }
     }
 

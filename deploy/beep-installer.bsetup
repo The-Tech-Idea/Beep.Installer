@@ -1,0 +1,52 @@
+; Beep Installer's own setup project: the installable release of the Installer, built by the Installer.
+; The release script publishes the application into the "publish" folder beside this file, then builds this project:
+;   release.ps1 -Manifest deploy\product.json
+; By hand:
+;   dotnet publish Beep.Installer\Beep.Installer.csproj -c Release -o deploy\publish
+;   Beep.Installer.exe /BUILD=deploy\beep-installer.bsetup /OUT=deploy\out
+
+[Setup]
+SchemaVersion=1.0
+ScriptName=Beep Installer
+AppName=Beep Installer
+AppId=5c848c86-975b-4b28-86db-5c912233603f
+AppVersion=1.0.0
+AppPublisher=The Tech Idea
+AppPublisherURL=https://thetechidea.app
+AppSupportURL=https://thetechidea.app/support/tickets
+AppUpdateMode=Optional
+
+SourceDir=publish
+
+DefaultDirName={pf}\Beep Installer
+DefaultGroupName=Beep Installer
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=no
+DefaultInstallType=Typical
+Prefer64Bit=yes
+AllowScopeSelection=yes
+DefaultScope=Machine
+AllowNoIcons=no
+AlwaysShowDirOnReadyPage=yes
+
+WindowTitle=Beep Installer Setup
+WelcomeTitle=Welcome to Beep Installer Setup
+OutputBaseFilename=Setup-Beep-Installer
+Compression=zip
+CompressionLevel=6
+SolidCompression=yes
+SingleFile=yes
+SelfContained=no
+CreateUninstallEntry=yes
+
+[Components]
+Name: "core"; Description: "Beep Installer"; Required: yes; Selected: yes; Types: typical
+
+[Icons]
+Name: "{group}\Beep Installer"; Filename: "{app}\Beep.Installer.exe"
+Name: "{commondesktop}\Beep Installer"; Filename: "{app}\Beep.Installer.exe"
+
+[Exclude]
+**/*.pdb
+**/*.log
+**/appsettings.Development.json

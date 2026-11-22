@@ -1418,6 +1418,18 @@
   <data name="Toolbar_Languages" xml:space="preserve">
     <value>اللغات</value>
   </data>
+  <data name="Toolbar_Mcp" xml:space="preserve">
+    <value>الذكاء الاصطناعي / MCP</value>
+  </data>
+  <data name="Toolbar_McpHint" xml:space="preserve">
+    <value>استخدم هذا المثبّت من Claude وCodex ومساعدي الذكاء الاصطناعي الآخرين (خادم MCP)</value>
+  </data>
+  <data name="Toolbar_More" xml:space="preserve">
+    <value>المزيد</value>
+  </data>
+  <data name="Toolbar_MoreHint" xml:space="preserve">
+    <value>الاسترداد والتحديثات والقوالب والإجراءات والشروط والوصفات ونظرة الإصدار والمقارنة واللغات والمساعدة وحول</value>
+  </data>
   <data name="Toolbar_LanguagesHint" xml:space="preserve">
     <value>فتح مدير اللغات</value>
   </data>
@@ -1526,4 +1538,462 @@
   <data name="Wizard_NoComponentsYet" xml:space="preserve">
     <value>أضف مكونًا واحدًا على الأقل قبل المتابعة.</value>
   </data>
+  <data name="Wizard_ValidationUnavailable" xml:space="preserve">
+    <value>التحقق غير متاح. حاول مرة أخرى قبل المتابعة.</value>
+  </data>
+  <data name="Guided_Project" xml:space="preserve">
+    <value>المشروع</value>
+  </data>
+  <data name="Guided_Files" xml:space="preserve">
+    <value>الملفات والمكونات</value>
+  </data>
+  <data name="Guided_Install" xml:space="preserve">
+    <value>سلوك التثبيت</value>
+  </data>
+  <data name="Guided_Package" xml:space="preserve">
+    <value>الحزمة والوجهة</value>
+  </data>
+  <data name="Guided_Signing" xml:space="preserve">
+    <value>التوقيع</value>
+  </data>
+  <data name="Guided_Review" xml:space="preserve">
+    <value>المراجعة والبناء</value>
+  </data>
+  <data name="Guided_Result" xml:space="preserve">
+    <value>النتيجة</value>
+  </data>
+  <data name="Guided_ContinueUnsigned" xml:space="preserve">
+    <value>المتابعة دون توقيع</value>
+  </data>
+  <data name="Guided_FilesOnly" xml:space="preserve">
+    <value>استخدام الملفات المصدر دون تعريف مكونات اختيارية</value>
+  </data>
+  <data name="Guided_SystemChanges" xml:space="preserve">
+    <value>تغييرات النظام</value>
+  </data>
+  <data name="Guided_Resources" xml:space="preserve">
+    <value>موارد</value>
+  </data>
+  <data name="Guided_Configured" xml:space="preserve">
+    <value>تم الإعداد</value>
+  </data>
+  <data name="Guided_Unsigned" xml:space="preserve">
+    <value>نسخة تطوير غير موقعة</value>
+  </data>
+  <data name="Nav_Includes" xml:space="preserve">
+    <value>التضمين والاستثناء</value>
+  </data>
+  <data name="Nav_Components" xml:space="preserve">
+    <value>المكونات</value>
+  </data>
+  <data name="Nav_Layout" xml:space="preserve">
+    <value>النطاق والوجهة</value>
+  </data>
+  <data name="Section_Prerequisites" xml:space="preserve">
+    <value>المتطلبات الأساسية</value>
+  </data>
+  <data name="Section_Shortcuts" xml:space="preserve">
+    <value>الاختصارات</value>
+  </data>
+  <data name="Section_Registry" xml:space="preserve">
+    <value>إدخالات السجل</value>
+  </data>
+  <data name="BuildResult_OpenManifest" xml:space="preserve">
+    <value>فتح ملف البيان</value>
+  </data>
+  <data name="Packaging_Msi" xml:space="preserve">
+    <value>MSI — حزمة Windows Installer (تتطلب WiX)</value>
+  </data>
+  <data name="Packaging_ClickOnce" xml:space="preserve">
+    <value>ClickOnce — ملفات التطبيق وبيانات التحديث</value>
+  </data>
+  <data name="Guided_OptionalBehavior" xml:space="preserve">
+    <value>المتطلبات الأساسية والاختصارات وإدخالات السجل اختيارية. اترك قوائمها فارغة عندما لا تحتاج إليها.</value>
+  </data>
+  <data name="Guided_WaitForBuild" xml:space="preserve">
+    <value>انتظر حتى ينتهي البناء، أو ألغِه من مساحة عمل البناء.</value>
+  </data>
+  <data name="Guided_NoPackageCancel" xml:space="preserve">
+    <value>لا يمكن مقاطعة خدمة إنشاء الحزم أثناء تشغيل العملية الحالية.</value>
+  </data>
+  <data name="Packaging_MsiHint" xml:space="preserve">
+    <value>يستخدم MSI أداة تصدير WiX الحالية. يجب توفر WiX لبناء الحزمة، وتُعرض العمليات غير المدعومة.</value>
+  </data>
+  <data name="Packaging_ClickOnceHint" xml:space="preserve">
+    <value>ينشر ClickOnce المجلد المصدر وبيانات التحديث. اضبط رابط التحديث هنا. تتطلب تغييرات النظام EXE أو MSI.</value>
+  </data>
+  <data name="Guided_PackageHelp" xml:space="preserve">
+    <value>يوفر EXE معالج تثبيت كاملًا. يتطلب MSI أداة WiX. يتطلب MSIX هوية حزمة ولا يدعم تغييرات النظام التقليدية. ينشر ClickOnce الملفات المصدر وبيانات التحديث.</value>
+  </data>
+  <data name="BuildResult_Artifact" xml:space="preserve"><value>ملف الناتج:</value></data>
+  <data name="Resources_Empty" xml:space="preserve"><value>هذه القائمة فارغة. اختر إضافة لإنشاء عنصر.</value></data>
+  <data name="Resources_Properties" xml:space="preserve"><value>الخصائص</value></data>
+  <data name="Section_ScheduledTasks" xml:space="preserve"><value>المهام المجدولة</value></data>
+  <data name="Section_FirewallRules" xml:space="preserve"><value>قواعد جدار الحماية</value></data>
+  <data name="Section_Certificates" xml:space="preserve"><value>الشهادات</value></data>
+  <data name="Section_ComRegistrations" xml:space="preserve"><value>تسجيلات COM</value></data>
+  <data name="Section_DriverPackages" xml:space="preserve"><value>حزم برامج التشغيل</value></data>
+  <data name="Section_ConfigTransforms" xml:space="preserve"><value>تحويلات الإعدادات</value></data>
+  <data name="Section_IisAppPools" xml:space="preserve"><value>تجمعات تطبيقات IIS</value></data>
+  <data name="Section_IisSites" xml:space="preserve"><value>مواقع IIS</value></data>
+  <data name="Section_WebDeploy" xml:space="preserve"><value>حزم Web Deploy</value></data>
+  <data name="Review_MoreItems" xml:space="preserve"><value>{0} عناصر إضافية. اختر تحرير لعرض القائمة كاملة.</value></data>
+  <data name="Readiness_Checking" xml:space="preserve"><value>جارٍ التحقق من الجاهزية…</value></data>
+  <data name="Readiness_Stale" xml:space="preserve"><value>تغير المشروع — يلزم التحقق من الجاهزية.</value></data>
+  <data name="Readiness_Unavailable" xml:space="preserve"><value>التحقق من الجاهزية غير متاح. تحقق من صحة المشروع قبل البناء.</value></data>
+  <data name="SaveState_Failed" xml:space="preserve"><value>فشل الحفظ</value></data>
+  <data name="SaveState_AutoSaveFailed" xml:space="preserve"><value>فشل حفظ مسودة الاسترداد</value></data>
+  <data name="SaveState_RecoveryFailed" xml:space="preserve"><value>تعذر تحميل مسودة الاسترداد</value></data>
+  <data name="SaveState_Recovered" xml:space="preserve"><value>تم استرداد المسودة — احفظ التغييرات</value></data>
+  <data name="SaveState_Unsaved" xml:space="preserve"><value>تغييرات غير محفوظة</value></data>
+  <data name="SaveState_Untitled" xml:space="preserve"><value>لم يُحفظ بعد</value></data>
+  <data name="SaveState_Saved" xml:space="preserve"><value>تم الحفظ</value></data>
+  <data name="SaveState_RecoveryPath" xml:space="preserve"><value>مسودة الاسترداد</value></data>
+  <data name="SaveState_SaveFirst" xml:space="preserve"><value>لديك تغييرات غير محفوظة. هل تريد حفظها أولاً؟</value></data>
+  <data name="Workspace_Title" xml:space="preserve"><value>مساحة عمل البناء</value></data>
+  <data name="Workspace_OlderRevision" xml:space="preserve"><value>يستخدم هذا البناء نسخة سابقة من المشروع. نتيجته غير مرتبطة بالمشروع الحالي.</value></data>
+  <data name="Workspace_Log" xml:space="preserve"><value>سجل البناء</value></data>
+  <data name="Workspace_OpenArtifact" xml:space="preserve"><value>فتح الملف الناتج</value></data>
+  <data name="Workspace_SaveLog" xml:space="preserve"><value>حفظ السجل</value></data>
+  <data name="Workspace_Idle" xml:space="preserve"><value>جاهز للبناء</value></data>
+  <data name="Workspace_Preparing" xml:space="preserve"><value>جارٍ التحضير</value></data>
+  <data name="Workspace_Building" xml:space="preserve"><value>جارٍ البناء</value></data>
+  <data name="Workspace_Signing" xml:space="preserve"><value>جارٍ التوقيع</value></data>
+  <data name="Workspace_Completed" xml:space="preserve"><value>اكتمل البناء</value></data>
+  <data name="Workspace_Failed" xml:space="preserve"><value>فشل البناء</value></data>
+  <data name="Workspace_Cancelled" xml:space="preserve"><value>تم إلغاء البناء</value></data>
+  <data name="Recipe_Title" xml:space="preserve"><value>وصفات الموارد</value></data>
+  <data name="Recipe_Preview" xml:space="preserve"><value>معاينة التغييرات</value></data>
+  <data name="Recipe_Apply" xml:space="preserve"><value>تطبيق الوصفة</value></data>
+  <data name="Recipe_PreviewFirst" xml:space="preserve"><value>عاين التغييرات قبل تطبيق هذه الوصفة.</value></data>
+  <data name="Recipe_Ready" xml:space="preserve"><value>جاهز لتطبيق التغييرات المعروضة.</value></data>
+  <data name="Recipe_Fix" xml:space="preserve"><value>أصلح الأخطاء المدرجة قبل التطبيق.</value></data>
+  <data name="Recipe_FieldName" xml:space="preserve"><value>اسم المورد *</value></data>
+  <data name="Recipe_FieldTargetPath" xml:space="preserve"><value>مسار الهدف</value></data>
+  <data name="Recipe_FieldPoolName" xml:space="preserve"><value>اسم تجمع التطبيقات الجديد *</value></data>
+  <data name="Recipe_FieldPort" xml:space="preserve"><value>المنفذ *</value></data>
+  <data name="Recipe_FieldHost" xml:space="preserve"><value>اسم المضيف (اختياري)</value></data>
+  <data name="Recipe_FieldRuntimeVersion" xml:space="preserve"><value>بيئة التشغيل المُدارة (فارغ: لا توجد)</value></data>
+  <data name="Recipe_FieldTrigger" xml:space="preserve"><value>مشغل المهمة *</value></data>
+  <data name="Recipe_FieldStartTime" xml:space="preserve"><value>وقت البدء (HH:mm)</value></data>
+  <data name="Recipe_FieldServiceAccount" xml:space="preserve"><value>حساب خدمة مضمن *</value></data>
+  <data name="Recipe_FieldFirewallProtocol" xml:space="preserve"><value>البروتوكول *</value></data>
+  <data name="Recipe_FieldFirewallProfile" xml:space="preserve"><value>ملفات تعريف جدار الحماية *</value></data>
+  <data name="Recipe_FieldUseMachineScope" xml:space="preserve"><value>تغيير المشروع إلى تثبيت على الجهاز بصلاحيات مسؤول</value></data>
+  <data name="Recipe_FieldUseExeOutput" xml:space="preserve"><value>تغيير المشروع إلى إخراج EXE</value></data>
+  <data name="Recipe_TargetWindowsService" xml:space="preserve"><value>مسار الملف التنفيذي *</value></data>
+  <data name="Recipe_TargetIisSite" xml:space="preserve"><value>المسار الفعلي *</value></data>
+  <data name="Recipe_TargetScheduledTask" xml:space="preserve"><value>مسار الملف التنفيذي *</value></data>
+  <data name="Recipe_TargetFirewallRule" xml:space="preserve"><value>البرنامج (اختياري)</value></data>
+  <data name="Recipe_Requirements" xml:space="preserve"><value>يتطلب أدوات Windows وإخراج EXE/MSI وتثبيتاً على الجهاز بصلاحيات مسؤول. استخدم أسماء محجوزة لهذا التطبيق. لا تُفحص موارد الجهاز الموجودة هنا.</value></data>
+  <data name="Recipe_WindowsServiceLimits" xml:space="preserve"><value>ينشئ خدمة تلقائية باستخدام الحساب المضمن المحدد. يلزم SCM. تُحذف الخدمات الجديدة عند التراجع؛ ويمكن استعادة الإعدادات السابقة الملتقطة. تتوفر بيانات الاعتماد والإعدادات المتقدمة في المحرر الكامل.</value></data>
+  <data name="Recipe_IisSiteLimits" xml:space="preserve"><value>ينشئ تجمع تطبيقات جديداً وموقع HTTP. يجب تثبيت IIS/appcmd مسبقاً. يُضبط TLS والشهادات في المحرر الكامل. قد يحذف التراجع أو الإزالة الموقع والتجمع المملوكين؛ ولا تُستعاد التعريفات السابقة.</value></data>
+  <data name="Recipe_ScheduledTaskLimits" xml:space="preserve"><value>ينشئ مهمة باستخدام الحساب الذي يشغّل المثبت. يلزم مجدول المهام. ينهي التراجع أو الإزالة المهمة ويحذفها؛ ولا يُستعاد تعريف المهمة السابق. تتوفر بيانات الاعتماد ورفع الصلاحيات في المحرر الكامل.</value></data>
+  <data name="Recipe_FirewallRuleLimits" xml:space="preserve"><value>ينشئ قاعدة سماح واردة للمنفذ والبرنامج وملفات التعريف المحددة. يلزم جدار حماية Windows/netsh. ينطبق حقل البرنامج الفارغ على جميع البرامج. يحذف التراجع أو الإزالة القاعدة؛ ولا يُستعاد تعريفها السابق.</value></data>
+  <data name="Recovery_Title" xml:space="preserve"><value>استعادة مشروع غير محفوظ</value></data>
+  <data name="Recovery_Help" xml:space="preserve"><value>اختر مسودة. تفتح الاستعادة المشروع كعمل غير محفوظ؛ احفظ للاحتفاظ بالتغييرات. تبقى المسودات غير القابلة للقراءة على القرص.</value></data>
+  <data name="Recovery_Modified" xml:space="preserve"><value>وقت المسودة</value></data>
+  <data name="Recovery_Recover" xml:space="preserve"><value>استعادة</value></data>
+  <data name="Recovery_Choice" xml:space="preserve"><value>توجد مسودة استعادة أحدث. هل تريد استعادتها؟ اختر لا لفتح المشروع المحفوظ مع الاحتفاظ بالمسودة، أو إلغاء للإبقاء على المشروع الحالي.</value></data>
+  <data name="Recovery_CleanupFailed" xml:space="preserve"><value>تم الحفظ؛ تعذر تنظيف مسودة الاستعادة</value></data>
+  <data name="Recovery_OriginalProject" xml:space="preserve"><value>المشروع الأصلي</value></data>
+  <data name="History_Undo" xml:space="preserve"><value>تراجع</value></data>
+  <data name="History_Redo" xml:space="preserve"><value>إعادة</value></data>
+  <data name="History_Credentials" xml:space="preserve"><value>يجب إعادة إدخال {0} من بيانات الاعتماد. راجع العناصر المستعادة قبل البناء.</value></data>
+  <data name="Release_Title" xml:space="preserve"><value>نظرة عامة على الإصدار</value></data>
+  <data name="Release_Notice" xml:space="preserve"><value>إنشاء الملفات لا يثبت نجاح النشر.</value></data>
+  <data name="Release_Package" xml:space="preserve"><value>الحزمة</value></data>
+  <data name="Release_Assets" xml:space="preserve"><value>ملفات النشر</value></data>
+  <data name="Release_Qualifications" xml:space="preserve"><value>أدلة التأهيل</value></data>
+  <data name="Release_ReportInvalid" xml:space="preserve"><value>تعذر تحميل تقرير التأهيل. اختر ملف JSON صالحًا للتقارير بحجم أقل من 4 ميغابايت.</value></data>
+  <data name="Release_FilePresent" xml:space="preserve"><value>الملف موجود</value></data>
+  <data name="Release_Unavailable" xml:space="preserve"><value>الملف غير متاح</value></data>
+  <data name="Release_ReportedPassed" xml:space="preserve"><value>نجاح حسب التقرير</value></data>
+  <data name="Release_ReportedFailed" xml:space="preserve"><value>فشل حسب التقرير</value></data>
+  <data name="Release_NoEvidence" xml:space="preserve"><value>لم يتم اختيار أو تسجيل أدلة.</value></data>
+  <data name="Release_Unbound" xml:space="preserve"><value>تقارير التأهيل المحددة غير مرتبطة بهذا البناء.</value></data>
+  <data name="Release_LoadAssets" xml:space="preserve"><value>اختيار ملفات النشر</value></data>
+  <data name="Release_LoadReport" xml:space="preserve"><value>تحميل تقارير التأهيل</value></data>
+  <data name="Release_Refresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="UpdatePreview_Title" xml:space="preserve"><value>معاينة التحديث</value></data>
+  <data name="UpdatePreview_CheckRequired" xml:space="preserve"><value>تحقق من التحديث لإنشاء معاينة جديدة.</value></data>
+  <data name="UpdatePreview_Channels" xml:space="preserve"><value>القناة: {0} ← {1}</value></data>
+  <data name="UpdatePreview_Versions" xml:space="preserve"><value>المثبت: {0}؛ هدف الحزمة التفاضلية: {1}؛ إصدار المصدر: {2}</value></data>
+  <data name="UpdatePreview_Local" xml:space="preserve"><value>الحمولة: حزمة تفاضلية محلية؛ انظر حالة التحقق أدناه.</value></data>
+  <data name="UpdatePreview_Remote" xml:space="preserve"><value>الحمولة: حزمة تفاضلية بعيدة؛ سيُتحقق من التوقيع والملفات عند التطبيق.</value></data>
+  <data name="UpdatePreview_NoPayload" xml:space="preserve"><value>لم تُحدد حزمة تفاضلية قابلة للاستخدام.</value></data>
+  <data name="UpdatePreview_Sizes" xml:space="preserve"><value>الحجم المعلن للحزمة التفاضلية: {0} بايت؛ صورة الهدف: {1} بايت (ليست مساحة القرص المطلوبة).</value></data>
+  <data name="UpdatePreview_Ready" xml:space="preserve"><value>مؤهل لمحاولة التطبيق؛ لا تزال فحوص التثبيت مطلوبة.</value></data>
+  <data name="UpdatePreview_MissingKey" xml:space="preserve"><value>حدد مفتاح RSA عامًا مقروءًا للحزمة التفاضلية.</value></data>
+  <data name="UpdatePreview_MissingSource" xml:space="preserve"><value>لا يحتوي المصدر على حزمة تفاضلية بعيدة؛ حدد مجلد حزمة محلية.</value></data>
+  <data name="UpdatePreview_UntrustedDelta" xml:space="preserve"><value>لا يحتوي بيان الحزمة التفاضلية المحلية على توقيع موثوق.</value></data>
+  <data name="UpdatePreview_Mismatch" xml:space="preserve"><value>لا تطابق الحزمة المحلية الإصدارات أو بصمات الأشجار في المصدر الموقّع.</value></data>
+  <data name="UpdatePreview_Unavailable" xml:space="preserve"><value>تعذرت قراءة الحزمة التفاضلية المحلية.</value></data>
+  <data name="UpdatePreview_PolicyDenied" xml:space="preserve"><value>تمنع السياسة مصدر الحزمة التفاضلية البعيد.</value></data>
+  <data name="UpdatePreview_MissingDelta" xml:space="preserve"><value>لا توجد حزمة تفاضلية تطابق الإصدار المثبت.</value></data>
+  <data name="UpdatePreview_AmbiguousDelta" xml:space="preserve"><value>تطابق أكثر من حزمة الإصدار المثبت؛ التطبيق محظور.</value></data>
+  <data name="UpdatePreview_InvalidVersion" xml:space="preserve"><value>أدخل إصدارًا بمكون رقمي إلى أربعة مكونات غير سالبة.</value></data>
+  <data name="UpdatePreview_NotAuthorized" xml:space="preserve"><value>يلزم مصدر موثوق وانتقال مسموح إلى قناة هدف واحدة فقط.</value></data>
+  <data name="UpdatePreview_NoFallback" xml:space="preserve"><value>لا يتوفر بديل بالحزمة الكاملة في مسار التحديث هذا.</value></data>
+  <data name="UpdatePreview_Rollback" xml:space="preserve"><value>إصدار التراجع في المصدر: {0}. يتطلب التراجع سجل تحديث مكتملًا ونسخة احتياطية محفوظة لم تتغير واستعادة الموارد؛ لا تتحقق المعاينة منها.</value></data>
+  <data name="UpdatePreview_Rechecks" xml:space="preserve"><value>يعيد التطبيق التحقق من بصمة المصدر وهوية التثبيت والتواقيع وبصمات الملفات قبل التجهيز والاستبدال. قد تفشل استعادة الموارد الخارجية حتى عند استعادة الملفات.</value></data>
+  <data name="Comparison_Title" xml:space="preserve"><value>مقارنة المشاريع</value></data>
+  <data name="Comparison_Notice" xml:space="preserve"><value>مراجعة الإعدادات فقط. لا تُقارن القيم المحمية أو الإجراءات المخصصة أو صفحات المعالج المخصصة أو محتويات الحمولة. لا تتحقق المراجعة من البناء أو التثبيت.</value></data>
+  <data name="Comparison_SelectFirst" xml:space="preserve"><value>اختر مشروع .bsetup مرجعيًا لمقارنته بالمشروع الحالي.</value></data>
+  <data name="Comparison_Snapshot" xml:space="preserve"><value>المرجع: {0}
+وقت الالتقاط: {1}؛ الحقول المتغيرة: {2}. يعيد التحديث قراءة المرجع ويقارن التعديلات الحالية.</value></data>
+  <data name="Comparison_LoadFailed" xml:space="preserve"><value>تعذرت مقارنة المشروع. اختر ملف .bsetup مقروءًا أصغر من 16 ميغابايت. تُحفظ المقارنة السابقة.</value></data>
+  <data name="Comparison_Select" xml:space="preserve"><value>اختيار مشروع مرجعي</value></data>
+  <data name="Comparison_Refresh" xml:space="preserve"><value>تحديث المقارنة</value></data>
+  <data name="Comparison_Category" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Comparison_Kind" xml:space="preserve"><value>التغيير</value></data>
+  <data name="Comparison_Path" xml:space="preserve"><value>الحقل</value></data>
+  <data name="Comparison_Before" xml:space="preserve"><value>المرجع</value></data>
+  <data name="Comparison_After" xml:space="preserve"><value>المشروع الحالي</value></data>
+  <data name="Comparison_Search" xml:space="preserve"><value>البحث في الحقول والقيم المتغيرة</value></data>
+  <data name="Comparison_All" xml:space="preserve"><value>كل التغييرات</value></data>
+  <data name="Comparison_Identity" xml:space="preserve"><value>الهوية والإصدار</value></data>
+  <data name="Comparison_Destinations" xml:space="preserve"><value>المسارات والوجهات</value></data>
+  <data name="Comparison_Package" xml:space="preserve"><value>الحزمة والتوقيع</value></data>
+  <data name="Comparison_Resources" xml:space="preserve"><value>الملفات والموارد</value></data>
+  <data name="Comparison_Other" xml:space="preserve"><value>إعدادات أخرى</value></data>
+  <data name="Comparison_Added" xml:space="preserve"><value>أُضيف</value></data>
+  <data name="Comparison_Removed" xml:space="preserve"><value>أُزيل</value></data>
+  <data name="Comparison_Changed" xml:space="preserve"><value>تغيّر</value></data>
+  <data name="Comparison_NoChanges" xml:space="preserve"><value>لا تغييرات في حقول الإعدادات التي تمت مقارنتها.</value></data>
+  <data name="Comparison_NoMatches" xml:space="preserve"><value>لا حقول متغيرة تطابق هذه الفئة أو البحث.</value></data>
+  <data name="Comparison_Details" xml:space="preserve"><value>تفاصيل التغيير المحدد</value></data>
+  <data name="Help_Title" xml:space="preserve"><value>مساعدة التأليف</value></data>
+  <data name="Help_Search" xml:space="preserve"><value>البحث عن المواضيع أو المهام</value></data>
+  <data name="Help_Topics" xml:space="preserve"><value>المواضيع</value></data>
+  <data name="Help_Views" xml:space="preserve"><value>طرق العرض المتاحة</value></data>
+  <data name="Help_AdvancedOnly" xml:space="preserve"><value>المحرر المتقدم فقط.</value></data>
+  <data name="Help_BothViews" xml:space="preserve"><value>الموجه: {0}. متاح أيضًا في المحرر المتقدم.</value></data>
+  <data name="Help_Advanced" xml:space="preserve"><value>متقدم</value></data>
+  <data name="Help_GuidedAdvanced" xml:space="preserve"><value>موجه / متقدم</value></data>
+  <data name="Help_NoMatches" xml:space="preserve"><value>لا مواضيع مطابقة. جرّب اسم ميزة أو مهمة مثل فتح منفذ أو مهمة مجدولة.</value></data>
+  <data name="Help_Keyboard" xml:space="preserve"><value>يفتح F1 المساعدة السياقية. يبحث Ctrl+F الموجه في المساعدة، وفي المتقدم يبحث في الأقسام. في المتقدم يتحقق F7 ويبني F5. لا تغير المساعدة المشروع ولا تتحقق منه.</value></data>
+  <data name="Help_Identity" xml:space="preserve"><value>الهوية</value></data>
+  <data name="Help_Layout" xml:space="preserve"><value>التخطيط</value></data>
+  <data name="Help_Eula" xml:space="preserve"><value>اتفاقية الترخيص</value></data>
+  <data name="Help_Files" xml:space="preserve"><value>الملفات</value></data>
+  <data name="Help_Includes" xml:space="preserve"><value>التضمين</value></data>
+  <data name="Help_Components" xml:space="preserve"><value>المكونات</value></data>
+  <data name="Help_Branding" xml:space="preserve"><value>الهوية البصرية</value></data>
+  <data name="Help_WizardPages" xml:space="preserve"><value>صفحات المعالج</value></data>
+  <data name="Help_Output" xml:space="preserve"><value>المخرجات</value></data>
+  <data name="Help_Payload" xml:space="preserve"><value>الحمولة</value></data>
+  <data name="Help_Compression" xml:space="preserve"><value>الضغط</value></data>
+  <data name="Help_Package" xml:space="preserve"><value>صيغة الحزمة</value></data>
+  <data name="Help_Msix" xml:space="preserve"><value>MSIX</value></data>
+  <data name="Help_Script" xml:space="preserve"><value>البرنامج النصي</value></data>
+  <data name="Help_Build" xml:space="preserve"><value>مسار البناء</value></data>
+  <data name="Help_Log" xml:space="preserve"><value>سجل البناء</value></data>
+  <data name="Help_Result" xml:space="preserve"><value>آخر نتيجة</value></data>
+  <data name="HelpBody_Project" xml:space="preserve"><value>حدد اسم المنتج والإصدار والناشر. حافظ على AppId لإصدارات التطبيق نفسه؛ تغييره يغير هوية التثبيت.</value></data>
+  <data name="HelpBody_Install" xml:space="preserve"><value>اختر نطاق التثبيت ووجهته. راجع متطلبات المسؤول والاختصارات وتغييرات السجل. قد تتطلب موارد الجهاز صلاحيات مرتفعة.</value></data>
+  <data name="HelpBody_Branding" xml:space="preserve"><value>اضبط المظهر ونص الترخيص وصفحات المثبت. عاين اللغات وترتيب الصفحات قبل البناء. للصفحات المخصصة تحقق خاص بالحقول.</value></data>
+  <data name="HelpBody_FilesBody" xml:space="preserve"><value>افحص مجلد بناء التطبيق. راجع مسارات المصدر والوجهة وأنماط التضمين والاستبعاد والمكونات الاختيارية. عدد الملفات لا يثبت حداثة محتويات الحمولة.</value></data>
+  <data name="HelpBody_PrerequisitesBody" xml:space="preserve"><value>حدد بيئات التشغيل والتبعيات المطلوبة. تتطلب الكتالوجات الموقّعة مفاتيح موثوقة. تحقق من توافق الحزمة وتشخيص السياسة قبل البناء.</value></data>
+  <data name="HelpBody_ResourcesBody" xml:space="preserve"><value>اضبط مدخلات الموارد في المحرر. يختلف دعم الموفر والحزمة؛ راجع التحقق وحدود التراجع. احمِ بيانات الاعتماد بمراجع الأسرار المدعومة.</value></data>
+  <data name="HelpBody_Network" xml:space="preserve"><value>اختر اتجاه جدار الحماية والمنافذ أو البرنامج وملفات الشبكة. فتح منفذ تغيير للنظام؛ راجع متطلبات المسؤول والإزالة والتراجع.</value></data>
+  <data name="HelpBody_Iis" xml:space="preserve"><value>اضبط تجمعات التطبيقات ومسارات المواقع والارتباطات أو معاملات Web Deploy. تحقق من متطلبات IIS ودعم الملكية والتراجع.</value></data>
+  <data name="HelpBody_Service" xml:space="preserve"><value>حدد ملف الخدمة ووضع بدء التشغيل والحساب. احمِ بيانات اعتماد الحساب. راجع سلوك التثبيت والإزالة والتراجع قبل إنشاء الحزمة.</value></data>
+  <data name="HelpBody_Packaging" xml:space="preserve"><value>اختر EXE أو MSI أو MSIX أو ClickOnce. راجع عوائق الصيغة ومسارات المخرجات ومتطلبات التوقيع. لا تدعم كل صيغة كل الموارد.</value></data>
+  <data name="HelpBody_Signing" xml:space="preserve"><value>اضبط الشهادة أو المخزن أو التوقيع البعيد المدعوم. استخدم مراجع اعتماد محمية. تعتمد نسخ التطوير غير الموقّعة على السياسة؛ إعداد التوقيع لا يثبت توقيع المخرجات.</value></data>
+  <data name="HelpBody_Updates" xml:space="preserve"><value>راجع المصادر الموثوقة والقنوات وسياسة الطرح. يعاين مركز التحديث الحزمة التفاضلية وحدود التراجع. أصول النشر أو إصدار التراجع لا تثبت نجاح التنفيذ.</value></data>
+  <data name="HelpBody_BuildBody" xml:space="preserve"><value>راجع التشخيصات المانعة قبل البناء. استخدم مساحة البناء للمراحل والإلغاء والسجلات والنتائج. يجب مراجعة نتيجة إصدار قديم من المشروع بصورة منفصلة.</value></data>
+  <data name="HelpBody_Tasks" xml:space="preserve"><value>اختر ملف المهمة ومعاملاتها والمشغل وحساب التشغيل. راجع النطاق والصلاحيات وسلوك الإزالة والتراجع قبل البناء.</value></data>
+  <data name="HelpAliases_firewallrules" xml:space="preserve"><value>فتح منفذ منافذ استثناء شبكة</value></data>
+  <data name="HelpAliases_scheduledtasks" xml:space="preserve"><value>مهمة مجدولة وظيفة مجدولة جدولة مهمة</value></data>
+  <data name="Runtime_Ready" xml:space="preserve"><value>جاهز للتثبيت</value></data>
+  <data name="Runtime_ReadyHint" xml:space="preserve"><value>راجع الإعدادات واضغط تثبيت للبدء.</value></data>
+  <data name="Runtime_InstallType" xml:space="preserve"><value>نوع التثبيت</value></data>
+  <data name="Runtime_PerUser" xml:space="preserve"><value>النطاق: المستخدم الحالي فقط</value></data>
+  <data name="Runtime_AllUsers" xml:space="preserve"><value>النطاق: جميع مستخدمي هذا الكمبيوتر</value></data>
+  <data name="Runtime_Required" xml:space="preserve"><value>مطلوب</value></data>
+  <data name="Runtime_Optional" xml:space="preserve"><value>اختياري</value></data>
+  <data name="Runtime_EstimatedSize" xml:space="preserve"><value>حجم ملفات التثبيت التقديري: {0}</value></data>
+  <data name="Runtime_ConfiguredChanges" xml:space="preserve"><value>المتطلبات المسبقة وتغييرات النظام المهيأة (قد تتخطاها الشروط والكشف؛ هذه ليست نتيجة تنفيذ):</value></data>
+  <data name="Runtime_CustomActions" xml:space="preserve"><value>إجراءات مخصصة</value></data>
+  <data name="Runtime_Tasks" xml:space="preserve"><value>المهام الإضافية المحددة:</value></data>
+  <data name="Runtime_StartMenu" xml:space="preserve"><value>إنشاء عناصر قائمة ابدأ</value></data>
+  <data name="Runtime_RestartRequired" xml:space="preserve"><value>أعد تشغيل Windows لإكمال تطبيق تغييرات التثبيت.</value></data>
+  <data name="Runtime_NoRestartReported" xml:space="preserve"><value>لم يبلّغ المثبّت عن حاجة لإعادة التشغيل.</value></data>
+  <data name="Runtime_RollbackAttempted" xml:space="preserve"><value>جرت محاولة الاستعادة: انتهى {0} من {1} إجراء تراجع دون خطأ مُبلغ عنه. لم يتم التحقق من الاستعادة الكاملة؛ راجع السجل قبل إعادة المحاولة.</value></data>
+  <data name="Runtime_RecoveryUnknown" xml:space="preserve"><value>لم يتم التحقق من الاستعادة. راجع السجل وحالة التثبيت قبل إعادة المحاولة.</value></data>
+  <data name="Runtime_BackupRestored" xml:space="preserve"><value>تمت استعادة النسخة الاحتياطية لملفات الإصدار السابق. هذا لا يثبت استعادة موارد النظام.</value></data>
+  <data name="Runtime_BackupFailed" xml:space="preserve"><value>فشلت استعادة النسخة الاحتياطية لملفات الإصدار السابق. قد تبقى بعض التغييرات.</value></data>
+  <data name="Runtime_BackupUnknown" xml:space="preserve"><value>نتيجة استعادة النسخة الاحتياطية للإصدار السابق غير معروفة.</value></data>
+  <data name="Runtime_BackupNotAttempted" xml:space="preserve"><value>لم تتم محاولة استعادة نسخة احتياطية لملفات الإصدار السابق.</value></data>
+  <data name="Runtime_Failed" xml:space="preserve"><value>فشل التثبيت</value></data>
+  <data name="Runtime_ViewBundle" xml:space="preserve"><value>عرض حزمة الدعم</value></data>
+  <data name="Runtime_Retry" xml:space="preserve"><value>إعادة محاولة التثبيت</value></data>
+  <data name="Runtime_Preview" xml:space="preserve"><value>معاينة فقط: لم تُطبّق أي تغييرات تثبيت.</value></data>
+  <data name="Runtime_Installed" xml:space="preserve"><value>تم تثبيت {0} في {1}.</value></data>
+  <data name="Runtime_FailedStep" xml:space="preserve"><value>فشل التثبيت في الخطوة: {0}</value></data>
+  <data name="Support_Review" xml:space="preserve"><value>مراجعة حزمة الدعم</value></data>
+  <data name="Support_ReviewNotice" xml:space="preserve"><value>راجع بيانات التشخيص المنقحة قبل الحفظ أو المشاركة. قد لا يزيل التنقيح كل التفاصيل الحساسة. تُحفظ النتيجة المسجلة وبيانات الخصوصية كما هي.</value></data>
+  <data name="Support_Export" xml:space="preserve"><value>تصدير حزمة الدعم</value></data>
+  <data name="Support_ExportFailed" xml:space="preserve"><value>تعذر تصدير حزمة الدعم. اختر وجهة أخرى أو أعد المحاولة.</value></data>
+  <data name="Support_Exported" xml:space="preserve"><value>تم حفظ حزمة الدعم في {0}.</value></data>
+  <data name="Support_Loading" xml:space="preserve"><value>جارٍ تحميل بيانات التشخيص المسجلة…</value></data>
+  <data name="Support_Unavailable" xml:space="preserve"><value>الحزمة المسجلة غير متاحة أو غير صالحة أو كبيرة جدًا للمراجعة. التصدير معطل.</value></data>
+  <data name="Support_CopyDetails" xml:space="preserve"><value>نسخ تفاصيل الخطأ</value></data>
+  <data name="Support_CopyFailed" xml:space="preserve"><value>تعذر نسخ تفاصيل الخطأ. أعد المحاولة أو حدد نص الملخص.</value></data>
+  <data name="Support_Copied" xml:space="preserve"><value>تم نسخ تفاصيل الخطأ المنقحة. راجعها قبل المشاركة.</value></data>
+  <data name="Gallery_Title" xml:space="preserve"><value>معرض القوالب</value></data>
+  <data name="Gallery_Search" xml:space="preserve"><value>البحث في القوالب</value></data>
+  <data name="Gallery_Category" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Gallery_FavoritesOnly" xml:space="preserve"><value>المفضلة فقط</value></data>
+  <data name="Gallery_SampleDetails" xml:space="preserve"><value>تفاصيل عينة القالب</value></data>
+  <data name="Gallery_Select" xml:space="preserve"><value>استخدام القالب المحدد</value></data>
+  <data name="Gallery_Favorite" xml:space="preserve"><value>مفضل</value></data>
+  <data name="Gallery_RemoveFavorite" xml:space="preserve"><value>إزالة من المفضلة</value></data>
+  <data name="Gallery_AddFavorite" xml:space="preserve"><value>إضافة إلى المفضلة</value></data>
+  <data name="Gallery_NoMatches" xml:space="preserve"><value>لا توجد قوالب تطابق هذه المرشحات.</value></data>
+  <data name="Gallery_Sample" xml:space="preserve"><value>مكونات العينة: {0}. أهداف الاختصارات:</value></data>
+  <data name="Gallery_Limits" xml:space="preserve"><value>أسماء ملفات العينة مجرد أمثلة. راجع أهداف الملفات التنفيذية والموارد والنطاق والتوقيع قبل البناء.</value></data>
+  <data name="Gallery_FavoritesUnavailable" xml:space="preserve"><value>تعذر قراءة المفضلة أو حفظها. تم الاحتفاظ بالبيانات الحالية؛ لا يزال اختيار القالب متاحًا.</value></data>
+  <data name="Gallery_AllCategories" xml:space="preserve"><value>جميع الفئات</value></data>
+  <data name="Gallery_Name_empty" xml:space="preserve"><value>فارغ</value></data>
+  <data name="Gallery_Name_console" xml:space="preserve"><value>تطبيق وحدة تحكم</value></data>
+  <data name="Gallery_Name_winforms" xml:space="preserve"><value>تطبيق WinForms</value></data>
+  <data name="Gallery_Name_wpf" xml:space="preserve"><value>تطبيق WPF</value></data>
+  <data name="Gallery_Name_service" xml:space="preserve"><value>خدمة Windows</value></data>
+  <data name="Gallery_Description_empty" xml:space="preserve"><value>مشروع فارغ — هيئ جميع الإعدادات بنفسك.</value></data>
+  <data name="Gallery_Description_console" xml:space="preserve"><value>أداة سطر أوامر: مكون أساسي واختصار في قائمة ابدأ.</value></data>
+  <data name="Gallery_Description_winforms" xml:space="preserve"><value>تطبيق سطح مكتب: مكون أساسي واختصارات سطح المكتب وقائمة ابدأ.</value></data>
+  <data name="Gallery_Description_wpf" xml:space="preserve"><value>تطبيق سطح مكتب: مكون أساسي واختصارات سطح المكتب وقائمة ابدأ.</value></data>
+  <data name="Gallery_Description_service" xml:space="preserve"><value>عينة مضيف خدمة: مكون أساسي واختصار بدء التشغيل؛ هيئ تسجيل الخدمة بشكل منفصل.</value></data>
+  <data name="Gallery_Category_General" xml:space="preserve"><value>عام</value></data>
+  <data name="Gallery_Category_Desktop" xml:space="preserve"><value>سطح المكتب</value></data>
+  <data name="Gallery_Category_Service" xml:space="preserve"><value>خدمة</value></data>
+  <data name="Gallery_Location_Desktop" xml:space="preserve"><value>سطح المكتب</value></data>
+  <data name="Gallery_Location_StartMenu" xml:space="preserve"><value>قائمة ابدأ</value></data>
+  <data name="Gallery_Location_Startup" xml:space="preserve"><value>بدء التشغيل</value></data>
+  <data name="Gallery_Import" xml:space="preserve"><value>استيراد قالب موقّع…</value></data>
+  <data name="Gallery_Verifying" xml:space="preserve"><value>جارٍ التحقق من القالب الموقّع…</value></data>
+  <data name="Gallery_Verified" xml:space="preserve"><value>تم التحقق من التوقيع. الجهة المصدرة: {0}
+SHA-256 للمفتاح الموثوق: {1}
+SHA-256 للمشروع: {2}</value></data>
+  <data name="Gallery_SignedLimits" xml:space="preserve"><value>محتوى الحزمة المحفوظ. لا يتحقق التوقيع من ملفات الحمولة ولا يمنح موافقة التثبيت. يحل الإنشاء محل هوية المنتج وحقول المصدر. راجع الموارد والمسارات قبل البناء.</value></data>
+  <data name="Gallery_PackageFolder" xml:space="preserve"><value>اختر مجلد حزمة القالب الموقّع</value></data>
+  <data name="Gallery_PublicKey" xml:space="preserve"><value>اختر مفتاحًا عامًا تثق به لهذا القالب</value></data>
+  <data name="Gallery_ImportError_Unavailable" xml:space="preserve"><value>الحزمة أو المفتاح العام غير متاح. تم الاحتفاظ بالاختيار.</value></data>
+  <data name="Gallery_ImportError_TooLarge" xml:space="preserve"><value>تتجاوز ملفات القالب حد الحجم. تم الاحتفاظ بالاختيار.</value></data>
+  <data name="Gallery_ImportError_Invalid" xml:space="preserve"><value>حزمة القالب أو المفتاح غير صالح. تم الاحتفاظ بالاختيار.</value></data>
+  <data name="Gallery_ImportError_Untrusted" xml:space="preserve"><value>فشل التحقق من التوقيع أو تجزئة المشروع أو المفتاح الموثوق. تم الاحتفاظ بالاختيار.</value></data>
+  <data name="Gallery_ImportError_UnsupportedContent" xml:space="preserve"><value>لا يمكن الاحتفاظ بمحتوى القالب في إصدار المحرر هذا. تم الاحتفاظ بالاختيار.</value></data>
+  <data name="Gallery_LibraryWarning" xml:space="preserve"><value>تعذر تحميل أو حفظ بعض القوالب المحفوظة. تم الاحتفاظ ببيانات المكتبة. أعد استيراد المصادر المتغيرة أو غير المتاحة لمراجعتها والتحقق منها مجددًا.</value></data>
+  <data name="Gallery_LibraryHint" xml:space="preserve"><value>يحفظ الاكتشاف مراجع المصادر والتجزئات التي تمت مراجعتها. يتم التحقق من المصادر والمفاتيح مجددًا في الجلسات اللاحقة. تتطلب المصادر المتغيرة إعادة الاستيراد.</value></data>
+  <data name="Preview_Title" xml:space="preserve"><value>معاينة المعالج — {0}</value></data>
+  <data name="Preview_LayoutHint" xml:space="preserve"><value>معاينة فقط. اختر صفحة مهيأة أو غيّر لغة المعالج أو حاكِ تحجيم التخطيط. مرّر لفحص التخطيطات الأكبر. لن يُنفّذ تثبيت؛ لا يثبت ذلك توافق DPI الفعلي لنظام التشغيل.</value></data>
+  <data name="Preview_Page" xml:space="preserve"><value>صفحة المعاينة</value></data>
+  <data name="Preview_Scale" xml:space="preserve"><value>تحجيم التخطيط</value></data>
+  <data name="Preview_Reset" xml:space="preserve"><value>إعادة ضبط المعاينة</value></data>
+  <data name="Preview_SimulatedFailure" xml:space="preserve"><value>فشل محاكى لمراجعة التخطيط. لم يُنفّذ أي تثبيت.</value></data>
+  <data name="Preview_PrerequisitesNotChecked" xml:space="preserve"><value>معاينة: لا تُنفّذ فحوص المتطلبات أو إجراءات التثبيت.</value></data>
+  <data name="Nav_AdvancedResources" xml:space="preserve"><value>الموارد المتقدمة</value></data>
+  <data name="Field_UpdateMode" xml:space="preserve"><value>وضع التحديث:</value></data>
+  <data name="Field_InstallType" xml:space="preserve"><value>نوع التثبيت:</value></data>
+  <data name="Field_Privileges" xml:space="preserve"><value>الصلاحيات:</value></data>
+  <data name="Field_Scope" xml:space="preserve"><value>نطاق التثبيت:</value></data>
+  <data name="Field_Theme" xml:space="preserve"><value>السمة:</value></data>
+  <data name="Field_TargetArchitecture" xml:space="preserve"><value>معمارية الهدف:</value></data>
+  <data name="Field_PayloadSource" xml:space="preserve"><value>مصدر الملفات:</value></data>
+  <data name="Field_CompressionFormat" xml:space="preserve"><value>تنسيق الضغط:</value></data>
+  <data name="Field_CompressionStrength" xml:space="preserve"><value>مستوى الضغط:</value></data>
+  <data name="Field_OutputFormat" xml:space="preserve"><value>تنسيق الإخراج:</value></data>
+  <data name="Builder_NoRecentScripts" xml:space="preserve"><value>لا توجد مشاريع حديثة</value></data>
+  <data name="Builder_ClearRecent" xml:space="preserve"><value>مسح قائمة المشاريع الحديثة</value></data>
+  <data name="Builder_ResultMetrics" xml:space="preserve"><value>الحجم: {0:N1} ميغابايت • الوقت: {1:N1} ثانية</value></data>
+  <data name="Builder_ResultTime" xml:space="preserve"><value>الوقت: {0:N1} ثانية</value></data>
+  <data name="Builder_ResultIssues" xml:space="preserve"><value>الأخطاء: {0} • التحذيرات: {1}</value></data>
+  <data name="Builder_LastBuildArtifact" xml:space="preserve"><value>آخر بناء: {0} (انقر للعرض)</value></data>
+  <data name="Builder_IncludePatterns" xml:space="preserve"><value>أنماط التضمين:</value></data>
+  <data name="Builder_ExcludePatterns" xml:space="preserve"><value>أنماط الاستبعاد:</value></data>
+  <data name="Builder_MoveUp" xml:space="preserve"><value>نقل إلى أعلى</value></data>
+  <data name="Builder_MoveDown" xml:space="preserve"><value>نقل إلى أسفل</value></data>
+  <data name="Builder_ScanningSource" xml:space="preserve"><value>جارٍ فحص {0}…</value></data>
+  <data name="Builder_ScanComplete" xml:space="preserve"><value>اكتمل الفحص: {0:N0} ملف ({1:N1} ميغابايت)، منها {2:N0} ملف مُدار.</value></data>
+  <data name="Builder_ScanFailedStatus" xml:space="preserve"><value>فشل الفحص: {0}</value></data>
+  <data name="Builder_KeyboardTitle" xml:space="preserve"><value>دليل استخدام لوحة المفاتيح</value></data>
+  <data name="Builder_ValidationTitle" xml:space="preserve"><value>مركز التحقق</value></data>
+  <data name="Builder_FormatReadinessTitle" xml:space="preserve"><value>جاهزية التنسيقات</value></data>
+  <data name="Builder_KeyboardSearchHelp" xml:space="preserve"><value>يفتح Enter أول نتيجة؛ ويمسح Escape البحث.</value></data>
+  <data name="Builder_KeyboardSections" xml:space="preserve"><value>القسم المرئي التالي / السابق</value></data>
+  <data name="Builder_KeyboardFields" xml:space="preserve"><value>الحقل أو الجدول أو الخاصية أو الإجراء التالي / السابق</value></data>
+  <data name="Section_ScheduledTasksHelp" xml:space="preserve"><value>أنشئ مهام في جدولة المهام مع تحديد المشغّل ورفع الصلاحيات ودليل العمل وبيانات الاعتماد وسلوك إزالة التثبيت.</value></data>
+  <data name="Section_FirewallRulesHelp" xml:space="preserve"><value>حدّد قواعد جدار حماية Windows للمنافذ والبرامج والخدمات ونطاق ملفات تعريف الشبكة.</value></data>
+  <data name="Section_CertificatesHelp" xml:space="preserve"><value>ثبّت الشهادات في مخزن شهادات Windows مع تحديد البصمة ومسؤولية إدارتها عند التراجع.</value></data>
+  <data name="Section_ComRegistrationsHelp" xml:space="preserve"><value>سجّل بيانات COM الوصفية لمعرّفات CLSID وProgID للملفات الثنائية داخل العملية أو لخادم محلي.</value></data>
+  <data name="Section_DriverPackagesHelp" xml:space="preserve"><value>جهّز حزم برامج التشغيل INF/SYS مع تحديد هوية الخدمة ومتطلبات التوقيع وسلوك إعادة التشغيل.</value></data>
+  <data name="Section_ConfigTransformsHelp" xml:space="preserve"><value>عدّل إعدادات JSON/XML/INI مع النسخ الاحتياطي عند التثبيت والاستعادة عند التراجع.</value></data>
+  <data name="Section_IisAppPoolsHelp" xml:space="preserve"><value>حدّد بيئة التشغيل ووضع مسار المعالجة والهوية والتشغيل التلقائي ومسؤولية إدارة مجمّعات تطبيقات IIS.</value></data>
+  <data name="Section_IisSitesHelp" xml:space="preserve"><value>حدّد المسار الفعلي ومجمّع التطبيقات والارتباطات ومسؤولية الإدارة عند إزالة تثبيت مواقع IIS.</value></data>
+  <data name="Section_WebDeployHelp" xml:space="preserve"><value>اربط حزم msdeploy بموقع IIS مع تحديد معلمات الحزمة ومسؤولية الإدارة عند إزالة التثبيت.</value></data>
+  <data name="Builder_ScanDiscarded" xml:space="preserve"><value>تغيّر المشروع أثناء الفحص. أعد الفحص لتحديث ملفاته.</value></data>
+  <data name="Report_Schema" xml:space="preserve"><value>المخطط</value></data>
+  <data name="Report_PlanHash" xml:space="preserve"><value>بصمة الخطة</value></data>
+  <data name="Report_DiagnosticCounts" xml:space="preserve"><value>الأخطاء: {0:N0}، التحذيرات: {1:N0}</value></data>
+  <data name="Report_Clean" xml:space="preserve"><value>لم تُكتشف مشكلات في التحقق الصارم من المشروع.</value></data>
+  <data name="Report_Fix" xml:space="preserve"><value>الإصلاح</value></data>
+  <data name="Report_ReleaseReadiness" xml:space="preserve"><value>جاهزية الإصدار</value></data>
+  <data name="Report_FormatCounts" xml:space="preserve"><value>جاهز: {0:N0}، تحذيرات: {1:N0}، محظور: {2:N0}</value></data>
+  <data name="Report_Artifacts" xml:space="preserve"><value>الملفات الناتجة</value></data>
+  <data name="Report_Finding" xml:space="preserve"><value>ملاحظة</value></data>
+  <data name="Report_MoreFindings" xml:space="preserve"><value>{0:N0} ملاحظات إضافية</value></data>
+  <data name="Report_Refreshed" xml:space="preserve"><value>تم تحديث جاهزية التنسيقات.</value></data>
+  <data name="Report_Ready" xml:space="preserve"><value>جاهز</value></data>
+  <data name="Report_ReadyWithWarnings" xml:space="preserve"><value>جاهز مع تحذيرات</value></data>
+  <data name="Report_Blocked" xml:space="preserve"><value>محظور</value></data>
+  <data name="Report_Warning" xml:space="preserve"><value>تحذير</value></data>
+  <data name="Status_SavedFile" xml:space="preserve"><value>تم حفظ {0}</value></data>
+  <data name="Status_ValidationPassed" xml:space="preserve"><value>نجح التحقق.</value></data>
+  <data name="Status_ValidationErrors" xml:space="preserve"><value>أخطاء التحقق: {0:N0}.</value></data>
+  <data name="Status_TemplateApplied" xml:space="preserve"><value>تم تطبيق القالب '{0}' — التغييرات: {1:N0}.</value></data>
+  <data name="Picker_ProjectFiles" xml:space="preserve"><value>برنامج تثبيت Beep (*.bsetup)</value></data>
+  <data name="Picker_AllFiles" xml:space="preserve"><value>كل الملفات (*.*)</value></data>
+  <data name="Picker_MatchingFiles" xml:space="preserve"><value>الملفات المطابقة ({0})</value></data>
+  <data name="AuthoringLanguage_Title" xml:space="preserve"><value>لغة الواجهة</value></data>
+  <data name="AuthoringLanguage_Help" xml:space="preserve"><value>طبّق لغة على واجهة التأليف. تبقى لغات برنامج التثبيت في المشروع دون تغيير.</value></data>
+  <data name="AuthoringLanguage_Edit" xml:space="preserve"><value>تحرير الترجمات</value></data>
+  <data name="Review_Checking" xml:space="preserve"><value>جارٍ فحص نسخة المشروع…</value></data>
+  <data name="Review_CheckFailed" xml:space="preserve"><value>فشل فحص المشروع. أعد الفحص قبل البناء.</value></data>
+  <data name="Review_CheckChanged" xml:space="preserve"><value>تغيّر المشروع. أعد الفحص قبل البناء.</value></data>
+  <data name="Review_CheckComplete" xml:space="preserve"><value>اكتمل فحص المشروع. عالج الأخطاء المانعة قبل البناء.</value></data>
+  <data name="Review_CheckAgain" xml:space="preserve"><value>إعادة الفحص</value></data>
+  <data name="Builder_VersionRequired" xml:space="preserve">
+    <value>الإصدار مطلوب.</value>
+  </data>
+  <data name="Editor_DraftChanged" xml:space="preserve"><value>تغيّر المشروع أو القائمة التي تعدّلها أثناء فتح هذه النافذة. تم الاحتفاظ بمسودتك. انسخ القيم التي تحتاجها، ثم ألغِ وافتح المحرر مجددًا قبل التطبيق.</value></data>
+  <data name="Conditions_PreviewEmpty" xml:space="preserve"><value>لا توجد شروط للمكوّن. يتوفر هذا المكوّن عندما يسمح نوع التثبيت أو ملفه التعريفي بذلك.</value></data>
+  <data name="Conditions_PreviewAll" xml:space="preserve"><value>المعنى: تثبيت هذا المكوّن أو عرضه فقط عند تحقق جميع القواعد.</value></data>
+  <data name="Conditions_PreviewAny" xml:space="preserve"><value>المعنى: تثبيت هذا المكوّن أو عرضه عند تحقق قاعدة واحدة على الأقل.</value></data>
+  <data name="Conditions_PreviewNot" xml:space="preserve"><value>المعنى: تثبيت هذا المكوّن أو عرضه عندما لا تتحقق مجموعة القواعد كاملة.</value></data>
+  <data name="Conditions_PreviewIssues" xml:space="preserve"><value>المشكلات:</value></data>
+  <data name="Conditions_PreviewNull" xml:space="preserve"><value>قاعدة مفقودة — احذف هذا الصف أو أضف قاعدة.</value></data>
+  <data name="Conditions_PreviewAlwaysTrue" xml:space="preserve"><value>صحيح دائمًا</value></data>
+  <data name="Conditions_PreviewAlwaysFalse" xml:space="preserve"><value>خطأ دائمًا</value></data>
+  <data name="Conditions_PreviewAdmin" xml:space="preserve"><value>جلسة المثبّت الحالية تعمل بصلاحيات المسؤول</value></data>
+  <data name="Conditions_PreviewArchitecture" xml:space="preserve"><value>معمارية الجهاز {0} {1}</value></data>
+  <data name="Conditions_PreviewOsVersion" xml:space="preserve"><value>إصدار Windows {0} {1}</value></data>
+  <data name="Conditions_PreviewFileExists" xml:space="preserve"><value>الملف موجود: {1}</value></data>
+  <data name="Conditions_PreviewDirectoryExists" xml:space="preserve"><value>المجلد موجود: {1}</value></data>
+  <data name="Conditions_PreviewRegistryExists" xml:space="preserve"><value>مفتاح التسجيل موجود: {1}</value></data>
+  <data name="Conditions_PreviewRegistryValue" xml:space="preserve"><value>قيمة التسجيل {1} {0} {2}</value></data>
+  <data name="Conditions_PreviewCommandReturns" xml:space="preserve"><value>مخرجات الأمر `{1}` أو رمز خروجه {0} {2}</value></data>
+  <data name="Files_EditTitle" xml:space="preserve"><value>تحرير الملفات — {0}</value></data>
+  <data name="Files_TotalSize" xml:space="preserve"><value>الحجم المعروف: {0:N2} ميغابايت في {1:N0} ملفًا ({2:N0} أحجام غير متاحة).</value></data>
+  <data name="Files_SharedCount" xml:space="preserve"><value>حساب مراجع الملف المشترك</value></data>
+  <data name="Files_SizeChecking" xml:space="preserve"><value>جارٍ التحقق من أحجام الملفات…</value></data>
+  <data name="Files_DropScanning" xml:space="preserve"><value>جارٍ قراءة الملفات المسقطة… لم تتغير المسودة.</value></data>
+  <data name="Files_DropCancelled" xml:space="preserve"><value>أُلغي الفحص. تم الاحتفاظ بالمسودة.</value></data>
+  <data name="Files_DropStale" xml:space="preserve"><value>تغيرت المسودة أثناء الفحص. أسقط الملفات مجددًا لاستخدام المسودة الحالية.</value></data>
+  <data name="Files_DropFailed" xml:space="preserve"><value>تعذرت قراءة الملفات المسقطة. تم الاحتفاظ بالمسودة.</value></data>
+  <data name="Files_DropSummary" xml:space="preserve"><value>المضاف: {0:N0}، المكرر: {1:N0}، تعارضات الوجهة: {2:N0}، المسارات غير المتاحة: {3:N0}.</value></data>
+  <data name="Files_DropIssues" xml:space="preserve"><value>تفاصيل الفحص:</value></data>
+  <data name="Files_CancelScan" xml:space="preserve"><value>إلغاء الفحص</value></data>
+  <data name="Files_ApplyFailed" xml:space="preserve"><value>تعذر تطبيق قائمة الملفات. لا تزال المسودة متاحة؛ راجع المشروع الحالي قبل إعادة المحاولة.</value></data>
 </root>

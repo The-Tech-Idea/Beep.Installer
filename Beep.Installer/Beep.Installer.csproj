@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <ApplicationIcon>Resources/beep-installer.ico</ApplicationIcon>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
@@ -29,6 +30,8 @@
     <ProjectReference Include="..\..\BeepDM\DataManagementEngineStandard\DataManagementEngine.csproj" />
     <ProjectReference Include="..\..\Beep.Winform\TheTechIdea.Beep.Winform.Controls\TheTechIdea.Beep.Winform.Controls.csproj" />
     <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
+    <!-- The MCP server is part of the installer: /MCP and the Tools menu both start it. -->
+    <ProjectReference Include="..\Beep.Installer.Mcp\Beep.Installer.Mcp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

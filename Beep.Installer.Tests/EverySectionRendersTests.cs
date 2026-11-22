@@ -23,6 +23,7 @@ namespace Beep.Installer.Tests;
 /// zero, which is what a first-time author sees) and a populated one (every collection non-empty,
 /// which is what exercises the grids and their bindings).
 /// </summary>
+[Collection("Language")]
 public sealed class EverySectionRendersTests
 {
     /// <summary>A project with nothing authored — the state a new user starts in.</summary>

@@ -61,6 +61,8 @@ public static class WinGetManifestExporter
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(options);
+        if (project.OutputFormat == InstallerOutputFormat.ClickOnce)
+            throw new NotSupportedException("WinGet export is not available for ClickOnce publications. Publish the deployment manifest through the ClickOnce update URL.");
 
         var packageIdentifier = string.IsNullOrWhiteSpace(options.PackageIdentifier)
             ? BuildPackageIdentifier(project)
@@ -144,12 +146,15 @@ public static class WinGetManifestExporter
         installerYaml.AppendLine("- silent");
         installerYaml.AppendLine("- silentWithProgress");
         installerYaml.AppendLine($"Scope: {Yaml(scope)}");
-        installerYaml.AppendLine("InstallerSwitches:");
-        installerYaml.AppendLine($"  Silent: {Yaml("/S /JSON /NORESTART")}");
-        installerYaml.AppendLine($"  SilentWithProgress: {Yaml("/SILENT /JSON /NORESTART")}");
-        installerYaml.AppendLine($"  InstallLocation: {Yaml("/D=<INSTALLPATH>")}");
-        installerYaml.AppendLine($"  Log: {Yaml("/LOG=<LOGPATH>")}");
-        installerYaml.AppendLine($"  Repair: {Yaml("/REPAIR /JSON")}");
+        if (project.OutputFormat != InstallerOutputFormat.Msi)
+        {
+            installerYaml.AppendLine("InstallerSwitches:");
+            installerYaml.AppendLine($"  Silent: {Yaml("/S /JSON /NORESTART")}");
+            installerYaml.AppendLine($"  SilentWithProgress: {Yaml("/SILENT /JSON /NORESTART")}");
+            installerYaml.AppendLine($"  InstallLocation: {Yaml("/D=<INSTALLPATH>")}");
+            installerYaml.AppendLine($"  Log: {Yaml("/LOG=<LOGPATH>")}");
+            installerYaml.AppendLine($"  Repair: {Yaml("/REPAIR /JSON")}");
+        }
         installerYaml.AppendLine("UpgradeBehavior: install");
         installerYaml.AppendLine("InstallerSuccessCodes:");
         installerYaml.AppendLine("- 3010");
@@ -516,6 +521,7 @@ public static class WinGetManifestExporter
         => project.OutputFormat switch
         {
             InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle => "msix",
+            InstallerOutputFormat.Msi => "msi",
             _ => "exe"
         };
 

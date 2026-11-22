@@ -59,6 +59,7 @@ public class BuildCancellationTests
             // The pipeline turns cancellation into a result, not an exception -- the UI shows it as
             // "Build canceled." rather than an error dialog blaming the project.
             result.Success.Should().BeFalse();
+            result.Canceled.Should().BeTrue();
             result.Errors.Should().Contain(e => e.Contains("cancel", StringComparison.OrdinalIgnoreCase));
         }
         finally
@@ -68,16 +69,14 @@ public class BuildCancellationTests
     }
 
     [Fact]
-    public void TheProgressDialogIsGivenACancellationSource()
+    public void WorkspaceCancellationTokenReachesTheCapturedPipeline()
     {
-        // The other half: SetCancellationSource exists, and the builder must call it. Guarded at
-        // source level because driving the real dialog needs a message loop.
+        // Routing guard complements the workspace's real worker/token and cancellation UI tests.
         var source = ReadRepoFile(Path.Combine("Beep.Installer", "Forms", "PackageBuilderForm.cs"));
 
-        source.Should().Contain("SetCancellationSource(",
-            "the Cancel button is inert unless the builder hands the dialog a source");
-        source.Should().Contain("_controller.Build(clean, ",
-            "the token has to reach the pipeline, not just the dialog");
+        source.Should().Contain("StartBuildWorkspace(buildProject", "builds must use the persistent workspace");
+        source.Should().Contain("_controller.BuildCapturedProject(buildProject, clean, token, progress)",
+            "both cancellation and progress must reach the captured pipeline");
     }
 
     [Fact]
@@ -85,7 +84,7 @@ public class BuildCancellationTests
     {
         // Telling the user "Build failed" after they pressed Cancel reads as a defect in their
         // project rather than as the thing they just asked for.
-        var source = ReadRepoFile(Path.Combine("Beep.Installer", "Forms", "PackageBuilderForm.cs"));
+        var source = ReadRepoFile(Path.Combine("Beep.Installer", "Engine", "AuthoringBuildWorkspace.cs"));
 
         source.Should().Contain("Build canceled.");
     }

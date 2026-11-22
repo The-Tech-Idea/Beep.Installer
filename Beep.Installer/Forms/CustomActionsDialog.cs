@@ -34,10 +34,23 @@ public class CustomActionsDialog : Form
     private Ui.BindingSourceRow<CustomAction> _row = null!;
     private BindingList<CustomAction> _actions = null!;
 
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IReadOnlyList<CustomAction> ResultActions => _actions.ToArray();
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    internal Func<bool>? ApplyDraft { get; set; }
+
     public CustomActionsDialog(System.Collections.IList actions)
     {
         _actions = new BindingList<CustomAction>();
-        foreach (CustomAction a in actions) _actions.Add(a);
+        foreach (CustomAction a in actions)
+        {
+            var copy = new CustomAction();
+            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(a))
+                if (!property.IsReadOnly) property.SetValue(copy, property.GetValue(a));
+            _actions.Add(copy);
+        }
 
         Text = L("Actions_CustomActionsA11", "Custom Actions (A1.1)");
         Size = new Size(900, 560);
@@ -243,6 +256,7 @@ public class CustomActionsDialog : Form
             if (MessageBox.Show(this, msg, L("Common_Warnings", "Warnings"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
                 return;
         }
+        if (ApplyDraft?.Invoke() == false) return;
         DialogResult = DialogResult.OK;
         Close();
     }

@@ -18,6 +18,7 @@ namespace Beep.Installer.Tests;
 /// firewall rules, both IIS sections, scheduled tasks and web-deploy packages were never cleared,
 /// so they kept displaying the previous project — and edits made in them were written back to it.
 /// </summary>
+[Collection("Language")]
 public class BuilderSectionCacheTests
 {
     // _contentHost is deliberately excluded: it is the live container the cached panels dock into,

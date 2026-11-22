@@ -38,7 +38,10 @@ public class DryRunTests : IDisposable
 
     public void Dispose()
     {
-        try { Environment.SetEnvironmentVariable(_varName, null, EnvironmentVariableTarget.User); } catch { }
+        // Clean only this fixture's unique value. SetEnvironmentVariable(User) broadcasts
+        // WM_SETTINGCHANGE to every desktop window, even when the dry run wrote nothing.
+        // Cleanup must not wait for unrelated applications to process that notification.
+        try { using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("Environment", writable: true); key?.DeleteValue(_varName, throwOnMissingValue: false); } catch { }
         try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); } catch { }
     }
 

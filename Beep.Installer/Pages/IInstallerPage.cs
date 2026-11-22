@@ -32,6 +32,7 @@ public interface IInstallerPage
 /// Implements INotifyPropertyChanged for direct WinForms data binding.</summary>
 public class InstallContext : INotifyPropertyChanged
 {
+    internal bool PreviewOnly { get; set; }
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private InstallProject _project = new();

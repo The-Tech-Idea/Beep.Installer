@@ -4,6 +4,8 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Beep.Installer.Engine;
+using Beep.Installer.Lang;
+using Beep.Installer.Ui;
 using TheTechIdea.Beep.Installer;
 using static Beep.Installer.Lang.UiStrings;
 
@@ -15,6 +17,11 @@ namespace Beep.Installer.Forms;
 /// </summary>
 public class ComponentConditionsDialog : Form
 {
+    private readonly Font _bodyFont = InstallerTheme.Body;
+    private readonly AuthoringThemeBinding _themeBinding;
+    private readonly System.Collections.Generic.List<Action> _captions = new();
+    private bool _disposed;
+    private bool _saveRejected;
     private readonly System.Collections.Generic.List<InstallComponent> _components;
     private ComboBox _componentBox = null!;
     private readonly InstallComponent? _initial;
@@ -32,7 +39,9 @@ public class ComponentConditionsDialog : Form
     private Button _cancelBtn = null!;
     private Label _validationLabel = null!;
     private BindingSource _binding = null!;
-    private Ui.BindingSourceRow<InstallCondition> _row = null!;
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    internal Func<bool>? ApplyDraft { get; set; }
 
     /// <param name="initial">
     /// The component the user already selected in the builder. The dialog opens on it instead of
@@ -57,10 +66,12 @@ public class ComponentConditionsDialog : Form
         // in the real list.
         _binding = new BindingSource { DataSource = typeof(InstallCondition) };
         _binding.ListChanged += (_, _) => RefreshValidation();
-        _row = new Ui.BindingSourceRow<InstallCondition>(_binding);
 
         Text = L("Conditions_ComponentConditionBuilder", "Component Condition Builder");
+        Font = _bodyFont;
+        Caption(this, "Conditions_ComponentConditionBuilder", Text);
         Size = new Size(1040, 640);
+        MinimumSize = new Size(760, 480);
         StartPosition = FormStartPosition.CenterParent;
         // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -69,23 +80,23 @@ public class ComponentConditionsDialog : Form
         MaximizeBox = false;
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         Controls.Add(root);
 
-        var selector = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4 };
-        selector.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
-        selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
-        selector.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
-        selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
-        selector.Controls.Add(new Label { Text = L("Common_Component", "Component:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+        var selector = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 2, RowCount = 2 };
+        selector.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        selector.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        selector.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        selector.Controls.Add(CaptionLabel("Common_Component", "Component:"), 0, 0);
         _componentBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var c in _components) _componentBox.Items.Add(c.Id + " — " + c.Name);
         _componentBox.SelectedIndexChanged += (_, _) => Rebind();
         selector.Controls.Add(_componentBox, 1, 0);
-        selector.Controls.Add(new Label { Text = L("Conditions_GroupExpression", "Group expression:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 2, 0);
+        selector.Controls.Add(CaptionLabel("Conditions_GroupExpression", "Group expression:"), 0, 1);
         _expressionBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var mode in Enum.GetValues(typeof(ConditionExpressionMode)))
             _expressionBox.Items.Add(mode);
@@ -97,7 +108,7 @@ public class ComponentConditionsDialog : Form
                 RefreshValidation();
             }
         };
-        selector.Controls.Add(_expressionBox, 3, 0);
+        selector.Controls.Add(_expressionBox, 1, 1);
         root.Controls.Add(selector, 0, 0);
 
         var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 420, FixedPanel = FixedPanel.Panel1 };
@@ -105,13 +116,15 @@ public class ComponentConditionsDialog : Form
         split.Panel2.Controls.Add(BuildEditorPanel());
         root.Controls.Add(split, 0, 1);
 
-        _validationLabel = new Label { Dock = DockStyle.Fill, ForeColor = Color.DarkGreen, Padding = new Padding(8, 0, 0, 0) };
+        _validationLabel = new Label { AutoSize = true, Dock = DockStyle.Fill, Padding = new Padding(8, 4, 8, 4) };
+        root.SizeChanged += (_, _) => _validationLabel.MaximumSize = new Size(Math.Max(1, root.ClientSize.Width), 0);
         root.Controls.Add(_validationLabel, 0, 2);
 
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-        _okBtn = new Button { Text = L("Common_OK", "OK"), Width = 90, Height = 28 };
+        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true, FlowDirection = FlowDirection.RightToLeft };
+        _okBtn = CaptionButton("Common_OK", "OK");
         _okBtn.Click += (_, _) => OnOk();
-        _cancelBtn = new Button { Text = L("Common_Cancel", "Cancel"), Width = 90, Height = 28, DialogResult = DialogResult.Cancel };
+        _cancelBtn = CaptionButton("Common_Cancel", "Cancel");
+        _cancelBtn.DialogResult = DialogResult.Cancel;
         buttons.Controls.Add(_okBtn);
         buttons.Controls.Add(_cancelBtn);
         root.Controls.Add(buttons, 0, 3);
@@ -129,16 +142,21 @@ public class ComponentConditionsDialog : Form
             _componentBox.SelectedIndex = index >= 0 ? index : 0;
         };
         Engine.Accessibility.Attach(this);
+        RegisterFields();
+        _themeBinding = new AuthoringThemeBinding(this);
+        LanguageManager.LanguageChanged += OnLanguageChanged;
+        RtlHelper.ApplyDirection(this, LanguageManager.CurrentCulture.TextInfo.IsRightToLeft);
     }
 
     private Control BuildListPanel()
     {
         var panel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         _grid = new DataGridView
         {
+            Name = "ConditionGrid", DataSource = _binding,
             AccessibleName = L("Conditions_GridName", "Conditions for the selected component"),
             Dock = DockStyle.Fill,
             AutoGenerateColumns = true,
@@ -148,68 +166,68 @@ public class ComponentConditionsDialog : Form
             AllowUserToDeleteRows = false,
             RowHeadersVisible = false
         };
+        _grid.DataBindingComplete += (_, _) => RefreshGridCaptions();
+        _grid.CellValueChanged += (_, _) => RefreshValidation();
 
-        var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6 };
-        for (var i = 0; i < 6; i++)
-            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
-        _addBtn = new Button { Text = L("Common_Add", "Add"), Dock = DockStyle.Fill };
-        var x64Btn = new Button { Text = L("Conditions_QuickX64", "x64 rule"), Dock = DockStyle.Fill };
-        var adminBtn = new Button { Text = L("Conditions_QuickAdmin", "Admin rule"), Dock = DockStyle.Fill };
-        var fileBtn = new Button { Text = L("Conditions_QuickFile", "File rule"), Dock = DockStyle.Fill };
-        _removeBtn = new Button { Text = L("Common_Remove", "Remove"), Dock = DockStyle.Fill };
-        _testBtn = new Button { Text = L("Conditions_TestAll", "Test all"), Dock = DockStyle.Fill };
+        var row = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
+        _addBtn = CaptionButton("Common_Add", "Add");
+        var x64Btn = CaptionButton("Conditions_QuickX64", "x64 rule");
+        var adminBtn = CaptionButton("Conditions_QuickAdmin", "Admin rule");
+        var fileBtn = CaptionButton("Conditions_QuickFile", "File rule");
+        _removeBtn = CaptionButton("Common_Remove", "Remove");
+        _testBtn = CaptionButton("Conditions_TestAll", "Test all");
         _addBtn.Click += (_, _) => OnAdd();
         x64Btn.Click += (_, _) => AddCondition(ConditionType.Architecture, "x64");
         adminBtn.Click += (_, _) => AddCondition(ConditionType.IsAdmin);
         fileBtn.Click += (_, _) => AddCondition(ConditionType.FileExists, "{app}\\marker.txt");
         _removeBtn.Click += (_, _) => OnRemove();
         _testBtn.Click += (_, _) => OnTestAll();
-        row.Controls.Add(_addBtn, 0, 0);
-        row.Controls.Add(x64Btn, 1, 0);
-        row.Controls.Add(adminBtn, 2, 0);
-        row.Controls.Add(fileBtn, 3, 0);
-        row.Controls.Add(_removeBtn, 4, 0);
-        row.Controls.Add(_testBtn, 5, 0);
+        row.Controls.AddRange(new Control[] { _addBtn, x64Btn, adminBtn, fileBtn, _removeBtn, _testBtn });
         panel.Controls.Add(_grid, 0, 0);
         panel.Controls.Add(row, 0, 1);
-        _row.WireRowButtons(_removeBtn);
+        // A null condition is a blocking, removable row too. Use its position rather
+        // than requiring a non-null object to enable the correction action.
+        void RefreshRemove() => _removeBtn.Enabled = _binding.Position >= 0 && _binding.Position < _binding.Count;
+        _binding.PositionChanged += (_, _) => RefreshRemove();
+        _binding.ListChanged += (_, _) => RefreshRemove();
+        RefreshRemove();
         return panel;
     }
 
     private Control BuildEditorPanel()
     {
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(8), AutoScroll = true };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         int row = 0;
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = L("Common_Type", "Type:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(CaptionLabel("Common_Type", "Type:"), 0, row);
         _typeBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var t in Enum.GetValues(typeof(ConditionType))) _typeBox.Items.Add(t);
         _typeBox.DataBindings.Add("SelectedItem", _binding, nameof(InstallCondition.Type), true, DataSourceUpdateMode.OnPropertyChanged);
         _typeBox.SelectedValueChanged += (_, _) => RefreshEditorEnabled();
         layout.Controls.Add(_typeBox, 1, row++);
 
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = L("Common_Value", "Value:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(CaptionLabel("Common_Value", "Value:"), 0, row);
         _valueBox = new TextBox { Dock = DockStyle.Fill };
         _valueBox.DataBindings.Add("Text", _binding, nameof(InstallCondition.Value), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_valueBox, 1, row++);
 
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = L("Conditions_Operator", "Operator:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(CaptionLabel("Conditions_Operator", "Operator:"), 0, row);
         _operatorBox = new TextBox { Dock = DockStyle.Fill, Text = "==" };
         _operatorBox.DataBindings.Add("Text", _binding, nameof(InstallCondition.Operator), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_operatorBox, 1, row++);
 
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(new Label { Text = L("Conditions_Value2", "Value2:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(CaptionLabel("Conditions_Value2", "Value2:"), 0, row);
         _value2Box = new TextBox { Dock = DockStyle.Fill };
         _value2Box.DataBindings.Add("Text", _binding, nameof(InstallCondition.Value2), true, DataSourceUpdateMode.OnPropertyChanged);
         layout.Controls.Add(_value2Box, 1, row++);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150));
-        layout.Controls.Add(new Label { Text = L("Conditions_Preview", "Preview:"), TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+        layout.Controls.Add(CaptionLabel("Conditions_Preview", "Preview:"), 0, row);
         _previewBox = new TextBox
         {
             Dock = DockStyle.Fill,
@@ -220,13 +238,17 @@ public class ComponentConditionsDialog : Form
         };
         layout.Controls.Add(_previewBox, 1, row++);
 
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var notes = new Label
         {
             Text = L("Conditions_NotesNGroupExpression", "Notes:\n • Group expression controls how all rows combine: All = every rule, Any = at least one rule, Not = invert the group.\n • Value holds the primary operand (registry path, file path, OS version, command, …).\n • Value2 is the expected value for RegistryValue and CommandReturns comparisons.\n • Operator is one of ==, =, !=, >, >=, <, <= (default '==')."),
             Dock = DockStyle.Fill,
             ForeColor = Ui.InstallerTheme.MutedText
         };
+        notes.AutoSize = true;
+        Caption(notes, "Conditions_NotesNGroupExpression", notes.Text);
+        AuthoringThemeBinding.SetTone(notes, AuthoringTone.Muted);
+        layout.SizeChanged += (_, _) => notes.MaximumSize = new Size(Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal), 0);
         layout.Controls.Add(notes, 0, row);
         layout.SetColumnSpan(notes, 2);
         return layout;
@@ -235,6 +257,95 @@ public class ComponentConditionsDialog : Form
     private InstallComponent? CurrentComponent
         => _componentBox.SelectedIndex >= 0 && _componentBox.SelectedIndex < _components.Count
             ? _components[_componentBox.SelectedIndex] : null;
+
+    private void Caption(Control control, string key, string fallback, bool text = true)
+    {
+        var caption = new LiveUiCaption(key, fallback);
+        void Refresh()
+        {
+            if (text) control.Text = caption.Value;
+            control.AccessibleName = caption.Value;
+        }
+        _captions.Add(Refresh);
+        Refresh();
+    }
+
+    private Label CaptionLabel(string key, string fallback)
+    {
+        var label = new Label { Name = "Caption_" + key, AutoSize = true, Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft, MaximumSize = new Size(160, 0), MinimumSize = new Size(0, 30) };
+        Caption(label, key, fallback);
+        return label;
+    }
+
+    private Button CaptionButton(string key, string fallback)
+    {
+        var button = new Button { Name = key, AutoSize = true, MinimumSize = new Size(75, 30) };
+        Caption(button, key, fallback);
+        return button;
+    }
+
+    private void RegisterFields()
+    {
+        _componentBox.Name = "ConditionComponent"; _expressionBox.Name = "ConditionExpression";
+        _typeBox.Name = "ConditionType"; _valueBox.Name = "ConditionValue";
+        _operatorBox.Name = "ConditionOperator"; _value2Box.Name = "ConditionValue2";
+        _previewBox.Name = "ConditionPreview"; _validationLabel.Name = "ConditionValidation";
+        _addBtn.Name = "ConditionAdd"; _removeBtn.Name = "ConditionRemove";
+        _testBtn.Name = "ConditionTest"; _okBtn.Name = "ConditionOk"; _cancelBtn.Name = "ConditionCancel";
+        Caption(_componentBox, "Common_Component", "Component:", false);
+        Caption(_expressionBox, "Conditions_GroupExpression", "Group expression:", false);
+        Caption(_grid, "Conditions_GridName", "Conditions for the selected component", false);
+        Caption(_typeBox, "Common_Type", "Type:", false); Caption(_valueBox, "Common_Value", "Value:", false);
+        Caption(_operatorBox, "Conditions_Operator", "Operator:", false);
+        Caption(_value2Box, "Conditions_Value2", "Value2:", false);
+        Caption(_previewBox, "Conditions_Preview", "Preview:", false);
+        foreach (var field in new Control[] { _valueBox, _operatorBox, _value2Box })
+            field.TextChanged += (_, _) => { _grid.Invalidate(); RefreshValidation(); };
+        _typeBox.SelectedValueChanged += (_, _) => RefreshValidation();
+    }
+
+    private void RefreshGridCaptions()
+    {
+        if (_grid is null) return;
+        foreach (DataGridViewColumn column in _grid.Columns)
+            column.HeaderText = column.DataPropertyName switch
+            {
+                "Type" => L("Common_Type", "Type:").TrimEnd(':'),
+                "Value" => L("Common_Value", "Value:").TrimEnd(':'),
+                "Operator" => L("Conditions_Operator", "Operator:").TrimEnd(':'),
+                "Value2" => L("Conditions_Value2", "Value2:").TrimEnd(':'),
+                _ => column.HeaderText
+            };
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (_disposed || IsDisposed || Disposing) return;
+        if (InvokeRequired) { BeginInvoke(() => OnLanguageChanged(sender, e)); return; }
+        var focus = UiFocusBookmark.Capture(this);
+        foreach (var refresh in _captions) refresh();
+        RefreshGridCaptions();
+        RefreshValidation(); // Validation inspects rule syntax only; it never evaluates a rule.
+        // Translated prose can move selected authored text within the preview. Its
+        // renderer has already retained that selection; bookmark the new position.
+        if (focus?.ControlName == _previewBox.Name) focus = UiFocusBookmark.Capture(this);
+        RtlHelper.ApplyDirection(this, LanguageManager.CurrentCulture.TextInfo.IsRightToLeft);
+        focus?.Restore();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_disposed)
+        {
+            _disposed = true;
+            LanguageManager.LanguageChanged -= OnLanguageChanged;
+            _themeBinding?.Dispose();
+            _binding?.Dispose();
+        }
+        base.Dispose(disposing);
+        if (disposing) _bodyFont.Dispose();
+    }
 
     private void Rebind()
     {
@@ -250,7 +361,7 @@ public class ComponentConditionsDialog : Form
     {
         var needsValue = _typeBox.SelectedItem is ConditionType t
             && t != ConditionType.AlwaysTrue && t != ConditionType.AlwaysFalse && t != ConditionType.IsAdmin;
-        var needsValue2 = _typeBox.SelectedItem is ConditionType t2 && t2 == ConditionType.RegistryValue;
+        var needsValue2 = _typeBox.SelectedItem is ConditionType t2 && t2 is ConditionType.RegistryValue or ConditionType.CommandReturns;
         _valueBox.Enabled = needsValue;
         _value2Box.Enabled = needsValue2;
         _operatorBox.Enabled = needsValue;
@@ -282,11 +393,15 @@ public class ComponentConditionsDialog : Form
 
     private void OnRemove()
     {
-        // BindingSource.Current throws on an empty list rather than returning null -- see
-        // Ui.BindingSourceRow. Reading the row by position instead means Remove on an empty list is a
-        // no-op (the button is also disabled in that state), not a crash.
-        if (CurrentComponent?.Conditions != null && _row.Current is { } c)
-            CurrentComponent.Conditions.Remove(c);
+        // Never read BindingSource.Current on an empty list. Removing by position
+        // also supports a null rule identified by syntax validation.
+        var index = _binding.Position;
+        if (CurrentComponent?.Conditions is { } conditions && index >= 0 && index < conditions.Count)
+        {
+            conditions.RemoveAt(index);
+            _binding.ResetBindings(false);
+            RefreshValidation();
+        }
     }
 
     private void OnTestAll()
@@ -306,28 +421,49 @@ public class ComponentConditionsDialog : Form
 
     private void OnOk()
     {
-        var issues = CurrentComponent == null
-            ? new System.Collections.Generic.List<ConditionListValidator.Issue>()
-            : ConditionListValidator.Validate(CurrentComponent.Conditions).ToList();
-        var errors = issues.Where(i => i.Severity == ConditionListValidator.IssueSeverity.Error).ToList();
-        if (errors.Count > 0)
+        PackageBuilderForm.CommitBindings(this);
+        for (var componentIndex = 0; componentIndex < _components.Count; componentIndex++)
         {
-            var msg = L("Conditions_CannotSave", "Cannot save — fix the following errors first:") + "\n\n" + string.Join("\n", errors.Select(e => $" • #{e.Index + 1}: {e.Message}"));
-            MessageBox.Show(this, msg, L("Common_Validation", "Validation"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            var component = _components[componentIndex];
+            var error = ConditionListValidator.Validate(component.Conditions)
+                .FirstOrDefault(i => i.Severity == ConditionListValidator.IssueSeverity.Error);
+            if (error is null) continue;
+            _saveRejected = true;
+            _componentBox.SelectedIndex = componentIndex;
+            _binding.Position = error.Index;
+            if (error.Index >= 0 && error.Index < _grid.Rows.Count)
+                _grid.CurrentCell = _grid.Rows[error.Index].Cells[0];
+            RefreshValidation();
+            // Current blocking rules are either a missing Value or a null row. Keep the
+            // latter selected for removal; do not infer a field from translated prose.
+            if (component.Conditions[error.Index] is not null) _valueBox.Focus();
+            else _grid.Focus();
             return;
         }
+        if (ApplyDraft?.Invoke() == false) return;
         DialogResult = DialogResult.OK;
         Close();
     }
 
     private void RefreshValidation()
     {
-        if (CurrentComponent == null) { _validationLabel.Text = ""; _previewBox.Text = ""; return; }
+        if (_disposed || _validationLabel is null || _previewBox is null) return;
+        if (CurrentComponent == null) { _validationLabel.Text = _validationLabel.AccessibleName = ""; _previewBox.Text = ""; return; }
         var issues = ConditionListValidator.Validate(CurrentComponent.Conditions);
         Ui.ValidationCounts
             .From(issues, i => i.Severity == ConditionListValidator.IssueSeverity.Error)
-            .Apply(_validationLabel, $"Component '{CurrentComponent.Id}' —", $"{CurrentComponent.Conditions.Count} condition(s) — OK");
-        _previewBox.Text = BuildConditionPreview(CurrentComponent, issues);
+            .Apply(_validationLabel, $"{L("Common_Component", "Component:")} {CurrentComponent.Id} —",
+                string.Format(LanguageManager.CurrentCulture, "{0}: {1:N0} — {2}",
+                    L("Conditions_CountLabel", "Conditions"), CurrentComponent.Conditions.Count, L("Common_OK", "OK")));
+        if (_saveRejected)
+        {
+            var error = issues.FirstOrDefault(i => i.Severity == ConditionListValidator.IssueSeverity.Error);
+            if (error is not null)
+                _validationLabel.Text = _validationLabel.AccessibleName =
+                    L("Conditions_CannotSave", "Cannot save — fix the following errors first:") +
+                    $" {CurrentComponent.Id} — #{error.Index + 1}: {error.Message}";
+        }
+        AuthoringReportPresentation.UpdateText(_previewBox, ConditionPreviewPresentation.Render(CurrentComponent, issues));
     }
 
     public static string BuildConditionPreview(InstallComponent component, System.Collections.Generic.IReadOnlyList<ConditionListValidator.Issue>? issues = null)

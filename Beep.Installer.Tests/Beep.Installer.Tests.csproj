@@ -20,6 +20,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.Installer\Beep.Installer.csproj" />
+    <ProjectReference Include="..\Beep.Installer.Mcp\Beep.Installer.Mcp.csproj" />
+    <ProjectReference Include="..\Beep.Installer.Cli\Beep.Installer.Cli.csproj" />
+    <Compile Remove="Fixtures\TemplatePreferenceWorker\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>

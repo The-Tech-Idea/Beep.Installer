@@ -57,6 +57,18 @@ public class ThemeAndDpiTests
         InstallerTheme.SectionTitle.Size.Should().BeGreaterThan(InstallerTheme.Body.Size);
     }
 
+    [Theory]
+    [InlineData(255, 255, 255)]
+    [InlineData(20, 20, 20)]
+    [InlineData(245, 185, 65)]
+    public void SemanticForegroundsRemainReadableOnLightDarkAndColoredSurfaces(int red, int green, int blue)
+    {
+        var background = Color.FromArgb(red, green, blue);
+        foreach (var preferred in new[] { Color.FromArgb(88, 96, 108), Color.FromArgb(30, 122, 58),
+            Color.FromArgb(154, 96, 0), Color.FromArgb(176, 42, 42), Color.White })
+            Contrast(InstallerTheme.AccessibleForeground(preferred, background), background).Should().BeGreaterThanOrEqualTo(4.5);
+    }
+
     [Fact]
     public void EveryForm_OptsIntoDpiScaling()
     {

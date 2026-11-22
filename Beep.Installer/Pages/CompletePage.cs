@@ -4,6 +4,8 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using Beep.Installer.Lang;
+using Beep.Installer.Engine;
+using Beep.Installer.Ui;
 using TheTechIdea.Beep.Winform.Controls;
 
 namespace Beep.Installer.Pages;
@@ -11,16 +13,21 @@ namespace Beep.Installer.Pages;
 public class CompletePage : UserControl, IInstallerPage
 {
     private PictureBox _icon = null!;
-    private BeepLabel _title = null!;
-    private BeepLabel _message = null!;
+    private Label _title = null!;
+    private TextBox _message = null!;
     private CheckBox _launchCheck = null!;
     private CheckBox _openLogCheck = null!;
     private BeepButton _viewSupportBundleBtn = null!;
     private bool _success;
+    private string _resultMessage = "";
+    private string? _messageKey;
+    private string[] _messageArguments = Array.Empty<string>();
+    private RuntimeOperationOutcome? _outcome;
+    private readonly RuntimePageLayout _layout;
 
     public string PageTitle => _success
         ? LanguageManager.GetOrDefault("Wizard_Complete", "Installation Complete")
-        : "Installation Failed";
+        : LanguageManager.GetOrDefault("Runtime_Failed", "Installation Failed");
     public string Subtitle => _success
         ? LanguageManager.GetOrDefault("Complete_Success", "The application has been installed successfully.")
         : LanguageManager.GetOrDefault("Complete_Failure", "There was a problem during installation.");
@@ -44,17 +51,20 @@ public class CompletePage : UserControl, IInstallerPage
             Size = new Size(48, 48),
             SizeMode = PictureBoxSizeMode.Zoom
         };
-        _title = new BeepLabel
+        _title = new Label
         {
             Location = new Point(60, 5),
             Size = new Size(440, 30),
-            Font = new Font("Segoe UI", 14, FontStyle.Bold)
+            AutoSize = true
         };
-        _message = new BeepLabel
+        _message = new TextBox
         {
+            Name = "RuntimeCompletionSummary",
+            AccessibleName = "Installation outcome",
             Location = new Point(0, 65),
             Size = new Size(500, 100),
-            AutoSize = false
+            Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
+            BackColor = InstallerTheme.Panel, ForeColor = InstallerTheme.Text
         };
         _launchCheck = new CheckBox
         {
@@ -80,31 +90,69 @@ public class CompletePage : UserControl, IInstallerPage
         _viewSupportBundleBtn.Click += (_, _) =>
         {
             if (!string.IsNullOrWhiteSpace(SupportBundlePath) && File.Exists(SupportBundlePath))
-                Process.Start("notepad.exe", SupportBundlePath);
+            {
+                using var dialog = new Forms.RuntimeSupportBundleDialog(SupportBundlePath); dialog.ShowDialog(this);
+            }
             else
                 MessageBox.Show(this, LanguageManager.GetOrDefault("Complete_NoBundle", "No support bundle was generated."), LanguageManager.GetOrDefault("Complete_BundleTitle", "Support Bundle"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
 
         Controls.AddRange(new Control[] { _icon, _title, _message, _launchCheck, _openLogCheck, _viewSupportBundleBtn });
+        _layout = new RuntimePageLayout(this, _title, _message, _icon, true, _launchCheck, _openLogCheck, _viewSupportBundleBtn);
+        ReloadStrings();
     }
 
     public void OnEnter(InstallContext ctx) { }
 
-    public void SetResult(bool success, string message, string? logPath = null, string? supportBundlePath = null)
+    public void SetResult(bool success, string message, string? logPath = null, string? supportBundlePath = null,
+        RuntimeOperationOutcome? outcome = null)
     {
         _success = success;
         LogPath = logPath;
         SupportBundlePath = supportBundlePath;
-        _title.Text = success ? "Installation Complete" : "Installation Failed";
-        _message.Text = message;
+        _resultMessage = message;
+        _messageKey = null;
+        _messageArguments = Array.Empty<string>();
+        _outcome = outcome;
+        ReloadStrings();
 
+        var oldIcon = _icon.Image;
         _icon.Image = LoadStatusIcon(success);
+        oldIcon?.Dispose();
 
         _launchCheck.Visible = success;
-        _openLogCheck.Visible = !string.IsNullOrEmpty(logPath);
+        _openLogCheck.Visible = !string.IsNullOrEmpty(logPath) && File.Exists(logPath);
         if (_openLogCheck.Visible) _openLogCheck.Tag = logPath;
         _viewSupportBundleBtn.Visible = !string.IsNullOrWhiteSpace(supportBundlePath) && File.Exists(supportBundlePath);
+        _layout.Refresh();
+    }
+
+    public void ReloadStrings()
+    {
+        _title.Text = PageTitle;
+        var message = _messageKey is null ? _resultMessage : string.Format(LanguageManager.GetString(_messageKey), _messageArguments.Cast<object>().ToArray());
+        _message.Text = message + (_outcome is null ? "" : Environment.NewLine + Environment.NewLine + RuntimeOperationPresentation.Describe(_outcome));
+        _message.AccessibleName = PageTitle;
+        _launchCheck.Text = LanguageManager.GetOrDefault("Complete_Launch", "Launch the application");
+        _openLogCheck.Text = LanguageManager.GetOrDefault("Complete_ViewLog", "View installation log");
+        _viewSupportBundleBtn.Text = LanguageManager.GetOrDefault("Support_Review", "Review support bundle");
+        _launchCheck.AccessibleName = _launchCheck.Text; _openLogCheck.AccessibleName = _openLogCheck.Text;
+        _viewSupportBundleBtn.AccessibleName = _viewSupportBundleBtn.Text;
+        _layout?.Refresh();
+    }
+
+    internal void SetLocalizedMessage(string key, params string[] arguments)
+    {
+        _messageKey = key;
+        _messageArguments = arguments.ToArray();
+        ReloadStrings();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) { _layout?.Dispose(); _icon.Image?.Dispose(); _icon.Image = null; }
+        base.Dispose(disposing);
     }
 
     private static Image? LoadStatusIcon(bool success)

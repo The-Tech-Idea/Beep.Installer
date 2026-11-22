@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Server - Beep Installer Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" title="Toggle navigation"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+    <div class="container">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="content-wrapper">
+                <nav class="breadcrumb-nav"><a href="index.html">Home</a><span>&gt;</span><span>MCP Server</span></nav>
+                <div class="page-header">
+                    <h1>MCP Server</h1>
+                    <p class="page-subtitle"><code>Beep.Installer.Mcp</code> lets an AI client (Claude Code, Codex, any MCP client) drive <code>Beep.Installer.exe</code> over stdio. It is a thin wrapper: every command runs in the real executable, and the exit code comes back untouched.</p>
+                </div>
+
+                <section class="section">
+                    <h2>Set it up</h2>
+                    <p>The MCP server is part of the installer: <code>Beep.Installer.exe /MCP</code> runs it over stdio, and an AI assistant starts it with that command. Running the installer normally never starts it.</p>
+                    <p>In the app, click <strong>AI / MCP</strong> in the toolbar. The dialog shows the command and can add the installer to Claude Desktop, Codex and Claude Code; each registration backs up the client's file first and leaves its other servers alone. In this repository the project-scope <code>.mcp.json</code> does the same for Claude Code:</p>
+<pre><code class="language-json">{ "mcpServers": { "beep-installer": {
+    "command": "Beep.Installer/bin/Debug/net10.0-windows/Beep.Installer.exe",
+    "args": ["/MCP"] } } }</code></pre>
+                    <p>The server runs commands through the same executable, so there is nothing else to install or configure.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Tools</h2>
+                    <table>
+                        <thead><tr><th>Tool</th><th>What it does</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>installer_list_commands</code></td><td>List the commands, filtered by category or effect.</td></tr>
+                            <tr><td><code>installer_describe_command</code></td><td>One command's value, options (required / secret), effect, dry-run and JSON support, and the exit-code contract.</td></tr>
+                            <tr><td><code>installer_run</code></td><td>Run <em>any</em> catalog command: <code>command</code>, <code>value</code>, <code>options</code>, <code>properties</code>, <code>dryRun</code>, <code>allowMachineChanges</code>, <code>timeoutSeconds</code>.</td></tr>
+                            <tr><td><code>installer_validate</code> · <code>installer_plan</code> · <code>installer_preview</code> · <code>installer_format_readiness</code> · <code>installer_list_templates</code></td><td>The read-only authoring flow.</td></tr>
+                            <tr><td><code>installer_get_project_fields</code> · <code>installer_set_project_fields</code></td><td>Read or change a project's scalar fields (name, version, publisher...). The edit is validated first, a <code>.bak</code> is kept, and credential-like fields and collections are not editable.</td></tr>
+                            <tr><td><code>installer_build</code> · <code>installer_publish_clickonce</code></td><td>Write installers or a ClickOnce deployment to a chosen directory.</td></tr>
+                            <tr><td><code>installer_export_winget</code></td><td>Write WinGet manifests for a built installer beside the output.</td></tr>
+                        </tbody>
+                    </table>
+                    <p>Resources: <code>beep-installer://catalog</code> (JSON), <code>beep-installer://catalog.md</code>, <code>beep-installer://guide</code>.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Safety rules</h2>
+                    <ul>
+                        <li><strong>Machine-changing commands</strong> (<code>/S</code>, <code>/UNINSTALL</code>, <code>/REPAIR</code>, <code>/APPLYDELTA</code>, <code>/MSI</code>, …) are refused unless <code>dryRun=true</code> (where the command really previews with <code>/DRYRUN</code>; <code>/S</code> and <code>/REPAIR</code> do not, so they always need <code>allowMachineChanges=true</code>) or <code>allowMachineChanges=true</code>. Publishing commands (<code>/PUBLISHSDK=</code>) are confirmed the same way. <code>/UNINSTALL</code> has no preview, so it always needs <code>allowMachineChanges=true</code>. <code>/ALLOWSCRIPTCMDS</code> is never offered: a person must pass it.</li>
+                        <li><strong>Credentials</strong> are never accepted as values. Options that carry one take only <code>secret://env/NAME</code> or <code>env:NAME</code>, resolved from the server's environment. Options that accept only a raw secret are blocked.</li>
+                        <li><strong>Arguments are a vector</strong>, never a joined string, so a path with spaces or quotes cannot inject another argument. Unknown options and missing required ones are refused before anything starts.</li>
+                        <li><strong>Windows and interactive commands</strong> (<code>/LANGMGR</code>, <code>/UPDATEUI</code>) are not offered; the child's stdin is closed so a command can never wait on a prompt.</li>
+                        <li><strong>Timeouts</strong> default to 300 s (max 3600 s) and kill the whole process tree.</li>
+                    </ul>
+                </section>
+
+                <section class="section">
+                    <h2>Exit codes</h2>
+                    <table>
+                        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>0</code></td><td>Success.</td></tr>
+                            <tr><td><code>3010</code></td><td>Success, reboot required — reported as success.</td></tr>
+                            <tr><td><code>1</code></td><td>The operation ran and failed, or a gate reported a blocking finding.</td></tr>
+                            <tr><td><code>2</code></td><td>The command line, script or response file was rejected before anything ran.</td></tr>
+                        </tbody>
+                    </table>
+                    <p>The result also carries <code>stdout</code>/<code>stderr</code>, parsed <code>json</code> when the command printed <code>/JSON</code>, <code>timedOut</code>, and <code>problems</code> when the request was refused before it started.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Where the command list comes from</h2>
+                    <p>The server, <code>/CATALOG</code>, the usage text guard and the <a href="cli-reference.html">CLI reference</a> all read one file, <code>Beep.Installer.Core/Cli/cli-catalog.json</code>. Tests fail if a dispatched verb is missing from it, if one of its options is rejected by the argument validator, or if the reference page is out of date (regenerate with <code>scripts/Update-CliReference.ps1</code>).</p>
+                </section>
+
+                <div class="nav-links">
+                    <a href="cli-reference.html"><i class="bi bi-arrow-left"></i> CLI Reference</a>
+                    <a href="authoring.html">Authoring <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <footer class="documentation-footer"><div class="footer-content"><div class="footer-copyright"><p>&copy; 2026 The Tech Idea — Beep Installer Documentation</p></div></div></footer>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

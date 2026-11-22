@@ -87,6 +87,9 @@ public sealed class UpdateChannelApplyResult
     public bool Success => Check.Success && Apply?.Success == true;
 }
 
+public enum UpdateDeltaSelectionStatus { Selected, Unauthorized, InvalidVersion, MissingChannel, Missing, Ambiguous }
+public sealed record UpdateDeltaSelection(UpdateDeltaSelectionStatus Status, UpdateChannelDeltaPackage? Package, string Error);
+
 public sealed class UpdateChannelFeedEntry
 {
     public string Id { get; init; } = "";
@@ -358,24 +361,18 @@ public static class UpdateChannelFeedPackageService
 
     public static UpdateChannelApplyResult ApplyDelta(UpdateChannelFeedVerificationOptions feedOptions,
         DeltaUpdateAtomicApplyOptions applyOptions, string currentChannelId = "", string targetChannelId = "",
-        string cohortSeed = "", DateTimeOffset? nowUtc = null, InstallerPolicyEvaluation? policyEvaluation = null)
+        string cohortSeed = "", DateTimeOffset? nowUtc = null, InstallerPolicyEvaluation? policyEvaluation = null, string expectedFeedSha256 = "")
     {
         ArgumentNullException.ThrowIfNull(applyOptions);
         applyOptions.CancellationToken.ThrowIfCancellationRequested();
         var check = Check(feedOptions, applyOptions.CurrentVersion, currentChannelId, targetChannelId,
             cohortSeed, nowUtc, policyEvaluation, applyOptions.CancellationToken);
-        if (!check.Success || check.Decision?.Allowed != true)
-            return new() { Check = check, Error = "Update channel did not authorize application." };
-        var channel = check.Verification.Manifest!.Channels.Single(c =>
-            c.Id.Equals(check.Decision.TargetChannelId, StringComparison.OrdinalIgnoreCase));
-        if (!UpdateChannelTransitionEvaluator.TryParseChannelVersion(applyOptions.CurrentVersion, out var installedVersion))
-            return new() { Check = check, Error = "Installed version must contain one to four non-negative numeric components." };
-        var candidates = channel.DeltaPackages.Where(p =>
-            UpdateChannelTransitionEvaluator.TryParseChannelVersion(p.BaseVersion, out var baseVersion)
-            && baseVersion == installedVersion).ToArray();
-        if (candidates.Length != 1)
-            return new() { Check = check, Error = "The channel must declare exactly one delta for the installed version." };
-        var package = candidates[0];
+        var selection = SelectDelta(check, applyOptions.CurrentVersion);
+        if (selection.Package is null) return new() { Check = check, Error = selection.Error };
+        if (!string.IsNullOrEmpty(expectedFeedSha256) && !expectedFeedSha256.Equals(check.Verification.FeedSha256, StringComparison.OrdinalIgnoreCase))
+            return new() { Check = check, Error = "The signed feed changed since preview. Check the update again before applying." };
+        var channel = check.Verification.Manifest!.Channels.Single(c => c.Id.Equals(check.Decision!.TargetChannelId, StringComparison.OrdinalIgnoreCase));
+        var package = selection.Package;
         InstallationOperationLock? cacheLease = null;
         try
         {
@@ -425,6 +422,23 @@ public static class UpdateChannelFeedPackageService
             return new() { Check = check, Error = ex.Message };
         }
         finally { cacheLease?.Dispose(); }
+    }
+
+    /// <summary>The same signed-feed selection used by preview and application.</summary>
+    public static UpdateDeltaSelection SelectDelta(UpdateChannelCheckResult check, string currentVersion)
+    {
+        ArgumentNullException.ThrowIfNull(check);
+        if (!check.Success || !check.Verification.SignatureTrusted || check.Decision?.Allowed != true)
+            return new(UpdateDeltaSelectionStatus.Unauthorized, null, "Update channel did not authorize application.");
+        var channels = check.Verification.Manifest?.Channels?.Where(c => c is not null && c.Id.Equals(check.Decision.TargetChannelId, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (channels?.Length != 1) return new(UpdateDeltaSelectionStatus.MissingChannel, null, "Authorized update channel is not declared in the feed.");
+        if (!UpdateChannelTransitionEvaluator.TryParseChannelVersion(currentVersion, out var installedVersion))
+            return new(UpdateDeltaSelectionStatus.InvalidVersion, null, "Installed version must contain one to four non-negative numeric components.");
+        var candidates = (channels[0].DeltaPackages ?? new()).Where(p => p is not null && UpdateChannelTransitionEvaluator.TryParseChannelVersion(p.BaseVersion, out var baseVersion)
+            && baseVersion == installedVersion).ToArray();
+        return candidates.Length == 1 ? new(UpdateDeltaSelectionStatus.Selected, candidates[0], "")
+            : new(candidates.Length == 0 ? UpdateDeltaSelectionStatus.Missing : UpdateDeltaSelectionStatus.Ambiguous, null,
+                "The channel must declare exactly one delta for the installed version.");
     }
 
     private static bool IsTreeHash(string? value)

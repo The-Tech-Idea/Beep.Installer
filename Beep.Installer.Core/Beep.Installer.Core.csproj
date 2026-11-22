@@ -36,6 +36,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The one description of every CLI verb; read by /CATALOG, the help guard and the MCP server. -->
+    <EmbeddedResource Include="Cli\cli-catalog.json" LogicalName="Beep.Installer.Core.Cli.cli-catalog.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Packaging\Msi\ScenarioPacks\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

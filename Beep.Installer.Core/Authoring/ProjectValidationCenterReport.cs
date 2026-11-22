@@ -87,7 +87,7 @@ public static class ProjectValidationCenter
         if (string.IsNullOrWhiteSpace(path))
             return "project";
 
-        var root = path.Split('[', '.', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? path;
+        var root = path.Split(new[] { '[', '.' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? path;
         return root switch
         {
             "Setup" => "project",

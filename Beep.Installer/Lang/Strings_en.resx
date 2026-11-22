@@ -1428,6 +1428,18 @@ Clean before building?</value>
   <data name="Toolbar_Languages" xml:space="preserve">
     <value>Languages</value>
   </data>
+  <data name="Toolbar_Mcp" xml:space="preserve">
+    <value>AI / MCP</value>
+  </data>
+  <data name="Toolbar_McpHint" xml:space="preserve">
+    <value>Use this installer from Claude, Codex and other AI assistants (MCP server)</value>
+  </data>
+  <data name="Toolbar_More" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="Toolbar_MoreHint" xml:space="preserve">
+    <value>Recovery, updates, templates, actions, conditions, recipes, release overview, comparison, languages, help and about</value>
+  </data>
   <data name="Toolbar_LanguagesHint" xml:space="preserve">
     <value>Open Language Manager</value>
   </data>
@@ -1536,4 +1548,462 @@ Clean before building?</value>
   <data name="Wizard_NoComponentsYet" xml:space="preserve">
     <value>Add at least one component before continuing.</value>
   </data>
+  <data name="Wizard_ValidationUnavailable" xml:space="preserve">
+    <value>Validation is unavailable. Try again before continuing.</value>
+  </data>
+  <data name="Guided_Project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Guided_Files" xml:space="preserve">
+    <value>Files and components</value>
+  </data>
+  <data name="Guided_Install" xml:space="preserve">
+    <value>Install behavior</value>
+  </data>
+  <data name="Guided_Package" xml:space="preserve">
+    <value>Package and destination</value>
+  </data>
+  <data name="Guided_Signing" xml:space="preserve">
+    <value>Signing</value>
+  </data>
+  <data name="Guided_Review" xml:space="preserve">
+    <value>Review and build</value>
+  </data>
+  <data name="Guided_Result" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="Guided_ContinueUnsigned" xml:space="preserve">
+    <value>Continue without signing</value>
+  </data>
+  <data name="Guided_FilesOnly" xml:space="preserve">
+    <value>Use source files without defining optional components</value>
+  </data>
+  <data name="Guided_SystemChanges" xml:space="preserve">
+    <value>System changes</value>
+  </data>
+  <data name="Guided_Resources" xml:space="preserve">
+    <value>resources</value>
+  </data>
+  <data name="Guided_Configured" xml:space="preserve">
+    <value>Configured</value>
+  </data>
+  <data name="Guided_Unsigned" xml:space="preserve">
+    <value>Unsigned development build</value>
+  </data>
+  <data name="Nav_Includes" xml:space="preserve">
+    <value>Includes and excludes</value>
+  </data>
+  <data name="Nav_Components" xml:space="preserve">
+    <value>Components</value>
+  </data>
+  <data name="Nav_Layout" xml:space="preserve">
+    <value>Scope and destination</value>
+  </data>
+  <data name="Section_Prerequisites" xml:space="preserve">
+    <value>Prerequisites</value>
+  </data>
+  <data name="Section_Shortcuts" xml:space="preserve">
+    <value>Shortcuts</value>
+  </data>
+  <data name="Section_Registry" xml:space="preserve">
+    <value>Registry entries</value>
+  </data>
+  <data name="BuildResult_OpenManifest" xml:space="preserve">
+    <value>Open manifest</value>
+  </data>
+  <data name="Packaging_Msi" xml:space="preserve">
+    <value>MSI — Windows Installer package (requires WiX)</value>
+  </data>
+  <data name="Packaging_ClickOnce" xml:space="preserve">
+    <value>ClickOnce — application files and update manifests</value>
+  </data>
+  <data name="Guided_OptionalBehavior" xml:space="preserve">
+    <value>Prerequisites, shortcuts and registry entries are optional. Leave their lists empty when they are not needed.</value>
+  </data>
+  <data name="Guided_WaitForBuild" xml:space="preserve">
+    <value>Wait for the build to finish, or cancel it from the build workspace.</value>
+  </data>
+  <data name="Guided_NoPackageCancel" xml:space="preserve">
+    <value>This packaging service cannot be interrupted while its current operation is running.</value>
+  </data>
+  <data name="Packaging_MsiHint" xml:space="preserve">
+    <value>MSI uses the existing WiX exporter. WiX must be available to build the package; unsupported operations are reported by the exporter.</value>
+  </data>
+  <data name="Packaging_ClickOnceHint" xml:space="preserve">
+    <value>ClickOnce publishes the source folder and update manifests. Configure the update URL here. System changes require EXE or MSI.</value>
+  </data>
+  <data name="Guided_PackageHelp" xml:space="preserve">
+    <value>EXE provides a full installer wizard. MSI requires WiX. MSIX requires package identity and cannot carry classic system changes. ClickOnce publishes source files and update manifests.</value>
+  </data>
+  <data name="BuildResult_Artifact" xml:space="preserve"><value>Output artifact:</value></data>
+  <data name="Resources_Empty" xml:space="preserve"><value>This list is empty. Choose Add to create an item.</value></data>
+  <data name="Resources_Properties" xml:space="preserve"><value>Properties</value></data>
+  <data name="Section_ScheduledTasks" xml:space="preserve"><value>Scheduled Tasks</value></data>
+  <data name="Section_FirewallRules" xml:space="preserve"><value>Firewall Rules</value></data>
+  <data name="Section_Certificates" xml:space="preserve"><value>Certificates</value></data>
+  <data name="Section_ComRegistrations" xml:space="preserve"><value>COM registrations</value></data>
+  <data name="Section_DriverPackages" xml:space="preserve"><value>Driver packages</value></data>
+  <data name="Section_ConfigTransforms" xml:space="preserve"><value>Configuration transforms</value></data>
+  <data name="Section_IisAppPools" xml:space="preserve"><value>IIS Application Pools</value></data>
+  <data name="Section_IisSites" xml:space="preserve"><value>IIS Sites</value></data>
+  <data name="Section_WebDeploy" xml:space="preserve"><value>Web Deploy packages</value></data>
+  <data name="Review_MoreItems" xml:space="preserve"><value>{0} additional items. Edit to view the full list.</value></data>
+  <data name="Readiness_Checking" xml:space="preserve"><value>Checking readiness…</value></data>
+  <data name="Readiness_Stale" xml:space="preserve"><value>Project changed — readiness needs checking.</value></data>
+  <data name="Readiness_Unavailable" xml:space="preserve"><value>Readiness check unavailable. Validate before building.</value></data>
+  <data name="SaveState_Failed" xml:space="preserve"><value>Save failed</value></data>
+  <data name="SaveState_AutoSaveFailed" xml:space="preserve"><value>Recovery draft failed</value></data>
+  <data name="SaveState_RecoveryFailed" xml:space="preserve"><value>Recovery draft could not be loaded</value></data>
+  <data name="SaveState_Recovered" xml:space="preserve"><value>Recovered draft — save to keep changes</value></data>
+  <data name="SaveState_Unsaved" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="SaveState_Untitled" xml:space="preserve"><value>Not saved yet</value></data>
+  <data name="SaveState_Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="SaveState_RecoveryPath" xml:space="preserve"><value>Recovery draft</value></data>
+  <data name="SaveState_SaveFirst" xml:space="preserve"><value>You have unsaved changes. Save first?</value></data>
+  <data name="Workspace_Title" xml:space="preserve"><value>Build workspace</value></data>
+  <data name="Workspace_OlderRevision" xml:space="preserve"><value>This build uses an earlier project revision. Its result is not attached to the current project.</value></data>
+  <data name="Workspace_Log" xml:space="preserve"><value>Build log</value></data>
+  <data name="Workspace_OpenArtifact" xml:space="preserve"><value>Open artifact</value></data>
+  <data name="Workspace_SaveLog" xml:space="preserve"><value>Save log</value></data>
+  <data name="Workspace_Idle" xml:space="preserve"><value>Ready to build</value></data>
+  <data name="Workspace_Preparing" xml:space="preserve"><value>Preparing</value></data>
+  <data name="Workspace_Building" xml:space="preserve"><value>Building</value></data>
+  <data name="Workspace_Signing" xml:space="preserve"><value>Signing</value></data>
+  <data name="Workspace_Completed" xml:space="preserve"><value>Build completed</value></data>
+  <data name="Workspace_Failed" xml:space="preserve"><value>Build failed</value></data>
+  <data name="Workspace_Cancelled" xml:space="preserve"><value>Build cancelled</value></data>
+  <data name="Recipe_Title" xml:space="preserve"><value>Resource recipes</value></data>
+  <data name="Recipe_Preview" xml:space="preserve"><value>Preview changes</value></data>
+  <data name="Recipe_Apply" xml:space="preserve"><value>Apply recipe</value></data>
+  <data name="Recipe_PreviewFirst" xml:space="preserve"><value>Preview the changes before applying this recipe.</value></data>
+  <data name="Recipe_Ready" xml:space="preserve"><value>Ready to apply the previewed changes.</value></data>
+  <data name="Recipe_Fix" xml:space="preserve"><value>Fix the listed errors before applying.</value></data>
+  <data name="Recipe_FieldName" xml:space="preserve"><value>Resource name *</value></data>
+  <data name="Recipe_FieldTargetPath" xml:space="preserve"><value>Target path</value></data>
+  <data name="Recipe_FieldPoolName" xml:space="preserve"><value>New application pool name *</value></data>
+  <data name="Recipe_FieldPort" xml:space="preserve"><value>Port *</value></data>
+  <data name="Recipe_FieldHost" xml:space="preserve"><value>Host name (optional)</value></data>
+  <data name="Recipe_FieldRuntimeVersion" xml:space="preserve"><value>Managed runtime (empty: none)</value></data>
+  <data name="Recipe_FieldTrigger" xml:space="preserve"><value>Task trigger *</value></data>
+  <data name="Recipe_FieldStartTime" xml:space="preserve"><value>Start time (HH:mm)</value></data>
+  <data name="Recipe_FieldServiceAccount" xml:space="preserve"><value>Built-in service account *</value></data>
+  <data name="Recipe_FieldFirewallProtocol" xml:space="preserve"><value>Protocol *</value></data>
+  <data name="Recipe_FieldFirewallProfile" xml:space="preserve"><value>Firewall profiles *</value></data>
+  <data name="Recipe_FieldUseMachineScope" xml:space="preserve"><value>Switch project to machine/admin installation</value></data>
+  <data name="Recipe_FieldUseExeOutput" xml:space="preserve"><value>Switch project to EXE output</value></data>
+  <data name="Recipe_TargetWindowsService" xml:space="preserve"><value>Executable path *</value></data>
+  <data name="Recipe_TargetIisSite" xml:space="preserve"><value>Physical path *</value></data>
+  <data name="Recipe_TargetScheduledTask" xml:space="preserve"><value>Executable path *</value></data>
+  <data name="Recipe_TargetFirewallRule" xml:space="preserve"><value>Program (optional)</value></data>
+  <data name="Recipe_Requirements" xml:space="preserve"><value>Requires Windows tools, EXE/MSI output and a machine installation with administrator privileges. Use names reserved for this app. Existing machine resources are not inspected here.</value></data>
+  <data name="Recipe_WindowsServiceLimits" xml:space="preserve"><value>Creates an automatic service using the selected built-in account. SCM is required. New services are removed on rollback; captured existing configuration can be restored. Credentials and advanced settings are available in the full editor.</value></data>
+  <data name="Recipe_IisSiteLimits" xml:space="preserve"><value>Creates a new application pool and an HTTP site. IIS/appcmd must already be installed. TLS and certificates are configured in the full editor. Rollback/removal may delete the owned site and pool; previous definitions are not restored.</value></data>
+  <data name="Recipe_ScheduledTaskLimits" xml:space="preserve"><value>Creates a task using the installer&apos;s executing account. Task Scheduler is required. Rollback/removal ends and deletes the task; a previous task definition is not restored. Credentials and elevation are available in the full editor.</value></data>
+  <data name="Recipe_FirewallRuleLimits" xml:space="preserve"><value>Creates an inbound allow rule for the selected port, program and profiles. Windows Firewall/netsh is required. An empty program applies to all programs. Rollback/removal deletes the rule; a previous rule definition is not restored.</value></data>
+  <data name="Recovery_Title" xml:space="preserve"><value>Recover unsaved project</value></data>
+  <data name="Recovery_Help" xml:space="preserve"><value>Choose a draft. Recovery opens it as unsaved; saving keeps the changes. Unreadable drafts remain on disk.</value></data>
+  <data name="Recovery_Modified" xml:space="preserve"><value>Draft time</value></data>
+  <data name="Recovery_Recover" xml:space="preserve"><value>Recover</value></data>
+  <data name="Recovery_Choice" xml:space="preserve"><value>A newer recovery draft is available. Recover it? Choose No to open the saved project and retain the draft, or Cancel to keep the current project.</value></data>
+  <data name="Recovery_CleanupFailed" xml:space="preserve"><value>Saved; recovery draft cleanup failed</value></data>
+  <data name="Recovery_OriginalProject" xml:space="preserve"><value>Original project</value></data>
+  <data name="History_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="History_Redo" xml:space="preserve"><value>Redo</value></data>
+  <data name="History_Credentials" xml:space="preserve"><value>{0} credential values require re-entry. Review the restored items before building.</value></data>
+  <data name="Release_Title" xml:space="preserve"><value>Release overview</value></data>
+  <data name="Release_Notice" xml:space="preserve"><value>Generated assets do not prove deployment succeeded.</value></data>
+  <data name="Release_Package" xml:space="preserve"><value>Package</value></data>
+  <data name="Release_Assets" xml:space="preserve"><value>Deployment assets</value></data>
+  <data name="Release_Qualifications" xml:space="preserve"><value>Qualification evidence</value></data>
+  <data name="Release_ReportInvalid" xml:space="preserve"><value>The qualification report could not be loaded. Choose a readable portfolio JSON file under 4 MB.</value></data>
+  <data name="Release_FilePresent" xml:space="preserve"><value>File present</value></data>
+  <data name="Release_Unavailable" xml:space="preserve"><value>File unavailable</value></data>
+  <data name="Release_ReportedPassed" xml:space="preserve"><value>Reported passed</value></data>
+  <data name="Release_ReportedFailed" xml:space="preserve"><value>Reported failed</value></data>
+  <data name="Release_NoEvidence" xml:space="preserve"><value>No evidence selected or recorded.</value></data>
+  <data name="Release_Unbound" xml:space="preserve"><value>Selected qualification reports are not associated with this build.</value></data>
+  <data name="Release_LoadAssets" xml:space="preserve"><value>Select deployment assets</value></data>
+  <data name="Release_LoadReport" xml:space="preserve"><value>Load qualification portfolio</value></data>
+  <data name="Release_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="UpdatePreview_Title" xml:space="preserve"><value>Update preview</value></data>
+  <data name="UpdatePreview_CheckRequired" xml:space="preserve"><value>Check the update to create a fresh preview.</value></data>
+  <data name="UpdatePreview_Channels" xml:space="preserve"><value>Channel: {0} → {1}</value></data>
+  <data name="UpdatePreview_Versions" xml:space="preserve"><value>Installed: {0}; delta target: {1}; feed version: {2}</value></data>
+  <data name="UpdatePreview_Local" xml:space="preserve"><value>Payload: local delta; see verification status below.</value></data>
+  <data name="UpdatePreview_Remote" xml:space="preserve"><value>Payload: remote delta; signature and files will be checked during Apply.</value></data>
+  <data name="UpdatePreview_NoPayload" xml:space="preserve"><value>No usable delta payload selected.</value></data>
+  <data name="UpdatePreview_Sizes" xml:space="preserve"><value>Advertised delta: {0} bytes; target image: {1} bytes (not required disk space).</value></data>
+  <data name="UpdatePreview_Ready" xml:space="preserve"><value>Eligible for an Apply attempt; installation checks are still required.</value></data>
+  <data name="UpdatePreview_MissingKey" xml:space="preserve"><value>Select a readable RSA public key for the delta.</value></data>
+  <data name="UpdatePreview_MissingSource" xml:space="preserve"><value>The feed has no remote delta source; select a local delta folder.</value></data>
+  <data name="UpdatePreview_UntrustedDelta" xml:space="preserve"><value>The local delta manifest has no trusted signature.</value></data>
+  <data name="UpdatePreview_Mismatch" xml:space="preserve"><value>The local delta does not match the versions or tree hashes in the signed feed.</value></data>
+  <data name="UpdatePreview_Unavailable" xml:space="preserve"><value>The local delta could not be read.</value></data>
+  <data name="UpdatePreview_PolicyDenied" xml:space="preserve"><value>Policy blocks the remote delta source.</value></data>
+  <data name="UpdatePreview_MissingDelta" xml:space="preserve"><value>No delta matches the installed version.</value></data>
+  <data name="UpdatePreview_AmbiguousDelta" xml:space="preserve"><value>More than one delta matches the installed version; Apply is blocked.</value></data>
+  <data name="UpdatePreview_InvalidVersion" xml:space="preserve"><value>Enter a version with one to four non-negative numeric components.</value></data>
+  <data name="UpdatePreview_NotAuthorized" xml:space="preserve"><value>A trusted feed and an allowed transition with exactly one target channel are required.</value></data>
+  <data name="UpdatePreview_NoFallback" xml:space="preserve"><value>Full-package fallback is unavailable in this update path.</value></data>
+  <data name="UpdatePreview_Rollback" xml:space="preserve"><value>Feed rollback version: {0}. Rollback requires a committed update journal, a retained unchanged backup and resource recovery; this preview does not verify them.</value></data>
+  <data name="UpdatePreview_Rechecks" xml:space="preserve"><value>Apply rechecks the feed digest, installed identity, signatures and file hashes before staging and swapping. External resource recovery may fail even when files are restored.</value></data>
+  <data name="Comparison_Title" xml:space="preserve"><value>Compare projects</value></data>
+  <data name="Comparison_Notice" xml:space="preserve"><value>Configuration review only. Protected values, custom actions, custom wizard pages and payload contents are not compared. This does not verify a build or installation.</value></data>
+  <data name="Comparison_SelectFirst" xml:space="preserve"><value>Choose a baseline .bsetup project to compare with the current project.</value></data>
+  <data name="Comparison_Snapshot" xml:space="preserve"><value>Baseline: {0}
+Captured: {1}; changed fields: {2}. Refresh reads the baseline again and compares current edits.</value></data>
+  <data name="Comparison_LoadFailed" xml:space="preserve"><value>The project could not be compared. Choose a readable .bsetup file under 16 MB. The previous comparison is preserved.</value></data>
+  <data name="Comparison_Select" xml:space="preserve"><value>Choose baseline project</value></data>
+  <data name="Comparison_Refresh" xml:space="preserve"><value>Refresh comparison</value></data>
+  <data name="Comparison_Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Comparison_Kind" xml:space="preserve"><value>Change</value></data>
+  <data name="Comparison_Path" xml:space="preserve"><value>Field</value></data>
+  <data name="Comparison_Before" xml:space="preserve"><value>Baseline</value></data>
+  <data name="Comparison_After" xml:space="preserve"><value>Current project</value></data>
+  <data name="Comparison_Search" xml:space="preserve"><value>Search changed fields and values</value></data>
+  <data name="Comparison_All" xml:space="preserve"><value>All changes</value></data>
+  <data name="Comparison_Identity" xml:space="preserve"><value>Identity and version</value></data>
+  <data name="Comparison_Destinations" xml:space="preserve"><value>Paths and destinations</value></data>
+  <data name="Comparison_Package" xml:space="preserve"><value>Package and signing</value></data>
+  <data name="Comparison_Resources" xml:space="preserve"><value>Files and resources</value></data>
+  <data name="Comparison_Other" xml:space="preserve"><value>Other configuration</value></data>
+  <data name="Comparison_Added" xml:space="preserve"><value>Added</value></data>
+  <data name="Comparison_Removed" xml:space="preserve"><value>Removed</value></data>
+  <data name="Comparison_Changed" xml:space="preserve"><value>Changed</value></data>
+  <data name="Comparison_NoChanges" xml:space="preserve"><value>No changes in the compared configuration fields.</value></data>
+  <data name="Comparison_NoMatches" xml:space="preserve"><value>No changed fields match this category or search.</value></data>
+  <data name="Comparison_Details" xml:space="preserve"><value>Selected change details</value></data>
+  <data name="Help_Title" xml:space="preserve"><value>Authoring help</value></data>
+  <data name="Help_Search" xml:space="preserve"><value>Search topics or tasks</value></data>
+  <data name="Help_Topics" xml:space="preserve"><value>Topics</value></data>
+  <data name="Help_Views" xml:space="preserve"><value>Available views</value></data>
+  <data name="Help_AdvancedOnly" xml:space="preserve"><value>Advanced editor only.</value></data>
+  <data name="Help_BothViews" xml:space="preserve"><value>Guided: {0}. Also available in the Advanced editor.</value></data>
+  <data name="Help_Advanced" xml:space="preserve"><value>Advanced</value></data>
+  <data name="Help_GuidedAdvanced" xml:space="preserve"><value>Guided / Advanced</value></data>
+  <data name="Help_NoMatches" xml:space="preserve"><value>No topics match. Try a feature name or task such as open port or scheduled job.</value></data>
+  <data name="Help_Keyboard" xml:space="preserve"><value>F1 opens contextual help. Guided Ctrl+F searches this help; Advanced Ctrl+F searches sections. In Advanced, F7 validates and F5 builds. Help does not change or validate the project.</value></data>
+  <data name="Help_Identity" xml:space="preserve"><value>Identity</value></data>
+  <data name="Help_Layout" xml:space="preserve"><value>Layout</value></data>
+  <data name="Help_Eula" xml:space="preserve"><value>EULA</value></data>
+  <data name="Help_Files" xml:space="preserve"><value>Files</value></data>
+  <data name="Help_Includes" xml:space="preserve"><value>Includes</value></data>
+  <data name="Help_Components" xml:space="preserve"><value>Components</value></data>
+  <data name="Help_Branding" xml:space="preserve"><value>Branding</value></data>
+  <data name="Help_WizardPages" xml:space="preserve"><value>Wizard Pages</value></data>
+  <data name="Help_Output" xml:space="preserve"><value>Output</value></data>
+  <data name="Help_Payload" xml:space="preserve"><value>Payload</value></data>
+  <data name="Help_Compression" xml:space="preserve"><value>Compression</value></data>
+  <data name="Help_Package" xml:space="preserve"><value>Package Format</value></data>
+  <data name="Help_Msix" xml:space="preserve"><value>MSIX</value></data>
+  <data name="Help_Script" xml:space="preserve"><value>Script</value></data>
+  <data name="Help_Build" xml:space="preserve"><value>Build Workflow</value></data>
+  <data name="Help_Log" xml:space="preserve"><value>Build Log</value></data>
+  <data name="Help_Result" xml:space="preserve"><value>Last Result</value></data>
+  <data name="HelpBody_Project" xml:space="preserve"><value>Set product name, version and publisher. Keep AppId stable for releases of the same application; changing it changes installation identity.</value></data>
+  <data name="HelpBody_Install" xml:space="preserve"><value>Choose install scope and destination. Review administrator requirements, shortcuts and registry changes. Machine-wide resources may require elevated privileges.</value></data>
+  <data name="HelpBody_Branding" xml:space="preserve"><value>Configure appearance, license text and installer pages. Preview languages and page order before building. Custom pages have their own field validation.</value></data>
+  <data name="HelpBody_FilesBody" xml:space="preserve"><value>Scan the application build folder. Review source and destination paths, include/exclude patterns and optional components. File counts do not prove payload contents are current.</value></data>
+  <data name="HelpBody_PrerequisitesBody" xml:space="preserve"><value>Select required runtimes and dependencies. Signed catalogs require trusted keys. Check package compatibility and policy diagnostics before building.</value></data>
+  <data name="HelpBody_ResourcesBody" xml:space="preserve"><value>Configure typed resource inputs in the editor. Provider and package support vary; review validation and rollback limits. Protect credential fields with supported secret references.</value></data>
+  <data name="HelpBody_Network" xml:space="preserve"><value>Choose firewall direction, ports or program, and network profiles. An open port is a system change; review administrator requirements and removal/rollback behavior.</value></data>
+  <data name="HelpBody_Iis" xml:space="preserve"><value>Configure application pools, site paths and bindings or Web Deploy parameters. Verify IIS prerequisites and review ownership and rollback support.</value></data>
+  <data name="HelpBody_Service" xml:space="preserve"><value>Set service executable, startup mode and account. Protect account credentials. Review install, uninstall and rollback behavior before packaging.</value></data>
+  <data name="HelpBody_Packaging" xml:space="preserve"><value>Choose EXE, MSI, MSIX or ClickOnce. Review format-specific blockers, output paths and signing requirements. Not every format supports every resource.</value></data>
+  <data name="HelpBody_Signing" xml:space="preserve"><value>Configure certificate/store or supported remote signing. Use protected credential references. Unsigned development builds depend on policy; configured signing is not proof of a signed artifact.</value></data>
+  <data name="HelpBody_Updates" xml:space="preserve"><value>Review trusted feeds, channels and rollout policy. Update Center previews the selected delta and rollback constraints. Deployment assets or a rollback version do not prove execution succeeded.</value></data>
+  <data name="HelpBody_BuildBody" xml:space="preserve"><value>Review blocking diagnostics before building. Use the build workspace for stages, cancellation, logs and artifact results. A result from an older project revision must be reviewed separately.</value></data>
+  <data name="HelpBody_Tasks" xml:space="preserve"><value>Choose the task executable, arguments, trigger and run account. Review scope, elevation and removal/rollback behavior before building.</value></data>
+  <data name="HelpAliases_firewallrules" xml:space="preserve"><value>open port network exception</value></data>
+  <data name="HelpAliases_scheduledtasks" xml:space="preserve"><value>scheduled job scheduled task</value></data>
+  <data name="Runtime_Ready" xml:space="preserve"><value>Ready to Install</value></data>
+  <data name="Runtime_ReadyHint" xml:space="preserve"><value>Review your settings and click Install to begin.</value></data>
+  <data name="Runtime_InstallType" xml:space="preserve"><value>Install type</value></data>
+  <data name="Runtime_PerUser" xml:space="preserve"><value>Scope: current user only</value></data>
+  <data name="Runtime_AllUsers" xml:space="preserve"><value>Scope: all users on this computer</value></data>
+  <data name="Runtime_Required" xml:space="preserve"><value>Required</value></data>
+  <data name="Runtime_Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="Runtime_EstimatedSize" xml:space="preserve"><value>Estimated payload size: {0}</value></data>
+  <data name="Runtime_ConfiguredChanges" xml:space="preserve"><value>Configured prerequisites and system changes (conditions and detection can skip these; this is not an execution result):</value></data>
+  <data name="Runtime_CustomActions" xml:space="preserve"><value>Custom actions</value></data>
+  <data name="Runtime_Tasks" xml:space="preserve"><value>Selected additional tasks:</value></data>
+  <data name="Runtime_StartMenu" xml:space="preserve"><value>Create start menu entries</value></data>
+  <data name="Runtime_RestartRequired" xml:space="preserve"><value>Restart Windows to finish applying the installation changes.</value></data>
+  <data name="Runtime_NoRestartReported" xml:space="preserve"><value>The installer did not report a required restart.</value></data>
+  <data name="Runtime_RollbackAttempted" xml:space="preserve"><value>Recovery was attempted: {0} of {1} rollback actions returned without an error. Full recovery is not verified; review the log before retrying.</value></data>
+  <data name="Runtime_RecoveryUnknown" xml:space="preserve"><value>Recovery has not been verified. Review the log and installation state before retrying.</value></data>
+  <data name="Runtime_BackupRestored" xml:space="preserve"><value>The previous-version file backup was restored. This does not verify recovery of system resources.</value></data>
+  <data name="Runtime_BackupFailed" xml:space="preserve"><value>Restoring the previous-version file backup failed. Changes may remain.</value></data>
+  <data name="Runtime_BackupUnknown" xml:space="preserve"><value>The previous-version backup recovery outcome is unknown.</value></data>
+  <data name="Runtime_BackupNotAttempted" xml:space="preserve"><value>No previous-version file backup restore was attempted.</value></data>
+  <data name="Runtime_Failed" xml:space="preserve"><value>Installation Failed</value></data>
+  <data name="Runtime_ViewBundle" xml:space="preserve"><value>View Support Bundle</value></data>
+  <data name="Runtime_Retry" xml:space="preserve"><value>Retry Installation</value></data>
+  <data name="Runtime_Preview" xml:space="preserve"><value>Preview only: no installation changes were applied.</value></data>
+  <data name="Runtime_Installed" xml:space="preserve"><value>{0} has been installed to {1}.</value></data>
+  <data name="Runtime_FailedStep" xml:space="preserve"><value>Installation failed at step: {0}</value></data>
+  <data name="Support_Review" xml:space="preserve"><value>Review support bundle</value></data>
+  <data name="Support_ReviewNotice" xml:space="preserve"><value>Review the redacted diagnostics before saving or sharing. Redaction may not remove every sensitive detail. The captured result and privacy metadata are preserved.</value></data>
+  <data name="Support_Export" xml:space="preserve"><value>Export support bundle</value></data>
+  <data name="Support_ExportFailed" xml:space="preserve"><value>The support bundle could not be exported. Choose another destination or retry.</value></data>
+  <data name="Support_Exported" xml:space="preserve"><value>Saved support bundle to {0}.</value></data>
+  <data name="Support_Loading" xml:space="preserve"><value>Loading captured diagnostics…</value></data>
+  <data name="Support_Unavailable" xml:space="preserve"><value>The captured bundle is unavailable, invalid or too large to review. Export is disabled.</value></data>
+  <data name="Support_CopyDetails" xml:space="preserve"><value>Copy error details</value></data>
+  <data name="Support_CopyFailed" xml:space="preserve"><value>Error details could not be copied. Retry or select the summary text.</value></data>
+  <data name="Support_Copied" xml:space="preserve"><value>Redacted error details copied. Review them before sharing.</value></data>
+  <data name="Gallery_Title" xml:space="preserve"><value>Template gallery</value></data>
+  <data name="Gallery_Search" xml:space="preserve"><value>Search templates</value></data>
+  <data name="Gallery_Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Gallery_FavoritesOnly" xml:space="preserve"><value>Favorites only</value></data>
+  <data name="Gallery_SampleDetails" xml:space="preserve"><value>Template sample details</value></data>
+  <data name="Gallery_Select" xml:space="preserve"><value>Use selected template</value></data>
+  <data name="Gallery_Favorite" xml:space="preserve"><value>Favorite</value></data>
+  <data name="Gallery_RemoveFavorite" xml:space="preserve"><value>Remove favorite</value></data>
+  <data name="Gallery_AddFavorite" xml:space="preserve"><value>Add favorite</value></data>
+  <data name="Gallery_NoMatches" xml:space="preserve"><value>No templates match these filters.</value></data>
+  <data name="Gallery_Sample" xml:space="preserve"><value>Sample components: {0}. Shortcut targets:</value></data>
+  <data name="Gallery_Limits" xml:space="preserve"><value>Sample filenames are placeholders. Review executable targets, resources, scope and signing before building.</value></data>
+  <data name="Gallery_FavoritesUnavailable" xml:space="preserve"><value>Favorites could not be read or saved. Existing data has been kept; template selection is still available.</value></data>
+  <data name="Gallery_AllCategories" xml:space="preserve"><value>All categories</value></data>
+  <data name="Gallery_Name_empty" xml:space="preserve"><value>Empty</value></data>
+  <data name="Gallery_Name_console" xml:space="preserve"><value>Console App</value></data>
+  <data name="Gallery_Name_winforms" xml:space="preserve"><value>WinForms App</value></data>
+  <data name="Gallery_Name_wpf" xml:space="preserve"><value>WPF App</value></data>
+  <data name="Gallery_Name_service" xml:space="preserve"><value>Windows Service</value></data>
+  <data name="Gallery_Description_empty" xml:space="preserve"><value>Blank project — configure everything yourself.</value></data>
+  <data name="Gallery_Description_console" xml:space="preserve"><value>Command-line tool: core component + Start Menu shortcut.</value></data>
+  <data name="Gallery_Description_winforms" xml:space="preserve"><value>Desktop app: core component + Desktop &amp; Start Menu shortcuts.</value></data>
+  <data name="Gallery_Description_wpf" xml:space="preserve"><value>Desktop app: core component + Desktop &amp; Start Menu shortcuts.</value></data>
+  <data name="Gallery_Description_service" xml:space="preserve"><value>Service host sample: core component + Startup shortcut; configure service registration separately.</value></data>
+  <data name="Gallery_Category_General" xml:space="preserve"><value>General</value></data>
+  <data name="Gallery_Category_Desktop" xml:space="preserve"><value>Desktop</value></data>
+  <data name="Gallery_Category_Service" xml:space="preserve"><value>Service</value></data>
+  <data name="Gallery_Location_Desktop" xml:space="preserve"><value>Desktop</value></data>
+  <data name="Gallery_Location_StartMenu" xml:space="preserve"><value>Start Menu</value></data>
+  <data name="Gallery_Location_Startup" xml:space="preserve"><value>Startup</value></data>
+  <data name="Gallery_Import" xml:space="preserve"><value>Import signed template…</value></data>
+  <data name="Gallery_Verifying" xml:space="preserve"><value>Verifying signed template…</value></data>
+  <data name="Gallery_Verified" xml:space="preserve"><value>Verified signature. Issuer: {0}
+Trusted key SHA-256: {1}
+Project SHA-256: {2}</value></data>
+  <data name="Gallery_SignedLimits" xml:space="preserve"><value>Captured package content. Verification does not validate payload files or approve installation. Creation replaces product identity and source fields. Review resources and paths before building.</value></data>
+  <data name="Gallery_PackageFolder" xml:space="preserve"><value>Select the signed template package folder</value></data>
+  <data name="Gallery_PublicKey" xml:space="preserve"><value>Select a public key you trust for this template</value></data>
+  <data name="Gallery_ImportError_Unavailable" xml:space="preserve"><value>Package or public key unavailable. Existing selection kept.</value></data>
+  <data name="Gallery_ImportError_TooLarge" xml:space="preserve"><value>Template files exceed the size limit. Existing selection kept.</value></data>
+  <data name="Gallery_ImportError_Invalid" xml:space="preserve"><value>Invalid template package or key. Existing selection kept.</value></data>
+  <data name="Gallery_ImportError_Untrusted" xml:space="preserve"><value>Signature, project hash or trusted key verification failed. Existing selection kept.</value></data>
+  <data name="Gallery_ImportError_UnsupportedContent" xml:space="preserve"><value>Template content cannot be retained by this authoring version. Existing selection kept.</value></data>
+  <data name="Gallery_LibraryWarning" xml:space="preserve"><value>Some saved templates could not be loaded or saved. Existing library data was kept. Reimport changed or unavailable sources to review and verify them again.</value></data>
+  <data name="Gallery_LibraryHint" xml:space="preserve"><value>Saved discovery remembers source references and reviewed hashes. Sources and keys are verified again in later sessions. Changed sources require reimport.</value></data>
+  <data name="Preview_Title" xml:space="preserve"><value>Wizard preview — {0}</value></data>
+  <data name="Preview_LayoutHint" xml:space="preserve"><value>Preview only. Select a configured page, change language in the wizard, or simulate layout scaling. Scroll to inspect larger layouts. No installation runs; this does not qualify actual OS DPI.</value></data>
+  <data name="Preview_Page" xml:space="preserve"><value>Preview page</value></data>
+  <data name="Preview_Scale" xml:space="preserve"><value>Layout scale</value></data>
+  <data name="Preview_Reset" xml:space="preserve"><value>Reset preview</value></data>
+  <data name="Preview_SimulatedFailure" xml:space="preserve"><value>Simulated failure for layout review. No installation was run.</value></data>
+  <data name="Preview_PrerequisitesNotChecked" xml:space="preserve"><value>Preview: prerequisite checks and installation actions are not run.</value></data>
+  <data name="Nav_AdvancedResources" xml:space="preserve"><value>Advanced Resources</value></data>
+  <data name="Field_UpdateMode" xml:space="preserve"><value>Update mode:</value></data>
+  <data name="Field_InstallType" xml:space="preserve"><value>Install type:</value></data>
+  <data name="Field_Privileges" xml:space="preserve"><value>Privileges:</value></data>
+  <data name="Field_Scope" xml:space="preserve"><value>Scope:</value></data>
+  <data name="Field_Theme" xml:space="preserve"><value>Theme:</value></data>
+  <data name="Field_TargetArchitecture" xml:space="preserve"><value>Target architecture:</value></data>
+  <data name="Field_PayloadSource" xml:space="preserve"><value>Payload source:</value></data>
+  <data name="Field_CompressionFormat" xml:space="preserve"><value>Compression format:</value></data>
+  <data name="Field_CompressionStrength" xml:space="preserve"><value>Compression strength:</value></data>
+  <data name="Field_OutputFormat" xml:space="preserve"><value>Output format:</value></data>
+  <data name="Builder_NoRecentScripts" xml:space="preserve"><value>No recent scripts</value></data>
+  <data name="Builder_ClearRecent" xml:space="preserve"><value>Clear recent scripts</value></data>
+  <data name="Builder_ResultMetrics" xml:space="preserve"><value>Size: {0:N1} MB • Time: {1:N1} s</value></data>
+  <data name="Builder_ResultTime" xml:space="preserve"><value>Time: {0:N1} s</value></data>
+  <data name="Builder_ResultIssues" xml:space="preserve"><value>Errors: {0} • Warnings: {1}</value></data>
+  <data name="Builder_LastBuildArtifact" xml:space="preserve"><value>Last build: {0} (click to view)</value></data>
+  <data name="Builder_IncludePatterns" xml:space="preserve"><value>Include patterns:</value></data>
+  <data name="Builder_ExcludePatterns" xml:space="preserve"><value>Exclude patterns:</value></data>
+  <data name="Builder_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Builder_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Builder_ScanningSource" xml:space="preserve"><value>Scanning {0}…</value></data>
+  <data name="Builder_ScanComplete" xml:space="preserve"><value>Scan complete: {0:N0} files ({1:N1} MB), {2:N0} managed.</value></data>
+  <data name="Builder_ScanFailedStatus" xml:space="preserve"><value>Scan failed: {0}</value></data>
+  <data name="Builder_KeyboardTitle" xml:space="preserve"><value>Keyboard walkthrough</value></data>
+  <data name="Builder_ValidationTitle" xml:space="preserve"><value>Validation center</value></data>
+  <data name="Builder_FormatReadinessTitle" xml:space="preserve"><value>Format readiness</value></data>
+  <data name="Builder_KeyboardSearchHelp" xml:space="preserve"><value>Enter opens the first match; Escape clears search.</value></data>
+  <data name="Builder_KeyboardSections" xml:space="preserve"><value>Next / previous visible section</value></data>
+  <data name="Builder_KeyboardFields" xml:space="preserve"><value>Next / previous field, grid, property or action</value></data>
+  <data name="Section_ScheduledTasksHelp" xml:space="preserve"><value>Create Task Scheduler entries with trigger, elevation, working-directory, credential and uninstall behavior.</value></data>
+  <data name="Section_FirewallRulesHelp" xml:space="preserve"><value>Author Windows Firewall rules for ports, programs, services and profile scope.</value></data>
+  <data name="Section_CertificatesHelp" xml:space="preserve"><value>Install certificate assets into the Windows certificate store with thumbprint and rollback ownership controls.</value></data>
+  <data name="Section_ComRegistrationsHelp" xml:space="preserve"><value>Register COM CLSID/ProgID metadata against in-process or local-server binaries.</value></data>
+  <data name="Section_DriverPackagesHelp" xml:space="preserve"><value>Stage driver INF/sys packages with service identity, signing requirements and reboot behavior.</value></data>
+  <data name="Section_ConfigTransformsHelp" xml:space="preserve"><value>Apply JSON/XML/INI configuration changes with install backup and rollback restore controls.</value></data>
+  <data name="Section_IisAppPoolsHelp" xml:space="preserve"><value>Define IIS application-pool runtime, pipeline mode, identity, autostart and ownership.</value></data>
+  <data name="Section_IisSitesHelp" xml:space="preserve"><value>Define IIS site physical path, application pool, binding collection and uninstall ownership.</value></data>
+  <data name="Section_WebDeployHelp" xml:space="preserve"><value>Attach msdeploy packages to an IIS site target with package parameters and uninstall ownership.</value></data>
+  <data name="Builder_ScanDiscarded" xml:space="preserve"><value>The project changed during scanning. Rescan to update its files.</value></data>
+  <data name="Report_Schema" xml:space="preserve"><value>Schema</value></data>
+  <data name="Report_PlanHash" xml:space="preserve"><value>Plan hash</value></data>
+  <data name="Report_DiagnosticCounts" xml:space="preserve"><value>Errors: {0:N0}, warnings: {1:N0}</value></data>
+  <data name="Report_Clean" xml:space="preserve"><value>No validation findings under strict authoring validation.</value></data>
+  <data name="Report_Fix" xml:space="preserve"><value>Fix</value></data>
+  <data name="Report_ReleaseReadiness" xml:space="preserve"><value>Release readiness</value></data>
+  <data name="Report_FormatCounts" xml:space="preserve"><value>Ready: {0:N0}, warnings: {1:N0}, blocked: {2:N0}</value></data>
+  <data name="Report_Artifacts" xml:space="preserve"><value>Artifacts</value></data>
+  <data name="Report_Finding" xml:space="preserve"><value>Finding</value></data>
+  <data name="Report_MoreFindings" xml:space="preserve"><value>{0:N0} more finding(s)</value></data>
+  <data name="Report_Refreshed" xml:space="preserve"><value>Format readiness refreshed.</value></data>
+  <data name="Report_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Report_ReadyWithWarnings" xml:space="preserve"><value>Ready with warnings</value></data>
+  <data name="Report_Blocked" xml:space="preserve"><value>Blocked</value></data>
+  <data name="Report_Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Status_SavedFile" xml:space="preserve"><value>Saved {0}</value></data>
+  <data name="Status_ValidationPassed" xml:space="preserve"><value>Validation passed.</value></data>
+  <data name="Status_ValidationErrors" xml:space="preserve"><value>Validation errors: {0:N0}.</value></data>
+  <data name="Status_TemplateApplied" xml:space="preserve"><value>Applied template '{0}' — changes: {1:N0}.</value></data>
+  <data name="Picker_ProjectFiles" xml:space="preserve"><value>Beep Installer Script (*.bsetup)</value></data>
+  <data name="Picker_AllFiles" xml:space="preserve"><value>All files (*.*)</value></data>
+  <data name="Picker_MatchingFiles" xml:space="preserve"><value>Matching files ({0})</value></data>
+  <data name="AuthoringLanguage_Title" xml:space="preserve"><value>UI language</value></data>
+  <data name="AuthoringLanguage_Help" xml:space="preserve"><value>Apply a language to the authoring interface. The project’s installer languages remain unchanged.</value></data>
+  <data name="AuthoringLanguage_Edit" xml:space="preserve"><value>Edit translations</value></data>
+  <data name="Review_Checking" xml:space="preserve"><value>Checking the captured project…</value></data>
+  <data name="Review_CheckFailed" xml:space="preserve"><value>The project check failed. Check again before building.</value></data>
+  <data name="Review_CheckChanged" xml:space="preserve"><value>The project changed. Check again before building.</value></data>
+  <data name="Review_CheckComplete" xml:space="preserve"><value>Project check complete. Resolve blocking errors before building.</value></data>
+  <data name="Review_CheckAgain" xml:space="preserve"><value>Check again</value></data>
+  <data name="Builder_VersionRequired" xml:space="preserve">
+    <value>Version is required.</value>
+  </data>
+  <data name="Editor_DraftChanged" xml:space="preserve"><value>The project or edited list changed while this dialog was open. Your draft is retained. Copy any needed values, cancel, and reopen the editor before applying.</value></data>
+  <data name="Conditions_PreviewEmpty" xml:space="preserve"><value>No component gates. This component is available whenever its install type/profile allows it.</value></data>
+  <data name="Conditions_PreviewAll" xml:space="preserve"><value>Meaning: install/offer this component only when every rule passes.</value></data>
+  <data name="Conditions_PreviewAny" xml:space="preserve"><value>Meaning: install/offer this component when at least one rule passes.</value></data>
+  <data name="Conditions_PreviewNot" xml:space="preserve"><value>Meaning: install/offer this component when the complete rule group does not pass.</value></data>
+  <data name="Conditions_PreviewIssues" xml:space="preserve"><value>Issues:</value></data>
+  <data name="Conditions_PreviewNull" xml:space="preserve"><value>Missing rule — remove this row or add a rule.</value></data>
+  <data name="Conditions_PreviewAlwaysTrue" xml:space="preserve"><value>Always true</value></data>
+  <data name="Conditions_PreviewAlwaysFalse" xml:space="preserve"><value>Always false</value></data>
+  <data name="Conditions_PreviewAdmin" xml:space="preserve"><value>Current installer session is elevated/admin</value></data>
+  <data name="Conditions_PreviewArchitecture" xml:space="preserve"><value>Machine architecture {0} {1}</value></data>
+  <data name="Conditions_PreviewOsVersion" xml:space="preserve"><value>Windows version {0} {1}</value></data>
+  <data name="Conditions_PreviewFileExists" xml:space="preserve"><value>File exists: {1}</value></data>
+  <data name="Conditions_PreviewDirectoryExists" xml:space="preserve"><value>Directory exists: {1}</value></data>
+  <data name="Conditions_PreviewRegistryExists" xml:space="preserve"><value>Registry key exists: {1}</value></data>
+  <data name="Conditions_PreviewRegistryValue" xml:space="preserve"><value>Registry value {1} {0} {2}</value></data>
+  <data name="Conditions_PreviewCommandReturns" xml:space="preserve"><value>Command `{1}` output/exit {0} {2}</value></data>
+  <data name="Files_EditTitle" xml:space="preserve"><value>Edit files — {0}</value></data>
+  <data name="Files_TotalSize" xml:space="preserve"><value>Known size: {0:N2} MB across {1:N0} files ({2:N0} sizes unavailable).</value></data>
+  <data name="Files_SharedCount" xml:space="preserve"><value>Shared-file reference counting</value></data>
+  <data name="Files_SizeChecking" xml:space="preserve"><value>Checking file sizes…</value></data>
+  <data name="Files_DropScanning" xml:space="preserve"><value>Reading dropped files… The draft has not changed.</value></data>
+  <data name="Files_DropCancelled" xml:space="preserve"><value>Scan cancelled. The draft has been kept.</value></data>
+  <data name="Files_DropStale" xml:space="preserve"><value>The draft changed during the scan. Drop the files again to use the current draft.</value></data>
+  <data name="Files_DropFailed" xml:space="preserve"><value>The dropped files could not be read. The draft has been kept.</value></data>
+  <data name="Files_DropSummary" xml:space="preserve"><value>Added: {0:N0}, duplicates: {1:N0}, destination conflicts: {2:N0}, unavailable paths: {3:N0}.</value></data>
+  <data name="Files_DropIssues" xml:space="preserve"><value>Scan details:</value></data>
+  <data name="Files_CancelScan" xml:space="preserve"><value>Cancel scan</value></data>
+  <data name="Files_ApplyFailed" xml:space="preserve"><value>The file list could not be applied. The draft is still available; review the current project before retrying.</value></data>
 </root>

@@ -7,6 +7,7 @@ using Beep.Installer.Cli;
 using Beep.Installer.Engine;
 using Beep.Installer.Engine.Updates;
 using Beep.Installer.Forms;
+using Beep.Installer.Ui;
 
 namespace Beep.Installer;
 
@@ -27,6 +28,8 @@ internal static partial class Program
         CliVerb.Flag(_ => { PrintUsage(); return 0; }, tokens: new[] { "/?", "/H", "/HELP" }),
         CliVerb.Flag(_ => { Console.WriteLine($"Beep Installer v{AppInfo.Version}"); return 0; }, tokens: new[] { "/VER" }),
         CliVerb.Flag(o => RunListTemplates(o.Args), tokens: new[] { "/LISTTEMPLATES" }),
+        CliVerb.Flag(o => RunCatalog(o.Args), tokens: new[] { "/CATALOG" }),
+        CliVerb.Flag(_ => RunMcpServer(), tokens: new[] { Beep.Installer.Mcp.InstallerMcpHost.CommandLineSwitch }),
 
         // Runtime maintenance — used by the SHIPPED installer and by Add/Remove Programs.
         // /VERYSILENT and /SUPPRESSMSGBOXES are Inno Setup's grammar; accepting them means
@@ -124,6 +127,41 @@ internal static partial class Program
         return RunSilentInstall(project, options.Args);
     }
 
+    /// <summary>
+    /// <c>/CATALOG [/JSON | /MARKDOWN | /HTML] [/OUT=file]</c>: the machine-readable description of every verb,
+    /// read from the one catalog the MCP server and the help guard also read.
+    /// </summary>
+    /// <summary>Runs this installer as an MCP server over stdio until the client closes it.</summary>
+    private static int RunMcpServer()
+    {
+        var self = Environment.ProcessPath
+                   ?? throw new InvalidOperationException("The installer cannot locate its own executable, so it cannot serve MCP.");
+        Beep.Installer.Mcp.InstallerMcpHost.RunAsync(self, CancellationToken.None).GetAwaiter().GetResult();
+        return 0;
+    }
+
+    private static int RunCatalog(string[] args)
+    {
+        var catalog = Beep.Installer.Core.Cli.CliVerbCatalog.Default;
+        string text;
+        if (Has(args, "/JSON")) text = catalog.ToJson();
+        else if (Has(args, "/MARKDOWN")) text = catalog.ToMarkdown();
+        else if (Has(args, "/HTML")) text = catalog.ToHtml();
+        else
+            text = string.Join(Environment.NewLine, catalog.Verbs.Select(v =>
+                $"{v.Token,-28} {v.Category,-14} {v.Summary}"));
+
+        var outPath = ArgValue(args, "/OUT=");
+        if (!string.IsNullOrWhiteSpace(outPath))
+        {
+            System.IO.File.WriteAllText(outPath, text + Environment.NewLine);
+            return 0;
+        }
+
+        Console.WriteLine(text);
+        return 0;
+    }
+
     private static int RunUpdateCenterVerb(CliOptions options)
     {
         var project = LoadRuntimeProject(options.Args);
@@ -182,8 +220,9 @@ internal static partial class Program
         if (mostRecent is { Path.Length: > 0 } && System.IO.File.Exists(mostRecent.Path))
         {
             var controller = new InstallerController();
-            var (ok, _) = controller.Open(mostRecent.Path);
+            var (ok, _, _) = RecoveryProjectOpening.Open(controller, mostRecent.Path);
             if (ok) { Application.Run(new PackageBuilderForm(controller, args)); return; }
+            controller.StopAutoSave();
         }
 
         var wizard = new BuilderWizardForm(new InstallerController());

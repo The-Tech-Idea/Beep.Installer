@@ -68,7 +68,7 @@ public static class ProjectSchemaService
             }
             foreach (var key in resource.SensitiveInputs)
                 if (!resource.Inputs.TryGetValue(key, out var value) || !SecretReference.TryParse(value, out _, out _))
-                    result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI1703", path + ".SensitiveInputs", "Sensitive inputs must name inputs containing valid secret references.");
+                    result.Add(ProjectSchemaDiagnosticSeverity.Error, "BI1703", path + ".Inputs." + key, "Sensitive inputs must name inputs containing valid secret references.");
         }
     }
 

@@ -62,29 +62,36 @@ public static class ProjectAuthoringWorkspace
     }
 
     public static ProjectTemplateUpdatePreview PreviewTemplateUpdate(InstallProject current, string templateId)
+        => PreviewTemplateUpdate(current, new ProjectTemplate { Id = templateId });
+
+    public static ProjectTemplateUpdatePreview PreviewTemplateUpdate(InstallProject current, ProjectTemplate template)
     {
         ArgumentNullException.ThrowIfNull(current);
 
-        var target = CreateTemplateCandidate(current, templateId);
+        var target = CreateTemplateCandidate(current, template);
 
         var currentSnapshot = CreateSnapshot(current, new ProjectSchemaValidationOptions { Strict = true });
         var updatedSnapshot = CreateSnapshot(target, new ProjectSchemaValidationOptions { Strict = true });
 
         return new ProjectTemplateUpdatePreview
         {
-            TemplateId = templateId,
+            TemplateId = template.Id,
             Current = currentSnapshot,
             Updated = updatedSnapshot,
-            Diff = DiffCanonicalJson(currentSnapshot.CanonicalJson, updatedSnapshot.CanonicalJson)
+            Diff = ProjectComparison.Create(current, target).Changes.Select(change => new ProjectTemplateDiffEntry
+                { Path = change.Path, CurrentValue = change.Before, UpdatedValue = change.After }).ToList()
         };
     }
 
     public static InstallProject CreateTemplateCandidate(InstallProject current, string templateId)
+        => CreateTemplateCandidate(current, new ProjectTemplate { Id = templateId });
+
+    public static InstallProject CreateTemplateCandidate(InstallProject current, ProjectTemplate template)
     {
         ArgumentNullException.ThrowIfNull(current);
 
         var target = ProjectTemplates.Create(
-            templateId,
+            template,
             current.AppName,
             current.AppVersion,
             current.AppPublisher,
@@ -112,7 +119,7 @@ public static class ProjectAuthoringWorkspace
         return target;
     }
 
-    private static List<ProjectTemplateDiffEntry> DiffCanonicalJson(string currentJson, string updatedJson)
+    public static List<ProjectTemplateDiffEntry> DiffCanonicalJson(string currentJson, string updatedJson)
     {
         var current = JsonNode.Parse(currentJson);
         var updated = JsonNode.Parse(updatedJson);

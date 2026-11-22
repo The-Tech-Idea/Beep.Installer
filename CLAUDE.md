@@ -1,6 +1,24 @@
+<!-- smarterasp-pem-rule:2026-10-02 -->
+> **Fahad's SmarterASP hosting rule (2026-10-02):** Use IdentityServer's PEM RSA key method,
+> parsed in memory. No PFX/PKCS#12 loading, Windows certificate store or user-profile key container;
+> do not suggest import-flag retries or changing `Load User Profile`. Follow the hosting rule in
+> `The-Tech-Idea/CLAUDE.md` and IdentityServer's `CredentialFiles.RsaKey`/`PemKeyRingCertificate` owners.
+> Family Needs uses `DataProtection:Key`, never `CertificatePath`/`CertificatePassword`.
+> Preserve each installation's existing keys and database key ring; no new key on startup, disabled
+> encryption, key-ring deletion or copying IdentityServer's private key into another application.
+> This supersedes older PFX deployment examples. Authentication migration still requires each app
+> to protect its own cookies and stored secrets. Check deployed builds and log timestamps.
+<!-- /smarterasp-pem-rule -->
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+> **Payments**: if this app ever needs to charge/checkout a customer (e.g. a paid license
+> activation flow), integrate with the Beep.DoitAll Payments API over HTTP — see
+> `../Beep.DoitAll/docs/payments/EXTERNAL-API-INTEGRATION-GUIDE.md` for the endpoints, auth, and
+> setup steps. Never embed Beep.DoitAll in-process (it's a separate SaaS) and never hand-roll a
+> vendor SDK integration directly.
 
 ## What this is
 
@@ -39,6 +57,21 @@ CLI verbs (all headless except the last two) dispatched in `Program.cs`:
 /SELFTEST                            Install→verify→uninstall in %TEMP%, exit 0 on success
 /LANGMGR                             Open the standalone translation editor
 ```
+
+`/CATALOG [/JSON|/MARKDOWN|/HTML]` prints the machine-readable command catalog. The catalog
+(`Beep.Installer.Core/Cli/cli-catalog.json`) is the one description of every verb — options, effect,
+JSON/dry-run support, MCP exposure — and is guarded against the dispatch table (`Program.Verbs`), the
+argument validator (`EnterpriseCommandLine`), `PrintUsage` and `Help/cli-reference.html`
+(`CliCatalogTests`). **Adding a verb means updating all of them**; after editing the catalog run
+`scripts/Update-CliReference.ps1`. See `plans/enhancements/P14_CLI_AND_MCP_PLAN.md`.
+
+`Help/cli-prompt.md` is the copy-paste command-line workflow for a project (guarded against the catalog).
+
+**The MCP server is part of the installer:** `Beep.Installer.exe /MCP` serves MCP over stdio, and the builder's
+**AI / MCP** toolbar button shows the command and registers it with Claude Desktop, Codex and Claude Code
+(`McpServerDialog`, `McpClientRegistrar`). The server code is the library project `Beep.Installer.Mcp`
+(`InstallerMcpHost`); it spawns the same exe per command and re-implements no verb. The rules for machine-changing
+commands, credential references and dry-run live in `CliInvocationBuilder` (Core). Config for this repo: `.mcp.json`.
 
 `/VERYSILENT`, `/SUPPRESSMSGBOXES`, `/NORESTART`, exit code `3010` are Inno Setup's grammar
 on purpose — deployment scripts written for Inno (Intune/SCCM/winget) work unchanged.

@@ -31,10 +31,28 @@ public static class InstallerScriptSerializer
         if (!File.Exists(path))
             return (null, $"File not found: {path}");
 
+        try { return ReadLines(File.ReadLines(path), Path.GetFileNameWithoutExtension(path)); }
+        catch (Exception ex) { return (null, $"Script error: {ex.Message}"); }
+    }
+
+    /// <summary>Reads an in-memory authoring snapshot through the same parser as a saved script.</summary>
+    public static (InstallProject? project, string? error) Read(string script, string projectName = "Project")
+    {
+        ArgumentNullException.ThrowIfNull(script);
+        static IEnumerable<string> Lines(string text)
+        {
+            using var reader = new StringReader(text);
+            while (reader.ReadLine() is { } line) yield return line;
+        }
+        return ReadLines(Lines(script), projectName);
+    }
+
+    private static (InstallProject? project, string? error) ReadLines(IEnumerable<string> lines, string projectName)
+    {
         try
         {
             var project = InstallerProjectFactory.CreateDefaults("MyApplication", "1.0.0", "Publisher", "");
-            project.ProjectName = Path.GetFileNameWithoutExtension(path);
+            project.ProjectName = projectName;
             project.SourceIncludes.Clear();
             project.SourceIncludes.Add("**/*");
             project.SourceExcludes.Clear();
@@ -42,8 +60,9 @@ public static class InstallerScriptSerializer
             var currentSection = "";
             var lineNo = 0;
             var includePatternsSpecified = false;
+            var componentsDeclared = false;
 
-            foreach (var rawLine in File.ReadLines(path))
+            foreach (var rawLine in lines)
             {
                 lineNo++;
                 var line = rawLine.Trim();
@@ -53,6 +72,7 @@ public static class InstallerScriptSerializer
                 if (line.StartsWith("[", StringComparison.Ordinal) && line.EndsWith("]", StringComparison.Ordinal))
                 {
                     currentSection = line[1..^1].Trim();
+                    if (currentSection.Equals("Components", StringComparison.OrdinalIgnoreCase)) componentsDeclared = true;
                     continue;
                 }
 
@@ -199,7 +219,7 @@ public static class InstallerScriptSerializer
                 }
             }
 
-            NormalizeProject(project);
+            NormalizeProject(project, componentsDeclared);
             project.MarkClean();
             return (project, null);
         }
@@ -281,7 +301,7 @@ public static class InstallerScriptSerializer
         try
         {
             project.ModifiedAt = DateTime.UtcNow.ToString("o");
-            File.WriteAllText(path, Write(project), new UTF8Encoding(false));
+            AtomicFileWriter.WriteAllText(path, Write(project));
             return (true, null);
         }
         catch (Exception ex)
@@ -413,7 +433,9 @@ public static class InstallerScriptSerializer
         WriteKey(sb, "AllowPathChange", YesNo(project.AllowPathChange));
 
         // Build pipeline
-        WriteKey(sb, "OutputBaseFilename", Path.GetFileNameWithoutExtension(project.OutputBaseFilename));
+        // OutputFilename preserves dots and the authored extension. The legacy
+        // OutputBaseFilename reader still appends .exe for existing scripts.
+        WriteKey(sb, "OutputFilename", project.OutputBaseFilename);
         WriteKey(sb, "OutputDir", o?.OutputDirOverride ?? project.OutputDir);
         WriteKey(sb, "OutputFormat", OutputFormatToString(project.OutputFormat));
         WriteKey(sb, "ArchitecturesAllowed", ArchitectureToString(project.ArchitecturesAllowed));
@@ -451,13 +473,15 @@ public static class InstallerScriptSerializer
 
         // ── Per-item sections (collections) ──
 
+        // An explicit empty section preserves a template with no components on reload.
+        sb.AppendLine();
+        sb.AppendLine("[Components]");
         if (project.Components.Count > 0)
         {
-            sb.AppendLine();
-            sb.AppendLine("[Components]");
             foreach (var c in project.Components)
             {
                 sb.Append("Name: ").Append(Quote(c.Id));
+                AppendDirective(sb, "DisplayName", c.Name);
                 AppendDirective(sb, "Description", c.Description);
                 AppendDirective(sb, "Required", YesNo(c.Required));
                 AppendDirective(sb, "Selected", YesNo(c.Selected));
@@ -1034,13 +1058,17 @@ public static class InstallerScriptSerializer
         var shortcut = new ShortcutDefinition
         {
             Name = Path.GetFileName(name.Replace("{group}\\", "", StringComparison.OrdinalIgnoreCase)
-                .Replace("{commondesktop}\\", "", StringComparison.OrdinalIgnoreCase)),
+                .Replace("{commondesktop}\\", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("{commonstartup}\\", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("{userstartup}\\", "", StringComparison.OrdinalIgnoreCase)),
             TargetPath = FromScriptPath(target),
             Arguments = Value(d, "Parameters", "Arguments") ?? "",
             WorkingDirectory = FromScriptPath(Value(d, "WorkingDir", "WorkingDirectory") ?? ""),
             IconPath = FromScriptPath(Value(d, "IconFilename", "IconPath") ?? ""),
             Location = name.Contains("{commondesktop}", StringComparison.OrdinalIgnoreCase)
                 ? ShortcutLocation.Desktop
+                : name.Contains("{commonstartup}", StringComparison.OrdinalIgnoreCase) || name.Contains("{userstartup}", StringComparison.OrdinalIgnoreCase)
+                ? ShortcutLocation.Startup
                 : ShortcutLocation.StartMenu,
             StartMenuSubfolder = ExtractStartMenuFolder(name)
         };
@@ -1643,7 +1671,7 @@ public static class InstallerScriptSerializer
         return line;
     }
 
-    private static void NormalizeProject(InstallProject project)
+    private static void NormalizeProject(InstallProject project, bool componentsDeclared)
     {
         if (string.IsNullOrWhiteSpace(project.ProjectName))
             project.ProjectName = project.AppName;
@@ -1654,7 +1682,7 @@ public static class InstallerScriptSerializer
         if (string.IsNullOrWhiteSpace(project.OutputBaseFilename))
             project.OutputBaseFilename = $"Setup-{project.AppName}-{project.AppVersion}.exe";
         project.Prefer64Bit = project.ArchitecturesAllowed != Architecture.X86;
-        if (project.Components.Count == 0)
+        if (project.Components.Count == 0 && !componentsDeclared)
             project.Components.Add(new InstallComponent { Id = "core", Name = "Core", Required = true, Selected = true });
     }
 
@@ -1713,8 +1741,10 @@ public static class InstallerScriptSerializer
 
     private static string ExtractStartMenuFolder(string name)
     {
-        if (!name.Contains("{group}", StringComparison.OrdinalIgnoreCase)) return "";
-        var stripped = name.Replace("{group}\\", "", StringComparison.OrdinalIgnoreCase);
+        var prefixes = new[] { "{group}", "{commondesktop}", "{commonstartup}", "{userstartup}" };
+        var prefix = prefixes.FirstOrDefault(value => name.StartsWith(value + "\\", StringComparison.OrdinalIgnoreCase));
+        if (prefix is null) return "";
+        var stripped = name[(prefix.Length + 1)..];
         var dir = Path.GetDirectoryName(stripped);
         return dir ?? "";
     }
@@ -1860,6 +1890,8 @@ public static class InstallerScriptSerializer
     {
         "msix" => InstallerOutputFormat.Msix,
         "msixbundle" => InstallerOutputFormat.MsixBundle,
+        "msi" => InstallerOutputFormat.Msi,
+        "clickonce" => InstallerOutputFormat.ClickOnce,
         _ => InstallerOutputFormat.Exe
     };
 
@@ -1867,6 +1899,8 @@ public static class InstallerScriptSerializer
     {
         InstallerOutputFormat.Msix => "msix",
         InstallerOutputFormat.MsixBundle => "msixbundle",
+        InstallerOutputFormat.Msi => "msi",
+        InstallerOutputFormat.ClickOnce => "clickonce",
         _ => "exe"
     };
 
@@ -2196,7 +2230,7 @@ public static class InstallerScriptSerializer
 
     private static void WriteIconDirective(StringBuilder sb, ShortcutDefinition icon)
     {
-        var prefix = icon.Location == ShortcutLocation.Desktop ? "{commondesktop}" : "{group}";
+        var prefix = icon.Location switch { ShortcutLocation.Desktop => "{commondesktop}", ShortcutLocation.Startup => "{commonstartup}", _ => "{group}" };
         var name = string.IsNullOrWhiteSpace(icon.StartMenuSubfolder)
             ? $"{prefix}\\{icon.Name}"
             : $"{prefix}\\{icon.StartMenuSubfolder}\\{icon.Name}";

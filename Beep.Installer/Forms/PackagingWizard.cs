@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Beep.Installer.Models;
+using Beep.Installer.Engine;
 using static Beep.Installer.Lang.UiStrings;
 
 namespace Beep.Installer.Forms;
@@ -119,6 +120,8 @@ public sealed class PackagingWizard : Form
             new FormatChoice(InstallerOutputFormat.Exe, L("Packaging_Exe", "Setup.exe — full capability, works everywhere")),
             new FormatChoice(InstallerOutputFormat.Msix, L("Packaging_Msix", "MSIX package — Store and managed deployment")),
             new FormatChoice(InstallerOutputFormat.MsixBundle, L("Packaging_MsixBundle", "MSIX bundle — several architectures in one package")),
+            new FormatChoice(InstallerOutputFormat.Msi, L("Packaging_Msi", "MSI — Windows Installer package (requires WiX)")),
+            new FormatChoice(InstallerOutputFormat.ClickOnce, L("Packaging_ClickOnce", "ClickOnce — application files and update manifests")),
         });
         _format.SelectedIndex = (int)_project.OutputFormat;
         _format.SelectedIndexChanged += (_, _) => Refresh_();
@@ -170,7 +173,7 @@ public sealed class PackagingWizard : Form
     /// </summary>
     public static IReadOnlyList<string> IncompatibilitiesFor(InstallProject project, InstallerOutputFormat format)
     {
-        if (format == InstallerOutputFormat.Exe) return Array.Empty<string>();
+        if (format is not (InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)) return Array.Empty<string>();
 
         var lost = new List<string>();
 
@@ -224,7 +227,7 @@ public sealed class PackagingWizard : Form
                 "Solid compression deduplicates identical files before compressing, which helps most when the "
                 + "payload has many copies of the same assembly."));
         }
-        else
+        else if (Format is InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)
         {
             _identity = Field(table, L("Field_MSIXIdentity", "MSIX identity:"), _project.MsixIdentity);
             Hint(table, L("Packaging_IdentityHint",
@@ -246,9 +249,13 @@ public sealed class PackagingWizard : Form
         var lost = IncompatibilitiesFor(_project, Format);
         if (lost.Count == 0)
         {
-            _impact.Text = Format == InstallerOutputFormat.Exe
-                ? L("Packaging_ExeFine", "Everything authored in this project is supported by this format.")
-                : L("Packaging_MsixFine", "Nothing in this project depends on features MSIX cannot represent.");
+            _impact.Text = Format switch
+            {
+                InstallerOutputFormat.Exe => L("Packaging_ExeFine", "Everything authored in this project is supported by this format."),
+                InstallerOutputFormat.Msi => L("Packaging_MsiHint", "MSI uses the existing WiX exporter. WiX must be available to build the package; unsupported operations are reported by the exporter."),
+                InstallerOutputFormat.ClickOnce => L("Packaging_ClickOnceHint", "ClickOnce publishes the source folder and update manifests. Configure the update URL in Project identity. System changes require EXE or MSI."),
+                _ => L("Packaging_MsixFine", "Nothing in this project depends on features MSIX cannot represent.")
+            };
             _impact.ForeColor = Ui.InstallerTheme.MutedText;
             return;
         }
@@ -264,7 +271,8 @@ public sealed class PackagingWizard : Form
     /// <summary>Why this choice cannot be applied, or <c>null</c> if it can.</summary>
     public static string? Validate(Choice choice, InstallProject project)
     {
-        if (choice.Format == InstallerOutputFormat.Exe) return null;
+        if (choice.Format is not (InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle))
+            return PackageTargetDiagnostics.Validate(project, choice.Format).FirstOrDefault()?.Message;
 
         if (!IdentityName.IsMatch(choice.Identity))
             return L("Packaging_BadIdentity",
@@ -299,8 +307,11 @@ public sealed class PackagingWizard : Form
             return;
         }
 
-        project.MsixIdentity = choice.Identity;
-        project.MsixPublisher = choice.Publisher;
+        if (choice.Format is InstallerOutputFormat.Msix or InstallerOutputFormat.MsixBundle)
+        {
+            project.MsixIdentity = choice.Identity;
+            project.MsixPublisher = choice.Publisher;
+        }
     }
 
     // ── layout helpers ──────────────────────────────────────────────────────

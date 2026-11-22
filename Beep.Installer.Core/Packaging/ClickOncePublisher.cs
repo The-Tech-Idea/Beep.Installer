@@ -23,6 +23,7 @@ public class ClickOncePublisher : IInstallerPublisher
     public string Kind => "clickonce";
 
     public IProgress<(int percent, string message)>? Progress { get; set; }
+    public IProgress<BuildPipeline.BuildProgress>? BuildProgress { get; set; }
 
     /// <inheritdoc />
     public PublishResult Publish(InstallProject project, string publishDir, string? updateUrl = null, bool sign = true)
@@ -66,6 +67,7 @@ public class ClickOncePublisher : IInstallerPublisher
 
             if (sign)
             {
+                Report(85, "Signing ClickOnce manifests…", BuildPipeline.BuildPhase.Signing);
                 var signResult = TrySignManifests(project, staged);
                 result.Signed = signResult.signed;
                 if (!string.IsNullOrEmpty(signResult.warning)) result.Warnings.Add(signResult.warning);
@@ -81,10 +83,8 @@ public class ClickOncePublisher : IInstallerPublisher
                 result.Errors.Add("Requested ClickOnce signing did not produce two validated manifest signatures.");
                 return result;
             }
-            Report(100, result.Success ? "Publish complete." : "Publish completed with issues.");
-            sw.Stop();
-            result.Elapsed = sw.Elapsed;
             result.Success = true;
+            Report(100, "Publish complete.", BuildPipeline.BuildPhase.Completed);
         }
         catch (Exception ex)
         {
@@ -92,6 +92,7 @@ public class ClickOncePublisher : IInstallerPublisher
             result.Errors.Add(ex.Message);
             Diag.Warn("Publisher", "publish failed", ex);
         }
+        finally { sw.Stop(); result.Elapsed = sw.Elapsed; }
         return result;
     }
 
@@ -136,7 +137,11 @@ public class ClickOncePublisher : IInstallerPublisher
         return (deployment.success, deployment.error);
     }
 
-    private void Report(int percent, string message) => Progress?.Report((percent, message));
+    private void Report(int percent, string message, BuildPipeline.BuildPhase phase = BuildPipeline.BuildPhase.Building)
+    {
+        Progress?.Report((percent, message));
+        BuildProgress?.Report(new(percent, message, phase));
+    }
 }
 
 /// <summary>Result of a ClickOnce publish.</summary>

@@ -19,6 +19,7 @@ class NavigationManager {
             'index': { activeId: 'nav-home', openSection: null },
             'architecture': { activeId: 'nav-architecture', openSection: 'nav-getting-started' },
             'cli-reference': { activeId: 'nav-cli', openSection: 'nav-getting-started' },
+            'mcp-server': { activeId: 'nav-mcp', openSection: 'nav-getting-started' },
             'authoring': { activeId: 'nav-authoring', openSection: 'nav-authoring-build' },
             'build': { activeId: 'nav-build', openSection: 'nav-authoring-build' },
             'packaging': { activeId: 'nav-packaging', openSection: 'nav-authoring-build' },
@@ -34,7 +35,7 @@ class NavigationManager {
     getNavigationHTML() {
         return `
         <div class="logo">
-            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#4f8cff,#7b5cff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--color-brand-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;">
                 <i class="bi bi-box-seam"></i>
             </div>
             <div class="logo-text">
@@ -55,6 +56,7 @@ class NavigationManager {
                     <ul class="submenu">
                         <li><a href="architecture.html" id="nav-architecture">Architecture</a></li>
                         <li><a href="cli-reference.html" id="nav-cli">CLI Reference</a></li>
+                        <li><a href="mcp-server.html" id="nav-mcp">MCP Server</a></li>
                     </ul>
                 </li>
                 <li class="has-submenu" id="nav-authoring-build">

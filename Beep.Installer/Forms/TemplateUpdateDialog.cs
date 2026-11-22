@@ -10,6 +10,7 @@ namespace Beep.Installer.Forms;
 public sealed class TemplateUpdateDialog : Form
 {
     private readonly Func<string, ProjectTemplateUpdatePreview> _previewFactory;
+    private readonly Func<ProjectTemplate, ProjectTemplateUpdatePreview>? _signedPreviewFactory;
     private readonly ComboBox _templateBox;
     private readonly Label _summaryLabel;
     private readonly DataGridView _diffGrid;
@@ -20,12 +21,15 @@ public sealed class TemplateUpdateDialog : Form
         _templateBox.SelectedItem is ProjectTemplate template ? template.Id : ProjectTemplates.EmptyId;
 
     public ProjectTemplateUpdatePreview? Preview => _preview;
+    public ProjectTemplate SelectedTemplate => _templateBox.SelectedItem as ProjectTemplate ?? new ProjectTemplate { Id = ProjectTemplates.EmptyId };
 
     public TemplateUpdateDialog(
         System.Collections.Generic.IEnumerable<ProjectTemplate> templates,
-        Func<string, ProjectTemplateUpdatePreview> previewFactory)
+        Func<string, ProjectTemplateUpdatePreview> previewFactory,
+        Func<ProjectTemplate, ProjectTemplateUpdatePreview>? signedPreviewFactory = null)
     {
         _previewFactory = previewFactory ?? throw new ArgumentNullException(nameof(previewFactory));
+        _signedPreviewFactory = signedPreviewFactory;
 
         Text = L("Template_ApplyTemplateUpdate", "Apply Template Update");
         Size = new Size(980, 620);
@@ -49,15 +53,17 @@ public sealed class TemplateUpdateDialog : Form
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
         Controls.Add(root);
 
-        var selector = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
+        var selector = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3 };
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
         selector.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        selector.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         selector.Controls.Add(new Label { Text = L("Template_Template", "Template:"), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         _templateBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var template in templates.OrderBy(t => t.Category).ThenBy(t => t.Name))
             _templateBox.Items.Add(template);
         _templateBox.SelectedIndexChanged += (_, _) => RefreshPreview();
         selector.Controls.Add(_templateBox, 1, 0);
+        selector.Controls.Add(Ui.TemplateGallerySelection.CreateButton(_templateBox), 2, 0);
         root.Controls.Add(selector, 0, 0);
 
         _summaryLabel = new Label
@@ -118,7 +124,8 @@ public sealed class TemplateUpdateDialog : Form
 
         try
         {
-            _preview = _previewFactory(template.Id);
+            _preview = template.Blueprint is null ? _previewFactory(template.Id)
+                : (_signedPreviewFactory ?? throw new InvalidOperationException("Signed template preview is unavailable."))(template);
             _summaryLabel.Text =
                 $"Current plan hash: {DisplayHash(_preview.Current.PlanHash)}{Environment.NewLine}" +
                 $"Updated plan hash: {DisplayHash(_preview.Updated.PlanHash)} · Changes: {_preview.Diff.Count} · " +

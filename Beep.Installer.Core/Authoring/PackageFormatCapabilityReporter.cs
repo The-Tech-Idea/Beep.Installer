@@ -107,7 +107,7 @@ public static class PackageFormatCapabilityReporter
         };
     }
 
-    private static PackageFormatCapability AnalyzeMsi(InstallProject project)
+    public static PackageFormatCapability AnalyzeMsi(InstallProject project, bool failOnUnsupported = false)
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"beep-msi-capability-{Guid.NewGuid():N}");
         try
@@ -115,7 +115,7 @@ public static class PackageFormatCapabilityReporter
             var result = MsiPackageExporter.Generate(project, new MsiExportOptions
             {
                 OutputDirectory = tempDir,
-                FailOnUnsupportedOperations = false,
+                FailOnUnsupportedOperations = failOnUnsupported,
                 StagePayloads = false,
                 BuildPackage = false
             });

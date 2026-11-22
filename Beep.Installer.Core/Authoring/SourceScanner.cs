@@ -277,25 +277,8 @@ public class SourceScanner
     /// </summary>
     public ScanResult ScanDirectory(string sourceDir, IEnumerable<string>? includePatterns)
     {
-        var r = new ScanResult();
-        if (string.IsNullOrEmpty(sourceDir) || !Directory.Exists(sourceDir))
-        {
-            r.Warnings.Add($"Source directory not found: {sourceDir}");
-            return r;
-        }
-
-        foreach (var file in EnumerateDeployableFiles(sourceDir, includePatterns, r.Warnings))
-        {
-            var rel = Path.GetRelativePath(sourceDir, file);
-            var sf = new ScannedFile
-            {
-                FullPath = file,
-                RelativePath = rel,
-                SizeBytes = FileSizeOrZero(file)
-            };
-            ClassifyFile(file, sf);
-            r.Files.Add(sf);
-        }
+        var r = ScanFileMetadata(sourceDir, includePatterns);
+        if (string.IsNullOrEmpty(sourceDir) || !Directory.Exists(sourceDir)) return r;
 
         var mainExe = r.Files.FirstOrDefault(f => f.IsExecutable);
         if (mainExe != null)
@@ -317,6 +300,30 @@ public class SourceScanner
             r.Warnings.Add($"Multiple .exe files ({r.ExeCount}) found. Only the first will be the entry point.");
 
         return r;
+    }
+
+    /// <summary>Discovers file metadata using the same directory rules, without configuring
+    /// an entry point, dependencies or prerequisites. Never executes a discovered file.</summary>
+    public ScanResult ScanFileMetadata(string sourceDir, IEnumerable<string>? includePatterns = null,
+        System.Threading.CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = new ScanResult();
+        if (string.IsNullOrEmpty(sourceDir) || !Directory.Exists(sourceDir))
+        {
+            result.Warnings.Add($"Source directory not found: {sourceDir}");
+            return result;
+        }
+        foreach (var file in EnumerateDeployableFiles(sourceDir, includePatterns, result.Warnings))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var scanned = new ScannedFile { FullPath = file, RelativePath = Path.GetRelativePath(sourceDir, file),
+                SizeBytes = FileSizeOrZero(file) };
+            ClassifyFile(file, scanned);
+            result.Files.Add(scanned);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+        return result;
     }
 
     // ── Smart enumeration: skip build artifacts ──

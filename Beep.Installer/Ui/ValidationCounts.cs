@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using Beep.Installer.Lang;
 
 namespace Beep.Installer.Ui;
 
@@ -45,7 +46,9 @@ public readonly struct ValidationCounts
     {
         label.Text = IsClean
             ? $"{subject} {okSuffix}"
-            : $"{subject} {Errors} error(s), {Warnings} warning(s).";
-        label.ForeColor = Errors > 0 ? Color.DarkRed : Warnings > 0 ? Color.DarkOrange : Color.DarkGreen;
+            : subject + " " + string.Format(LanguageManager.CurrentCulture,
+                LanguageManager.GetOrDefault("Report_DiagnosticCounts", "Errors: {0:N0}, warnings: {1:N0}"), Errors, Warnings);
+        label.AccessibleName = label.Text;
+        AuthoringThemeBinding.SetTone(label, Errors > 0 ? AuthoringTone.Danger : Warnings > 0 ? AuthoringTone.Warning : AuthoringTone.Success);
     }
 }

@@ -8,6 +8,132 @@ doc excludes packaging and code-signing. The WinForms exe ends up a shell.
 > **Evidence:** [R0_REVIEW_FINDINGS.md](R0_REVIEW_FINDINGS.md) (rev. 2 — re-derived from code)
 > **Conventions:** ⬜ not done · 🟡 partly done · ✅ done · ❌ blocked. Phases are append-only.
 
+## P14 — Command-line catalog and MCP server — 2026-11-18
+
+[P14 plan](P14_CLI_AND_MCP_PLAN.md); per-feature documents
+[F30–F39](../professional-enterprise-roadmap/features/F30_CLI_COMMAND_CATALOG.md).
+**Status: stages S0–S6 implemented (🟡 — S7 open items listed in the plan).**
+
+| Stage | Result | Evidence |
+|---|---|---|
+| S1 catalog | `Beep.Installer.Core/Cli/cli-catalog.json` — 70 verbs with options, effect, JSON/dry-run support, MCP exposure; loader `CliVerbCatalog` | `CliCatalogTests` |
+| S2 CLI | new `/CATALOG [/JSON\|/MARKDOWN\|/HTML]`; three documented switches that the validator rejected with `BI7005` (`/NOSCRIPTCMDS`, `/ALLOWSCRIPTCMDS`, `/APPINSTALLERHOURS=`) now run; `Help/cli-reference.html` went from 13 of 69 verbs to all 70 (generated section, `scripts/Update-CliReference.ps1`) | guards seen failing, then passing |
+| S3 builder | `CliInvocationBuilder`: argv vector, required/unknown/secret-reference/dry-run/machine-change rules, same validator as the exe | `CliInvocationBuilderTests` |
+| S4–S5 MCP | `Beep.Installer.Mcp` (stdio, `ModelContextProtocol` 1.4.1): 10 tools, 3 resources; 67 of 70 commands reachable (3 withheld with a reason) | `McpServerTests` incl. real stdio against the real exe; manual smoke incl. `installer_validate`/`installer_plan` on `samples/MyApp.bsetup` |
+| S6 docs | `Help/mcp-server.html`, `.mcp.json`, this entry | — |
+
+Focused verification: **108 passed, 0 failed, 0 skipped** (`p14-cli-mcp-focused.log`; filter
+`CliCatalogTests|CliInvocationBuilderTests|McpServerTests|CliVerbTableTests|EnterpriseCommandLineTests|HelpCli*|EnterpriseCliQualificationRunnerTests`).
+Review corrections 2026-11-18: `publishes` effect gated like machine changes; three qualify verbs re-rated machine-changing; `/UNINSTALL` ignores `/DRYRUN` in the shell (catalog no longer claims it; shell not changed); `/ALLOWSCRIPTCMDS` withheld over MCP; two more rejected switches (`/APPINSTALLERNOPROMPT`, `/APPINSTALLERFORCEUPDATEFROMANYVERSION`) registered; runner works in the server directory. Not claimed:
+no machine-changing verb was run through MCP, most qualification verbs were not executed end-to-end through it, the
+server was not exercised inside a live Claude Code session, and nothing was committed or pushed.
+
+## Proposed follow-up — 2026-10-02
+
+[P13 — UI, UX and Feature Enhancement Plan](P13_UI_UX_FEATURE_ENHANCEMENT_PLAN.md)
+reviews the pulled `6c2f148` baseline and defines 20 prioritized improvements with acceptance
+criteria and staged delivery. Start with severity-aware validation, reliable step navigation and
+one project-creation flow, then guided package selection/review and shared presentation.
+**Status: in progress.** Stage A implements severity-aware navigation, intervening-step checks,
+the unified default New flow and stable project revisit behavior. The focused verification run
+passed 88 tests, including lifetime/cache/localization checks. Stages B–F remain open;
+see P13's implementation log. Existing phase completion statuses below remain unchanged.
+
+Stage B now has seven grouped guided steps, a files-only choice, review/edit links and persisted
+MSI/ClickOnce build targets routed to existing services. Core/UI compile and 174 selected tests
+pass against available dependency binaries. Stage C adds 29 keys across eight languages and
+live guided-shell RTL switching that preserves drafts; 68 selected presentation/guided tests
+and 19 package/deployment tests pass. One normal source build passed with zero errors and
+9,744 dependency-tree warnings, and both source-binding checks passed. A later source rerun
+hit a new CS1061 in concurrent BeepDM `SyncCheckpointFailureResult.cs` work. The Language
+test collection now runs without parallel collections to avoid global-culture races. Final
+isolated regression verification passed 226 of 226 selected tests using the last successful
+dependency binaries (`p13-isolated-regression.log`). Stage B
+remains in progress, with deeper review/focus behavior and broader qualification still open.
+Stage C registry extraction, populated DPI/accessibility evidence and Stages D–F remain open
+in that earlier batch.
+
+The next batch extracts the shared resource editor and registers all 40 view factories,
+adds per-resource review and nested field navigation, fixes custom-action draft application,
+and adds wrapping/empty states and accessible theme foregrounds. Stage D begins with an
+independent project capture for builds. Status readiness now checks snapshots asynchronously
+and discards stale results. The latest source build passes with zero errors and 9,750 warnings;
+the earlier BeepDM compile failures are historical. Separate targeted runs passed 148 shared
+presentation tests, 39 snapshot/parser tests, 191 regressions, then 50 workflow and 15 readiness
+contract tests after follow-up fixes. Final selected regressions passed 233 of 233 tests;
+see P13 for the
+exact evidence and open qualification gates. Stages B–F remain in progress/open.
+
+Stage D now adds shared save/recovery status and Guided Save/Ctrl+S. Failed Save As retains
+the original identity, recovered drafts remain unsaved, save-before-discard handles failures,
+and atomic saves/autosave lifecycle locking prevent stale recovery writes. Nine translated
+status strings cover all eight languages. Pending Advanced script edits now participate in
+save/discard and visible status. The final source build passed with zero errors and 1,470
+dependency/test warnings; 254 selected regressions passed, including source-binding checks.
+See P13 for the remaining recovery/workspace/feature gates.
+
+Stage D's next batch adds one persistent build workspace to Guided and Advanced. It tracks
+typed phases/cancellation, retains logs/results, isolates job progress and detaches results
+from projects edited/replaced during a job. Build and Publish now share job exclusivity;
+ClickOnce publication returns its actual manifest. Model/UI tests cover lifetime, cancellation,
+reopened views, artifact actions and result attribution. The final normal source build passed
+with zero errors and five existing test warnings; 270 selected regressions passed, including
+source-binding checks. See P13 for exact evidence and remaining gates.
+The resource recipe batch adds service, IIS site/pool, task and firewall setup from Guided and
+Advanced. Detached previews, explicit machine/admin/package changes and fresh Apply validation
+preserve existing resources; provider prerequisites/removal limits appear in eight languages.
+The normal source build passed with zero errors and five existing test warnings; all 327 selected
+regressions passed, including source binding and schema/compiler checks
+(`p13-resource-recipe-final-regression.log`). These supersede the preliminary recipe checks.
+Recovery discovery/history, later features and manual qualification remain open.
+
+The recovery batch gives untitled sessions independent draft files, adds an Advanced recovery
+picker and an explicit newer-draft choice when opening a saved project, and opens recovered
+untitled work in a separate unsaved session copy. Cleanup failure is reported independently
+from successful saving and retries preserve changed drafts using content fingerprints. Six
+strings cover all eight languages. Guided recovery access, unified saved-project history,
+retention controls and crash/restart qualification remain open; P13 is still in progress.
+Final source compilation passed with zero errors; the final incremental rebuild had no warnings.
+All 358 selected regressions passed (`p13-recovery-fingerprint-regression.log`), including
+source binding and changed-draft preservation. See P13 for exact build evidence and open gates.
+
+Guided now shares the recovery picker and checks uncommitted Project/script fields before
+replacement. Cancellation preserves the draft and current step; recovery rebinds Project and
+Next retains the recovered graph/AppId/resources, including an otherwise empty project.
+Forty focused Guided/recovery/source-binding checks passed after a normal source compilation
+with zero errors and five existing test warnings (`p13-guided-recovery-test.log`).
+Unified history/retention, explicit cold-start recovery choice and manual qualification remain open.
+
+Cold start now shares Advanced's explicit recovery choice, preserving the saved file/draft
+distinction and leaving state untouched on Cancel. Failed/cancelled reopen disposes its unused
+autosave timer. Normal source compilation passes with zero errors and five existing test warnings.
+The earlier full-suite run was interrupted after stack evidence located Windows notification
+broadcasts in existing test cleanup; its 1,447 passes/four skips are partial evidence. The two
+fixtures now remove only their unique test registry values directly, and the full suite reruns
+in `p13-coldstart-recovery-full-suite.log`. History/retention and manual qualification remain open.
+All eight cold-start/shared-opening and Guided recovery contract tests pass against the source
+build (`p13-coldstart-recovery-focused.log`); this does not replace the ongoing full-suite gate.
+
+The recovery picker now includes saved/current/recent drafts and original document identity,
+including missing originals. Named recovery uses an independent session copy and origin
+metadata so rediscovery preserves the saved path and relative-path base. Malformed metadata
+blocks recovery without replacing the current project. A separate source output build passed
+with zero errors and 9,811 dependency/test warnings; 93 selected recovery/save/dialog/cache and
+source-binding checks passed (`p13-saved-recovery-test.log`). The usual output copy is held by
+the still-running full-suite testhost. History/retention, outside-catalog browsing and manual
+qualification remain open.
+
+The cold-start full-suite run has now completed: 1,628 passed, four existing integration tests
+skipped and zero failed (`p13-coldstart-recovery-full-suite.log`). That build predates the saved
+catalog changes. Those newer changes passed 94 focused checks after adding missing-origin
+detection (`p13-saved-recovery-metadata-test.log`); the earlier 93-test run is superseded.
+The usual source output now builds with zero errors and 8,129 dependency/test warnings
+(`p13-saved-recovery-normal-build.log`); the file-lock failure is resolved. Latest authoring
+regression results are tracked separately in `p13-saved-recovery-normal-regression.log`.
+All 373 selected current-build regressions have now passed in that log, including source binding,
+recovery, build-workspace lifetime, navigation, package and schema/compiler contracts. The earlier
+full-suite result remains evidence for its preceding build, not a claim about all later changes.
+
 ---
 
 ## Progress log — 2026-09-09 (delta E2E, DPI/a11y/RTL, switcher)
@@ -1888,3 +2014,647 @@ pulled forward. P9 runs continuously and closes last.
 build stages, packaging. **BeepDM** = the runtime install contract (`InstallConfig`) and
 execution engine — with the env-var step, ARP registration, scope-awareness, real rollback
 support and its first test coverage contributed back upstream.
+
+P13 UX12 now has bounded credential-masked history, controller transactions and Guided/Advanced
+Undo/Redo controls. Shared resource actions, recipes and scans are grouped; Save preserves
+history/document identity and New/Open/recovery reset it. Restoring graphs refreshes bindings.
+UI tests exposed and fixed resource-only Guided recreation and a reload cleanup that cleared
+rebuilt sections. All 174 selected current-source regression checks passed
+(`p13-authoring-history-rebind-regression.log`); 24 history translations were verified.
+UX12 remains partial pending specialized-editor/template/script transaction coverage,
+text-editor undo behavior, action feedback and manual qualification. The full P13 goal remains
+in progress; see its 2026-10-03 implementation batch.
+
+The next UX12 batch covers specialized component actions, detached file/condition drafts,
+custom actions, source patterns and wizard-page transactions. Duplicate resources now have
+independent nested models; component duplicates get unused IDs. Populated tests verify
+canonical template/script undo/redo and generated fields, button availability/live Arabic
+captions and native focused-text undo. A normal build passed with zero errors and 9,908
+warnings. All 235 selected authoring/history/recovery/build/package/wizard/feature checks
+passed (`p13-history-editor-final-regression.log`). Manual qualification and the remaining
+P13 features stay open; UX13–16 are next. See the new editor-coverage implementation log.
+
+UX13 has begun with a detached read-only release overview model over existing build/signing
+results and qualification portfolio reports. It separates artifact availability, reported checks
+and selected deployment files; deployment outcome remains unknown and qualification reports
+remain unbound to the build. All seven new model cases and 20 history checks passed
+(`p13-release-overview-model-retest.log`). Overview UI/report loading/localization are next;
+UX13 and the full P13 goal remain in progress.
+
+UX13 now exposes Release Overview through Advanced and Guided Review, with separate package,
+signing, selected deployment asset and qualification tabs. Existing portfolio reports load
+asynchronously with bounded/schema checks and safe projections; invalid loads preserve previous
+selections. Evidence remains unbound to the build and deployment outcome remains unknown.
+All 265 selected release/authoring/history/recovery/build/package/dialog checks passed
+(`p13-release-overview-ui-regression.log`), and 120 new captions across eight languages were
+verified. Populated German/Arabic simulated-scale tests pass. Final focused entry-point/lifetime
+checks follow; live qualification gates and UX14–20 remain open.
+
+UX14 now adds a localized, read-only update preview to the existing Update Center. Preview and
+Apply share signed-feed delta selection; known trust, key, source, contract and policy failures
+block Apply. The review separates advertised sizes from disk requirements, states the absence
+of a full-package fallback and explains journal/backup/resource rollback constraints. Apply
+rejects a changed reviewed feed digest before installation acquisition/staging/journal writes.
+All 265 selected update/feed/transition/delta/release/dialog checks passed
+(`p13-update-preview-final-regression.log`), including actual signed local packages, changed
+trusted publications, unchanged installation on digest rejection and successful matching-digest
+application. All 176 preview captions were checked across eight languages; populated German
+and Arabic simulated-scale layouts pass after fixing the footer/minimum-size interaction.
+The final disposal/cancellation guard run is separate. UX15 comparison is next; UX15–20 and
+manual/live P13 qualification gates remain open. The full P13 goal remains active.
+
+The final UX14 source rebuild passed all 29 focused preview/Update Center checks after
+disposal/cancellation guards (`p13-update-preview-final-guards.log`). This supplements the
+broader 265-check run and is not a full-suite or live deployment qualification result.
+
+UX15 now provides Compare Projects through Advanced and Guided Review. It compares a selected
+baseline `.bsetup` with current edits using the canonical exporter/template diff, groups version,
+destination, package and resource changes, and offers category/search filters and full selected
+values. Known protected values are masked before capture using sensitivity declared on either
+side. Existing canonical coverage excludes custom actions/pages and payload contents; the review
+does not claim build or install verification. Bounded asynchronous reading uses the existing
+serializer/path resolver, preserves previous results on failure and rejects stale/disposed loads.
+Large projects use virtual rows, and live theme/language/RTL preserve the selected review state.
+The initial concurrent BeepDM compile error cleared on a later normal rebuild without editing
+that sibling checkout. All 225 selected comparison/history/template/serializer/golden/dialog/
+Guided/update-preview/release checks passed (`p13-project-comparison-final-regression.log`), then
+all 19 focused checks passed after final accessible-label/default-action changes
+(`p13-project-comparison-final-accessibility.log`). These include 200 captions, actual modal
+entry points, a real theme event, saved-path equality, 500-resource long-value review and
+German/Arabic simulated-scale layouts. UX16 search/help is next; UX16–20 and cross-stage
+manual/live/usability gates remain open. The full P13 goal remains active.
+
+UX16 adds contextual offline help for all 40 navigation sections. Advanced F1/Help and Guided
+F1 open the current topic; Guided Ctrl+F focuses help search and a visible help action is
+available. Existing navigation now matches useful synonyms and localized port/task phrases,
+shows Guided/Advanced availability and gives full localized destination tooltips. Help is
+read-only and does not create/validate a draft or bypass required-step gates. Filter/language
+rebuilds preserve selection and edits without reopening the active editor. Shared theme/font
+ownership and live language/RTL apply to the new browser/navigation presentation.
+All 159 selected help/navigation/editor/every-section/every-dialog/Guided/history/comparison
+checks passed from a normal source rebuild (`p13-context-help-regression.log`). They cover
+344 new resources, all topics, localized aliases, real modal keyboard handlers, preserved
+uncreated drafts, quiet selection restoration, real theme events and German/Arabic simulated
+scales. UX17 runtime summary is next; UX17–20, general Advanced translation gaps and final
+manual/live/usability gates stay open. This is not a full-suite or manual qualification claim.
+
+P13 UX17 runtime evidence first batch: Ready describes explicit scope and configured
+prerequisites/system changes, with a scrollable summary and no provider inputs. Completion
+uses the existing engine restart flag; failure preserves the original error/log and separates
+rollback attempts from previous-version file-backup outcomes without claiming full recovery.
+Rollback shares the installation logger, restore exceptions preserve the original failure,
+and support metadata uses the existing reboot-aware exit-code mapper. Preview text and
+localized Finish survive terminal-page rendering. A normal source build passed; 82 selected
+runtime/layout/RTL/exit-code/page/context checks passed (`p13-runtime-summary-final-regression.log`).
+UX17 translations, terminal-page polish and live recovery qualification, UX18–20 and final
+cross-stage gates remain open. This is not a full-suite or live deployment qualification.
+
+P13 UX17 follow-up: all 26 runtime captions now ship in eight languages (208 resources).
+Ready/Complete/Error use shared responsive summary layouts, wrapping/stacking actions,
+live theme colors, owned fonts, localized accessible names and RTL direction. Installed and
+preview messages translate live from detached identity arguments, while engine error evidence
+and user launch/log choices are preserved. The normal-source build passed with zero errors;
+172 selected runtime/dialog/layout/RTL/theme/context checks passed (`p13-runtime-layout-final-regression.log`),
+including three-page German/Arabic simulated scale checks, embedded resource/format coverage,
+actual theme events and safe disposal. UX17 presentation gaps from the preceding batch are
+addressed. Live install/failure/recovery/restart and OS DPI/Narrator/usability qualification,
+UX18–20 and cross-stage gates remain open. UX18 support actions are next; existing redaction
+and bundle contracts are the integration points. This is not a full-suite or live qualification.
+
+P13 UX18 functional support workflow: Error explicitly copies redacted error/recovery details;
+Complete/Error open the captured JSON bundle for readonly review and asynchronous local export.
+The core export service bounds/validates/re-redacts the captured artifact, preserves its original
+privacy and result metadata, writes exactly the reviewed snapshot atomically, prevents source
+overwrite and preserves existing outputs on write failure. Shared redaction now covers quoted
+secret assignments and provider-declared sensitive inputs. Support generation includes actual
+restart/rollback/backup evidence with full recovery unverified. Picker cancellation and dialog
+disposal cannot publish a fabricated success or change installation state. All ten support
+captions ship in eight languages (80 resources). Latest normal source build passed with zero
+warnings/errors; 196 selected source runtime/support/dialog/layout/RTL/context checks passed
+(`p13-runtime-support-final-regression.log`). UX19–20 and cross-stage/live/manual/full-suite
+qualification remain open, including installed-machine failure/recovery, real clipboard/Save As,
+OS DPI, Narrator and usability evidence. This batch does not claim those gates are qualified.
+
+P13 UX19 first gallery batch: five built-ins have search/category/favorite filters and readonly
+sample metadata from the existing factory. New Project, Guided creation and template-update
+selection open the shared gallery; creation/apply still use existing controller/diff/history
+paths. Guided language rebuilds now preserve the template ID and draft fields. Favorites are
+identifier-only, bounded/schema checked and atomically saved; malformed/future/oversized or
+unreadable data is preserved, and failed writes leave prior data intact. Service sample metadata
+now accurately describes its Startup shortcut and need for separate service registration.
+All 149 selected gallery/project/signed-template/Guided/dialog/history checks passed
+(`p13-template-gallery-final-regression.log`). Signed-package gallery discovery/import remains
+open; existing verifier tests do not prove
+gallery import. Cross-process favorite concurrency, UX20 and final live/manual/full-suite
+gates are also unverified. UX19 remains in progress.
+
+P13 UX19 gallery localization batch: all 30 captions are packaged in eight languages (240
+resources), including sample shortcut locations while preserving literal target paths. Live
+language changes preserve gallery selection/filter state and creation drafts; launcher captions
+and accessible names update and subscriptions end on disposal. Gallery actions receive current
+theme colors. Populated German/Arabic minimum-size layouts pass simulated 100/125/150/200%
+containment/overlap checks, including visible labels and invalid-favorites status. Embedded
+resources, localized search/sample details, theme changes and disposal are covered. The installer
+build against existing dependencies passed with zero warnings/errors; a normal source-dependency
+retry passed with 1470 warnings and zero errors after a transient sibling BeepDM compile failure.
+Final selected regression after rebuilding the installer passed 167 checks with
+BuildProjectReferences=false (`p13-template-gallery-localized-verified-regression.log`). Actual
+OS DPI, accessibility/manual/live/full-suite qualification, signed gallery import, cross-process
+favorites and UX20 remain open. UX19 remains in progress.
+
+P13 UX19 signed-import foundation: a bounded captured package is verified through the existing
+signature/hash/key verifier and reconstructed from its actual canonical project content. Exact
+canonical and .bsetup round-trip comparisons reject unsupported/lossy fields; detached immutable
+blueprints never reread changed source files or substitute a built-in by ID. Manifest paths are
+restricted to the flat exported package format. Typed failures omit parser/key/content details.
+Serializer fixes retain component display names, explicitly empty component sections, authored
+output filename dots/extensions and Startup shortcut locations while retaining legacy defaults.
+Normal source regression passed 52 import/serializer/template checks; the final source build
+passed with zero warnings/errors (`p13-template-import-final-build.log`). Broader normal source
+authoring/recovery/gallery regression passed 249 selected checks
+(`p13-template-import-authoring-regression.log`). Gallery discovery,
+key review, signed sample display and actual captured-graph controller integration remain open.
+UX19, UX20 and the full P13 qualification gates are not complete.
+
+P13 UX19 signed-gallery integration: asynchronous package/public-key verification adds an actual
+captured sample and protected canonical review with issuer/key/project hashes. Cancellation,
+failed verification and dialog disposal preserve selection and block late publication. The
+verified descriptor reaches New Project, Guided creation and template-update preview/apply;
+creation gives a new AppId and explicit author identity/source fields, while updates preserve
+existing identity/output/destination/scope/signing and use the existing undo flow. Protected
+comparison values now mask preview differences. Signed favorites store content-hash IDs only,
+without granting trust. Eleven captions ship in eight languages (328 gallery resources total).
+Normal source regression passed 173 selected checks; the final 31 gallery checks also passed
+after review wording/layout refinements. Final normal source build passed with zero warnings
+or errors (`p13-signed-gallery-reviewed-final-build.log`). Saved signed-package discovery across
+sessions, stale-source/key/hash handling, cross-process favorites, real OS picker/DPI/manual
+accessibility/live/full-suite gates and UX20 remain open. UX19 is still in progress.
+
+P13 UX19 saved discovery: a bounded per-user library stores source references and reviewed
+manifest/project/public-key hash pins without copying graphs, secrets or key contents. Each load
+reruns signature/hash/key verification and matches all pins. Changed signed content/metadata,
+missing sources or changed keys require explicit reimport and do not become selectable. Invalid
+catalogs and failed writes preserve existing data; failed saving still permits a reviewed session
+template with a warning. Asynchronous form-load discovery preserves selection and prevents late
+publication after disposal. Fresh native galleries prove unchanged signed favorites reappear.
+Favorites and library writes now use a path-specific named mutex, but separate-process
+qualification remains unverified. Two captions ship in eight languages (344 gallery resources).
+Normal source regression passed 164 selected checks; all 58 final focused library/import/gallery
+checks passed. Normal source build passed with zero warnings/errors. UX19 has its functional
+workflow; separate-process, real picker/DPI/accessibility/user-task/live/full-suite gates, UX20
+and remaining cross-stage P13 requirements are open. The full goal is not complete.
+
+P13 UX20 first preview batch: preview uses a detached script capture, direct selection from the
+actual configured page list, simulated completion/failure, reset and scrollable layout dimensions
+at 100/125/150/200%. Changes remain separate from the authoring graph. Closing/finishing the
+child closes the preview owner; reset replaces the child safely. Native tests cover graph/dirty
+state independence, page selection, scaling/reset, live RTL/disposal and preview-only API guards.
+Prerequisite download/browser/install actions now have explicit preview guards after inspection
+found the old preview could launch processes. Dedicated action/no-side-effect qualification is
+still open. Six captions use English fallbacks; translations, broader page/theme/layout scenarios
+and actual OS DPI/accessibility/manual/live qualification remain open. Isolated builds passed
+with zero warnings/errors; 75 selected checks and four final control checks passed against
+existing dependencies. A normal source retry passed with 1470 warnings and zero errors after a
+transient sibling BeepDM compile failure. UX20 and the full P13 goal remain in progress.
+The final normal source regression passed 76 selected preview/dialog checks
+(`p13-preview-final-source-regression.log`); this does not qualify the remaining preview gates.
+
+P13 UX20 localization/action isolation: seven captions ship in eight languages (56 resources).
+Native checks after reset verify all languages, accessible captions, page choices/selection,
+scale preservation and simulated failure text. Preview prerequisite rows show a localized
+not-checked state; detection commands are not executed, navigation is permitted without claiming
+prerequisites are met, and download/browser/install actions stay disabled and guarded. A marker
+command fixture and direct guarded-method invocation prove this prerequisite path has no command
+or download action, with live Arabic status refresh. Final normal source regression passed 79
+selected preview/dialog checks; final normal source build passed with zero warnings/errors.
+Broader populated page/theme/scale scenarios, complete installation-action isolation, separate-
+process preferences and actual DPI/accessibility/user-task/live/full-suite gates remain open.
+UX20 and the full P13 goal remain in progress.
+
+UX20's next batch adds live theme tokens and owned-font disposal to the preview controls.
+Native populated German/Arabic checks exercise configured/custom pages at minimum window size,
+all four simulated scales, scrollbars, control containment, validation and password masking.
+The preview install method is exercised from Ready with an accepted license, real payload and
+authored-command sentinel; completion creates no payload copy, command marker, installation
+directory, runtime log or support bundle. Final normal source regression passed 147 selected
+preview/dialog/runtime-summary/support-action/theme checks (`p13-preview-populated-final-regression.log`);
+final normal source build passed with zero warnings/errors (`p13-preview-populated-final-build.log`).
+Remote synchronization was rechecked on 2026-10-03: master matches origin/master at 6c2f148,
+and a fast-forward-only pull reported already up to date while preserving local implementation.
+P13 remains in progress: separate-process preferences, broader presentation/exact-field focus,
+actual OS DPI/accessibility, representative author tasks, live runtime and current full-suite
+qualification are still open.
+
+UX06's dictionary focus gap now has a native property-grid editor for existing and missing
+input keys, including dots/hyphens/brackets. BI1703 Review links identify the exact input;
+known and provider-declared sensitive values are masked. Native tests verify actual modal
+Review → Advanced handoff, deferred visible focus, stale-focus cancellation, preserved
+resources/siblings, input correction and undo/redo. The handoff retains the diagnostic's
+section rather than reopening Identity; programmatic navigation clears cached selections
+before native handle creation. Final normal source regression passed 111 selected diagnostic,
+Guided, section, resource, history, schema, wizard and help checks
+(`p13-dictionary-final-regression.log`). Final normal source build passed with zero warnings/errors
+(`p13-dictionary-final-build.log`). Broader field/presentation and manual/live/full-suite
+qualification remain open; the full P13 goal is still in progress.
+
+UX19 independent-process checks now exercise the actual Core stores through a separate console
+worker and isolated, genuinely signed fixtures. They exposed and fixed favorites overflow beyond
+256 IDs and concurrent read-handle interference with destination replacement. Reads and writes
+now share the path-specific mutex with consistent lock order. Eight favorite writers/readers
+retain all IDs across path casing; boundary contenders cannot corrupt the store. Five library
+writers/readers retain every verified source; fresh processes reverify packages and reject a
+changed source without changing the catalog. Damaged files remain intact, temporary files are
+cleaned, and a worker terminated while holding the real mutex does not block later writes.
+All 63 selected process/gallery/library/import checks passed (`p13-template-process-fixed-tests.log`);
+final normal source build passed with zero warnings/errors (`p13-template-process-final-build.log`).
+This qualifies the tested local Windows process workflows, not every interrupted-write phase,
+other sessions/filesystems, manual/live journeys or the full suite. P13 remains in progress.
+
+UX07–08 shared Advanced captions now refresh bound-field labels, accessible names, resource
+headings/actions/empty states and navigation groups in all eight languages. Authored values,
+canonical scripts, selected resources and collapsed groups are preserved. Native checks exposed
+and fixed Arabic focus loss caused by restoring a surrounding container rather than the focused
+field; focus bookmarks preserve text selection and respect later navigation, another window,
+hidden/disposed controls and form ownership. Navigation rebuilds suppress spurious section events.
+All 75 selected localization/help/diagnostic/Guided/resource/section checks passed on the normal
+source build (`p13-advanced-live-verified-regression.log`); the final normal source installer build
+passed with zero warnings/errors (`p13-advanced-live-verified-build.log`). Toolbar/search captions,
+hand-built editor coverage, Guided rebuilt-control focus, broader layouts and manual/live/full-suite
+qualification remain open. P13 is still in progress.
+
+UX07–08 authoring chrome now refreshes toolbar captions/tooltips/accessibility, search placeholder,
+window title and Recent menu captions in all eight languages without changing authored values or
+filenames. Replaced menu items dispose their translation bindings. Guided language refresh restores
+focus and text selection to matching rebuilt fields, the template picker and stable stepper controls;
+checks retain a non-default template ID and pending Project draft. All 77 selected localization/help/
+diagnostic/Guided/resource/section checks passed (`p13-chrome-guided-final-regression.log`), and the
+final normal source installer build passed with zero warnings/errors (`p13-chrome-guided-final-build.log`).
+Both authoring shells still lack a form-wide live-theme subscription. Shared live-theme coverage,
+hand-built captions/dynamic messages, populated layouts, broader field audits and manual/live/full-suite
+qualification remain open. P13 remains in progress.
+
+UX07 both authoring shells now own live palette bindings for existing/cached/borrowed/new controls,
+with explicit surface and status roles. Grid/property-grid public APIs, themed tabs and readable
+menu rendering follow palette changes without replacing fonts, text, tags, values or selection.
+Native composite child trees retain ownership; the initial PropertyGrid help-color interference
+was fixed. Native light/dark checks preserve cached values, canonical scripts, selected resources,
+focus/text selection, Guided borrowed-panel ownership and rendered selected-tab color. Repeated
+disposal removes watch records and the global subscription. All 88 selected theme/localization/help/
+diagnostic/Guided/resource/section checks passed (`p13-authoring-theme-verified-regression.log`);
+final normal source installer build passed with zero warnings/errors (`p13-authoring-theme-verified-build.log`).
+Remaining caption/font/layout/field audits include an inline result label that still says Setup EXE
+for other package formats. Actual OS high contrast/DPI/accessibility, author tasks, live runtime
+and current full-suite qualification remain open. P13 remains in progress.
+
+UX07–09 inline results now use generic artifact labels for EXE/MSI/MSIX/MSIX bundle/ClickOnce,
+with Open manifest for ClickOnce. Status, source-script labels, culture-formatted metrics/counts
+and the last-build link refresh across eight languages; four new keys provide 32 resources.
+Wrapping rows/actions replace absolute vertical layout. Actual action checks use inert files and
+an injected launcher; failed/cancelled/missing outputs cannot launch. Reopened cached editors now
+retain their current palette and custom fonts after legacy structural styling, and Guided shares
+the authoring body font. All 124 selected result/theme/localization/help/diagnostic/Guided/resource/
+build-workspace checks passed (`p13-inline-results-regression.log`). Source-pattern/source-scan/
+component caption audits, broader fields/layouts, actual OS DPI/accessibility, author tasks,
+runtime journeys and current full-suite qualification remain open. P13 is still in progress.
+Final normal source installer build passed with zero warnings/errors (`p13-inline-results-final-build.log`).
+
+UX07–08 source/pattern/component editors now refresh headings, actions, declared column headers and
+accessible names in eight languages. Pattern actions wrap and observable collection changes update
+the displayed list, with binding/subscription disposal owned by the panel. Scan summaries retain
+culture-formatted arguments and reset on source/project changes; later status messages retain their
+ownership. Native tests exercise a real source fixture, pattern Add/Remove, all languages, pending
+drafts, focus/text/list selection, selected components, tree paths and canonical project preservation.
+Seven new keys provide 56 resources. All 127 selected authoring presentation/workflow checks passed
+(`p13-source-caption-regression.log`). Identity hints, script/build/log/package/welcome captions and
+literal resource headings/help remain audit items. Broader layout/field/concurrency, OS DPI/accessibility,
+author tasks, live runtime and current full-suite qualification remain open; P13 remains in progress.
+Initial source build passed with zero warnings/errors (`p13-source-caption-build.log`). The later
+final source rebuild failed on five sibling BeepDM migration compiler errors, after the regression
+passed (`p13-source-caption-final-build.log`). External files were preserved. Installer compilation
+against existing dependency binaries passed with zero warnings/errors using BuildProjectReferences=false
+(`p13-source-caption-dependency-build.log`). Final complete source-graph qualification remains open.
+
+UX07–09 script/log actions, workflow headings/output/results/pending hints/keyboard guide,
+identity/package help and welcome captions now refresh across eight languages. Six new keys provide
+48 resources. Authored script drafts, focus/text selection, log output, output paths and populated
+reports are preserved; detached welcome-panel disposal removes its five language subscriptions.
+Native checks found an RTL handle error caused by changing BuildWorkspaceView direction inside
+OnHandleCreated during ancestor recreation. Handle-created refresh now updates state without a
+direction transition; the normal language event applies direction afterward. Host workarounds were
+removed. All 21 focused cases passed (`p13-workspace-direction-checks.log`), followed by all 144
+expanded authoring/presentation/section checks (`p13-workflow-caption-regression.log`) against existing
+dependency binaries. Installer compilation using BuildProjectReferences=false passed with zero
+warnings/errors (`p13-workspace-direction-build.log`). Report/status/resource-caption and broader
+field/layout audits, complete source/full-suite verification, actual OS DPI/accessibility, author
+tasks and live runtime journeys remain open. P13 remains in progress.
+The subsequent complete source rebuild passed with 1,469 dependency/analyzer warnings and zero
+errors (`p13-workflow-caption-final-source-build.log`) after the sibling migration errors were
+resolved externally. No sibling files were edited for this installer task. All 144 selected checks
+then passed against the rebuilt source graph (`p13-workflow-caption-source-regression.log`), with no
+skipped checks. Complete current full-suite and remaining Windows qualification gates stay open.
+
+UX07–08 now binds localized headings/help in the nine remaining system-resource editors:
+scheduled tasks, firewall rules, certificates, COM, drivers, configuration transforms, IIS pools,
+IIS sites and Web Deploy. Nine new help keys provide 72 resources across eight languages. Nine
+native populated-editor cases retain authored rows, selected properties, focus and canonical
+values through language changes; detached cached panels translate, reopen and dispose without
+leaking language subscriptions. Normal source installer build passed with zero warnings/errors
+(`p13-system-resource-captions-build.log`), and all 99 selected authoring/presentation regressions
+passed with no skips (`p13-system-resource-captions-regression.log`); five existing test warnings
+remain. Remote fetch/pull confirmed the current baseline with no divergence. Report/status,
+field/layout/concurrency audits, current full-suite and Windows qualification remain open.
+See P13's current actions for concrete artifact, diagnostic-routing and scan follow-ups.
+
+UX06/09 follow-up guards artifact opening against failed or cancelled results, including handler
+calls before the button refreshes; output-folder inspection remains available. Root-only Setup
+diagnostics safely open Identity, and indexed include/exclude diagnostics select the exact pattern
+list row. Actual Remove actions preserve the other list; invalid indices retain selection and data.
+File-tree refresh revisions now advance for empty/invalid source changes; two held-continuation
+race checks verify an old valid source cannot repopulate the cleared tree. All 32 workspace/diagnostic
+checks and both tree checks passed, then all 117 selected expanded regressions passed with no skips
+(`p13-workspace-pattern-tree-regression.log`). Initial local compiler/test-lookup errors were corrected
+before the passing runs. Source scan still mutates the controller's project on a worker and requires
+separate concurrency work. Report/status, remaining field/layout audits, full-suite and Windows
+qualification stay open; see P13 for exact evidence. No full-goal completion is claimed.
+Final normal source installer build passed with zero errors and 9,995 dependency/analyzer warnings
+(`p13-workspace-pattern-tree-final-build.log`); git diff --check found no whitespace errors.
+
+UX07/11/12 source scans now use a detached full model rather than mutating the controller's
+project on a worker. Full-state hashing, origin identity, request generation and completion guards
+reject stale/failed/repeated applications. UI-thread application preserves authored component/file
+objects and existing prerequisites, updates scan-owned fields, marks dirty and records one scan
+transaction. Pending script drafts apply before capture while keeping the originating section;
+later script edits reject the scan, and an unedited generated-script view refreshes on completion.
+Stale failures do not show errors for a changed source. One discard/rescan key ships in eight
+languages. Initial metadata-comparison, fixture-shape and test-focus issues were corrected.
+Final normal source regression passed all 109 selected checks with no skips
+(`p13-detached-scan-final-regression.log`), superseding the 107-case run before the two script-flow
+additions. Broader layout/performance/lifecycle, report localization, full-suite and real Windows
+qualification remain open. P13 remains in progress.
+After that passing source regression, the final installer rebuild failed on five new sibling
+BeepDM editor/filter errors in SecurityManager.cs and ManagedFilterCompiler.cs
+(`p13-detached-scan-final-build.log`); external files were preserved. Installer compilation using
+BuildProjectReferences=false and the last successful dependencies passed with zero warnings/errors
+(`p13-detached-scan-dependency-build.log`). This is not a passing final full-source build; repeat
+complete source qualification after those sibling errors resolve. git diff --check passes.
+
+UX07/08 validation and capability report presentation now rerenders detached captured data
+across eight languages, preserving attribution, selected diagnostic codes, paths, hashes,
+engine explanations and authored artifacts. Save/validation/template/script/history/completed-build
+status captions also refresh live with captured arguments; project replacement clears old status.
+Fifteen report keys and four status keys ship in each language. Native test classes that shared
+process-wide windows now use the nonparallel UI/language collection, and the modal diagnostic
+fixture identifies its own editor. Populated resource fixtures settle activation before focusing.
+The initial failed/aborted and stale-binary runs are documented in P13, not passing evidence.
+After explicit installer rebuild, 14 focused checks passed. Final normal-source regression passed
+all 144 selected checks with no skips (`p13-live-status-final-regression.log`, 6 m 55 s), including
+report/status/history/localization/navigation/scan/workspace paths. Normal-source installer build
+passes with zero errors and 10,003 dependency/analyzer warnings (`p13-live-status-source-build.log`);
+the earlier sibling security/filter errors were resolved externally and those files were preserved.
+Remaining modal/field/layout/accessibility/lifetime audits, current full suite and real Windows
+DPI/usability/runtime qualification remain open. P13 remains in progress; no goal completion claimed.
+
+UX07/08 project pickers now localize titles and filter descriptions. Shared folder selection
+describes its field and uses an existing authored starting directory. The field-picker audit
+found raw icon/image/license/certificate patterns passed directly to OpenFileDialog.Filter;
+the shared factory now supplies valid description/pattern pairs, with all original patterns
+preserved. Actual constructor checks prove the raw assignments throw and corrected filters
+work across all eight languages. Three picker keys add 24 translated entries.
+Guided Project Browse now has a stable accessible name for rebuilt-field focus; automatic rows,
+wrapping labels/help and scrolling improve its minimum-window layout. Shared heading font and
+muted help theme roles replace literals. Draft and canonical model preservation remain checked.
+The initial 37 focused checks passed. The expanded run passed 95 of 96 checks but repeated the
+COM-grid focus assertion failure. Richer owner/control diagnostics and a four-window COM cycle
+check were added; nine isolated resource-editor checks and eight filter/repeated-focus checks
+passed. Final normal-source regression passed all 101 checks with no skips
+(`p13-project-picker-final-regression.log`, 4.9483 min), including empty/populated/add-remove
+checks across all forty sections. Five existing test warnings remain. The earlier new nullable
+filename warning was corrected before normal-source test builds. Actual pickers were not opened.
+The intermittent COM focus failure is not claimed as explained by a passing rerun. Remaining
+field/modal/font/layout/lifetime audits, full suite and actual Windows DPI/accessibility/usability/
+runtime qualification remain open. P13 remains in progress; no goal completion is claimed.
+
+P13 shared-field/focus follow-up: six clipping cases reproduced with enlarged multiline captions;
+shared rows now use preferred sizing, file/folder hosts grow to content, checkbox minimum height
+stays compact, and the license pane scrolls. Seven initial checks passed; eight expanded layout
+checks passed within the later runs. Inactive focus bookmarks retain the managed target/selection
+without activating another window; two tests verify user reentry. COM checks now explicitly
+verify retained target and reentry if Windows deactivates the recreated owner. Actual activation
+cause and modal-origin focus remain open. The 109-case run had 108 passes/one COM failure. The
+111-case run had 93 passes/18 failures, starting with two STA timeouts and culture overlap from
+workers left running. Two matrix helpers now stop the test host on timeout and use a three-minute
+matrix deadline. The first normal-source rerun failed before testing on five missing members in
+sibling BeepDM FormsManager.Lifecycle sources; those sources were preserved. Explicit installer
+build with BuildProjectReferences=false passed with zero warnings/errors. Current broad/full
+regression and real Windows qualification remain open; P13 and the implementation goal stay active.
+
+P13 fresh-process follow-up: 5/5 focused checks passed in 2.3664 minutes; 111/111 selected
+regression checks passed with no skips in 4.8173 minutes (p13-shared-field-sta-dependency-regression.log).
+The broad run used --no-build after rebuilding installer/test assemblies with BuildProjectReferences=false,
+so existing dependency binaries were used. Full-source integration remains blocked by the observed
+sibling compile errors; this is not full-suite qualification. Earlier failed runs remain recorded.
+Timeout termination branch, modal-origin focus, other STA helper deadlines and real Windows
+DPI/accessibility/usability/runtime gates remain open. P13 and the goal remain active.
+
+P13 modal-origin language refresh follow-up: actual ShowDialog tests reproduced Guided rebuilt-field
+selection loss (corrected baseline: 1 passed, 2 failed). Saved active-leaf capture preserves the
+editing target while a modal owns focus. A first fix exposed the parent being natively re-enabled
+by RTL handle recreation and taking modal focus. Both shells now scope refreshes to keep that
+owner disabled, retain selection without activation and restore the current native handle on
+modal closure according to managed Enabled. Close/disposal subscriptions detach. Nested modals
+and an explicitly disabled owner retain their respective states. All four Guided draft fields
+and Advanced identity are covered across all eight cultures; no authored canonical changes occur.
+Ten expanded focused checks passed (52.5914 seconds). Normal-source installer compilation passed
+with 0 errors and 1,468 existing dependency/analyzer warnings (p13-modal-language-source-build.log);
+earlier sibling FormsManager errors were resolved externally, without editing those files here.
+Final normal-source regression: 118 passed, 0 failed, 0 skipped in 7.4265 minutes
+(p13-modal-language-source-regression.log). Tests use actual owned modal forms with API-driven
+language changes, not translation-file editing in LanguageManagerForm. Other modal captions,
+remaining field/font/layout/lifetime audits, fresh full suite, timeout termination and real Windows
+DPI/accessibility/usability/runtime gates remain open. P13 and the full goal remain active.
+
+P13 current integration qualification started: unfiltered dotnet test through the normal source
+graph is still running (p13-current-full-source-suite.log). Intermediate passes are not a full-suite
+result and no completion is claimed. The models dependency-binding check passed: the test-output
+DataManagementModels.dll is byte-identical to the sibling net10.0 source output
+(p13-current-model-source-binding.log). The whole-solution build, four explicitly skipped
+end-to-end cases and real Windows/manual qualification remain separate requirements.
+Current source audit confirmed two implementation gaps: authoring Languages opens the translation
+editor rather than selecting UI culture; GuidedReviewPage still runs schema/package evaluation
+synchronously in its constructor. Visible authoring culture selection and detached asynchronous
+Review evaluation with pending/error/stale/disposal guards remain in scope. P13 stays active.
+
+P13 full-suite result and support repairs: the unfiltered normal-source run finished with
+2,009 passed, 10 failed and 4 skipped (2,023 total, 31.9007 minutes;
+p13-current-full-source-suite.log). Eight failures used an undeclared Builder_SaveTitle resource;
+the caption now uses translated Common_Save. Support-review reads now share one PendingLoad
+task and retain the reviewed snapshot after source changes; modal fixtures drain owned reads
+before deleting their files. Controlled held-reader checks cover coalescing, disposal and retained
+exports. The original intermittent export-click failure remains unexplained beyond passing reruns.
+Final normal-source selected regression passed 124 checks, no skips, in 5.5534 minutes
+(p13-support-read-source-regression.log). Whole-solution build passed with 0 errors and 11,504
+existing warnings (p13-current-whole-solution-build.log). Current model binding then failed:
+matching app/test assemblies were built before newer sibling Debug outputs with different hashes.
+The hash inventory is p13-current-model-source-binding-after-solution.log. Fresh source binding,
+full-suite and all manual/live qualification gates remain open. These results are not additive.
+
+P13 authoring UI-language selection: Advanced Languages and Guided Languages now share an owned
+dialog with all eight native language names, explicit Apply and separate translation editing.
+Authored installer languages and draft fields remain unchanged. Three captions ship in all eight
+languages; Guided Help also refreshes live. Native action tests cover all cultures, modal owner
+state/RTL, retained drafts/selections, unapplied choice and subscription disposal. All 22 focused
+checks passed (44s). The initial expanded run passed 102/103; the sole failure expected the former
+translation-editor tooltip. The updated expectation retains the original localization/focus/lifetime
+checks. Final expanded regression passed all 103 checks, no skips, in 2m50s
+(p13-authoring-language-dependency-regression-retry.log). This used BuildProjectReferences=false
+after explicit current installer compilation (0 warnings/errors). Normal source attempts failed
+before tests at sibling VerifyQueryRegistration, then EnterQueryModeCoreAsync references; those
+files were preserved. Final app/test models hashes match one current sibling source output
+(p13-authoring-language-model-binding.log), superseding the earlier copy mismatch for this batch.
+Current full-source build/full-suite and Windows/manual gates remain open. Detached asynchronous
+Guided Review remains the next confirmed implementation gap. P13 and the full goal remain active.
+
+P13 asynchronous Guided Review: validation now runs through LatestProjectCheck on a detached
+full-model worker graph; a separate captured summary prevents worker normalization from affecting
+authored values or displayed summary data. Pending/current failure/blocking/stale states disable
+Build, and completion/Build dispatch verify original project identity and a full model hash.
+Check Again replaces the request; stale failures/results and disposal cannot publish. Exact edit
+paths remain available, severity/status captions are localized, and five keys ship in all eight
+languages. Source errors from the preceding authoring-language batch resolved externally; no
+sibling files were edited. The first 68 checks passed through the normal source graph (30s).
+An actual Arabic focus case exposed whole-tree replacement losing the managed edit target;
+completion now updates diagnostics/status/Build while retaining summary controls. A separate
+diagnostic-link baseline then exposed page replacement dropping a link until revalidation ended.
+Guided now refreshes the existing Review presentation on culture changes, retaining diagnostics
+and exactly one pending check. All 27 retained-culture/async/modal/inactive-focus checks passed
+(53s). The initial expanded run passed 202 checks (4m46s); a final expanded run including the
+additional diagnostic-link case passed all 203 checks, no skips, in 5m19s through the normal source
+graph (p13-async-review-final-source-regression.log). Whole-solution build passed with 0 errors,
+7 existing warnings, in 17.88s (p13-async-review-whole-solution-build.log): five test warnings and
+two UpdateServer nullable channel/product warnings. App/test models copies match a current
+sibling Debug output (p13-async-review-model-binding.log). P13 records logs and the distinction between retained
+target and native activation. Current full suite, large-project latency and Windows/manual/runtime
+qualification remain open; P13 and the full goal remain active.
+
+Fresh unfiltered normal-source qualification is starting after the language-selector, support-read
+and asynchronous Review repairs (p13-async-review-current-full-suite.log). No completed result is
+claimed. The preceding full suite failed (2,009 passed, 10 failed, 4 skipped); selected results and
+the new whole-solution/binding checks do not turn that failed run into a passing one. Four explicit
+end-to-end skips and all real Windows/manual/runtime gates remain separate requirements.
+
+P13 read-only presentation audit during the live full suite: source confirms remaining English
+Component Files title/size summary, Custom Actions and Conditions validation wrappers, missing
+live modal caption/palette bindings and fixed-height editor/action layouts. LanguageManagerForm
+uses removal-caption keys for both Add/Remove Language and Add/Remove Key; dynamic editor statuses
+also remain English. Guided blocking navigation returns a reason without explicit diagnostic-field
+focus routing. P13_PRESENTATION_AUDIT_2026-10-03.md records exact sources, intended fixes and required
+native baselines, preserving detached drafts, warning policy and Apply-only-on-OK. No production
+or test source was changed for this audit while p13-async-review-current-full-suite.log runs.
+Actual OS/manual/runtime, full-suite and broader presentation gates remain open. P13 stays active.
+
+The same audit adds modal Apply origin/conflict cases: Custom Actions applies to current _project,
+Conditions compares component count/IDs and Files checks membership, without a uniform captured
+origin/edited-collection fingerprint. Native project-replacement and concurrent-target baselines
+are required; no observed data-loss claim is made from source alone. Component Files also advertises
+file/folder drops without AllowDrop setup or handlers; staged drop behavior needs implementation
+and qualification. These are existing correctness/editor requirements, not new feature IDs.
+
+P13 fresh full-suite result: 2,045 passed, 0 failed, 4 skipped, 2,049 total in 31m24s
+(p13-async-review-current-full-suite.log), through the normal source graph. This supersedes the
+earlier failed full run for its compiled implementation; no production/test changes were made
+during the presentation audit. Four explicit end-to-end skips remain unqualified. Post-run binding
+inventory finds app/test models copies matching each other, but no matching current sibling Debug
+output (p13-async-review-full-suite-model-binding.log); source outputs were rebuilt during the run.
+Current binding needs a fresh build/check. Six remaining audit fixes, real Windows/manual/runtime
+and large-project qualification remain open. P13 and the full implementation goal remain active.
+
+### P13 remote/build verification follow-up — 2026-10-03
+
+Remote fetch and `git pull --ff-only origin master` confirmed already up to date, ahead/behind 0/0;
+all local changes preserved. Fresh whole-solution source build passed with 0 errors, 20,152 warnings
+in 59.94s (`p13-post-full-current-source-build.log`). Post-build models inventory still has matching
+app/test copies and zero current sibling Debug matches (`p13-post-full-current-model-binding.log`):
+app/test dated 11:48:52 UTC, sibling outputs rebuilt 11:51–11:52 UTC. Current binding remains open;
+do not conflate this build with tests against those later binaries. The completed 2,045-pass,
+four-skip full suite remains evidence for its compiled implementation. P13's six source-audit fixes
+and Windows/manual/runtime qualification gates remain open. No production/test changes,
+commit or push were made in this review follow-up.
+
+### P13 A05 Guided blocking focus — 2026-10-03
+
+Implemented exact blocking-field focus. Four native Next/jump baselines failed, then passed after
+name/component routing fixes. Expanded checks failed three cases (34 passed), exposing silently
+defaulted blank version and a ClickOnce blocker in an earlier source step. Required-version draft
+validation (all eight resource cultures) and earlier-step Guided routing correct those cases.
+Current-step routing selects existing controls/tab/row/property without rebuilding drafts; reasons
+and canonical data are retained. Empty required components focus Add; files-only remains explicit.
+Final 39 focused cases passed in 20s. Expanded normal-source regression passed all 143 cases,
+no skips, in 2m57s (`p13-guided-blocking-focus-source-regression.log`), including existing warning,
+localization, modal-focus, diagnostic and async Review cases. Current app/test models hashes match
+the sibling net10.0 Debug output (`p13-guided-blocking-focus-model-binding.log`). Earlier full-suite
+qualification predates this change; A01–A04/A06 and release gates remain open. No commit/push.
+
+### P13 A06 modal draft Apply — 2026-10-03
+
+Implemented project-origin/edited-target guards before OK closes actual Actions/Conditions/Files
+modals. Conflicts retain draft and leave DialogResult.None, with localized accessible/wrapping
+feedback; compatible Apply is one undo transaction and preserves unrelated changes. Conditions
+protect component references/order/IDs; Files include membership/source/size context and calculate
+size before canonical replacement. Six native baseline checks accepted stale OK (fixture cancels
+after assertions; no persisted data-loss claim). Initial test enum/type and callback-serialization
+compile errors were corrected. Six focused rejection checks passed; final expanded 16 checks
+passed after correcting three incorrect Panel-color test expectations to the shared root Shell
+role. Includes source scan completion during file draft, Apply/undo/redo, eight cultures, palette and
+subscription cleanup. Expanded source regression passed 209 checks, no skips, in 2m12s
+(`p13-modal-draft-conflict-source-regression.log`). Whole-solution source build: 0 errors, 11,592
+warnings, 38.10s (`p13-modal-draft-conflict-whole-solution-build.log`). Final app/test models match
+current sibling net10.0 Debug output (`p13-modal-draft-conflict-model-binding.log`). A01–A04 and
+Windows/manual/runtime qualification remain open; prior full suite predates A05/A06. No commit/push.
+
+### P13 A03 Conditions partial implementation — 2026-10-03
+
+Two native baselines failed: populated grid had zero rows because DataSource was not assigned,
+and French UI selection left an English title. Initial test Rows assertions were corrected before
+baseline. Grid now binds typed selection, edits actual values and resets after removal; CommandReturns
+exposes Value2. Explicit-key live captions/accessibility/header/help, shared semantic localized
+validation counts, preferred/wrapping layout, shared-derived owned font and disposal are implemented.
+All-eight-culture model/component/row/expression/caret/focus preservation and absent command-marker,
+clean/error/warning palette states, listener cleanup and enlarged multiline/minimum layout have
+selected native evidence. Public preview remains deterministic English; A03 is still open for a
+localized UI renderer and broader modal/keyboard/accessibility/OS DPI qualification.
+21 focused checks passed (4s); expanded 39 passed (51s); broad normal-source regression passed
+206 checks, no skips, in 2m49s (`p13-conditions-presentation-source-regression.log`). Final app/test
+models match current sibling net10.0 Debug output (`p13-conditions-presentation-model-binding.log`).
+Earlier full-suite/whole-solution logs predate this batch. A01/A02/A04 and release gates remain open.
+No commit/push.
+
+2026-10-03 A03 save validation progress: reproduced invalid-draft acceptance when another
+component contains an error, then fixed whole-component syntax validation and exact component/
+rule/value focus with localized inline accessible feedback. Rejected drafts remain intact;
+correction permits warning-only apply, cancellation does not apply. All 56 normal-source focused
+checks passed (0 skipped, 53s), including 16 actual modal cases across eight cultures; app/test
+models match sibling source output. Evidence: `p13-conditions-all-components-modal-retry.log`
+and `p13-conditions-all-components-model-binding.log`. The initial expanded fixture used the
+wrong managed owner Enabled property; it was corrected to native IsWindowEnabled. A03 preview
+localization, A01/A02/A04 and full release qualification remain open. Details are in P13/audit.
+
+2026-10-03 A03 preview/correction progress: the actual Conditions preview now uses 16 resources
+in each of eight cultures while preserving authored operands, literal format braces, validator
+messages and indices. Native baselines reproduced English preview, selected-command offset loss,
+and disabled removal of a null blocking rule. All three are corrected; the public English preview
+API remains unchanged. Final normal-source focused regression: 114 passed, 0 skipped, 3m34s
+(`p13-conditions-preview-final-focused.log`); app/test Models binding matches sibling source output
+(`p13-conditions-preview-model-binding.log`). A03 wider keyboard/accessibility/actual-DPI qualification
+and all remaining release gates stay open. A01/A02/A04 still need implementation; A01 is next.
+
+2026-10-03 A01 Component Files partial: native baselines reproduced static English title and
+clipped multiline caption. Live keyed fields/title/grid headers/size summary, accessible names,
+shared font/theme/disposal, flexible scrolling/wrapping layout and localized controlled picker
+are implemented. Normal-source expanded checks passed 138 (0 skipped, 2m44s). A later 139-case
+run passed 138 with one fixture failure (WinForms clears disposed label text); corrected fixture
+and all four native file cases passed (0 skipped, 12s). App/test Models match source output.
+Evidence: `p13-component-files-presentation-final-fixture-retry.log` and
+`p13-component-files-presentation-model-binding.log`; details in P13/audit. Actual staged file/
+folder drop, cancellation/duplicate/stale guards and asynchronous size/path-edit scanning remain
+next A01 work. A02/A04 and broader release/manual/OS gates remain open; no commit or push.
+- 2026-11-18: P14 addendum — MCP project-field tools (`installer_get_project_fields`/`installer_set_project_fields`) shipped; open: 4 machine-changing qualify-* commands untested pending owner decision.

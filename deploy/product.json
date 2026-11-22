@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "productCode": "beep-installer",
+  "name": "Beep Installer",
+  "kind": "desktop-tool",
+  "tier": "subscriber",
+  "repository": "https://github.com/The-Tech-Idea/Beep.Installer",
+  "license": "MIT",
+  "version": { "file": "Beep.Installer/Beep.Installer.csproj", "xpath": "//Version" },
+  "checks": [
+    { "name": "Installer tests", "command": "dotnet test Beep.Installer.Tests" }
+  ],
+  "artifacts": [
+    { "kind": "installer", "builder": "beep-installer", "platform": "Windows", "source": "deploy/beep-installer.bsetup", "project": "Beep.Installer/Beep.Installer.csproj", "output": "Setup-*.exe" }
+  ]
+}

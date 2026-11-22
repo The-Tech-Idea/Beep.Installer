@@ -2,6 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using Beep.Installer.Lang;
+using TheTechIdea.Beep.Winform.Controls.ThemeManagement;
 
 namespace Beep.Installer.Ui;
 
@@ -11,15 +13,20 @@ namespace Beep.Installer.Ui;
 /// </summary>
 public sealed class LeftNavPanel : Panel
 {
-    private sealed record NavSection(string Id, string Label);
+    private sealed record NavSection(string Id, string Fallback, string? ResourceKey)
+    { internal string Label => ResourceKey is null ? Fallback : LanguageManager.GetOrDefault(ResourceKey, Fallback); }
     private sealed record NavItem(string SectionId, string Id, string Label, string Hint);
 
     private readonly ListView _list;
+    private readonly Font _font = InstallerTheme.Body;
+    private readonly Label _empty = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, Visible = false };
     private readonly List<NavSection> _sections = new();
     private readonly List<NavItem> _items = new();
     private string _filterText = "";
     private string _selectedSectionId = "";
     private int _selIdx = -2;
+    private bool _selectingSection;
+    private readonly Dictionary<string, ListViewGroupCollapsedState> _collapsedGroups = new();
 
     /// <summary>Fires the section id when a leaf is selected.</summary>
     public event EventHandler<string>? SectionSelected;
@@ -37,15 +44,21 @@ public sealed class LeftNavPanel : Panel
             HideSelection = false,
             ShowGroups = true,
             MultiSelect = false,
-            Font = new Font("Segoe UI", 9F),
+            Font = _font,
             BorderStyle = BorderStyle.None,
             BackColor = InstallerTheme.Sidebar,
             ForeColor = InstallerTheme.Text,
+            ShowItemToolTips = true,
         };
-        _list.Columns.Add("", 200);
+        _list.SmallImageList = new ImageList { ImageSize = new Size(16, 16), ColorDepth = ColorDepth.Depth32Bit };
+        _list.Columns.Add(LanguageManager.GetString("Help_Topics"), 200);
+        _list.Columns.Add(LanguageManager.GetString("Help_Views"), 0);
+        _list.AccessibleName = LanguageManager.GetString("Help_Topics");
+        _empty.Font = _font;
+        _list.ClientSizeChanged += (_, _) => ResizeColumns();
         _list.SelectedIndexChanged += (_, _) =>
         {
-            if (_list.SelectedIndices.Count == 0) return;
+            if (_selectingSection || _list.SelectedIndices.Count == 0) return;
             var idx = _list.SelectedIndices[0];
             if (idx == _selIdx) return;
             _selIdx = idx;
@@ -57,6 +70,10 @@ public sealed class LeftNavPanel : Panel
             }
         };
         Controls.Add(_list);
+        Controls.Add(_empty);
+        LanguageManager.LanguageChanged += OnLanguageChanged;
+        BeepThemesManager.ThemeChanged += OnThemeChanged;
+        ApplyTheme();
     }
 
     [Browsable(false)]
@@ -89,10 +106,11 @@ public sealed class LeftNavPanel : Panel
         => _selectedSectionId;
 
     /// <summary>Add a section group. Returns the group for subsequent <see cref="AddItem"/> calls.</summary>
-    public ListViewGroup AddSection(string id, string label)
+    public ListViewGroup AddSection(string id, string label, string? resourceKey = null)
     {
-        _sections.Add(new NavSection(id, label));
-        return AddListGroup(id, label);
+        var section = new NavSection(id, label, resourceKey);
+        _sections.Add(section);
+        return AddListGroup(id, section.Label);
     }
 
     /// <summary>Add a leaf item to a section group. The id is what fire on <see cref="SectionSelected"/>.</summary>
@@ -105,6 +123,9 @@ public sealed class LeftNavPanel : Panel
 
     /// <summary>Select a section programmatically.</summary>
     public void SelectSection(string id)
+        => SelectSection(id, notify: true);
+
+    private void SelectSection(string id, bool notify)
     {
         for (var i = 0; i < _list.Items.Count; i++)
         {
@@ -115,11 +136,21 @@ public sealed class LeftNavPanel : Panel
 
                 // A collapsed group hides its rows, so EnsureVisible would scroll to something the
                 // user cannot see. Open the owning group first.
-                ExpandGroupFor(id);
+                if (notify) ExpandGroupFor(id);
 
-                _list.Items[i].Selected = true;
-                _list.Items[i].EnsureVisible();
-                SectionSelected?.Invoke(this, id);
+                var selecting = _selectingSection;
+                _selectingSection = true;
+                try
+                {
+                    // Before handle creation, MultiSelect=false does not clear the other
+                    // items' cached Selected flags. Clear them explicitly before choosing one.
+                    foreach (ListViewItem item in _list.Items)
+                        if (!ReferenceEquals(item, _list.Items[i])) item.Selected = false;
+                    _list.Items[i].Selected = true;
+                    if (notify) _list.Items[i].EnsureVisible();
+                }
+                finally { _selectingSection = selecting; }
+                if (notify) SectionSelected?.Invoke(this, id);
                 return;
             }
         }
@@ -166,8 +197,12 @@ public sealed class LeftNavPanel : Panel
 
     private void RebuildList()
     {
-        var selectedId = _list.SelectedItems.Count > 0 ? _list.SelectedItems[0].Tag as string : null;
+        foreach (ListViewGroup group in _list.Groups)
+            if (group.Name is { } id) _collapsedGroups[id] = group.CollapsedState;
+        var selectedId = _list.SelectedItems.Count > 0 ? _list.SelectedItems[0].Tag as string : _selectedSectionId;
         _selIdx = -2;
+        var selecting = _selectingSection;
+        _selectingSection = true;
         _list.BeginUpdate();
         try
         {
@@ -184,17 +219,22 @@ public sealed class LeftNavPanel : Panel
                     continue;
 
                 var group = AddListGroup(section.Id, section.Label);
+                if (_collapsedGroups.TryGetValue(section.Id, out var collapsed)) group.CollapsedState = collapsed;
                 foreach (var item in sectionItems)
                     AddListItem(group, item.Id, item.Label, item.Hint);
             }
+            if (!string.IsNullOrWhiteSpace(selectedId))
+                SelectSection(selectedId, notify: false);
         }
         finally
         {
             _list.EndUpdate();
+            _selectingSection = selecting;
         }
-
-        if (!string.IsNullOrWhiteSpace(selectedId))
-            SelectSection(selectedId);
+        ResizeColumns();
+        _empty.Text = _empty.AccessibleName = LanguageManager.GetString("Help_NoMatches");
+        _empty.Visible = _list.Items.Count == 0 && _filterText.Length > 0;
+        if (_empty.Visible) _empty.BringToFront();
     }
 
     private bool Matches(NavSection section, NavItem item)
@@ -202,6 +242,8 @@ public sealed class LeftNavPanel : Panel
         if (string.IsNullOrWhiteSpace(_filterText))
             return true;
 
+        var topic = AuthoringHelpCatalog.Topics.FirstOrDefault(topic => topic.Id == item.Id);
+        if (topic is not null) return AuthoringHelpCatalog.Matches(topic, _filterText, section.Label, section.Fallback, item.Label, item.Hint);
         return Contains(section.Label, _filterText)
             || Contains(item.Id, _filterText)
             || Contains(item.Label, _filterText)
@@ -219,9 +261,14 @@ public sealed class LeftNavPanel : Panel
     /// </summary>
     private ListViewGroup AddListGroup(string id, string label)
     {
+        // Advanced Resources starts folded: thirteen enterprise sections would otherwise push Customize
+        // and the rest below the fold for someone still setting up identity and files. Searching, or
+        // selecting one of its sections, opens it; its header still opens it by hand.
         var group = new ListViewGroup(id, label)
         {
-            CollapsedState = ListViewGroupCollapsedState.Expanded,
+            CollapsedState = id == "advanced" && _filterText.Length == 0 && !_collapsedGroups.ContainsKey(id)
+                ? ListViewGroupCollapsedState.Collapsed
+                : ListViewGroupCollapsedState.Expanded,
         };
 
         _list.Groups.Add(group);
@@ -243,7 +290,79 @@ public sealed class LeftNavPanel : Panel
 
     private void AddListItem(ListViewGroup group, string id, string label, string hint)
     {
-        var item = new ListViewItem(label, group) { Tag = id, ToolTipText = hint };
+        var topic = AuthoringHelpCatalog.Topics.FirstOrDefault(topic => topic.Id == id);
+        var item = new ListViewItem(topic?.Title ?? label, group) { Tag = id,
+            ToolTipText = topic is null ? hint : topic.Title + Environment.NewLine + topic.Availability + Environment.NewLine + topic.Body };
+        item.SubItems.Add(topic?.GuidedKey is null ? LanguageManager.GetString("Help_Advanced") : LanguageManager.GetString("Help_GuidedAdvanced"));
+        item.ImageKey = EnsureSectionIcon(group.Name ?? "");
         _list.Items.Add(item);
+    }
+
+    private static readonly Dictionary<string, string[]> SectionIcons = new()
+    {
+        ["project"] = new[] { "folder" }, ["source"] = new[] { "fi-tr-file-code", "file" }, ["features"] = new[] { "fi-tr-puzzle-alt", "puzzle" },
+        ["advanced"] = new[] { "settings", "sliders" }, ["customize"] = new[] { "palette" },
+        ["output"] = new[] { "download", "box-multiple" }, ["deployment"] = new[] { "fi-tr-rocket", "cloud" },
+        ["build"] = new[] { "fi-tr-hammer", "fi-tr-tools", "settings" },
+    };
+
+    /// <summary>The Beep icon for a section group, registered once per theme colour; "" when the group has none.</summary>
+    private string EnsureSectionIcon(string sectionId)
+    {
+        if (!SectionIcons.TryGetValue(sectionId, out var candidates)) return "";
+        var images = _list.SmallImageList!.Images;
+        var key = sectionId + "#" + InstallerTheme.Text.ToArgb();
+        if (images.ContainsKey(key)) return key;
+        var bitmap = BeepIcons.Render(16, candidates);
+        if (bitmap is null) return "";
+        images.Add(key, bitmap);
+        return key;
+    }
+
+    private void ResizeColumns()
+    {
+        var available = Math.Max(1, _list.ClientSize.Width - SystemInformation.VerticalScrollBarWidth);
+        var requested = TextRenderer.MeasureText(LanguageManager.GetString("Help_GuidedAdvanced"), _list.Font).Width + 8;
+        var destinations = _filterText.Length == 0 ? 0 : Math.Min(requested, available * 2 / 3);
+        _list.Columns[0].Width = Math.Max(1, available - destinations); _list.Columns[1].Width = destinations;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (IsDisposed || Disposing) return;
+        if (InvokeRequired) { BeginInvoke(() => OnLanguageChanged(sender, e)); return; }
+        var focus = UiFocusBookmark.Capture(FindForm());
+        _selectingSection = true;
+        try
+        {
+            RightToLeft = LanguageManager.CurrentCulture.TextInfo.IsRightToLeft ? RightToLeft.Yes : RightToLeft.No;
+            _list.RightToLeft = RightToLeft; _list.RightToLeftLayout = RightToLeft == RightToLeft.Yes;
+        }
+        finally { _selectingSection = false; }
+        _list.AccessibleName = _list.Columns[0].Text = LanguageManager.GetString("Help_Topics");
+        _list.Columns[1].Text = LanguageManager.GetString("Help_Views");
+        RebuildList();
+        focus?.Restore();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) LanguageManager.LanguageChanged -= OnLanguageChanged;
+        if (disposing) BeepThemesManager.ThemeChanged -= OnThemeChanged;
+        base.Dispose(disposing);
+        if (disposing) _font.Dispose();
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        if (IsDisposed || Disposing) return;
+        if (InvokeRequired) { BeginInvoke(() => OnThemeChanged(sender, e)); return; }
+        ApplyTheme();
+    }
+
+    private void ApplyTheme()
+    {
+        BackColor = _list.BackColor = _empty.BackColor = InstallerTheme.Sidebar;
+        ForeColor = _list.ForeColor = _empty.ForeColor = InstallerTheme.AccessibleForeground(InstallerTheme.Text, InstallerTheme.Sidebar);
     }
 }

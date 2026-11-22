@@ -367,3 +367,5 @@ Beep.Installer/samples/build/
 
 # Beep.Installer build output (large binaries)
 Beep.Installer/output/
+# Self-contained runnable build (scripts/Publish-Installer.ps1)
+dist/

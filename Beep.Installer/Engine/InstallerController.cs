@@ -17,13 +17,102 @@ public class InstallerController : INotifyPropertyChanged
     public event EventHandler? ProjectMutated;
 
     private InstallProject _project;
+    private readonly AuthoringHistory _history = new();
+    private int _authoringChangeDepth;
+    public bool CanUndo => _history.CanUndo;
+    public bool CanRedo => _history.CanRedo;
+
+    /// <summary>Commit a field-edit burst before starting the next authoring action.</summary>
+    public void CommitAuthoringChanges(string label = "Edit")
+    {
+        lock (_autoSaveLock)
+        {
+            if (_authoringChangeDepth != 0) return;
+            if (_history.Record(_project, label)) NotifyHistoryChanged();
+        }
+    }
+
+    public void RunAuthoringChange(string label, Action action)
+    {
+        lock (_autoSaveLock)
+        {
+            if (_authoringChangeDepth == 0) CommitAuthoringChanges();
+            _authoringChangeDepth++;
+            try { action(); }
+            finally
+            {
+                _authoringChangeDepth--;
+                if (_authoringChangeDepth == 0) CommitAuthoringChanges(label);
+            }
+        }
+    }
+
+    public AuthoringHistoryRestore? Undo() => RestoreHistory(false);
+    public AuthoringHistoryRestore? Redo() => RestoreHistory(true);
+
+    private AuthoringHistoryRestore? RestoreHistory(bool redo)
+    {
+        lock (_autoSaveLock)
+        {
+            CommitAuthoringChanges();
+            var restored = redo ? _history.Redo(_project) : _history.Undo(_project);
+            if (restored is null) return null;
+            _project.PropertyChanged -= OnProjectPropertyChanged;
+            _project = restored.Project;
+            _project.PropertyChanged += OnProjectPropertyChanged;
+            OnPropertyChanged(nameof(Project));
+            OnPropertyChanged(nameof(IsDirty));
+            OnPropertyChanged(nameof(SaveState));
+            NotifyHistoryChanged();
+            ProjectReloaded?.Invoke(this, EventArgs.Empty);
+            return restored;
+        }
+    }
+
+    private void NotifyHistoryChanged()
+    {
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+    }
+
+    private void ResetHistory()
+    {
+        _history.Reset(_project);
+        NotifyHistoryChanged();
+    }
     private string? _filePath;
+    private string _untitledRecoveryPath = NewUntitledRecoveryPath();
+    private string? _sessionRecoveryPath;
+    private string? _recoveredSourcePath;
+    private string? _recoveredSourceFingerprint;
+    private readonly System.Collections.Generic.Dictionary<string, string?> _pendingRecoveryCleanup = new(StringComparer.OrdinalIgnoreCase);
+    private static string NewUntitledRecoveryPath(string? documentPath = null) => Path.Combine(AutoSave.RecoveryDirectory,
+        Guid.NewGuid().ToString("N") + (documentPath is null ? "" : ".named") + ".autosave.bsetup");
+    private string RecoveryPath => _sessionRecoveryPath ?? (_filePath is null ? _untitledRecoveryPath : AutoSave.AutoSavePath(_filePath));
     private System.Threading.Timer? _autoSaveTimer;
 
     public InstallProject Project => _project;
     public bool IsDirty => _project.IsDirty;
     public bool HasFilePath => !string.IsNullOrEmpty(_filePath);
     public string? FilePath => _filePath;
+    private bool _isRecovered;
+    private DateTime? _lastSavedAt, _lastAutoSavedAt;
+    private string? _saveError, _autoSaveError, _recoveryError, _cleanupError;
+    public AuthoringSaveState SaveState
+    {
+        get { lock (_autoSaveLock) return new(_filePath, RecoveryPath, IsDirty,
+            _isRecovered, _lastSavedAt, _lastAutoSavedAt, _saveError, _autoSaveError, _recoveryError, _cleanupError); }
+    }
+
+    private void ResetSaveState()
+    {
+        _isRecovered = false;
+        _sessionRecoveryPath = null;
+        _recoveredSourcePath = null;
+        _recoveredSourceFingerprint = null;
+        _lastSavedAt = _lastAutoSavedAt = null;
+        _saveError = _autoSaveError = _recoveryError = _cleanupError = null;
+    }
 
     public string ProductName
     {
@@ -47,17 +136,24 @@ public class InstallerController : INotifyPropertyChanged
             _project = InstallerProjectFactory.CreateNew("MyApplication", "1.0.0", "Publisher", "");
         }
         _project.PropertyChanged += OnProjectPropertyChanged;
+        _history.Reset(_project);
         StartAutoSave();
     }
 
     public void ReplaceProject(InstallProject project)
     {
-        if (_project != null)
-            _project.PropertyChanged -= OnProjectPropertyChanged;
-        _project = project;
-        _project.PropertyChanged += OnProjectPropertyChanged;
-        OnPropertyChanged(nameof(Project));
-        OnPropertyChanged(nameof(IsDirty));
+        lock (_autoSaveLock)
+        {
+            CommitAuthoringChanges();
+            _history.AdoptReplacement(_project, project);
+            if (_project != null)
+                _project.PropertyChanged -= OnProjectPropertyChanged;
+            _project = project;
+            _project.PropertyChanged += OnProjectPropertyChanged;
+            OnPropertyChanged(nameof(Project));
+            OnPropertyChanged(nameof(IsDirty));
+            CommitAuthoringChanges("Replace project");
+        }
     }
 
     // ── Lifecycle ──
@@ -66,71 +162,176 @@ public class InstallerController : INotifyPropertyChanged
         => New(ProjectTemplates.EmptyId, name, version, publisher, sourceDir);
 
     public void New(string templateId, string name, string version, string publisher, string sourceDir)
+        => New(new ProjectTemplate { Id = templateId }, name, version, publisher, sourceDir);
+
+    public void New(ProjectTemplate template, string name, string version, string publisher, string sourceDir)
     {
-        if (_project != null)
-            _project.PropertyChanged -= OnProjectPropertyChanged;
-        _project = ProjectTemplates.Create(templateId, name, version, publisher, sourceDir);
-        _project.PropertyChanged += OnProjectPropertyChanged;
-        _filePath = null;
-        OnPropertyChanged(nameof(Project));
-        OnPropertyChanged(nameof(IsDirty));
-        ProjectReloaded?.Invoke(this, EventArgs.Empty);
+        var created = ProjectTemplates.Create(template, name, version, publisher, sourceDir);
+        lock (_autoSaveLock)
+        {
+            if (_project != null)
+                _project.PropertyChanged -= OnProjectPropertyChanged;
+            _project = created;
+            _project.PropertyChanged += OnProjectPropertyChanged;
+            _filePath = null;
+            _untitledRecoveryPath = NewUntitledRecoveryPath();
+            ResetSaveState();
+            ResetHistory();
+            OnPropertyChanged(nameof(Project));
+            OnPropertyChanged(nameof(IsDirty));
+            ProjectReloaded?.Invoke(this, EventArgs.Empty);
+            OnPropertyChanged(nameof(SaveState));
+        }
     }
 
-    public (bool ok, string? error) Open(string path)
+    public (bool ok, string? error) Open(string path, bool recoverDraft = true)
     {
-        var (project, error) = InstallerScriptSerializer.Load(path);
-        if (project == null)
-            return (false, error);
-
-        // Script-relative paths resolve against the script, not the builder's working
-        // directory. In memory only — saving must not bake absolute paths into the script.
-        InstallerScriptSerializer.ResolveRelativePaths(project, path);
-
-        if (AutoSave.IsRecoveryAvailable(path))
+        lock (_autoSaveLock)
         {
-            var recovered = AutoSave.AutoSavePath(path);
-            if (recovered != null && File.Exists(recovered))
-            {
-                var (recoveryProject, _) = InstallerScriptSerializer.Load(recovered);
-                if (recoveryProject != null)
-                    project = recoveryProject;
-            }
-        }
+            var (project, error) = InstallerScriptSerializer.Load(path);
+            if (project == null)
+                return (false, error);
+            ResetSaveState();
 
-        if (_project != null)
+            // Script-relative paths resolve against the script, not the builder's working
+            // directory. In memory only — saving must not bake absolute paths into the script.
+            InstallerScriptSerializer.ResolveRelativePaths(project, path);
+            project.MarkClean();
+            _lastSavedAt = File.GetLastWriteTimeUtc(path);
+
+            if (recoverDraft && AutoSave.IsRecoveryAvailable(path))
+            {
+                var recovered = AutoSave.AutoSavePath(path);
+                if (recovered != null && File.Exists(recovered))
+                {
+                    var (recoveryProject, recoveryError) = InstallerScriptSerializer.Load(recovered);
+                    if (recoveryProject != null)
+                    {
+                        InstallerScriptSerializer.ResolveRelativePaths(recoveryProject, path);
+                        recoveryProject.MarkDirty();
+                        project = recoveryProject;
+                        _isRecovered = true;
+                        _lastAutoSavedAt = File.GetLastWriteTimeUtc(recovered);
+                    }
+                    else _recoveryError = recoveryError;
+                }
+            }
+
+            if (_project != null)
+                _project.PropertyChanged -= OnProjectPropertyChanged;
+            _project = project;
+            _project.PropertyChanged += OnProjectPropertyChanged;
+            _filePath = path;
+            ResetHistory();
+            RecentProjects.Record(path);
+            OnPropertyChanged(nameof(Project));
+            OnPropertyChanged(nameof(IsDirty));
+            ProjectReloaded?.Invoke(this, EventArgs.Empty);
+            OnPropertyChanged(nameof(SaveState));
+            return (true, null);
+        }
+    }
+
+    public (bool ok, string? error) RecoverUntitled(string recoveryPath)
+        => RecoverDraft(new RecoveryDraftEntry(recoveryPath));
+
+    public (bool ok, string? error) RecoverDraft(RecoveryDraftEntry entry)
+    {
+        lock (_autoSaveLock)
+        {
+            if (entry.DiscoveryError is not null) return (false, entry.DiscoveryError);
+            var recoveryPath = entry.RecoveryPath;
+            var sourceFingerprint = AutoSave.RecoveryFingerprint(recoveryPath);
+            var (project, error) = InstallerScriptSerializer.Load(recoveryPath);
+            if (project is null) return (false, error);
+            try { if (entry.DocumentPath is not null) InstallerScriptSerializer.ResolveRelativePaths(project, entry.DocumentPath); }
+            catch (Exception ex) { return (false, ex.Message); }
+            var sessionPath = NewUntitledRecoveryPath(entry.DocumentPath);
+            try
+            {
+                Directory.CreateDirectory(AutoSave.RecoveryDirectory);
+                AutoSave.RecordDocumentIdentity(sessionPath, entry.DocumentPath);
+                AtomicFileWriter.WriteAllText(sessionPath, InstallerScriptSerializer.Write(project));
+            }
+            catch (Exception ex) { AutoSave.ClearRecoveryFile(sessionPath); return (false, ex.Message); }
             _project.PropertyChanged -= OnProjectPropertyChanged;
-        _project = project;
-        _project.PropertyChanged += OnProjectPropertyChanged;
-        _filePath = path;
-        RecentProjects.Record(path);
-        OnPropertyChanged(nameof(Project));
-        OnPropertyChanged(nameof(IsDirty));
-        ProjectReloaded?.Invoke(this, EventArgs.Empty);
-        return (true, null);
+            _project = project;
+            _project.PropertyChanged += OnProjectPropertyChanged;
+            _filePath = entry.DocumentPath;
+            _untitledRecoveryPath = sessionPath;
+            ResetSaveState();
+            _sessionRecoveryPath = sessionPath;
+            if (entry.DocumentPath is not null && File.Exists(entry.DocumentPath)) _lastSavedAt = File.GetLastWriteTimeUtc(entry.DocumentPath);
+            _recoveredSourcePath = recoveryPath;
+            _recoveredSourceFingerprint = sourceFingerprint;
+            _isRecovered = true;
+            _lastAutoSavedAt = File.GetLastWriteTimeUtc(recoveryPath);
+            _project.MarkDirty();
+            ResetHistory();
+            OnPropertyChanged(nameof(Project));
+            OnPropertyChanged(nameof(IsDirty));
+            ProjectReloaded?.Invoke(this, EventArgs.Empty);
+            OnPropertyChanged(nameof(SaveState));
+            return (true, null);
+        }
     }
 
     public (bool ok, string? error) Save()
     {
-        if (_filePath == null)
-            return (false, "No file path. Use SaveAs.");
-        var result = InstallerScriptSerializer.Save(_project, _filePath);
+        lock (_autoSaveLock)
+        {
+            if (_filePath == null)
+            {
+                _saveError = "No file path. Use SaveAs.";
+                OnPropertyChanged(nameof(SaveState));
+                return (false, _saveError);
+            }
+            return SaveTo(_filePath);
+        }
+    }
+
+    private (bool ok, string? error) SaveTo(string path)
+    {
+        CommitAuthoringChanges();
+        var previousRecoveryPath = RecoveryPath;
+        var result = InstallerScriptSerializer.Save(_project, path);
+        _saveError = result.error;
         if (result.ok)
         {
+            _filePath = path;
+            _sessionRecoveryPath = null;
+            _lastSavedAt = DateTime.UtcNow;
+            _isRecovered = false;
+            _recoveryError = _autoSaveError = null;
             _project.MarkClean();
-            AutoSave.Clear(_filePath);
+            _pendingRecoveryCleanup[previousRecoveryPath] = AutoSave.RecoveryFingerprint(previousRecoveryPath);
+            if (_recoveredSourcePath is not null) _pendingRecoveryCleanup[_recoveredSourcePath] = _recoveredSourceFingerprint;
+            _recoveredSourcePath = null;
+            _recoveredSourceFingerprint = null;
+            _cleanupError = null;
+            foreach (var pending in new System.Collections.Generic.Dictionary<string, string?>(_pendingRecoveryCleanup))
+            {
+                var recoveryFile = pending.Key;
+                var cleanupError = AutoSave.ClearRecoveryFile(recoveryFile, pending.Value, verifyFingerprint: true);
+                if (cleanupError is null) _pendingRecoveryCleanup.Remove(recoveryFile);
+                else _cleanupError = (_cleanupError is null ? "" : _cleanupError + Environment.NewLine) + recoveryFile + ": " + cleanupError;
+            }
             OnPropertyChanged(nameof(IsDirty));
         }
+        OnPropertyChanged(nameof(FilePath));
+        OnPropertyChanged(nameof(SaveState));
         return result;
     }
 
     public (bool ok, string? error) SaveAs(string path)
     {
-        _filePath = EnsureScriptExtension(path);
-        var result = Save();
-        if (result.ok)
-            RecentProjects.Record(_filePath!);
-        return result;
+        lock (_autoSaveLock)
+        {
+            var result = SaveTo(EnsureScriptExtension(path));
+            if (result.ok)
+                RecentProjects.Record(_filePath!);
+            return result;
+        }
     }
 
     // ── Build ──
@@ -142,20 +343,45 @@ public class InstallerController : INotifyPropertyChanged
     /// has always passed one.
     /// </param>
     public BuildPipeline.BuildResult Build(bool clean = false, CancellationToken cancellationToken = default)
+        => BuildCapturedProject(CaptureBuildProject(), clean, cancellationToken);
+
+    /// <summary>Capture on the UI thread before a build is dispatched. No references to editable resources are shared.</summary>
+    internal InstallProject CaptureBuildProject()
+    {
+        lock (_autoSaveLock)
+        {
+            var (snapshot, error) = InstallerScriptSerializer.Read(InstallerScriptSerializer.Write(_project), _project.ProjectName);
+            return snapshot ?? throw new InvalidOperationException(error ?? "The project could not be captured for building.");
+        }
+    }
+
+    internal BuildPipeline.BuildResult BuildCapturedProject(InstallProject snapshot, bool clean = false, CancellationToken cancellationToken = default,
+        IProgress<BuildPipeline.BuildProgress>? progress = null)
     {
         // SINGLE source of truth: delegate to BuildPipeline
         var pipeline = new BuildPipeline
         {
-            Progress = new Progress<BuildPipeline.BuildProgress>(p => BuildProgressChanged?.Invoke(this, p)),
+            Progress = new DirectProgress<BuildPipeline.BuildProgress>(p =>
+            {
+                progress?.Report(p);
+                BuildProgressChanged?.Invoke(this, p);
+            }),
             CancellationToken = cancellationToken
         };
-        var result = pipeline.Run(_project, clean);
-        BuildProgressChanged?.Invoke(this, new BuildPipeline.BuildProgress(
+        var result = pipeline.Run(snapshot, clean);
+        var finalProgress = new BuildPipeline.BuildProgress(
             100,
             result.Success ? "Build complete."
-                : cancellationToken.IsCancellationRequested ? "Build canceled."
-                : "Build failed."));
+                : result.Canceled ? "Build canceled."
+                : "Build failed.", result.Canceled ? BuildPipeline.BuildPhase.Canceled : result.Success ? BuildPipeline.BuildPhase.Completed : BuildPipeline.BuildPhase.Failed);
+        progress?.Report(finalProgress);
+        BuildProgressChanged?.Invoke(this, finalProgress);
         return result;
+    }
+
+    private sealed class DirectProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 
     public BuildPipeline.BuildResult Validate()
@@ -186,11 +412,17 @@ public class InstallerController : INotifyPropertyChanged
 
     public ProjectTemplateUpdatePreview PreviewTemplateUpdate(string templateId)
         => ProjectAuthoringWorkspace.PreviewTemplateUpdate(_project, templateId);
+    public ProjectTemplateUpdatePreview PreviewTemplateUpdate(ProjectTemplate template)
+        => ProjectAuthoringWorkspace.PreviewTemplateUpdate(_project, template);
 
     public ProjectTemplateUpdatePreview ApplyTemplateUpdate(string templateId)
+        => ApplyTemplateUpdate(new ProjectTemplate { Id = templateId });
+
+    public ProjectTemplateUpdatePreview ApplyTemplateUpdate(ProjectTemplate template)
     {
-        var preview = PreviewTemplateUpdate(templateId);
-        var updated = ProjectAuthoringWorkspace.CreateTemplateCandidate(_project, templateId);
+        CommitAuthoringChanges();
+        var preview = PreviewTemplateUpdate(template);
+        var updated = ProjectAuthoringWorkspace.CreateTemplateCandidate(_project, template);
         updated.MarkDirty();
         ReplaceProject(updated);
         ProjectReloaded?.Invoke(this, EventArgs.Empty);
@@ -199,12 +431,50 @@ public class InstallerController : INotifyPropertyChanged
 
     // ── Scan ──
 
+    internal ResourceRecipePreview ApplyResourceRecipe(ResourceRecipeRequest request)
+    {
+        lock (_autoSaveLock)
+        {
+            ResourceRecipePreview preview = null!;
+            RunAuthoringChange("Resource recipe", () => preview = ResourceRecipeCatalog.Apply(_project, request));
+            if (preview.CanApply) ProjectMutated?.Invoke(this, EventArgs.Empty);
+            return preview;
+        }
+    }
+
+    private long _sourceScanGeneration;
+
+    internal AuthoringSourceScan CaptureSourceScan(string directory)
+    {
+        lock (_autoSaveLock)
+        {
+            CommitAuthoringChanges();
+            return AuthoringSourceScan.Capture(_project, directory, ++_sourceScanGeneration);
+        }
+    }
+
+    internal bool IsSourceScanCurrent(AuthoringSourceScan scan)
+    {
+        lock (_autoSaveLock) return scan.Generation == _sourceScanGeneration && scan.Matches(_project);
+    }
+
+    internal bool TryApplySourceScan(AuthoringSourceScan scan)
+    {
+        lock (_autoSaveLock)
+        {
+            if (!scan.IsCompleted || !IsSourceScanCurrent(scan)) return false;
+            RunAuthoringChange("Scan source", () => scan.Apply(_project));
+            ++_sourceScanGeneration; // A completed request can only be applied once.
+            ProjectMutated?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+    }
+
     public SourceScanner.ScanResult Scan(string? sourceDirectory = null)
     {
-        var scanner = new SourceScanner();
-        var dir = sourceDirectory ?? _project.SourceDirectory;
-        var result = scanner.ScanAndApply(_project, dir);
-        ProjectMutated?.Invoke(this, EventArgs.Empty);
+        var scan = CaptureSourceScan(sourceDirectory ?? _project.SourceDirectory);
+        var result = scan.Run();
+        if (!TryApplySourceScan(scan)) throw new InvalidOperationException("The project changed during source scanning. Rescan to update its files.");
         return result;
     }
 
@@ -228,6 +498,27 @@ public class InstallerController : INotifyPropertyChanged
 
     // ── Preview ──
 
+    internal BuildPipeline.BuildResult PublishCapturedProject(InstallProject snapshot, string outputDir,
+        string updateUrl, bool sign, IProgress<BuildPipeline.BuildProgress> progress)
+    {
+        var publisher = new ClickOncePublisher
+        {
+            BuildProgress = progress
+        };
+        var published = publisher.Publish(snapshot, outputDir, updateUrl, sign);
+        var result = new BuildPipeline.BuildResult { Success = published.Success, ArtifactKind = "clickonce",
+            OutputFile = published.DeploymentManifest, FileCount = published.DeployFileCount, Elapsed = published.Elapsed };
+        result.Warnings.AddRange(published.Warnings);
+        result.Errors.AddRange(published.Errors);
+        if (result.Success && !File.Exists(result.OutputFile))
+        {
+            result.Success = false;
+            result.Errors.Add("The publisher did not produce a deployment manifest.");
+        }
+        if (File.Exists(result.OutputFile)) result.OutputSizeBytes = new FileInfo(result.OutputFile).Length;
+        return result;
+    }
+
     public void ShowPreview(IWin32Window owner)
     {
         using var f = new WizardPreviewForm(_project);
@@ -238,14 +529,30 @@ public class InstallerController : INotifyPropertyChanged
 
     // ── Helpers ──
 
-    public bool ConfirmDiscardChanges(IWin32Window owner)
+    public bool ConfirmDiscardChanges(IWin32Window owner, Func<bool>? saveAction = null, bool hasPendingChanges = false)
     {
-        if (!IsDirty) return true;
+        if (!IsDirty && !hasPendingChanges) return true;
         var ans = MessageBox.Show(owner,
-            "You have unsaved changes. Save first?",
+            Beep.Installer.Lang.LanguageManager.GetOrDefault("SaveState_SaveFirst", "You have unsaved changes. Save first?"),
             "Beep Installer", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         if (ans == DialogResult.Cancel) return false;
-        if (ans == DialogResult.Yes) Save();
+        if (ans == DialogResult.Yes)
+        {
+            if (saveAction is not null) return saveAction();
+            if (!HasFilePath)
+            {
+                using var dialog = new SaveFileDialog { Filter = InstallerScriptSerializer.FileFilter,
+                    FileName = _project.OutputBaseFilename + ".bsetup" };
+                if (dialog.ShowDialog(owner) != DialogResult.OK) return false;
+                var result = SaveAs(dialog.FileName);
+                if (!result.ok) { MessageBox.Show(owner, result.error, "Save", MessageBoxButtons.OK, MessageBoxIcon.Error); return false; }
+            }
+            else
+            {
+                var result = Save();
+                if (!result.ok) { MessageBox.Show(owner, result.error, "Save", MessageBoxButtons.OK, MessageBoxIcon.Error); return false; }
+            }
+        }
         return true;
     }
 
@@ -253,6 +560,7 @@ public class InstallerController : INotifyPropertyChanged
     {
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(Project));
+        OnPropertyChanged(nameof(SaveState));
     }
 
     private void OnPropertyChanged(string name) =>
@@ -294,27 +602,30 @@ public class InstallerController : INotifyPropertyChanged
         // A tick that arrives while the previous one is still writing is dropped, not queued: the
         // next tick captures newer state anyway.
         if (Interlocked.Exchange(ref _autoSaveInFlight, 1) == 1) return;
-        try
+        lock (_autoSaveLock)
         {
-            string text;
-            lock (_autoSaveLock)
-                text = InstallerScriptSerializer.Write(_project);
-
-            var path = AutoSave.AutoSavePath(_filePath);
-            var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
-            AtomicFileWriter.WriteAllText(path, text);
-        }
-        catch (Exception ex)
-        {
-            // Autosave exists so a crash does not lose the user's work. Failing silently
-            // means they believe they are covered when they are not — record it so the
-            // failure is at least discoverable.
-            Diag.Warn("AutoSave", "periodic autosave failed — crash recovery is unavailable", ex, "BI2640");
-        }
-        finally
-        {
-            Interlocked.Exchange(ref _autoSaveInFlight, 0);
+            try
+            {
+                if (!_project.IsDirty) return;
+                var text = InstallerScriptSerializer.Write(_project);
+                var path = RecoveryPath;
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+                AtomicFileWriter.WriteAllText(path, text);
+                _lastAutoSavedAt = DateTime.UtcNow;
+                _autoSaveError = null;
+                OnPropertyChanged(nameof(SaveState));
+            }
+            catch (Exception ex)
+            {
+                Diag.Warn("AutoSave", "periodic autosave failed — crash recovery is unavailable", ex, "BI2640");
+                _autoSaveError = ex.Message;
+                OnPropertyChanged(nameof(SaveState));
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _autoSaveInFlight, 0);
+            }
         }
     }
 

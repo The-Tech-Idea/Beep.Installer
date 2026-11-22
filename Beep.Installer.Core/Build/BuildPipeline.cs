@@ -98,7 +98,9 @@ public class BuildPipeline
     public class BuildResult
     {
         public bool Success { get; set; }
+        public bool Canceled { get; set; }
         public string OutputFile { get; set; } = "";
+        public string ArtifactKind { get; set; } = "exe";
         public string PayloadPath { get; set; } = "";
         public string SetupScriptPath { get; set; } = "";
         public string MsixPackagePath { get; set; } = "";
@@ -181,7 +183,8 @@ public class BuildPipeline
         public string Error { get; init; } = "";
     }
 
-    public readonly record struct BuildProgress(int Percent, string Message);
+    public enum BuildPhase { Preparing, Building, Signing, Completed, Failed, Canceled }
+    public readonly record struct BuildProgress(int Percent, string Message, BuildPhase Phase = BuildPhase.Building);
 
     private const int PeFooterMagicSize = 16;
     private static readonly byte[] PeFooterMagic = Encoding.ASCII.GetBytes("BEEPINSTPAYLOAD.");
@@ -194,6 +197,8 @@ public class BuildPipeline
     /// exercised without a multi-minute publish of the whole installer project.
     /// </summary>
     public IInstallerHostBuilder HostBuilder { get; set; } = new DotnetPublishHostBuilder();
+    public IInstallerPublisher ClickOncePublisher { get; set; } = new ClickOncePublisher();
+    public Func<Beep.Installer.Engine.Msi.MsiToolInvocation, Beep.Installer.Engine.Msi.MsiToolResult>? MsiToolRunner { get; set; }
     public IReadOnlyList<string> ExtensionDirectories { get; set; } = Array.Empty<string>();
     public Beep.Installer.Policy.InstallerPolicy? ExtensionPolicy { get; set; }
 
@@ -277,6 +282,8 @@ public class BuildPipeline
 
     public BuildResult Run(InstallProject project, bool cleanOutput = false)
     {
+        if (project.OutputFormat is InstallerOutputFormat.Msi or InstallerOutputFormat.ClickOnce)
+            return AlternativePackageBuilder.Run(project, this, cleanOutput);
         var result = new BuildResult();
         if (project.Resources.Count > 0 && ExtensionDirectories.Count == 0)
         {
@@ -340,11 +347,12 @@ public class BuildPipeline
         {
             sw.Stop();
             result.Success = false;
+            result.Canceled = true;
             result.Errors.Add("Build canceled.");
             result.Elapsed = sw.Elapsed;
             log.Add($"[11/11] CANCELED after {result.Elapsed.TotalSeconds:F1}s");
             CleanupCanceledOutput(outputDir, project?.PayloadFolderName ?? "payload", log);
-            Report(100, "Build canceled.");
+            Report(100, "Build canceled.", BuildPhase.Canceled);
         }
         catch (Exception ex)
         {
@@ -453,7 +461,7 @@ public class BuildPipeline
     /// <summary>Validates, then reserves the output file. False means the build cannot proceed.</summary>
     private bool ValidateAndReserveOutput(BuildRun run)
     {
-        Report(2, "Validating project…");
+        Report(2, "Validating project…", BuildPhase.Preparing);
         ValidateProject(run.Project, run.Result);
         if (run.Result.Errors.Count > 0) { run.Result.Success = false; return false; }
 
@@ -474,7 +482,7 @@ public class BuildPipeline
 
     private bool StagePayloadStage(BuildRun run)
     {
-        Report(8, "Staging payload…");
+        Report(8, "Staging payload…", BuildPhase.Preparing);
         var staged = StagePayload(run.Project, run.OutputDir, run.Result);
         if (run.Result.Errors.Count > 0) { run.Result.Success = false; return false; }
 
@@ -621,7 +629,7 @@ public class BuildPipeline
     {
         if (run.Project.HasCodeSigningCertificate)
         {
-            Report(85, "Code signing…");
+            Report(85, "Code signing…", BuildPhase.Signing);
             ThrowIfBuildCanceled();
             SignExe(run.ExePath, run.Project, run.Result, run.Log);
             return;
@@ -668,7 +676,7 @@ public class BuildPipeline
         sw.Stop();
         result.Elapsed = sw.Elapsed;
         result.Success = result.Errors.Count == 0;
-        Report(100, result.Success ? "Build complete." : "Build completed with errors.");
+        Report(100, result.Success ? "Build complete." : "Build completed with errors.", result.Success ? BuildPhase.Completed : BuildPhase.Failed);
         run.Log.Add($"[11/11] {(result.Success ? "Build succeeded" : "Build failed")} in {result.Elapsed.TotalSeconds:F1}s");
     }
 
@@ -1824,8 +1832,8 @@ Beep Installer v1.0.0
         throw new FileNotFoundException("Cannot locate Beep.Installer.csproj.");
     }
 
-    private void Report(int percent, string message)
-        => Progress?.Report(new BuildProgress(percent, message));
+    private void Report(int percent, string message, BuildPhase phase = BuildPhase.Building)
+        => Progress?.Report(new BuildProgress(percent, message, phase));
 
     private void ThrowIfBuildCanceled()
     {

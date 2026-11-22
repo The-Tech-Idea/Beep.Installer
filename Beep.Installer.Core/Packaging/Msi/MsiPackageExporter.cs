@@ -75,6 +75,7 @@ public sealed class MsiExportOptions
     public CodeSigningService SigningService { get; init; } = new();
     public string? WixToolPath { get; init; }
     public Func<MsiToolInvocation, MsiToolResult>? ToolRunner { get; init; }
+    public IProgress<BuildPipeline.BuildProgress>? Progress { get; init; }
 }
 
 public sealed class MsiExportResult
@@ -1764,6 +1765,7 @@ public static class MsiPackageExporter
             return;
         }
 
+        options.Progress?.Report(new(85, "Signing " + artifactKind.ToUpperInvariant(), BuildPipeline.BuildPhase.Signing));
         var signing = options.SigningService.SignInstaller(
             absoluteArtifactPath,
             project.CodeSignCertificatePath,

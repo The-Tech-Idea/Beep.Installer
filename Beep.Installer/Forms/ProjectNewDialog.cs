@@ -26,11 +26,12 @@ public class ProjectNewDialog : Form
     /// <summary>The selected template id (defaults to Empty).</summary>
     public string TemplateId =>
         _templateBox.SelectedItem is ProjectTemplate t ? t.Id : ProjectTemplates.EmptyId;
+    public ProjectTemplate SelectedTemplate => _templateBox.SelectedItem as ProjectTemplate ?? new ProjectTemplate { Id = ProjectTemplates.EmptyId };
 
     public ProjectNewDialog()
     {
         Text = L("NewProject_NewInstallerScript", "New Installer Script");
-        Size = new Size(520, 320);
+        Size = new Size(700, 420);
         StartPosition = FormStartPosition.CenterParent;
         // Absolute pixel sizes below require DPI auto-scaling, or the dialog clips at 125%+.
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -49,8 +50,11 @@ public class ProjectNewDialog : Form
         _templateBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var t in ProjectTemplates.Builtins) _templateBox.Items.Add(t);
         _templateBox.SelectedIndex = 0;
-        layout.SetColumnSpan(_templateBox, 2);
-        layout.Controls.Add(_templateBox, 1, r);
+        var templates = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, AutoSize = true };
+        templates.ColumnStyles.Add(new(SizeType.Percent, 100)); templates.ColumnStyles.Add(new(SizeType.AutoSize));
+        templates.Controls.Add(_templateBox, 0, 0); templates.Controls.Add(Ui.TemplateGallerySelection.CreateButton(_templateBox), 1, 0);
+        layout.SetColumnSpan(templates, 2);
+        layout.Controls.Add(templates, 1, r);
         r++;
 
         layout.Controls.Add(MakeLabel("Product name:"), 0, r);

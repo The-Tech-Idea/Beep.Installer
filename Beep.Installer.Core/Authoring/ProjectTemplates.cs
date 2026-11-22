@@ -14,6 +14,7 @@ public class ProjectTemplate
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
     public string Category { get; set; } = "General";
+    public VerifiedTemplateBlueprint? Blueprint { get; init; }
 
     public override string ToString() => $"{Name} — {Description}";
 }
@@ -33,10 +34,22 @@ public static class ProjectTemplates
         new ProjectTemplate { Id = ConsoleId,  Name = "Console App",  Description = "Command-line tool: core component + Start Menu shortcut.", Category = "Desktop" },
         new ProjectTemplate { Id = WinFormsId, Name = "WinForms App", Description = "Desktop app: core component + Desktop & Start Menu shortcuts.", Category = "Desktop" },
         new ProjectTemplate { Id = WpfId,      Name = "WPF App",      Description = "Desktop app: core component + Desktop & Start Menu shortcuts.", Category = "Desktop" },
-        new ProjectTemplate { Id = ServiceId,  Name = "Windows Service", Description = "Background service: core component + Start Menu shortcut.", Category = "Service" },
+        new ProjectTemplate { Id = ServiceId,  Name = "Windows Service", Description = "Service host sample: core component + Startup shortcut; configure service registration separately.", Category = "Service" },
     };
 
     /// <summary>Creates a fresh installer model from the named template.</summary>
+    public static InstallProject Create(ProjectTemplate template, string productName, string version, string publisher, string sourceDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+        if (template.Blueprint is null) return Create(template.Id, productName, version, publisher, sourceDirectory);
+        var project = template.Blueprint.CreateProject();
+        // Creation fields explicitly supplied by the author replace sample product identity.
+        var identity = InstallerProjectFactory.CreateNew(productName, version, publisher, sourceDirectory);
+        project.AppId = identity.AppId; project.AppName = identity.AppName; project.ProjectName = identity.ProjectName;
+        project.AppVersion = identity.AppVersion; project.AppPublisher = identity.AppPublisher; project.SourceDirectory = identity.SourceDirectory;
+        project.MarkDirty(); return project;
+    }
+
     public static InstallProject Create(string templateId, string productName, string version, string publisher, string sourceDirectory)
     {
         var p = InstallerProjectFactory.CreateNew(productName, version, publisher, sourceDirectory);

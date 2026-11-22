@@ -125,6 +125,9 @@ public static class ProjectCanonicalJsonExporter
     }
 
     public static SortedDictionary<string, object?> ToObject(InstallProject project)
+        => ToObject(project, null);
+
+    internal static SortedDictionary<string, object?> ToObject(InstallProject project, Func<object, string, object?, object?>? projectValue)
     {
         ArgumentNullException.ThrowIfNull(project);
 
@@ -140,13 +143,13 @@ public static class ProjectCanonicalJsonExporter
                 continue;
 
             var value = property.GetValue(project);
-            output[JsonName(name)] = NormalizeValue(value, depth: 0);
+            output[JsonName(name)] = NormalizeValue(projectValue?.Invoke(project, name, value) ?? value, depth: 0, projectValue);
         }
 
         return output;
     }
 
-    private static object? NormalizeValue(object? value, int depth)
+    private static object? NormalizeValue(object? value, int depth, Func<object, string, object?, object?>? projectValue = null)
     {
         if (value == null)
             return null;
@@ -171,8 +174,8 @@ public static class ProjectCanonicalJsonExporter
             {
                 if (entry.Key is null)
                     continue;
-                result[Convert.ToString(entry.Key, System.Globalization.CultureInfo.InvariantCulture) ?? ""] =
-                    NormalizeValue(entry.Value, depth + 1);
+                var key = Convert.ToString(entry.Key, System.Globalization.CultureInfo.InvariantCulture) ?? "";
+                result[key] = NormalizeValue(projectValue?.Invoke(dictionary, key, entry.Value) ?? entry.Value, depth + 1, projectValue);
             }
             return result;
         }
@@ -182,7 +185,7 @@ public static class ProjectCanonicalJsonExporter
             return enumerable
                 .Cast<object?>()
                 .OrderBy(CollectionSortKey, StringComparer.OrdinalIgnoreCase)
-                .Select(item => NormalizeValue(item, depth + 1))
+                .Select(item => NormalizeValue(item, depth + 1, projectValue))
                 .ToList();
         }
 
@@ -196,7 +199,8 @@ public static class ProjectCanonicalJsonExporter
         {
             if (!property.CanRead || property.Name is "HasErrors" or "IsDirty" or "IsModified")
                 continue;
-            output[JsonName(property.Name)] = NormalizeValue(property.GetValue(value), depth + 1);
+            var memberValue = property.GetValue(value);
+            output[JsonName(property.Name)] = NormalizeValue(projectValue?.Invoke(value, property.Name, memberValue) ?? memberValue, depth + 1, projectValue);
         }
 
         return output;

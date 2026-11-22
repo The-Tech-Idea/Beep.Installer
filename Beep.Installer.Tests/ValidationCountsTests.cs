@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using Beep.Installer.Ui;
+using Beep.Installer.Lang;
 using FluentAssertions;
 using Xunit;
 
@@ -13,8 +14,12 @@ namespace Beep.Installer.Tests;
 /// is the extracted, shared version; these tests cover the counting and label-formatting it replaced,
 /// independent of either dialog.
 /// </summary>
-public sealed class ValidationCountsTests
+[Collection("Language")]
+public sealed class ValidationCountsTests : IDisposable
 {
+    private readonly string _culture = LanguageManager.CurrentCulture.TwoLetterISOLanguageName;
+    public ValidationCountsTests() => LanguageManager.SetLanguage("en");
+    public void Dispose() => LanguageManager.SetLanguage(_culture);
     private sealed record BoolIssue(bool IsError);
 
     [Fact]
@@ -48,7 +53,7 @@ public sealed class ValidationCountsTests
             .Apply(label, "3 action(s) -", "OK");
 
         label.Text.Should().Be("3 action(s) - OK");
-        label.ForeColor.Should().Be(Color.DarkGreen);
+        label.ForeColor.Should().Be(InstallerTheme.AccessibleForeground(InstallerTheme.Success, InstallerTheme.Panel));
     }
 
     [Fact]
@@ -59,8 +64,8 @@ public sealed class ValidationCountsTests
 
         ValidationCounts.From(issues, i => i.IsError).Apply(label, "2 action(s) -", "OK");
 
-        label.Text.Should().Be("2 action(s) - 1 error(s), 1 warning(s).");
-        label.ForeColor.Should().Be(Color.DarkRed);
+        label.Text.Should().Be("2 action(s) - Errors: 1, warnings: 1");
+        label.ForeColor.Should().Be(InstallerTheme.AccessibleForeground(InstallerTheme.Danger, InstallerTheme.Panel));
     }
 
     [Fact]
@@ -71,7 +76,7 @@ public sealed class ValidationCountsTests
 
         ValidationCounts.From(issues, i => i.IsError).Apply(label, "1 action(s) -", "OK");
 
-        label.Text.Should().Be("1 action(s) - 0 error(s), 1 warning(s).");
-        label.ForeColor.Should().Be(Color.DarkOrange);
+        label.Text.Should().Be("1 action(s) - Errors: 0, warnings: 1");
+        label.ForeColor.Should().Be(InstallerTheme.AccessibleForeground(InstallerTheme.Warning, InstallerTheme.Panel));
     }
 }

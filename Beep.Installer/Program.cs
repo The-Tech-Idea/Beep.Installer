@@ -4051,6 +4051,9 @@ internal static partial class Program
         Console.WriteLine("  Beep.Installer.exe /CANONICALIZE=<script.bsetup> [/WRITE] Canonicalize a script");
         Console.WriteLine("  Beep.Installer.exe /PLAN=<script.bsetup> [/JSON] Compile and print the install plan");
         Console.WriteLine("  Beep.Installer.exe /FORMATREADINESS=<script.bsetup> [/JSON] [/OUT=<json>] Report EXE/MSI/MSIX/WinGet/management-kit release readiness");
+        Console.WriteLine("  Beep.Installer.exe /MCP                  Run this installer as an MCP server over stdio (for Claude, Codex and other AI clients)");
+        Console.WriteLine("  Beep.Installer.exe /VER                                  Print the installer version");
+        Console.WriteLine("  Beep.Installer.exe /CATALOG [/JSON|/MARKDOWN|/HTML] [/OUT=<file>] Print the machine-readable catalog of every command, option, effect and MCP exposure");
         Console.WriteLine("  Beep.Installer.exe /LISTTEMPLATES [/JSON] [/OUT=<json>] List built-in project-template IDs for reusable package export");
         Console.WriteLine("  Beep.Installer.exe /EXPORTTEMPLATEPACKAGE=<template-id> /TEMPLATESIGNKEY=<pem> [/OUT=<dir>] [/JSON] Export a signed reusable project-template package");
         Console.WriteLine("  Beep.Installer.exe /VERIFYTEMPLATEPACKAGE=<dir> /TEMPLATETRUSTKEY=<pem> [/JSON] Verify a signed project-template package");

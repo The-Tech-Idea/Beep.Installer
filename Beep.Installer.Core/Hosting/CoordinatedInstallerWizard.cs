@@ -25,6 +25,10 @@ internal sealed class CoordinatedInstallerWizard(ISetupWizard inner) : ISetupWiz
         ArgumentNullException.ThrowIfNull(context);
         var install = context.TryGetProperty<string>(InstallContextKeys.InstallPath);
         if (string.IsNullOrWhiteSpace(install)) throw new ArgumentException("Installer graph requires an explicit installation path.");
+        // SetupContext.Options is never null (it defaults to a fresh SetupOptions), and the engine lets the context's
+        // options win over the wizard's. Without this, a graph built with DryRun=true ran live: the silent install
+        // created directories and wrote the registry. The graph's own options are the ones the caller chose.
+        context.Options = inner.Options;
         if (Interlocked.Exchange(ref _running, 1) != 0) throw new InvalidOperationException("This installer graph is already running.");
         try { return InstallationOperationLock.RunGraph(install, run); }
         finally { Volatile.Write(ref _running, 0); }

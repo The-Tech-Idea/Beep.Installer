@@ -28,11 +28,16 @@ public class InlineValidationTests
         // validator from the build it would eventually disagree with it -- which is precisely the
         // split that once let /VALIDATE reject a project /BUILD accepted.
         var source = ReadRepoFile(System.IO.Path.Combine("Beep.Installer", "Forms", "PackageBuilderForm.cs"));
-        var readiness = Between(source, "private void RefreshReadiness()", "private Panel BuildIdentitySection");
+        var readiness = Between(source, "private async void RefreshReadiness()", "protected override void OnShown");
 
-        readiness.Should().Contain("ProjectSchemaService.Validate(_project)",
+        readiness.Should().Contain("ProjectSchemaService.Validate(project)",
             "the indicator must agree with what pressing Build would do");
-        readiness.Should().Contain("ProjectSchemaDiagnosticSeverity.Error",
+        readiness.Should().Contain("_controller.CaptureBuildProject()",
+            "background validation must read an isolated snapshot rather than the mutable project");
+        readiness.Should().Contain("PackageTargetDiagnostics.Validate(project)",
+            "selected package blockers must be part of readiness");
+        var presentation = Between(source, "private void ApplyReadiness", "private void PaintBrandingPreview");
+        presentation.Should().Contain("ProjectSchemaDiagnosticSeverity.Error",
             "only errors block a build; warnings must not be reported as blocking");
     }
 

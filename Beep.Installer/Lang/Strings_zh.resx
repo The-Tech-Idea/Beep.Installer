@@ -1418,6 +1418,18 @@
   <data name="Toolbar_Languages" xml:space="preserve">
     <value>语言</value>
   </data>
+  <data name="Toolbar_Mcp" xml:space="preserve">
+    <value>AI / MCP</value>
+  </data>
+  <data name="Toolbar_McpHint" xml:space="preserve">
+    <value>从 Claude、Codex 及其他 AI 助手使用此安装程序 (MCP 服务器)</value>
+  </data>
+  <data name="Toolbar_More" xml:space="preserve">
+    <value>更多</value>
+  </data>
+  <data name="Toolbar_MoreHint" xml:space="preserve">
+    <value>恢复、更新、模板、操作、条件、配方、发布概览、比较、语言、帮助和关于</value>
+  </data>
   <data name="Toolbar_LanguagesHint" xml:space="preserve">
     <value>打开语言管理器</value>
   </data>
@@ -1526,4 +1538,462 @@
   <data name="Wizard_NoComponentsYet" xml:space="preserve">
     <value>请先添加至少一个组件，然后再继续。</value>
   </data>
+  <data name="Wizard_ValidationUnavailable" xml:space="preserve">
+    <value>验证不可用。请重试后再继续。</value>
+  </data>
+  <data name="Guided_Project" xml:space="preserve">
+    <value>项目</value>
+  </data>
+  <data name="Guided_Files" xml:space="preserve">
+    <value>文件和组件</value>
+  </data>
+  <data name="Guided_Install" xml:space="preserve">
+    <value>安装行为</value>
+  </data>
+  <data name="Guided_Package" xml:space="preserve">
+    <value>包和目标位置</value>
+  </data>
+  <data name="Guided_Signing" xml:space="preserve">
+    <value>签名</value>
+  </data>
+  <data name="Guided_Review" xml:space="preserve">
+    <value>检查并生成</value>
+  </data>
+  <data name="Guided_Result" xml:space="preserve">
+    <value>结果</value>
+  </data>
+  <data name="Guided_ContinueUnsigned" xml:space="preserve">
+    <value>不签名并继续</value>
+  </data>
+  <data name="Guided_FilesOnly" xml:space="preserve">
+    <value>使用源文件，无需定义可选组件</value>
+  </data>
+  <data name="Guided_SystemChanges" xml:space="preserve">
+    <value>系统更改</value>
+  </data>
+  <data name="Guided_Resources" xml:space="preserve">
+    <value>资源</value>
+  </data>
+  <data name="Guided_Configured" xml:space="preserve">
+    <value>已配置</value>
+  </data>
+  <data name="Guided_Unsigned" xml:space="preserve">
+    <value>未签名的开发版本</value>
+  </data>
+  <data name="Nav_Includes" xml:space="preserve">
+    <value>包含和排除</value>
+  </data>
+  <data name="Nav_Components" xml:space="preserve">
+    <value>组件</value>
+  </data>
+  <data name="Nav_Layout" xml:space="preserve">
+    <value>范围和目标位置</value>
+  </data>
+  <data name="Section_Prerequisites" xml:space="preserve">
+    <value>先决条件</value>
+  </data>
+  <data name="Section_Shortcuts" xml:space="preserve">
+    <value>快捷方式</value>
+  </data>
+  <data name="Section_Registry" xml:space="preserve">
+    <value>注册表项</value>
+  </data>
+  <data name="BuildResult_OpenManifest" xml:space="preserve">
+    <value>打开清单</value>
+  </data>
+  <data name="Packaging_Msi" xml:space="preserve">
+    <value>MSI — Windows Installer 包（需要 WiX）</value>
+  </data>
+  <data name="Packaging_ClickOnce" xml:space="preserve">
+    <value>ClickOnce — 应用程序文件和更新清单</value>
+  </data>
+  <data name="Guided_OptionalBehavior" xml:space="preserve">
+    <value>先决条件、快捷方式和注册表项均为可选。不需要时请将列表留空。</value>
+  </data>
+  <data name="Guided_WaitForBuild" xml:space="preserve">
+    <value>请等待构建完成，或从构建工作区取消构建。</value>
+  </data>
+  <data name="Guided_NoPackageCancel" xml:space="preserve">
+    <value>此打包服务在当前操作运行时无法中断。</value>
+  </data>
+  <data name="Packaging_MsiHint" xml:space="preserve">
+    <value>MSI 使用现有 WiX 导出器。生成包需要 WiX；导出器会报告不支持的操作。</value>
+  </data>
+  <data name="Packaging_ClickOnceHint" xml:space="preserve">
+    <value>ClickOnce 发布源文件夹和更新清单。在此配置更新 URL。系统更改需要 EXE 或 MSI。</value>
+  </data>
+  <data name="Guided_PackageHelp" xml:space="preserve">
+    <value>EXE 提供完整安装向导。MSI 需要 WiX。MSIX 需要包标识，且无法进行传统系统更改。ClickOnce 发布源文件和更新清单。</value>
+  </data>
+  <data name="BuildResult_Artifact" xml:space="preserve"><value>输出文件：</value></data>
+  <data name="Resources_Empty" xml:space="preserve"><value>此列表为空。选择“添加”以创建项目。</value></data>
+  <data name="Resources_Properties" xml:space="preserve"><value>属性</value></data>
+  <data name="Section_ScheduledTasks" xml:space="preserve"><value>计划任务</value></data>
+  <data name="Section_FirewallRules" xml:space="preserve"><value>防火墙规则</value></data>
+  <data name="Section_Certificates" xml:space="preserve"><value>证书</value></data>
+  <data name="Section_ComRegistrations" xml:space="preserve"><value>COM 注册</value></data>
+  <data name="Section_DriverPackages" xml:space="preserve"><value>驱动程序包</value></data>
+  <data name="Section_ConfigTransforms" xml:space="preserve"><value>配置转换</value></data>
+  <data name="Section_IisAppPools" xml:space="preserve"><value>IIS 应用程序池</value></data>
+  <data name="Section_IisSites" xml:space="preserve"><value>IIS 站点</value></data>
+  <data name="Section_WebDeploy" xml:space="preserve"><value>Web Deploy 包</value></data>
+  <data name="Review_MoreItems" xml:space="preserve"><value>另有 {0} 个项目。编辑以查看完整列表。</value></data>
+  <data name="Readiness_Checking" xml:space="preserve"><value>正在检查准备状态…</value></data>
+  <data name="Readiness_Stale" xml:space="preserve"><value>项目已更改，需要重新检查准备状态。</value></data>
+  <data name="Readiness_Unavailable" xml:space="preserve"><value>准备状态检查不可用。请在生成前验证。</value></data>
+  <data name="SaveState_Failed" xml:space="preserve"><value>保存失败</value></data>
+  <data name="SaveState_AutoSaveFailed" xml:space="preserve"><value>恢复草稿保存失败</value></data>
+  <data name="SaveState_RecoveryFailed" xml:space="preserve"><value>无法加载恢复草稿</value></data>
+  <data name="SaveState_Recovered" xml:space="preserve"><value>草稿已恢复 — 请保存更改</value></data>
+  <data name="SaveState_Unsaved" xml:space="preserve"><value>未保存的更改</value></data>
+  <data name="SaveState_Untitled" xml:space="preserve"><value>尚未保存</value></data>
+  <data name="SaveState_Saved" xml:space="preserve"><value>已保存</value></data>
+  <data name="SaveState_RecoveryPath" xml:space="preserve"><value>恢复草稿</value></data>
+  <data name="SaveState_SaveFirst" xml:space="preserve"><value>您有未保存的更改。是否先保存？</value></data>
+  <data name="Workspace_Title" xml:space="preserve"><value>构建工作区</value></data>
+  <data name="Workspace_OlderRevision" xml:space="preserve"><value>此构建使用项目的先前版本。其结果不关联到当前项目。</value></data>
+  <data name="Workspace_Log" xml:space="preserve"><value>构建日志</value></data>
+  <data name="Workspace_OpenArtifact" xml:space="preserve"><value>打开生成文件</value></data>
+  <data name="Workspace_SaveLog" xml:space="preserve"><value>保存日志</value></data>
+  <data name="Workspace_Idle" xml:space="preserve"><value>准备构建</value></data>
+  <data name="Workspace_Preparing" xml:space="preserve"><value>正在准备</value></data>
+  <data name="Workspace_Building" xml:space="preserve"><value>正在构建</value></data>
+  <data name="Workspace_Signing" xml:space="preserve"><value>正在签名</value></data>
+  <data name="Workspace_Completed" xml:space="preserve"><value>构建完成</value></data>
+  <data name="Workspace_Failed" xml:space="preserve"><value>构建失败</value></data>
+  <data name="Workspace_Cancelled" xml:space="preserve"><value>构建已取消</value></data>
+  <data name="Recipe_Title" xml:space="preserve"><value>资源配方</value></data>
+  <data name="Recipe_Preview" xml:space="preserve"><value>预览更改</value></data>
+  <data name="Recipe_Apply" xml:space="preserve"><value>应用配方</value></data>
+  <data name="Recipe_PreviewFirst" xml:space="preserve"><value>应用此配方前请预览更改。</value></data>
+  <data name="Recipe_Ready" xml:space="preserve"><value>可以应用已预览的更改。</value></data>
+  <data name="Recipe_Fix" xml:space="preserve"><value>应用前请修复列出的错误。</value></data>
+  <data name="Recipe_FieldName" xml:space="preserve"><value>资源名称 *</value></data>
+  <data name="Recipe_FieldTargetPath" xml:space="preserve"><value>目标路径</value></data>
+  <data name="Recipe_FieldPoolName" xml:space="preserve"><value>新应用程序池名称 *</value></data>
+  <data name="Recipe_FieldPort" xml:space="preserve"><value>端口 *</value></data>
+  <data name="Recipe_FieldHost" xml:space="preserve"><value>主机名（可选）</value></data>
+  <data name="Recipe_FieldRuntimeVersion" xml:space="preserve"><value>托管运行时（留空：无）</value></data>
+  <data name="Recipe_FieldTrigger" xml:space="preserve"><value>任务触发器 *</value></data>
+  <data name="Recipe_FieldStartTime" xml:space="preserve"><value>开始时间（HH:mm）</value></data>
+  <data name="Recipe_FieldServiceAccount" xml:space="preserve"><value>内置服务账户 *</value></data>
+  <data name="Recipe_FieldFirewallProtocol" xml:space="preserve"><value>协议 *</value></data>
+  <data name="Recipe_FieldFirewallProfile" xml:space="preserve"><value>防火墙配置文件 *</value></data>
+  <data name="Recipe_FieldUseMachineScope" xml:space="preserve"><value>将项目改为具有管理员权限的计算机安装</value></data>
+  <data name="Recipe_FieldUseExeOutput" xml:space="preserve"><value>将项目改为EXE输出</value></data>
+  <data name="Recipe_TargetWindowsService" xml:space="preserve"><value>可执行文件路径 *</value></data>
+  <data name="Recipe_TargetIisSite" xml:space="preserve"><value>物理路径 *</value></data>
+  <data name="Recipe_TargetScheduledTask" xml:space="preserve"><value>可执行文件路径 *</value></data>
+  <data name="Recipe_TargetFirewallRule" xml:space="preserve"><value>程序（可选）</value></data>
+  <data name="Recipe_Requirements" xml:space="preserve"><value>需要Windows工具、EXE/MSI输出以及具有管理员权限的计算机安装。请使用为此应用预留的名称。此处不会检查计算机上已有的资源。</value></data>
+  <data name="Recipe_WindowsServiceLimits" xml:space="preserve"><value>使用所选内置账户创建自动启动服务。需要SCM。回滚会删除新服务；已捕获的先前配置可以恢复。凭据和高级设置可在完整编辑器中配置。</value></data>
+  <data name="Recipe_IisSiteLimits" xml:space="preserve"><value>创建新的应用程序池和HTTP站点。必须预先安装IIS/appcmd。TLS和证书在完整编辑器中配置。回滚或移除可能删除自有站点和池；不会恢复先前定义。</value></data>
+  <data name="Recipe_ScheduledTaskLimits" xml:space="preserve"><value>使用运行安装程序的账户创建任务。需要任务计划程序。回滚或移除会结束并删除任务；不会恢复先前的任务定义。凭据和提权可在完整编辑器中配置。</value></data>
+  <data name="Recipe_FirewallRuleLimits" xml:space="preserve"><value>为所选端口、程序和配置文件创建入站允许规则。需要Windows防火墙/netsh。程序留空时适用于所有程序。回滚或移除会删除规则；不会恢复先前定义。</value></data>
+  <data name="Recovery_Title" xml:space="preserve"><value>恢复未保存的项目</value></data>
+  <data name="Recovery_Help" xml:space="preserve"><value>选择草稿。恢复后项目处于未保存状态；请保存以保留更改。无法读取的草稿仍保留在磁盘上。</value></data>
+  <data name="Recovery_Modified" xml:space="preserve"><value>草稿时间</value></data>
+  <data name="Recovery_Recover" xml:space="preserve"><value>恢复</value></data>
+  <data name="Recovery_Choice" xml:space="preserve"><value>有较新的恢复草稿。是否恢复？选择否可打开已保存的项目并保留草稿，取消可保留当前项目。</value></data>
+  <data name="Recovery_CleanupFailed" xml:space="preserve"><value>已保存；恢复草稿清理失败</value></data>
+  <data name="Recovery_OriginalProject" xml:space="preserve"><value>原始项目</value></data>
+  <data name="History_Undo" xml:space="preserve"><value>撤销</value></data>
+  <data name="History_Redo" xml:space="preserve"><value>重做</value></data>
+  <data name="History_Credentials" xml:space="preserve"><value>需要重新输入 {0} 个凭据值。请在构建前检查恢复的项目。</value></data>
+  <data name="Release_Title" xml:space="preserve"><value>发布概览</value></data>
+  <data name="Release_Notice" xml:space="preserve"><value>生成文件不能证明部署成功。</value></data>
+  <data name="Release_Package" xml:space="preserve"><value>安装包</value></data>
+  <data name="Release_Assets" xml:space="preserve"><value>部署文件</value></data>
+  <data name="Release_Qualifications" xml:space="preserve"><value>验证证据</value></data>
+  <data name="Release_ReportInvalid" xml:space="preserve"><value>无法加载验证报告。请选择小于 4 MB 的可读报告组合 JSON 文件。</value></data>
+  <data name="Release_FilePresent" xml:space="preserve"><value>文件存在</value></data>
+  <data name="Release_Unavailable" xml:space="preserve"><value>文件不可用</value></data>
+  <data name="Release_ReportedPassed" xml:space="preserve"><value>报告显示通过</value></data>
+  <data name="Release_ReportedFailed" xml:space="preserve"><value>报告显示失败</value></data>
+  <data name="Release_NoEvidence" xml:space="preserve"><value>未选择或记录证据。</value></data>
+  <data name="Release_Unbound" xml:space="preserve"><value>所选验证报告未与此构建关联。</value></data>
+  <data name="Release_LoadAssets" xml:space="preserve"><value>选择部署文件</value></data>
+  <data name="Release_LoadReport" xml:space="preserve"><value>加载验证报告组合</value></data>
+  <data name="Release_Refresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="UpdatePreview_Title" xml:space="preserve"><value>更新预览</value></data>
+  <data name="UpdatePreview_CheckRequired" xml:space="preserve"><value>检查更新以创建新的预览。</value></data>
+  <data name="UpdatePreview_Channels" xml:space="preserve"><value>通道：{0} → {1}</value></data>
+  <data name="UpdatePreview_Versions" xml:space="preserve"><value>已安装：{0}；增量目标：{1}；源版本：{2}</value></data>
+  <data name="UpdatePreview_Local" xml:space="preserve"><value>载荷：本地增量；请查看下方的验证状态。</value></data>
+  <data name="UpdatePreview_Remote" xml:space="preserve"><value>载荷：远程增量；应用时将检查签名和文件。</value></data>
+  <data name="UpdatePreview_NoPayload" xml:space="preserve"><value>未选择可用的增量载荷。</value></data>
+  <data name="UpdatePreview_Sizes" xml:space="preserve"><value>公布的增量大小：{0} 字节；目标映像：{1} 字节（不是所需磁盘空间）。</value></data>
+  <data name="UpdatePreview_Ready" xml:space="preserve"><value>可以尝试应用；仍需检查安装状态。</value></data>
+  <data name="UpdatePreview_MissingKey" xml:space="preserve"><value>选择可读取的增量 RSA 公钥。</value></data>
+  <data name="UpdatePreview_MissingSource" xml:space="preserve"><value>源未提供远程增量地址；请选择本地增量文件夹。</value></data>
+  <data name="UpdatePreview_UntrustedDelta" xml:space="preserve"><value>本地增量清单没有可信签名。</value></data>
+  <data name="UpdatePreview_Mismatch" xml:space="preserve"><value>本地增量的版本或树哈希与签名源不匹配。</value></data>
+  <data name="UpdatePreview_Unavailable" xml:space="preserve"><value>无法读取本地增量。</value></data>
+  <data name="UpdatePreview_PolicyDenied" xml:space="preserve"><value>策略阻止了远程增量地址。</value></data>
+  <data name="UpdatePreview_MissingDelta" xml:space="preserve"><value>没有与已安装版本匹配的增量。</value></data>
+  <data name="UpdatePreview_AmbiguousDelta" xml:space="preserve"><value>多个增量与已安装版本匹配；应用已被阻止。</value></data>
+  <data name="UpdatePreview_InvalidVersion" xml:space="preserve"><value>请输入包含一到四个非负数字部分的版本。</value></data>
+  <data name="UpdatePreview_NotAuthorized" xml:space="preserve"><value>需要可信源以及到唯一目标通道的获准转换。</value></data>
+  <data name="UpdatePreview_NoFallback" xml:space="preserve"><value>此更新路径不提供完整包回退。</value></data>
+  <data name="UpdatePreview_Rollback" xml:space="preserve"><value>源中的回滚版本：{0}。回滚需要已提交的更新日志、保留且未变更的备份以及资源恢复；此预览不验证这些条件。</value></data>
+  <data name="UpdatePreview_Rechecks" xml:space="preserve"><value>应用会在准备和切换前重新检查源摘要、安装标识、签名和文件哈希。即使文件已恢复，外部资源恢复仍可能失败。</value></data>
+  <data name="Comparison_Title" xml:space="preserve"><value>比较项目</value></data>
+  <data name="Comparison_Notice" xml:space="preserve"><value>仅审查配置。不比较受保护的值、自定义操作、自定义向导页面及载荷内容。不验证构建或安装。</value></data>
+  <data name="Comparison_SelectFirst" xml:space="preserve"><value>选择一个基准 .bsetup 项目，与当前项目进行比较。</value></data>
+  <data name="Comparison_Snapshot" xml:space="preserve"><value>基准：{0}
+快照时间：{1}；变更字段：{2}。刷新会重新读取基准并比较当前编辑内容。</value></data>
+  <data name="Comparison_LoadFailed" xml:space="preserve"><value>无法比较项目。请选择小于 16 MB 的可读取 .bsetup 文件。保留上次比较结果。</value></data>
+  <data name="Comparison_Select" xml:space="preserve"><value>选择基准项目</value></data>
+  <data name="Comparison_Refresh" xml:space="preserve"><value>刷新比较</value></data>
+  <data name="Comparison_Category" xml:space="preserve"><value>类别</value></data>
+  <data name="Comparison_Kind" xml:space="preserve"><value>变更</value></data>
+  <data name="Comparison_Path" xml:space="preserve"><value>字段</value></data>
+  <data name="Comparison_Before" xml:space="preserve"><value>基准</value></data>
+  <data name="Comparison_After" xml:space="preserve"><value>当前项目</value></data>
+  <data name="Comparison_Search" xml:space="preserve"><value>搜索变更的字段和值</value></data>
+  <data name="Comparison_All" xml:space="preserve"><value>所有变更</value></data>
+  <data name="Comparison_Identity" xml:space="preserve"><value>标识和版本</value></data>
+  <data name="Comparison_Destinations" xml:space="preserve"><value>路径和目标</value></data>
+  <data name="Comparison_Package" xml:space="preserve"><value>包和签名</value></data>
+  <data name="Comparison_Resources" xml:space="preserve"><value>文件和资源</value></data>
+  <data name="Comparison_Other" xml:space="preserve"><value>其他配置</value></data>
+  <data name="Comparison_Added" xml:space="preserve"><value>新增</value></data>
+  <data name="Comparison_Removed" xml:space="preserve"><value>删除</value></data>
+  <data name="Comparison_Changed" xml:space="preserve"><value>修改</value></data>
+  <data name="Comparison_NoChanges" xml:space="preserve"><value>比较的配置字段没有变更。</value></data>
+  <data name="Comparison_NoMatches" xml:space="preserve"><value>没有与此类别或搜索匹配的变更字段。</value></data>
+  <data name="Comparison_Details" xml:space="preserve"><value>所选变更的详细信息</value></data>
+  <data name="Help_Title" xml:space="preserve"><value>创作帮助</value></data>
+  <data name="Help_Search" xml:space="preserve"><value>搜索主题或任务</value></data>
+  <data name="Help_Topics" xml:space="preserve"><value>主题</value></data>
+  <data name="Help_Views" xml:space="preserve"><value>可用视图</value></data>
+  <data name="Help_AdvancedOnly" xml:space="preserve"><value>仅在高级编辑器中。</value></data>
+  <data name="Help_BothViews" xml:space="preserve"><value>引导：{0}。也可在高级编辑器中使用。</value></data>
+  <data name="Help_Advanced" xml:space="preserve"><value>高级</value></data>
+  <data name="Help_GuidedAdvanced" xml:space="preserve"><value>引导 / 高级</value></data>
+  <data name="Help_NoMatches" xml:space="preserve"><value>没有匹配的主题。请尝试功能名称或任务，例如开放端口或计划任务。</value></data>
+  <data name="Help_Keyboard" xml:space="preserve"><value>F1 打开上下文帮助。引导中的 Ctrl+F 搜索本帮助，高级中的 Ctrl+F 搜索编辑部分。高级中 F7 验证、F5 构建。帮助不会更改或验证项目。</value></data>
+  <data name="Help_Identity" xml:space="preserve"><value>标识</value></data>
+  <data name="Help_Layout" xml:space="preserve"><value>布局</value></data>
+  <data name="Help_Eula" xml:space="preserve"><value>许可协议</value></data>
+  <data name="Help_Files" xml:space="preserve"><value>文件</value></data>
+  <data name="Help_Includes" xml:space="preserve"><value>包含规则</value></data>
+  <data name="Help_Components" xml:space="preserve"><value>组件</value></data>
+  <data name="Help_Branding" xml:space="preserve"><value>品牌外观</value></data>
+  <data name="Help_WizardPages" xml:space="preserve"><value>向导页面</value></data>
+  <data name="Help_Output" xml:space="preserve"><value>输出</value></data>
+  <data name="Help_Payload" xml:space="preserve"><value>载荷</value></data>
+  <data name="Help_Compression" xml:space="preserve"><value>压缩</value></data>
+  <data name="Help_Package" xml:space="preserve"><value>包格式</value></data>
+  <data name="Help_Msix" xml:space="preserve"><value>MSIX</value></data>
+  <data name="Help_Script" xml:space="preserve"><value>脚本</value></data>
+  <data name="Help_Build" xml:space="preserve"><value>构建流程</value></data>
+  <data name="Help_Log" xml:space="preserve"><value>构建日志</value></data>
+  <data name="Help_Result" xml:space="preserve"><value>上次结果</value></data>
+  <data name="HelpBody_Project" xml:space="preserve"><value>设置产品名称、版本和发布者。同一应用的版本应保持 AppId；更改它会改变安装标识。</value></data>
+  <data name="HelpBody_Install" xml:space="preserve"><value>选择安装范围和目标。检查管理员要求、快捷方式和注册表更改。系统范围资源可能需要提升权限。</value></data>
+  <data name="HelpBody_Branding" xml:space="preserve"><value>配置外观、许可文本及安装页面。构建前预览语言和页面顺序。自定义页面具有各自的字段验证。</value></data>
+  <data name="HelpBody_FilesBody" xml:space="preserve"><value>扫描应用构建文件夹。检查源路径和目标路径、包含/排除规则及可选组件。文件数量不能证明载荷内容是最新的。</value></data>
+  <data name="HelpBody_PrerequisitesBody" xml:space="preserve"><value>选择所需运行时及依赖项。签名目录需要可信密钥。构建前检查包兼容性和策略诊断。</value></data>
+  <data name="HelpBody_ResourcesBody" xml:space="preserve"><value>在编辑器中配置资源输入。提供程序和包的支持各不相同；检查验证及回滚限制。使用支持的机密引用保护凭据。</value></data>
+  <data name="HelpBody_Network" xml:space="preserve"><value>选择防火墙方向、端口或程序及网络配置文件。开放端口会更改系统；检查管理员要求及删除/回滚行为。</value></data>
+  <data name="HelpBody_Iis" xml:space="preserve"><value>配置应用程序池、站点路径和绑定或 Web Deploy 参数。验证 IIS 前提条件并检查所有权及回滚支持。</value></data>
+  <data name="HelpBody_Service" xml:space="preserve"><value>设置服务可执行文件、启动模式及账户。保护账户凭据。打包前检查安装、卸载及回滚行为。</value></data>
+  <data name="HelpBody_Packaging" xml:space="preserve"><value>选择 EXE、MSI、MSIX 或 ClickOnce。检查格式特定的阻止项、输出路径及签名要求。并非每种格式都支持所有资源。</value></data>
+  <data name="HelpBody_Signing" xml:space="preserve"><value>配置证书/存储或支持的远程签名。使用受保护的凭据引用。未签名开发构建取决于策略；签名配置不能证明产物已签名。</value></data>
+  <data name="HelpBody_Updates" xml:space="preserve"><value>检查可信源、通道及发布策略。更新中心预览所选增量和回滚限制。部署文件或回滚版本不能证明执行成功。</value></data>
+  <data name="HelpBody_BuildBody" xml:space="preserve"><value>构建前检查阻止性诊断。使用构建工作区查看阶段、取消、日志及产物结果。较早项目版本的结果需要单独审查。</value></data>
+  <data name="HelpBody_Tasks" xml:space="preserve"><value>选择任务的可执行文件、参数、触发器及运行账户。构建前检查范围、权限提升及删除/回滚行为。</value></data>
+  <data name="HelpAliases_firewallrules" xml:space="preserve"><value>开放端口 打开端口 网络例外</value></data>
+  <data name="HelpAliases_scheduledtasks" xml:space="preserve"><value>计划任务 定时任务 定时作业</value></data>
+  <data name="Runtime_Ready" xml:space="preserve"><value>准备安装</value></data>
+  <data name="Runtime_ReadyHint" xml:space="preserve"><value>检查设置并点击“安装”开始。</value></data>
+  <data name="Runtime_InstallType" xml:space="preserve"><value>安装类型</value></data>
+  <data name="Runtime_PerUser" xml:space="preserve"><value>范围：仅当前用户</value></data>
+  <data name="Runtime_AllUsers" xml:space="preserve"><value>范围：此计算机上的所有用户</value></data>
+  <data name="Runtime_Required" xml:space="preserve"><value>必需</value></data>
+  <data name="Runtime_Optional" xml:space="preserve"><value>可选</value></data>
+  <data name="Runtime_EstimatedSize" xml:space="preserve"><value>安装文件估计大小：{0}</value></data>
+  <data name="Runtime_ConfiguredChanges" xml:space="preserve"><value>已配置的先决条件和系统更改（条件和检测可能跳过这些项目；这不是执行结果）：</value></data>
+  <data name="Runtime_CustomActions" xml:space="preserve"><value>自定义操作</value></data>
+  <data name="Runtime_Tasks" xml:space="preserve"><value>已选附加任务：</value></data>
+  <data name="Runtime_StartMenu" xml:space="preserve"><value>创建开始菜单项</value></data>
+  <data name="Runtime_RestartRequired" xml:space="preserve"><value>请重启 Windows 以完成安装更改。</value></data>
+  <data name="Runtime_NoRestartReported" xml:space="preserve"><value>安装程序未报告需要重启。</value></data>
+  <data name="Runtime_RollbackAttempted" xml:space="preserve"><value>已尝试恢复：{1} 个回滚操作中有 {0} 个返回时未报告错误。尚未验证完全恢复；请在重试前查看日志。</value></data>
+  <data name="Runtime_RecoveryUnknown" xml:space="preserve"><value>尚未验证恢复结果。请在重试前查看日志和安装状态。</value></data>
+  <data name="Runtime_BackupRestored" xml:space="preserve"><value>已还原上一版本的文件备份。这不代表已验证系统资源的恢复。</value></data>
+  <data name="Runtime_BackupFailed" xml:space="preserve"><value>还原上一版本的文件备份失败。更改可能仍然存在。</value></data>
+  <data name="Runtime_BackupUnknown" xml:space="preserve"><value>上一版本备份的恢复结果未知。</value></data>
+  <data name="Runtime_BackupNotAttempted" xml:space="preserve"><value>未尝试还原上一版本的文件备份。</value></data>
+  <data name="Runtime_Failed" xml:space="preserve"><value>安装失败</value></data>
+  <data name="Runtime_ViewBundle" xml:space="preserve"><value>查看支持包</value></data>
+  <data name="Runtime_Retry" xml:space="preserve"><value>重试安装</value></data>
+  <data name="Runtime_Preview" xml:space="preserve"><value>仅预览：未应用任何安装更改。</value></data>
+  <data name="Runtime_Installed" xml:space="preserve"><value>{0} 已安装到 {1}。</value></data>
+  <data name="Runtime_FailedStep" xml:space="preserve"><value>安装在此步骤失败：{0}</value></data>
+  <data name="Support_Review" xml:space="preserve"><value>查看支持包</value></data>
+  <data name="Support_ReviewNotice" xml:space="preserve"><value>保存或分享前，请检查已脱敏的诊断数据。脱敏可能无法移除所有敏感信息。记录的结果和隐私元数据将保留。</value></data>
+  <data name="Support_Export" xml:space="preserve"><value>导出支持包</value></data>
+  <data name="Support_ExportFailed" xml:space="preserve"><value>无法导出支持包。请选择其他目标位置或重试。</value></data>
+  <data name="Support_Exported" xml:space="preserve"><value>支持包已保存到 {0}。</value></data>
+  <data name="Support_Loading" xml:space="preserve"><value>正在加载记录的诊断数据…</value></data>
+  <data name="Support_Unavailable" xml:space="preserve"><value>记录的支持包不可用、无效或过大，无法查看。导出已禁用。</value></data>
+  <data name="Support_CopyDetails" xml:space="preserve"><value>复制错误详情</value></data>
+  <data name="Support_CopyFailed" xml:space="preserve"><value>无法复制错误详情。请重试或选择摘要文本。</value></data>
+  <data name="Support_Copied" xml:space="preserve"><value>已复制脱敏的错误详情。请在分享前检查内容。</value></data>
+  <data name="Gallery_Title" xml:space="preserve"><value>模板库</value></data>
+  <data name="Gallery_Search" xml:space="preserve"><value>搜索模板</value></data>
+  <data name="Gallery_Category" xml:space="preserve"><value>类别</value></data>
+  <data name="Gallery_FavoritesOnly" xml:space="preserve"><value>仅收藏</value></data>
+  <data name="Gallery_SampleDetails" xml:space="preserve"><value>模板示例详情</value></data>
+  <data name="Gallery_Select" xml:space="preserve"><value>使用所选模板</value></data>
+  <data name="Gallery_Favorite" xml:space="preserve"><value>收藏</value></data>
+  <data name="Gallery_RemoveFavorite" xml:space="preserve"><value>取消收藏</value></data>
+  <data name="Gallery_AddFavorite" xml:space="preserve"><value>添加收藏</value></data>
+  <data name="Gallery_NoMatches" xml:space="preserve"><value>没有符合这些筛选条件的模板。</value></data>
+  <data name="Gallery_Sample" xml:space="preserve"><value>示例组件：{0}。快捷方式目标：</value></data>
+  <data name="Gallery_Limits" xml:space="preserve"><value>示例文件名是占位符。构建前请检查可执行文件目标、资源、范围和签名。</value></data>
+  <data name="Gallery_FavoritesUnavailable" xml:space="preserve"><value>无法读取或保存收藏。现有数据已保留；仍可选择模板。</value></data>
+  <data name="Gallery_AllCategories" xml:space="preserve"><value>所有类别</value></data>
+  <data name="Gallery_Name_empty" xml:space="preserve"><value>空白</value></data>
+  <data name="Gallery_Name_console" xml:space="preserve"><value>控制台应用</value></data>
+  <data name="Gallery_Name_winforms" xml:space="preserve"><value>WinForms 应用</value></data>
+  <data name="Gallery_Name_wpf" xml:space="preserve"><value>WPF 应用</value></data>
+  <data name="Gallery_Name_service" xml:space="preserve"><value>Windows 服务</value></data>
+  <data name="Gallery_Description_empty" xml:space="preserve"><value>空白项目：自行配置所有内容。</value></data>
+  <data name="Gallery_Description_console" xml:space="preserve"><value>命令行工具：核心组件和开始菜单快捷方式。</value></data>
+  <data name="Gallery_Description_winforms" xml:space="preserve"><value>桌面应用：核心组件、桌面和开始菜单快捷方式。</value></data>
+  <data name="Gallery_Description_wpf" xml:space="preserve"><value>桌面应用：核心组件、桌面和开始菜单快捷方式。</value></data>
+  <data name="Gallery_Description_service" xml:space="preserve"><value>服务主机示例：核心组件和启动快捷方式；请单独配置服务注册。</value></data>
+  <data name="Gallery_Category_General" xml:space="preserve"><value>常规</value></data>
+  <data name="Gallery_Category_Desktop" xml:space="preserve"><value>桌面</value></data>
+  <data name="Gallery_Category_Service" xml:space="preserve"><value>服务</value></data>
+  <data name="Gallery_Location_Desktop" xml:space="preserve"><value>桌面</value></data>
+  <data name="Gallery_Location_StartMenu" xml:space="preserve"><value>开始菜单</value></data>
+  <data name="Gallery_Location_Startup" xml:space="preserve"><value>启动</value></data>
+  <data name="Gallery_Import" xml:space="preserve"><value>导入签名模板…</value></data>
+  <data name="Gallery_Verifying" xml:space="preserve"><value>正在验证签名模板…</value></data>
+  <data name="Gallery_Verified" xml:space="preserve"><value>签名已验证。发布者：{0}
+受信任密钥 SHA-256：{1}
+项目 SHA-256：{2}</value></data>
+  <data name="Gallery_SignedLimits" xml:space="preserve"><value>已捕获的包内容。验证不会检查负载文件，也不代表批准安装。创建时会替换产品标识和源字段。构建前请检查资源和路径。</value></data>
+  <data name="Gallery_PackageFolder" xml:space="preserve"><value>选择签名模板包文件夹</value></data>
+  <data name="Gallery_PublicKey" xml:space="preserve"><value>选择此模板的受信任公钥</value></data>
+  <data name="Gallery_ImportError_Unavailable" xml:space="preserve"><value>无法访问包或公钥。已保留当前选择。</value></data>
+  <data name="Gallery_ImportError_TooLarge" xml:space="preserve"><value>模板文件超出大小限制。已保留当前选择。</value></data>
+  <data name="Gallery_ImportError_Invalid" xml:space="preserve"><value>模板包或密钥无效。已保留当前选择。</value></data>
+  <data name="Gallery_ImportError_Untrusted" xml:space="preserve"><value>签名、项目哈希或受信任密钥验证失败。已保留当前选择。</value></data>
+  <data name="Gallery_ImportError_UnsupportedContent" xml:space="preserve"><value>此编辑器版本无法保留模板内容。已保留当前选择。</value></data>
+  <data name="Gallery_LibraryWarning" xml:space="preserve"><value>部分已保存模板无法加载或保存。已保留库数据。请重新导入已更改或不可用的源，以再次审查和验证。</value></data>
+  <data name="Gallery_LibraryHint" xml:space="preserve"><value>已保存的发现记录包含源引用和已审查的哈希。后续会话会再次验证源和密钥。源发生更改时需要重新导入。</value></data>
+  <data name="Preview_Title" xml:space="preserve"><value>向导预览 — {0}</value></data>
+  <data name="Preview_LayoutHint" xml:space="preserve"><value>仅供预览。选择已配置的页面、更改向导语言或模拟布局缩放。可滚动检查较大的布局。不会执行安装；这不代表已验证实际操作系统 DPI。</value></data>
+  <data name="Preview_Page" xml:space="preserve"><value>预览页面</value></data>
+  <data name="Preview_Scale" xml:space="preserve"><value>布局缩放</value></data>
+  <data name="Preview_Reset" xml:space="preserve"><value>重置预览</value></data>
+  <data name="Preview_SimulatedFailure" xml:space="preserve"><value>用于布局检查的模拟失败。未执行任何安装。</value></data>
+  <data name="Preview_PrerequisitesNotChecked" xml:space="preserve"><value>预览：不会运行先决条件检查或安装操作。</value></data>
+  <data name="Nav_AdvancedResources" xml:space="preserve"><value>高级资源</value></data>
+  <data name="Field_UpdateMode" xml:space="preserve"><value>更新模式：</value></data>
+  <data name="Field_InstallType" xml:space="preserve"><value>安装类型：</value></data>
+  <data name="Field_Privileges" xml:space="preserve"><value>权限：</value></data>
+  <data name="Field_Scope" xml:space="preserve"><value>安装范围：</value></data>
+  <data name="Field_Theme" xml:space="preserve"><value>主题：</value></data>
+  <data name="Field_TargetArchitecture" xml:space="preserve"><value>目标体系结构：</value></data>
+  <data name="Field_PayloadSource" xml:space="preserve"><value>文件来源：</value></data>
+  <data name="Field_CompressionFormat" xml:space="preserve"><value>压缩格式：</value></data>
+  <data name="Field_CompressionStrength" xml:space="preserve"><value>压缩级别：</value></data>
+  <data name="Field_OutputFormat" xml:space="preserve"><value>输出格式：</value></data>
+  <data name="Builder_NoRecentScripts" xml:space="preserve"><value>没有最近使用的脚本</value></data>
+  <data name="Builder_ClearRecent" xml:space="preserve"><value>清除最近使用的脚本列表</value></data>
+  <data name="Builder_ResultMetrics" xml:space="preserve"><value>大小：{0:N1} MB • 时间：{1:N1} 秒</value></data>
+  <data name="Builder_ResultTime" xml:space="preserve"><value>时间：{0:N1} 秒</value></data>
+  <data name="Builder_ResultIssues" xml:space="preserve"><value>错误：{0} • 警告：{1}</value></data>
+  <data name="Builder_LastBuildArtifact" xml:space="preserve"><value>上次生成：{0}（单击查看）</value></data>
+  <data name="Builder_IncludePatterns" xml:space="preserve"><value>包含模式：</value></data>
+  <data name="Builder_ExcludePatterns" xml:space="preserve"><value>排除模式：</value></data>
+  <data name="Builder_MoveUp" xml:space="preserve"><value>上移</value></data>
+  <data name="Builder_MoveDown" xml:space="preserve"><value>下移</value></data>
+  <data name="Builder_ScanningSource" xml:space="preserve"><value>正在扫描 {0}…</value></data>
+  <data name="Builder_ScanComplete" xml:space="preserve"><value>扫描完成：{0:N0} 个文件（{1:N1} MB），其中 {2:N0} 个为托管文件。</value></data>
+  <data name="Builder_ScanFailedStatus" xml:space="preserve"><value>扫描失败：{0}</value></data>
+  <data name="Builder_KeyboardTitle" xml:space="preserve"><value>键盘操作指南</value></data>
+  <data name="Builder_ValidationTitle" xml:space="preserve"><value>验证中心</value></data>
+  <data name="Builder_FormatReadinessTitle" xml:space="preserve"><value>格式就绪状态</value></data>
+  <data name="Builder_KeyboardSearchHelp" xml:space="preserve"><value>Enter 打开首个结果；Escape 清除搜索。</value></data>
+  <data name="Builder_KeyboardSections" xml:space="preserve"><value>下一个 / 上一个可见分区</value></data>
+  <data name="Builder_KeyboardFields" xml:space="preserve"><value>下一个 / 上一个字段、表格、属性或操作</value></data>
+  <data name="Section_ScheduledTasksHelp" xml:space="preserve"><value>创建任务计划程序任务，设置触发器、权限提升、工作目录、凭据和卸载行为。</value></data>
+  <data name="Section_FirewallRulesHelp" xml:space="preserve"><value>定义 Windows 防火墙规则，设置端口、程序、服务和网络配置文件范围。</value></data>
+  <data name="Section_CertificatesHelp" xml:space="preserve"><value>将证书安装到 Windows 证书存储中，设置指纹和回滚时的管理责任。</value></data>
+  <data name="Section_ComRegistrationsHelp" xml:space="preserve"><value>为进程内或本地服务器二进制文件注册 COM CLSID/ProgID 元数据。</value></data>
+  <data name="Section_DriverPackagesHelp" xml:space="preserve"><value>准备 INF/SYS 驱动程序包，设置服务标识、签名要求和重启行为。</value></data>
+  <data name="Section_ConfigTransformsHelp" xml:space="preserve"><value>修改 JSON/XML/INI 配置，设置安装时备份和回滚时恢复。</value></data>
+  <data name="Section_IisAppPoolsHelp" xml:space="preserve"><value>定义 IIS 应用程序池的运行时、管道模式、标识、自动启动和管理责任。</value></data>
+  <data name="Section_IisSitesHelp" xml:space="preserve"><value>定义 IIS 站点的物理路径、应用程序池、绑定集合和卸载时的管理责任。</value></data>
+  <data name="Section_WebDeployHelp" xml:space="preserve"><value>将 msdeploy 程序包关联到 IIS 站点，设置程序包参数和卸载时的管理责任。</value></data>
+  <data name="Builder_ScanDiscarded" xml:space="preserve"><value>项目在扫描期间发生了更改。请重新扫描以更新其文件。</value></data>
+  <data name="Report_Schema" xml:space="preserve"><value>架构</value></data>
+  <data name="Report_PlanHash" xml:space="preserve"><value>计划哈希</value></data>
+  <data name="Report_DiagnosticCounts" xml:space="preserve"><value>错误：{0:N0}，警告：{1:N0}</value></data>
+  <data name="Report_Clean" xml:space="preserve"><value>严格项目验证未发现问题。</value></data>
+  <data name="Report_Fix" xml:space="preserve"><value>修复</value></data>
+  <data name="Report_ReleaseReadiness" xml:space="preserve"><value>发布准备情况</value></data>
+  <data name="Report_FormatCounts" xml:space="preserve"><value>就绪：{0:N0}，警告：{1:N0}，已阻止：{2:N0}</value></data>
+  <data name="Report_Artifacts" xml:space="preserve"><value>产物</value></data>
+  <data name="Report_Finding" xml:space="preserve"><value>问题</value></data>
+  <data name="Report_MoreFindings" xml:space="preserve"><value>另外 {0:N0} 个问题</value></data>
+  <data name="Report_Refreshed" xml:space="preserve"><value>已刷新格式准备情况。</value></data>
+  <data name="Report_Ready" xml:space="preserve"><value>就绪</value></data>
+  <data name="Report_ReadyWithWarnings" xml:space="preserve"><value>就绪但有警告</value></data>
+  <data name="Report_Blocked" xml:space="preserve"><value>已阻止</value></data>
+  <data name="Report_Warning" xml:space="preserve"><value>警告</value></data>
+  <data name="Status_SavedFile" xml:space="preserve"><value>已保存 {0}</value></data>
+  <data name="Status_ValidationPassed" xml:space="preserve"><value>验证通过。</value></data>
+  <data name="Status_ValidationErrors" xml:space="preserve"><value>验证错误：{0:N0}。</value></data>
+  <data name="Status_TemplateApplied" xml:space="preserve"><value>已应用模板 '{0}' — 更改：{1:N0}。</value></data>
+  <data name="Picker_ProjectFiles" xml:space="preserve"><value>Beep 安装脚本 (*.bsetup)</value></data>
+  <data name="Picker_AllFiles" xml:space="preserve"><value>所有文件 (*.*)</value></data>
+  <data name="Picker_MatchingFiles" xml:space="preserve"><value>匹配的文件 ({0})</value></data>
+  <data name="AuthoringLanguage_Title" xml:space="preserve"><value>界面语言</value></data>
+  <data name="AuthoringLanguage_Help" xml:space="preserve"><value>将语言应用于创作界面。项目的安装程序语言保持不变。</value></data>
+  <data name="AuthoringLanguage_Edit" xml:space="preserve"><value>编辑翻译</value></data>
+  <data name="Review_Checking" xml:space="preserve"><value>正在检查项目副本…</value></data>
+  <data name="Review_CheckFailed" xml:space="preserve"><value>项目检查失败。请在构建前重新检查。</value></data>
+  <data name="Review_CheckChanged" xml:space="preserve"><value>项目已更改。请在构建前重新检查。</value></data>
+  <data name="Review_CheckComplete" xml:space="preserve"><value>项目检查已完成。请在构建前解决阻止构建的错误。</value></data>
+  <data name="Review_CheckAgain" xml:space="preserve"><value>重新检查</value></data>
+  <data name="Builder_VersionRequired" xml:space="preserve">
+    <value>版本为必填项。</value>
+  </data>
+  <data name="Editor_DraftChanged" xml:space="preserve"><value>此对话框打开期间，项目或正在编辑的列表已更改。草稿已保留。请复制所需的值，取消并重新打开编辑器后再应用。</value></data>
+  <data name="Conditions_PreviewEmpty" xml:space="preserve"><value>没有组件条件。当安装类型或配置文件允许时，此组件可用。</value></data>
+  <data name="Conditions_PreviewAll" xml:space="preserve"><value>含义：仅当所有规则都满足时，安装或提供此组件。</value></data>
+  <data name="Conditions_PreviewAny" xml:space="preserve"><value>含义：当至少一条规则满足时，安装或提供此组件。</value></data>
+  <data name="Conditions_PreviewNot" xml:space="preserve"><value>含义：当整个规则组不满足时，安装或提供此组件。</value></data>
+  <data name="Conditions_PreviewIssues" xml:space="preserve"><value>问题：</value></data>
+  <data name="Conditions_PreviewNull" xml:space="preserve"><value>缺少规则，请删除此行或添加规则。</value></data>
+  <data name="Conditions_PreviewAlwaysTrue" xml:space="preserve"><value>始终为真</value></data>
+  <data name="Conditions_PreviewAlwaysFalse" xml:space="preserve"><value>始终为假</value></data>
+  <data name="Conditions_PreviewAdmin" xml:space="preserve"><value>当前安装程序会话具有管理员权限</value></data>
+  <data name="Conditions_PreviewArchitecture" xml:space="preserve"><value>计算机体系结构 {0} {1}</value></data>
+  <data name="Conditions_PreviewOsVersion" xml:space="preserve"><value>Windows 版本 {0} {1}</value></data>
+  <data name="Conditions_PreviewFileExists" xml:space="preserve"><value>文件存在：{1}</value></data>
+  <data name="Conditions_PreviewDirectoryExists" xml:space="preserve"><value>目录存在：{1}</value></data>
+  <data name="Conditions_PreviewRegistryExists" xml:space="preserve"><value>注册表项存在：{1}</value></data>
+  <data name="Conditions_PreviewRegistryValue" xml:space="preserve"><value>注册表值 {1} {0} {2}</value></data>
+  <data name="Conditions_PreviewCommandReturns" xml:space="preserve"><value>命令 `{1}` 的输出或退出代码 {0} {2}</value></data>
+  <data name="Files_EditTitle" xml:space="preserve"><value>编辑文件 — {0}</value></data>
+  <data name="Files_TotalSize" xml:space="preserve"><value>已知大小：{0:N2} MB，共 {1:N0} 个文件（{2:N0} 个大小不可用）。</value></data>
+  <data name="Files_SharedCount" xml:space="preserve"><value>共享文件引用计数</value></data>
+  <data name="Files_SizeChecking" xml:space="preserve"><value>正在检查文件大小…</value></data>
+  <data name="Files_DropScanning" xml:space="preserve"><value>正在读取拖放的文件… 草稿尚未更改。</value></data>
+  <data name="Files_DropCancelled" xml:space="preserve"><value>扫描已取消，草稿已保留。</value></data>
+  <data name="Files_DropStale" xml:space="preserve"><value>扫描期间草稿发生变化。请再次拖放文件以使用当前草稿。</value></data>
+  <data name="Files_DropFailed" xml:space="preserve"><value>无法读取拖放的文件，草稿已保留。</value></data>
+  <data name="Files_DropSummary" xml:space="preserve"><value>已添加：{0:N0}，重复项：{1:N0}，目标冲突：{2:N0}，不可用路径：{3:N0}。</value></data>
+  <data name="Files_DropIssues" xml:space="preserve"><value>扫描详情：</value></data>
+  <data name="Files_CancelScan" xml:space="preserve"><value>取消扫描</value></data>
+  <data name="Files_ApplyFailed" xml:space="preserve"><value>无法应用文件列表。草稿仍可用，请在重试前检查当前项目。</value></data>
 </root>

@@ -108,7 +108,7 @@ public class BuilderFeatureCoverageTests
         var source = BuilderSource();
 
         var dispatchable = System.Text.RegularExpressions.Regex
-            .Matches(source, @"^\s+""(?<id>[a-z]+)""\s*=> GetOrCreate", System.Text.RegularExpressions.RegexOptions.Multiline)
+            .Matches(source, @"_sectionViews.Register\(""(?<id>[a-z]+)""")
             .Select(m => m.Groups["id"].Value)
             .ToHashSet(StringComparer.Ordinal);
 
@@ -131,7 +131,7 @@ public class BuilderFeatureCoverageTests
         var source = BuilderSource();
 
         var dispatchable = System.Text.RegularExpressions.Regex
-            .Matches(source, @"^\s+""(?<id>[a-z]+)""\s*=> GetOrCreate", System.Text.RegularExpressions.RegexOptions.Multiline)
+            .Matches(source, @"_sectionViews.Register\(""(?<id>[a-z]+)""")
             .Select(m => m.Groups["id"].Value)
             .ToHashSet(StringComparer.Ordinal);
 

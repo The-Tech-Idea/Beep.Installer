@@ -47,6 +47,13 @@ public sealed class EveryDialogRendersTests
         "CustomActionsDialog",
         "LanguageManagerForm",
         "ProjectNewDialog",
+        "ResourceRecipeDialog",
+        "RecoveryDraftDialog",
+        "ReleaseOverviewDialog",
+        "ProjectComparisonDialog",
+        "AuthoringHelpDialog",
+        "RuntimeSupportBundleDialog",
+        "TemplateGalleryDialog",
         "TemplateUpdateDialog",
         "WizardPreviewForm",
     };
@@ -79,7 +86,16 @@ public sealed class EveryDialogRendersTests
             "LanguageManagerForm" => new LanguageManagerForm(),
 
             "ProjectNewDialog" => new ProjectNewDialog(),
+            "RecoveryDraftDialog" => new RecoveryDraftDialog(Array.Empty<string>()),
+            "ResourceRecipeDialog" => new ResourceRecipeDialog(() => project,
+                request => ResourceRecipeCatalog.Apply(project, request), ResourceRecipeKind.WindowsService, "{app}\\app.exe"),
 
+            "ReleaseOverviewDialog" => new ReleaseOverviewDialog((portfolio, assets) => ReleaseOverview.Create(project.AppName, project.AppVersion,
+                project.OutputFormat.ToString(), true, false, selectedDeploymentFiles: assets, portfolio: portfolio)),
+            "ProjectComparisonDialog" => new ProjectComparisonDialog(() => project),
+            "AuthoringHelpDialog" => new AuthoringHelpDialog("identity"),
+            "RuntimeSupportBundleDialog" => new RuntimeSupportBundleDialog(Path.Combine(Path.GetTempPath(), "missing-support-" + Guid.NewGuid().ToString("N") + ".json")),
+            "TemplateGalleryDialog" => new TemplateGalleryDialog(),
             "TemplateUpdateDialog" => new TemplateUpdateDialog(
                 Array.Empty<ProjectTemplate>(),
                 _ => new ProjectTemplateUpdatePreview()),
@@ -130,6 +146,13 @@ public sealed class EveryDialogRendersTests
             form.Opacity = 0;
             form.Show();
             Application.DoEvents();
+
+            // Add requires a source; empty input opens a validation message box.
+            // Seed its editor so this in-place action remains non-modal.
+            if (form is ComponentFilesDialog)
+                Descendants(form).OfType<TextBox>()
+                    .Single(t => t.DataBindings.Cast<Binding>().Any(b => b.BindingMemberInfo.BindingField == nameof(FileCopyOperation.SourcePath)))
+                    .Text = @"C:\payload\sample.exe";
 
             foreach (var button in Descendants(form).OfType<Button>().Where(IsSafeToPress).ToList())
             {

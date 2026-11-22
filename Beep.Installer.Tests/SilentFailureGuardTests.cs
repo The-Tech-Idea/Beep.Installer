@@ -102,9 +102,11 @@ public class SilentFailureGuardTests
         //   Program.cs — the console verbs. Blocking is correct at a top-level entry point that
         //     has no synchronization context to deadlock against, and the update checks that do it
         //     carry a cancellation token so they cannot hang indefinitely.
+        //   ProgramVerbs.cs — the same console verbs, kept in a partial of Program: /MCP blocks on the stdio
+        //     server at that same entry point, headless, before any form or synchronization context exists.
         //   InstallerServices.cs — Shutdown() deliberately hops to the thread pool before waiting,
         //     precisely to avoid blocking on a captured context.
-        var exempt = new[] { "Program.cs", "InstallerServices.cs" };
+        var exempt = new[] { "Program.cs", "ProgramVerbs.cs", "InstallerServices.cs" };
         offenders.RemoveAll(o => exempt.Any(e => o.StartsWith(e, StringComparison.Ordinal)));
 
         offenders.Should().BeEmpty(

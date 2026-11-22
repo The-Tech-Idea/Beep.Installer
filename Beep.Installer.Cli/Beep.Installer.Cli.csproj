@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- beepi: the console front door to Beep.Installer. The installer is a WinExe, which has no console of its own, so a
+       terminal or build server sees no output (and some shells hang). This forwards every argument to the one installer
+       executable with its streams redirected and relays its output and exit code; the verbs stay owned by the installer. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>beepi</AssemblyName>
+    <RootNamespace>Beep.Installer.Cli</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

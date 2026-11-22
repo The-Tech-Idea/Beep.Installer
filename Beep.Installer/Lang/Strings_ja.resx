@@ -1418,6 +1418,18 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Toolbar_Languages" xml:space="preserve">
     <value>言語</value>
   </data>
+  <data name="Toolbar_Mcp" xml:space="preserve">
+    <value>AI / MCP</value>
+  </data>
+  <data name="Toolbar_McpHint" xml:space="preserve">
+    <value>Claude、Codex などの AI アシスタントからこのインストーラーを使用します (MCP サーバー)</value>
+  </data>
+  <data name="Toolbar_More" xml:space="preserve">
+    <value>その他</value>
+  </data>
+  <data name="Toolbar_MoreHint" xml:space="preserve">
+    <value>復元、更新、テンプレート、アクション、条件、レシピ、リリース概要、比較、言語、ヘルプ、バージョン情報</value>
+  </data>
   <data name="Toolbar_LanguagesHint" xml:space="preserve">
     <value>言語マネージャーを開く</value>
   </data>
@@ -1526,4 +1538,462 @@ Windows 向けの自己完結型 Setup.exe インストーラーを作成しま�
   <data name="Wizard_NoComponentsYet" xml:space="preserve">
     <value>続行する前に、少なくとも 1 つのコンポーネントを追加してください。</value>
   </data>
+  <data name="Wizard_ValidationUnavailable" xml:space="preserve">
+    <value>検証を利用できません。続行する前にもう一度お試しください。</value>
+  </data>
+  <data name="Guided_Project" xml:space="preserve">
+    <value>プロジェクト</value>
+  </data>
+  <data name="Guided_Files" xml:space="preserve">
+    <value>ファイルとコンポーネント</value>
+  </data>
+  <data name="Guided_Install" xml:space="preserve">
+    <value>インストール動作</value>
+  </data>
+  <data name="Guided_Package" xml:space="preserve">
+    <value>パッケージと保存先</value>
+  </data>
+  <data name="Guided_Signing" xml:space="preserve">
+    <value>署名</value>
+  </data>
+  <data name="Guided_Review" xml:space="preserve">
+    <value>確認とビルド</value>
+  </data>
+  <data name="Guided_Result" xml:space="preserve">
+    <value>結果</value>
+  </data>
+  <data name="Guided_ContinueUnsigned" xml:space="preserve">
+    <value>署名せずに続行</value>
+  </data>
+  <data name="Guided_FilesOnly" xml:space="preserve">
+    <value>任意のコンポーネントを定義せずにソースファイルを使用</value>
+  </data>
+  <data name="Guided_SystemChanges" xml:space="preserve">
+    <value>システム変更</value>
+  </data>
+  <data name="Guided_Resources" xml:space="preserve">
+    <value>リソース</value>
+  </data>
+  <data name="Guided_Configured" xml:space="preserve">
+    <value>設定済み</value>
+  </data>
+  <data name="Guided_Unsigned" xml:space="preserve">
+    <value>署名なしの開発ビルド</value>
+  </data>
+  <data name="Nav_Includes" xml:space="preserve">
+    <value>含める項目と除外項目</value>
+  </data>
+  <data name="Nav_Components" xml:space="preserve">
+    <value>コンポーネント</value>
+  </data>
+  <data name="Nav_Layout" xml:space="preserve">
+    <value>対象範囲とインストール先</value>
+  </data>
+  <data name="Section_Prerequisites" xml:space="preserve">
+    <value>前提条件</value>
+  </data>
+  <data name="Section_Shortcuts" xml:space="preserve">
+    <value>ショートカット</value>
+  </data>
+  <data name="Section_Registry" xml:space="preserve">
+    <value>レジストリエントリ</value>
+  </data>
+  <data name="BuildResult_OpenManifest" xml:space="preserve">
+    <value>マニフェストを開く</value>
+  </data>
+  <data name="Packaging_Msi" xml:space="preserve">
+    <value>MSI — Windows Installer パッケージ（WiX が必要）</value>
+  </data>
+  <data name="Packaging_ClickOnce" xml:space="preserve">
+    <value>ClickOnce — アプリファイルと更新マニフェスト</value>
+  </data>
+  <data name="Guided_OptionalBehavior" xml:space="preserve">
+    <value>前提条件、ショートカット、レジストリエントリは任意です。不要な場合は一覧を空にしてください。</value>
+  </data>
+  <data name="Guided_WaitForBuild" xml:space="preserve">
+    <value>ビルドが完了するまで待つか、ビルドワークスペースでキャンセルしてください。</value>
+  </data>
+  <data name="Guided_NoPackageCancel" xml:space="preserve">
+    <value>このパッケージサービスは現在の処理中に中断できません。</value>
+  </data>
+  <data name="Packaging_MsiHint" xml:space="preserve">
+    <value>MSI は既存の WiX エクスポーターを使用します。ビルドには WiX が必要です。非対応の操作は報告されます。</value>
+  </data>
+  <data name="Packaging_ClickOnceHint" xml:space="preserve">
+    <value>ClickOnce はソースフォルダーと更新マニフェストを公開します。更新 URL をここで設定してください。システム変更には EXE または MSI が必要です。</value>
+  </data>
+  <data name="Guided_PackageHelp" xml:space="preserve">
+    <value>EXE は完全なインストールウィザードを提供します。MSI には WiX が必要です。MSIX はパッケージ ID が必要で、従来のシステム変更には対応しません。ClickOnce はソースファイルと更新マニフェストを公開します。</value>
+  </data>
+  <data name="BuildResult_Artifact" xml:space="preserve"><value>出力ファイル:</value></data>
+  <data name="Resources_Empty" xml:space="preserve"><value>一覧は空です。「追加」を選択して項目を作成してください。</value></data>
+  <data name="Resources_Properties" xml:space="preserve"><value>プロパティ</value></data>
+  <data name="Section_ScheduledTasks" xml:space="preserve"><value>スケジュールされたタスク</value></data>
+  <data name="Section_FirewallRules" xml:space="preserve"><value>ファイアウォール規則</value></data>
+  <data name="Section_Certificates" xml:space="preserve"><value>証明書</value></data>
+  <data name="Section_ComRegistrations" xml:space="preserve"><value>COM 登録</value></data>
+  <data name="Section_DriverPackages" xml:space="preserve"><value>ドライバーパッケージ</value></data>
+  <data name="Section_ConfigTransforms" xml:space="preserve"><value>構成の変換</value></data>
+  <data name="Section_IisAppPools" xml:space="preserve"><value>IIS アプリケーションプール</value></data>
+  <data name="Section_IisSites" xml:space="preserve"><value>IIS サイト</value></data>
+  <data name="Section_WebDeploy" xml:space="preserve"><value>Web Deploy パッケージ</value></data>
+  <data name="Review_MoreItems" xml:space="preserve"><value>他に {0} 件あります。編集で一覧を表示できます。</value></data>
+  <data name="Readiness_Checking" xml:space="preserve"><value>準備状態を確認中…</value></data>
+  <data name="Readiness_Stale" xml:space="preserve"><value>プロジェクトが変更されました。再確認が必要です。</value></data>
+  <data name="Readiness_Unavailable" xml:space="preserve"><value>準備状態を確認できません。ビルド前に検証してください。</value></data>
+  <data name="SaveState_Failed" xml:space="preserve"><value>保存に失敗しました</value></data>
+  <data name="SaveState_AutoSaveFailed" xml:space="preserve"><value>復元用下書きの保存に失敗しました</value></data>
+  <data name="SaveState_RecoveryFailed" xml:space="preserve"><value>復元用下書きを読み込めませんでした</value></data>
+  <data name="SaveState_Recovered" xml:space="preserve"><value>下書きを復元しました — 変更を保存してください</value></data>
+  <data name="SaveState_Unsaved" xml:space="preserve"><value>未保存の変更</value></data>
+  <data name="SaveState_Untitled" xml:space="preserve"><value>まだ保存されていません</value></data>
+  <data name="SaveState_Saved" xml:space="preserve"><value>保存済み</value></data>
+  <data name="SaveState_RecoveryPath" xml:space="preserve"><value>復元用下書き</value></data>
+  <data name="SaveState_SaveFirst" xml:space="preserve"><value>未保存の変更があります。先に保存しますか？</value></data>
+  <data name="Workspace_Title" xml:space="preserve"><value>ビルドワークスペース</value></data>
+  <data name="Workspace_OlderRevision" xml:space="preserve"><value>このビルドは以前のプロジェクト版を使用しています。結果は現在のプロジェクトには関連付けられていません。</value></data>
+  <data name="Workspace_Log" xml:space="preserve"><value>ビルドログ</value></data>
+  <data name="Workspace_OpenArtifact" xml:space="preserve"><value>成果物を開く</value></data>
+  <data name="Workspace_SaveLog" xml:space="preserve"><value>ログを保存</value></data>
+  <data name="Workspace_Idle" xml:space="preserve"><value>ビルド準備完了</value></data>
+  <data name="Workspace_Preparing" xml:space="preserve"><value>準備中</value></data>
+  <data name="Workspace_Building" xml:space="preserve"><value>ビルド中</value></data>
+  <data name="Workspace_Signing" xml:space="preserve"><value>署名中</value></data>
+  <data name="Workspace_Completed" xml:space="preserve"><value>ビルド完了</value></data>
+  <data name="Workspace_Failed" xml:space="preserve"><value>ビルド失敗</value></data>
+  <data name="Workspace_Cancelled" xml:space="preserve"><value>ビルドをキャンセルしました</value></data>
+  <data name="Recipe_Title" xml:space="preserve"><value>リソースレシピ</value></data>
+  <data name="Recipe_Preview" xml:space="preserve"><value>変更をプレビュー</value></data>
+  <data name="Recipe_Apply" xml:space="preserve"><value>レシピを適用</value></data>
+  <data name="Recipe_PreviewFirst" xml:space="preserve"><value>レシピを適用する前に変更を確認してください。</value></data>
+  <data name="Recipe_Ready" xml:space="preserve"><value>表示された変更を適用できます。</value></data>
+  <data name="Recipe_Fix" xml:space="preserve"><value>適用する前に表示されたエラーを修正してください。</value></data>
+  <data name="Recipe_FieldName" xml:space="preserve"><value>リソース名 *</value></data>
+  <data name="Recipe_FieldTargetPath" xml:space="preserve"><value>対象パス</value></data>
+  <data name="Recipe_FieldPoolName" xml:space="preserve"><value>新しいアプリケーションプール名 *</value></data>
+  <data name="Recipe_FieldPort" xml:space="preserve"><value>ポート *</value></data>
+  <data name="Recipe_FieldHost" xml:space="preserve"><value>ホスト名（任意）</value></data>
+  <data name="Recipe_FieldRuntimeVersion" xml:space="preserve"><value>マネージドランタイム（空欄：なし）</value></data>
+  <data name="Recipe_FieldTrigger" xml:space="preserve"><value>タスクのトリガー *</value></data>
+  <data name="Recipe_FieldStartTime" xml:space="preserve"><value>開始時刻（HH:mm）</value></data>
+  <data name="Recipe_FieldServiceAccount" xml:space="preserve"><value>組み込みサービスアカウント *</value></data>
+  <data name="Recipe_FieldFirewallProtocol" xml:space="preserve"><value>プロトコル *</value></data>
+  <data name="Recipe_FieldFirewallProfile" xml:space="preserve"><value>ファイアウォールプロファイル *</value></data>
+  <data name="Recipe_FieldUseMachineScope" xml:space="preserve"><value>プロジェクトを管理者権限のマシンインストールに変更</value></data>
+  <data name="Recipe_FieldUseExeOutput" xml:space="preserve"><value>プロジェクトをEXE出力に変更</value></data>
+  <data name="Recipe_TargetWindowsService" xml:space="preserve"><value>実行ファイルのパス *</value></data>
+  <data name="Recipe_TargetIisSite" xml:space="preserve"><value>物理パス *</value></data>
+  <data name="Recipe_TargetScheduledTask" xml:space="preserve"><value>実行ファイルのパス *</value></data>
+  <data name="Recipe_TargetFirewallRule" xml:space="preserve"><value>プログラム（任意）</value></data>
+  <data name="Recipe_Requirements" xml:space="preserve"><value>Windowsツール、EXE/MSI出力、管理者権限でのマシンインストールが必要です。このアプリ専用の名前を使用してください。既存のマシンリソースはここでは検査されません。</value></data>
+  <data name="Recipe_WindowsServiceLimits" xml:space="preserve"><value>選択した組み込みアカウントで自動サービスを作成します。SCMが必要です。ロールバック時に新しいサービスは削除され、取得済みの以前の設定は復元できる場合があります。資格情報と詳細設定は完全なエディターで設定できます。</value></data>
+  <data name="Recipe_IisSiteLimits" xml:space="preserve"><value>新しいアプリケーションプールとHTTPサイトを作成します。IIS/appcmdの事前インストールが必要です。TLSと証明書は完全なエディターで設定します。ロールバックまたは削除で所有するサイトとプールが削除される場合があり、以前の定義は復元されません。</value></data>
+  <data name="Recipe_ScheduledTaskLimits" xml:space="preserve"><value>インストーラーを実行するアカウントでタスクを作成します。タスクスケジューラが必要です。ロールバックまたは削除でタスクは停止・削除され、以前の定義は復元されません。資格情報と昇格は完全なエディターで設定できます。</value></data>
+  <data name="Recipe_FirewallRuleLimits" xml:space="preserve"><value>指定したポート、プログラム、プロファイルの受信許可ルールを作成します。Windowsファイアウォール/netshが必要です。プログラムが空欄の場合はすべてのプログラムに適用されます。ロールバックまたは削除でルールが削除され、以前の定義は復元されません。</value></data>
+  <data name="Recovery_Title" xml:space="preserve"><value>未保存のプロジェクトを復元</value></data>
+  <data name="Recovery_Help" xml:space="preserve"><value>下書きを選択してください。未保存として開きます。変更を保存してください。読み取れない下書きはディスクに残ります。</value></data>
+  <data name="Recovery_Modified" xml:space="preserve"><value>下書きの日時</value></data>
+  <data name="Recovery_Recover" xml:space="preserve"><value>復元</value></data>
+  <data name="Recovery_Choice" xml:space="preserve"><value>新しい復元用の下書きがあります。復元しますか？「いいえ」は保存済みのプロジェクトを開き下書きを保持します。「キャンセル」は現在のプロジェクトを保持します。</value></data>
+  <data name="Recovery_CleanupFailed" xml:space="preserve"><value>保存済み。復元用の下書きの削除に失敗しました</value></data>
+  <data name="Recovery_OriginalProject" xml:space="preserve"><value>元のプロジェクト</value></data>
+  <data name="History_Undo" xml:space="preserve"><value>元に戻す</value></data>
+  <data name="History_Redo" xml:space="preserve"><value>やり直す</value></data>
+  <data name="History_Credentials" xml:space="preserve"><value>{0} 件の認証情報を再入力してください。ビルド前に復元された項目を確認してください。</value></data>
+  <data name="Release_Title" xml:space="preserve"><value>リリース概要</value></data>
+  <data name="Release_Notice" xml:space="preserve"><value>ファイルの生成はデプロイの成功を証明しません。</value></data>
+  <data name="Release_Package" xml:space="preserve"><value>パッケージ</value></data>
+  <data name="Release_Assets" xml:space="preserve"><value>デプロイ用ファイル</value></data>
+  <data name="Release_Qualifications" xml:space="preserve"><value>検証の証拠</value></data>
+  <data name="Release_ReportInvalid" xml:space="preserve"><value>レポートを読み込めませんでした。4 MB 未満の読み取り可能なポートフォリオ JSON ファイルを選択してください。</value></data>
+  <data name="Release_FilePresent" xml:space="preserve"><value>ファイルあり</value></data>
+  <data name="Release_Unavailable" xml:space="preserve"><value>ファイルを利用できません</value></data>
+  <data name="Release_ReportedPassed" xml:space="preserve"><value>レポート上は合格</value></data>
+  <data name="Release_ReportedFailed" xml:space="preserve"><value>レポート上は不合格</value></data>
+  <data name="Release_NoEvidence" xml:space="preserve"><value>証拠は選択または記録されていません。</value></data>
+  <data name="Release_Unbound" xml:space="preserve"><value>選択した検証レポートはこのビルドに関連付けられていません。</value></data>
+  <data name="Release_LoadAssets" xml:space="preserve"><value>デプロイ用ファイルを選択</value></data>
+  <data name="Release_LoadReport" xml:space="preserve"><value>検証ポートフォリオを読み込む</value></data>
+  <data name="Release_Refresh" xml:space="preserve"><value>更新</value></data>
+  <data name="UpdatePreview_Title" xml:space="preserve"><value>更新のプレビュー</value></data>
+  <data name="UpdatePreview_CheckRequired" xml:space="preserve"><value>更新を確認して新しいプレビューを作成してください。</value></data>
+  <data name="UpdatePreview_Channels" xml:space="preserve"><value>チャネル: {0} → {1}</value></data>
+  <data name="UpdatePreview_Versions" xml:space="preserve"><value>インストール済み: {0}; 差分の対象: {1}; フィードのバージョン: {2}</value></data>
+  <data name="UpdatePreview_Local" xml:space="preserve"><value>ペイロード: ローカル差分。下の検証状態を確認してください。</value></data>
+  <data name="UpdatePreview_Remote" xml:space="preserve"><value>ペイロード: リモート差分。適用時に署名とファイルを検証します。</value></data>
+  <data name="UpdatePreview_NoPayload" xml:space="preserve"><value>使用可能な差分が選択されていません。</value></data>
+  <data name="UpdatePreview_Sizes" xml:space="preserve"><value>公称差分サイズ: {0} バイト; 対象イメージ: {1} バイト（必要なディスク容量ではありません）。</value></data>
+  <data name="UpdatePreview_Ready" xml:space="preserve"><value>適用を試行できます。インストールの検証は引き続き必要です。</value></data>
+  <data name="UpdatePreview_MissingKey" xml:space="preserve"><value>差分用の読み取り可能な RSA 公開鍵を選択してください。</value></data>
+  <data name="UpdatePreview_MissingSource" xml:space="preserve"><value>フィードにリモート差分の取得先がありません。ローカルの差分フォルダーを選択してください。</value></data>
+  <data name="UpdatePreview_UntrustedDelta" xml:space="preserve"><value>ローカル差分マニフェストに信頼された署名がありません。</value></data>
+  <data name="UpdatePreview_Mismatch" xml:space="preserve"><value>ローカル差分のバージョンまたはツリーのハッシュが署名付きフィードと一致しません。</value></data>
+  <data name="UpdatePreview_Unavailable" xml:space="preserve"><value>ローカル差分を読み取れませんでした。</value></data>
+  <data name="UpdatePreview_PolicyDenied" xml:space="preserve"><value>ポリシーによりリモート差分の取得先がブロックされています。</value></data>
+  <data name="UpdatePreview_MissingDelta" xml:space="preserve"><value>インストール済みバージョンに一致する差分がありません。</value></data>
+  <data name="UpdatePreview_AmbiguousDelta" xml:space="preserve"><value>インストール済みバージョンに一致する差分が複数あります。適用できません。</value></data>
+  <data name="UpdatePreview_InvalidVersion" xml:space="preserve"><value>バージョンには 1～4 個の非負の数値を入力してください。</value></data>
+  <data name="UpdatePreview_NotAuthorized" xml:space="preserve"><value>信頼されたフィードと、単一の対象チャネルへの許可された移行が必要です。</value></data>
+  <data name="UpdatePreview_NoFallback" xml:space="preserve"><value>この更新方法では完全パッケージへのフォールバックは利用できません。</value></data>
+  <data name="UpdatePreview_Rollback" xml:space="preserve"><value>フィードのロールバック先: {0}。ロールバックには確定済み更新ジャーナル、保持された変更のないバックアップ、リソースの復元が必要です。このプレビューでは検証しません。</value></data>
+  <data name="UpdatePreview_Rechecks" xml:space="preserve"><value>適用時に、ステージングと切り替えの前にフィードのハッシュ、インストール識別情報、署名、ファイルのハッシュを再検証します。ファイルが復元されても外部リソースの復元は失敗する場合があります。</value></data>
+  <data name="Comparison_Title" xml:space="preserve"><value>プロジェクトの比較</value></data>
+  <data name="Comparison_Notice" xml:space="preserve"><value>構成のみの比較です。保護された値、カスタムアクション、カスタムウィザードページ、ペイロードの内容は比較しません。ビルドやインストールの検証ではありません。</value></data>
+  <data name="Comparison_SelectFirst" xml:space="preserve"><value>現在のプロジェクトと比較する基準の .bsetup プロジェクトを選択してください。</value></data>
+  <data name="Comparison_Snapshot" xml:space="preserve"><value>基準: {0}
+取得時刻: {1}; 変更された項目: {2}。更新すると基準を再読込し、現在の編集内容を比較します。</value></data>
+  <data name="Comparison_LoadFailed" xml:space="preserve"><value>プロジェクトを比較できませんでした。16 MB 未満の読み取り可能な .bsetup ファイルを選択してください。前の比較は保持されます。</value></data>
+  <data name="Comparison_Select" xml:space="preserve"><value>基準プロジェクトを選択</value></data>
+  <data name="Comparison_Refresh" xml:space="preserve"><value>比較を更新</value></data>
+  <data name="Comparison_Category" xml:space="preserve"><value>カテゴリ</value></data>
+  <data name="Comparison_Kind" xml:space="preserve"><value>変更</value></data>
+  <data name="Comparison_Path" xml:space="preserve"><value>項目</value></data>
+  <data name="Comparison_Before" xml:space="preserve"><value>基準</value></data>
+  <data name="Comparison_After" xml:space="preserve"><value>現在のプロジェクト</value></data>
+  <data name="Comparison_Search" xml:space="preserve"><value>変更された項目と値を検索</value></data>
+  <data name="Comparison_All" xml:space="preserve"><value>すべての変更</value></data>
+  <data name="Comparison_Identity" xml:space="preserve"><value>識別情報とバージョン</value></data>
+  <data name="Comparison_Destinations" xml:space="preserve"><value>パスと配置先</value></data>
+  <data name="Comparison_Package" xml:space="preserve"><value>パッケージと署名</value></data>
+  <data name="Comparison_Resources" xml:space="preserve"><value>ファイルとリソース</value></data>
+  <data name="Comparison_Other" xml:space="preserve"><value>その他の構成</value></data>
+  <data name="Comparison_Added" xml:space="preserve"><value>追加</value></data>
+  <data name="Comparison_Removed" xml:space="preserve"><value>削除</value></data>
+  <data name="Comparison_Changed" xml:space="preserve"><value>変更</value></data>
+  <data name="Comparison_NoChanges" xml:space="preserve"><value>比較した構成項目に変更はありません。</value></data>
+  <data name="Comparison_NoMatches" xml:space="preserve"><value>このカテゴリまたは検索条件に一致する変更項目はありません。</value></data>
+  <data name="Comparison_Details" xml:space="preserve"><value>選択した変更の詳細</value></data>
+  <data name="Help_Title" xml:space="preserve"><value>作成ヘルプ</value></data>
+  <data name="Help_Search" xml:space="preserve"><value>トピックや作業を検索</value></data>
+  <data name="Help_Topics" xml:space="preserve"><value>トピック</value></data>
+  <data name="Help_Views" xml:space="preserve"><value>利用可能な画面</value></data>
+  <data name="Help_AdvancedOnly" xml:space="preserve"><value>詳細エディターのみ。</value></data>
+  <data name="Help_BothViews" xml:space="preserve"><value>ガイド: {0}。詳細エディターでも利用できます。</value></data>
+  <data name="Help_Advanced" xml:space="preserve"><value>詳細</value></data>
+  <data name="Help_GuidedAdvanced" xml:space="preserve"><value>ガイド / 詳細</value></data>
+  <data name="Help_NoMatches" xml:space="preserve"><value>一致するトピックがありません。機能名や、ポートを開く、定期ジョブなどの作業を検索してください。</value></data>
+  <data name="Help_Keyboard" xml:space="preserve"><value>F1 でコンテキストヘルプを開きます。ガイドの Ctrl+F はこのヘルプを、詳細の Ctrl+F はセクションを検索します。詳細では F7 で検証、F5 でビルドします。ヘルプはプロジェクトを変更・検証しません。</value></data>
+  <data name="Help_Identity" xml:space="preserve"><value>識別情報</value></data>
+  <data name="Help_Layout" xml:space="preserve"><value>配置</value></data>
+  <data name="Help_Eula" xml:space="preserve"><value>使用許諾契約</value></data>
+  <data name="Help_Files" xml:space="preserve"><value>ファイル</value></data>
+  <data name="Help_Includes" xml:space="preserve"><value>含める項目</value></data>
+  <data name="Help_Components" xml:space="preserve"><value>コンポーネント</value></data>
+  <data name="Help_Branding" xml:space="preserve"><value>外観</value></data>
+  <data name="Help_WizardPages" xml:space="preserve"><value>ウィザードページ</value></data>
+  <data name="Help_Output" xml:space="preserve"><value>出力</value></data>
+  <data name="Help_Payload" xml:space="preserve"><value>ペイロード</value></data>
+  <data name="Help_Compression" xml:space="preserve"><value>圧縮</value></data>
+  <data name="Help_Package" xml:space="preserve"><value>パッケージ形式</value></data>
+  <data name="Help_Msix" xml:space="preserve"><value>MSIX</value></data>
+  <data name="Help_Script" xml:space="preserve"><value>スクリプト</value></data>
+  <data name="Help_Build" xml:space="preserve"><value>ビルド手順</value></data>
+  <data name="Help_Log" xml:space="preserve"><value>ビルドログ</value></data>
+  <data name="Help_Result" xml:space="preserve"><value>最後の結果</value></data>
+  <data name="HelpBody_Project" xml:space="preserve"><value>製品名、バージョン、発行元を設定します。同じアプリのリリースでは AppId を維持してください。変更するとインストール識別情報が変わります。</value></data>
+  <data name="HelpBody_Install" xml:space="preserve"><value>インストール範囲と配置先を選択します。管理者要件、ショートカット、レジストリ変更を確認してください。マシン全体のリソースには昇格が必要な場合があります。</value></data>
+  <data name="HelpBody_Branding" xml:space="preserve"><value>外観、ライセンス文章、インストーラーページを設定します。ビルド前に言語とページ順を確認してください。カスタムページには固有の入力検証があります。</value></data>
+  <data name="HelpBody_FilesBody" xml:space="preserve"><value>アプリのビルドフォルダーをスキャンします。取得元・配置先、含める・除外するパターン、任意コンポーネントを確認してください。ファイル数は内容の最新性を保証しません。</value></data>
+  <data name="HelpBody_PrerequisitesBody" xml:space="preserve"><value>必要なランタイムと依存関係を選択します。署名付きカタログには信頼された鍵が必要です。ビルド前に形式との互換性とポリシー診断を確認してください。</value></data>
+  <data name="HelpBody_ResourcesBody" xml:space="preserve"><value>エディターでリソースの入力を設定します。プロバイダーや形式ごとに対応が異なります。検証とロールバックの制約を確認し、対応する秘密参照で資格情報を保護してください。</value></data>
+  <data name="HelpBody_Network" xml:space="preserve"><value>ファイアウォールの方向、ポートまたはプログラム、ネットワークプロファイルを選択します。ポート開放はシステムの変更です。管理者要件と削除・ロールバックの動作を確認してください。</value></data>
+  <data name="HelpBody_Iis" xml:space="preserve"><value>アプリケーションプール、サイトパス、バインドまたは Web Deploy パラメーターを設定します。IIS の前提条件、所有権、ロールバック対応を確認してください。</value></data>
+  <data name="HelpBody_Service" xml:space="preserve"><value>サービス実行ファイル、起動モード、アカウントを設定します。資格情報を保護し、パッケージ化前にインストール、アンインストール、ロールバックの動作を確認してください。</value></data>
+  <data name="HelpBody_Packaging" xml:space="preserve"><value>EXE、MSI、MSIX、ClickOnce を選択します。形式固有の問題、出力先、署名要件を確認してください。すべての形式ですべてのリソースを利用できるわけではありません。</value></data>
+  <data name="HelpBody_Signing" xml:space="preserve"><value>証明書・ストアまたは対応するリモート署名を設定します。保護された資格情報参照を使ってください。未署名の開発ビルドはポリシーに依存し、署名設定だけでは成果物の署名を証明しません。</value></data>
+  <data name="HelpBody_Updates" xml:space="preserve"><value>信頼されたフィード、チャネル、ロールアウトポリシーを確認します。更新センターで差分とロールバック制約を確認できます。配布用ファイルやロールバック先だけでは実行成功を証明しません。</value></data>
+  <data name="HelpBody_BuildBody" xml:space="preserve"><value>ビルド前にブロックする診断を確認します。ビルド画面で段階、キャンセル、ログ、成果物を確認してください。以前のプロジェクト版の結果は別途確認が必要です。</value></data>
+  <data name="HelpBody_Tasks" xml:space="preserve"><value>タスクの実行ファイル、引数、トリガー、実行アカウントを選択します。ビルド前に範囲、昇格、削除・ロールバックの動作を確認してください。</value></data>
+  <data name="HelpAliases_firewallrules" xml:space="preserve"><value>ポートを開く ネットワーク例外 ポート開放</value></data>
+  <data name="HelpAliases_scheduledtasks" xml:space="preserve"><value>定期ジョブ スケジュールタスク 定期実行</value></data>
+  <data name="Runtime_Ready" xml:space="preserve"><value>インストールの準備完了</value></data>
+  <data name="Runtime_ReadyHint" xml:space="preserve"><value>設定を確認し、「インストール」をクリックして開始してください。</value></data>
+  <data name="Runtime_InstallType" xml:space="preserve"><value>インストールの種類</value></data>
+  <data name="Runtime_PerUser" xml:space="preserve"><value>対象：現在のユーザーのみ</value></data>
+  <data name="Runtime_AllUsers" xml:space="preserve"><value>対象：このコンピューターのすべてのユーザー</value></data>
+  <data name="Runtime_Required" xml:space="preserve"><value>必須</value></data>
+  <data name="Runtime_Optional" xml:space="preserve"><value>任意</value></data>
+  <data name="Runtime_EstimatedSize" xml:space="preserve"><value>インストールファイルの推定サイズ：{0}</value></data>
+  <data name="Runtime_ConfiguredChanges" xml:space="preserve"><value>設定された前提条件とシステム変更（条件や検出によって省略される場合があります。実行結果ではありません）：</value></data>
+  <data name="Runtime_CustomActions" xml:space="preserve"><value>カスタム操作</value></data>
+  <data name="Runtime_Tasks" xml:space="preserve"><value>選択した追加タスク：</value></data>
+  <data name="Runtime_StartMenu" xml:space="preserve"><value>スタートメニュー項目を作成</value></data>
+  <data name="Runtime_RestartRequired" xml:space="preserve"><value>インストールの変更を完了するには、Windows を再起動してください。</value></data>
+  <data name="Runtime_NoRestartReported" xml:space="preserve"><value>インストーラーから再起動が必要との報告はありません。</value></data>
+  <data name="Runtime_RollbackAttempted" xml:space="preserve"><value>復旧を試みました。{1} 件中 {0} 件のロールバック操作がエラーなしで終了しました。完全な復旧は未確認です。再試行する前にログを確認してください。</value></data>
+  <data name="Runtime_RecoveryUnknown" xml:space="preserve"><value>復旧は未確認です。再試行する前にログとインストール状態を確認してください。</value></data>
+  <data name="Runtime_BackupRestored" xml:space="preserve"><value>以前のバージョンのファイルバックアップを復元しました。システムリソースの復旧が確認されたことを意味するものではありません。</value></data>
+  <data name="Runtime_BackupFailed" xml:space="preserve"><value>以前のバージョンのファイルバックアップの復元に失敗しました。変更が残っている可能性があります。</value></data>
+  <data name="Runtime_BackupUnknown" xml:space="preserve"><value>以前のバージョンのバックアップ復旧結果は不明です。</value></data>
+  <data name="Runtime_BackupNotAttempted" xml:space="preserve"><value>以前のバージョンのファイルバックアップの復元は試みていません。</value></data>
+  <data name="Runtime_Failed" xml:space="preserve"><value>インストール失敗</value></data>
+  <data name="Runtime_ViewBundle" xml:space="preserve"><value>サポートバンドルを表示</value></data>
+  <data name="Runtime_Retry" xml:space="preserve"><value>インストールを再試行</value></data>
+  <data name="Runtime_Preview" xml:space="preserve"><value>プレビューのみ：インストールの変更は適用されていません。</value></data>
+  <data name="Runtime_Installed" xml:space="preserve"><value>{0} を {1} にインストールしました。</value></data>
+  <data name="Runtime_FailedStep" xml:space="preserve"><value>インストールは次のステップで失敗しました：{0}</value></data>
+  <data name="Support_Review" xml:space="preserve"><value>サポートバンドルを確認</value></data>
+  <data name="Support_ReviewNotice" xml:space="preserve"><value>保存または共有する前に、秘匿処理済みの診断情報を確認してください。すべての機密情報が除去されるとは限りません。記録された結果とプライバシーメタデータは維持されます。</value></data>
+  <data name="Support_Export" xml:space="preserve"><value>サポートバンドルをエクスポート</value></data>
+  <data name="Support_ExportFailed" xml:space="preserve"><value>サポートバンドルをエクスポートできませんでした。別の保存先を選ぶか、再試行してください。</value></data>
+  <data name="Support_Exported" xml:space="preserve"><value>サポートバンドルを {0} に保存しました。</value></data>
+  <data name="Support_Loading" xml:space="preserve"><value>記録された診断情報を読み込み中…</value></data>
+  <data name="Support_Unavailable" xml:space="preserve"><value>記録されたバンドルが利用できない、無効、または大きすぎるため確認できません。エクスポートは無効です。</value></data>
+  <data name="Support_CopyDetails" xml:space="preserve"><value>エラーの詳細をコピー</value></data>
+  <data name="Support_CopyFailed" xml:space="preserve"><value>エラーの詳細をコピーできませんでした。再試行するか、概要のテキストを選択してください。</value></data>
+  <data name="Support_Copied" xml:space="preserve"><value>秘匿処理済みのエラー詳細をコピーしました。共有する前に確認してください。</value></data>
+  <data name="Gallery_Title" xml:space="preserve"><value>テンプレートギャラリー</value></data>
+  <data name="Gallery_Search" xml:space="preserve"><value>テンプレートを検索</value></data>
+  <data name="Gallery_Category" xml:space="preserve"><value>カテゴリー</value></data>
+  <data name="Gallery_FavoritesOnly" xml:space="preserve"><value>お気に入りのみ</value></data>
+  <data name="Gallery_SampleDetails" xml:space="preserve"><value>テンプレートのサンプル詳細</value></data>
+  <data name="Gallery_Select" xml:space="preserve"><value>選択したテンプレートを使用</value></data>
+  <data name="Gallery_Favorite" xml:space="preserve"><value>お気に入り</value></data>
+  <data name="Gallery_RemoveFavorite" xml:space="preserve"><value>お気に入りから削除</value></data>
+  <data name="Gallery_AddFavorite" xml:space="preserve"><value>お気に入りに追加</value></data>
+  <data name="Gallery_NoMatches" xml:space="preserve"><value>この条件に一致するテンプレートはありません。</value></data>
+  <data name="Gallery_Sample" xml:space="preserve"><value>サンプルコンポーネント：{0}。ショートカットの対象：</value></data>
+  <data name="Gallery_Limits" xml:space="preserve"><value>サンプルのファイル名は仮の名前です。ビルド前に実行ファイルの対象、リソース、範囲、署名を確認してください。</value></data>
+  <data name="Gallery_FavoritesUnavailable" xml:space="preserve"><value>お気に入りを読み込むか保存することができませんでした。既存のデータは保持されています。テンプレートは引き続き選択できます。</value></data>
+  <data name="Gallery_AllCategories" xml:space="preserve"><value>すべてのカテゴリー</value></data>
+  <data name="Gallery_Name_empty" xml:space="preserve"><value>空</value></data>
+  <data name="Gallery_Name_console" xml:space="preserve"><value>コンソールアプリ</value></data>
+  <data name="Gallery_Name_winforms" xml:space="preserve"><value>WinForms アプリ</value></data>
+  <data name="Gallery_Name_wpf" xml:space="preserve"><value>WPF アプリ</value></data>
+  <data name="Gallery_Name_service" xml:space="preserve"><value>Windows サービス</value></data>
+  <data name="Gallery_Description_empty" xml:space="preserve"><value>空のプロジェクトです。すべての設定を自分で構成します。</value></data>
+  <data name="Gallery_Description_console" xml:space="preserve"><value>コマンドラインツール：コアコンポーネントとスタートメニューのショートカット。</value></data>
+  <data name="Gallery_Description_winforms" xml:space="preserve"><value>デスクトップアプリ：コアコンポーネント、デスクトップとスタートメニューのショートカット。</value></data>
+  <data name="Gallery_Description_wpf" xml:space="preserve"><value>デスクトップアプリ：コアコンポーネント、デスクトップとスタートメニューのショートカット。</value></data>
+  <data name="Gallery_Description_service" xml:space="preserve"><value>サービスホストのサンプル：コアコンポーネントとスタートアップのショートカット。サービス登録は別途設定してください。</value></data>
+  <data name="Gallery_Category_General" xml:space="preserve"><value>一般</value></data>
+  <data name="Gallery_Category_Desktop" xml:space="preserve"><value>デスクトップ</value></data>
+  <data name="Gallery_Category_Service" xml:space="preserve"><value>サービス</value></data>
+  <data name="Gallery_Location_Desktop" xml:space="preserve"><value>デスクトップ</value></data>
+  <data name="Gallery_Location_StartMenu" xml:space="preserve"><value>スタートメニュー</value></data>
+  <data name="Gallery_Location_Startup" xml:space="preserve"><value>スタートアップ</value></data>
+  <data name="Gallery_Import" xml:space="preserve"><value>署名付きテンプレートをインポート…</value></data>
+  <data name="Gallery_Verifying" xml:space="preserve"><value>署名付きテンプレートを検証中…</value></data>
+  <data name="Gallery_Verified" xml:space="preserve"><value>署名を検証済み。発行者: {0}
+信頼する鍵の SHA-256: {1}
+プロジェクトの SHA-256: {2}</value></data>
+  <data name="Gallery_SignedLimits" xml:space="preserve"><value>取得したパッケージ内容です。検証はペイロードファイルの確認やインストールの承認を行いません。作成時に製品の識別情報とソース欄を置き換えます。ビルド前にリソースとパスを確認してください。</value></data>
+  <data name="Gallery_PackageFolder" xml:space="preserve"><value>署名付きテンプレートのパッケージフォルダーを選択</value></data>
+  <data name="Gallery_PublicKey" xml:space="preserve"><value>このテンプレートで信頼する公開鍵を選択</value></data>
+  <data name="Gallery_ImportError_Unavailable" xml:space="preserve"><value>パッケージまたは公開鍵を利用できません。選択を保持しました。</value></data>
+  <data name="Gallery_ImportError_TooLarge" xml:space="preserve"><value>ファイルがサイズ制限を超えています。選択を保持しました。</value></data>
+  <data name="Gallery_ImportError_Invalid" xml:space="preserve"><value>テンプレートパッケージまたは鍵が無効です。選択を保持しました。</value></data>
+  <data name="Gallery_ImportError_Untrusted" xml:space="preserve"><value>署名、プロジェクトハッシュまたは信頼する鍵の検証に失敗しました。選択を保持しました。</value></data>
+  <data name="Gallery_ImportError_UnsupportedContent" xml:space="preserve"><value>このエディターのバージョンではテンプレートの内容を保持できません。選択を保持しました。</value></data>
+  <data name="Gallery_LibraryWarning" xml:space="preserve"><value>一部の保存済みテンプレートを読み込みまたは保存できませんでした。ライブラリのデータは保持しました。変更されたソースや利用できないソースを再インポートして確認してください。</value></data>
+  <data name="Gallery_LibraryHint" xml:space="preserve"><value>保存済み一覧はソースの参照と確認済みハッシュを保持します。次回以降もソースと鍵を検証します。ソースが変わった場合は再インポートが必要です。</value></data>
+  <data name="Preview_Title" xml:space="preserve"><value>ウィザードのプレビュー — {0}</value></data>
+  <data name="Preview_LayoutHint" xml:space="preserve"><value>プレビュー専用です。構成済みのページを選択し、ウィザードの言語を変更するか、レイアウトの拡大縮小を試してください。大きいレイアウトはスクロールして確認できます。インストールは実行されません。実際の OS DPI の検証にはなりません。</value></data>
+  <data name="Preview_Page" xml:space="preserve"><value>プレビューページ</value></data>
+  <data name="Preview_Scale" xml:space="preserve"><value>レイアウトの倍率</value></data>
+  <data name="Preview_Reset" xml:space="preserve"><value>プレビューをリセット</value></data>
+  <data name="Preview_SimulatedFailure" xml:space="preserve"><value>レイアウト確認用の模擬エラーです。インストールは実行されていません。</value></data>
+  <data name="Preview_PrerequisitesNotChecked" xml:space="preserve"><value>プレビューでは前提条件のチェックやインストール操作を実行しません。</value></data>
+  <data name="Nav_AdvancedResources" xml:space="preserve"><value>高度なリソース</value></data>
+  <data name="Field_UpdateMode" xml:space="preserve"><value>更新モード:</value></data>
+  <data name="Field_InstallType" xml:space="preserve"><value>インストールの種類:</value></data>
+  <data name="Field_Privileges" xml:space="preserve"><value>権限:</value></data>
+  <data name="Field_Scope" xml:space="preserve"><value>インストール範囲:</value></data>
+  <data name="Field_Theme" xml:space="preserve"><value>テーマ:</value></data>
+  <data name="Field_TargetArchitecture" xml:space="preserve"><value>対象アーキテクチャ:</value></data>
+  <data name="Field_PayloadSource" xml:space="preserve"><value>ファイルの取得元:</value></data>
+  <data name="Field_CompressionFormat" xml:space="preserve"><value>圧縮形式:</value></data>
+  <data name="Field_CompressionStrength" xml:space="preserve"><value>圧縮レベル:</value></data>
+  <data name="Field_OutputFormat" xml:space="preserve"><value>出力形式:</value></data>
+  <data name="Builder_NoRecentScripts" xml:space="preserve"><value>最近使ったスクリプトはありません</value></data>
+  <data name="Builder_ClearRecent" xml:space="preserve"><value>最近使ったスクリプトの一覧を消去</value></data>
+  <data name="Builder_ResultMetrics" xml:space="preserve"><value>サイズ: {0:N1} MB • 時間: {1:N1} 秒</value></data>
+  <data name="Builder_ResultTime" xml:space="preserve"><value>時間: {0:N1} 秒</value></data>
+  <data name="Builder_ResultIssues" xml:space="preserve"><value>エラー: {0} • 警告: {1}</value></data>
+  <data name="Builder_LastBuildArtifact" xml:space="preserve"><value>前回のビルド: {0} (クリックして表示)</value></data>
+  <data name="Builder_IncludePatterns" xml:space="preserve"><value>含めるパターン:</value></data>
+  <data name="Builder_ExcludePatterns" xml:space="preserve"><value>除外するパターン:</value></data>
+  <data name="Builder_MoveUp" xml:space="preserve"><value>上へ移動</value></data>
+  <data name="Builder_MoveDown" xml:space="preserve"><value>下へ移動</value></data>
+  <data name="Builder_ScanningSource" xml:space="preserve"><value>{0} をスキャン中…</value></data>
+  <data name="Builder_ScanComplete" xml:space="preserve"><value>スキャン完了: {0:N0} 個のファイル ({1:N1} MB)、うち {2:N0} 個がマネージド。</value></data>
+  <data name="Builder_ScanFailedStatus" xml:space="preserve"><value>スキャン失敗: {0}</value></data>
+  <data name="Builder_KeyboardTitle" xml:space="preserve"><value>キーボード操作ガイド</value></data>
+  <data name="Builder_ValidationTitle" xml:space="preserve"><value>検証センター</value></data>
+  <data name="Builder_FormatReadinessTitle" xml:space="preserve"><value>形式の準備状況</value></data>
+  <data name="Builder_KeyboardSearchHelp" xml:space="preserve"><value>Enter で最初の結果を開き、Escape で検索を消去します。</value></data>
+  <data name="Builder_KeyboardSections" xml:space="preserve"><value>次 / 前の表示セクション</value></data>
+  <data name="Builder_KeyboardFields" xml:space="preserve"><value>次 / 前のフィールド、表、プロパティまたは操作</value></data>
+  <data name="Section_ScheduledTasksHelp" xml:space="preserve"><value>トリガー、権限昇格、作業ディレクトリ、資格情報、アンインストール時の動作を指定してタスク スケジューラのタスクを作成します。</value></data>
+  <data name="Section_FirewallRulesHelp" xml:space="preserve"><value>ポート、プログラム、サービス、ネットワーク プロファイルに対する Windows ファイアウォール規則を定義します。</value></data>
+  <data name="Section_CertificatesHelp" xml:space="preserve"><value>拇印とロールバック時の管理責任を指定して、Windows 証明書ストアに証明書をインストールします。</value></data>
+  <data name="Section_ComRegistrationsHelp" xml:space="preserve"><value>プロセス内またはローカル サーバーのバイナリに対して COM CLSID/ProgID メタデータを登録します。</value></data>
+  <data name="Section_DriverPackagesHelp" xml:space="preserve"><value>サービス ID、署名要件、再起動時の動作を指定して INF/SYS ドライバー パッケージを準備します。</value></data>
+  <data name="Section_ConfigTransformsHelp" xml:space="preserve"><value>インストール時のバックアップとロールバック時の復元を指定して JSON/XML/INI 設定を変更します。</value></data>
+  <data name="Section_IisAppPoolsHelp" xml:space="preserve"><value>IIS アプリケーション プールのランタイム、パイプライン モード、ID、自動起動、管理責任を定義します。</value></data>
+  <data name="Section_IisSitesHelp" xml:space="preserve"><value>IIS サイトの物理パス、アプリケーション プール、バインド、アンインストール時の管理責任を定義します。</value></data>
+  <data name="Section_WebDeployHelp" xml:space="preserve"><value>パッケージ パラメーターとアンインストール時の管理責任を指定して、msdeploy パッケージを IIS サイトに関連付けます。</value></data>
+  <data name="Builder_ScanDiscarded" xml:space="preserve"><value>スキャン中にプロジェクトが変更されました。ファイルを更新するには、もう一度スキャンしてください。</value></data>
+  <data name="Report_Schema" xml:space="preserve"><value>スキーマ</value></data>
+  <data name="Report_PlanHash" xml:space="preserve"><value>プランのハッシュ</value></data>
+  <data name="Report_DiagnosticCounts" xml:space="preserve"><value>エラー: {0:N0}、警告: {1:N0}</value></data>
+  <data name="Report_Clean" xml:space="preserve"><value>厳密なプロジェクト検証で問題は見つかりませんでした。</value></data>
+  <data name="Report_Fix" xml:space="preserve"><value>修正</value></data>
+  <data name="Report_ReleaseReadiness" xml:space="preserve"><value>リリースの準備状況</value></data>
+  <data name="Report_FormatCounts" xml:space="preserve"><value>準備完了: {0:N0}、警告: {1:N0}、ブロック: {2:N0}</value></data>
+  <data name="Report_Artifacts" xml:space="preserve"><value>成果物</value></data>
+  <data name="Report_Finding" xml:space="preserve"><value>指摘事項</value></data>
+  <data name="Report_MoreFindings" xml:space="preserve"><value>ほか {0:N0} 件の指摘事項</value></data>
+  <data name="Report_Refreshed" xml:space="preserve"><value>形式の準備状況を更新しました。</value></data>
+  <data name="Report_Ready" xml:space="preserve"><value>準備完了</value></data>
+  <data name="Report_ReadyWithWarnings" xml:space="preserve"><value>警告付きで準備完了</value></data>
+  <data name="Report_Blocked" xml:space="preserve"><value>ブロック</value></data>
+  <data name="Report_Warning" xml:space="preserve"><value>警告</value></data>
+  <data name="Status_SavedFile" xml:space="preserve"><value>{0} を保存しました</value></data>
+  <data name="Status_ValidationPassed" xml:space="preserve"><value>検証に成功しました。</value></data>
+  <data name="Status_ValidationErrors" xml:space="preserve"><value>検証エラー: {0:N0} 件。</value></data>
+  <data name="Status_TemplateApplied" xml:space="preserve"><value>テンプレート '{0}' を適用しました — 変更: {1:N0} 件。</value></data>
+  <data name="Picker_ProjectFiles" xml:space="preserve"><value>Beep インストールスクリプト (*.bsetup)</value></data>
+  <data name="Picker_AllFiles" xml:space="preserve"><value>すべてのファイル (*.*)</value></data>
+  <data name="Picker_MatchingFiles" xml:space="preserve"><value>一致するファイル ({0})</value></data>
+  <data name="AuthoringLanguage_Title" xml:space="preserve"><value>画面の言語</value></data>
+  <data name="AuthoringLanguage_Help" xml:space="preserve"><value>作成画面に言語を適用します。プロジェクトのインストーラーの言語は変更されません。</value></data>
+  <data name="AuthoringLanguage_Edit" xml:space="preserve"><value>翻訳を編集</value></data>
+  <data name="Review_Checking" xml:space="preserve"><value>プロジェクトのコピーを確認しています…</value></data>
+  <data name="Review_CheckFailed" xml:space="preserve"><value>プロジェクトの確認に失敗しました。ビルドする前に再確認してください。</value></data>
+  <data name="Review_CheckChanged" xml:space="preserve"><value>プロジェクトが変更されました。ビルドする前に再確認してください。</value></data>
+  <data name="Review_CheckComplete" xml:space="preserve"><value>プロジェクトの確認が完了しました。ビルドする前に重大なエラーを修正してください。</value></data>
+  <data name="Review_CheckAgain" xml:space="preserve"><value>再確認</value></data>
+  <data name="Builder_VersionRequired" xml:space="preserve">
+    <value>バージョンは必須です。</value>
+  </data>
+  <data name="Editor_DraftChanged" xml:space="preserve"><value>このダイアログを開いている間に、プロジェクトまたは編集中のリストが変更されました。下書きは保持されています。必要な値をコピーし、キャンセルしてエディターを開き直してから適用してください。</value></data>
+  <data name="Conditions_PreviewEmpty" xml:space="preserve"><value>コンポーネントの条件はありません。インストールの種類またはプロファイルで許可されている場合、このコンポーネントを利用できます。</value></data>
+  <data name="Conditions_PreviewAll" xml:space="preserve"><value>意味：すべてのルールを満たす場合のみ、このコンポーネントをインストールまたは提示します。</value></data>
+  <data name="Conditions_PreviewAny" xml:space="preserve"><value>意味：少なくとも1つのルールを満たす場合、このコンポーネントをインストールまたは提示します。</value></data>
+  <data name="Conditions_PreviewNot" xml:space="preserve"><value>意味：ルールのグループ全体を満たさない場合、このコンポーネントをインストールまたは提示します。</value></data>
+  <data name="Conditions_PreviewIssues" xml:space="preserve"><value>問題：</value></data>
+  <data name="Conditions_PreviewNull" xml:space="preserve"><value>ルールがありません。この行を削除するか、ルールを追加してください。</value></data>
+  <data name="Conditions_PreviewAlwaysTrue" xml:space="preserve"><value>常に真</value></data>
+  <data name="Conditions_PreviewAlwaysFalse" xml:space="preserve"><value>常に偽</value></data>
+  <data name="Conditions_PreviewAdmin" xml:space="preserve"><value>現在のインストーラーセッションは管理者権限で実行されています</value></data>
+  <data name="Conditions_PreviewArchitecture" xml:space="preserve"><value>マシンのアーキテクチャ {0} {1}</value></data>
+  <data name="Conditions_PreviewOsVersion" xml:space="preserve"><value>Windows のバージョン {0} {1}</value></data>
+  <data name="Conditions_PreviewFileExists" xml:space="preserve"><value>ファイルが存在する：{1}</value></data>
+  <data name="Conditions_PreviewDirectoryExists" xml:space="preserve"><value>ディレクトリが存在する：{1}</value></data>
+  <data name="Conditions_PreviewRegistryExists" xml:space="preserve"><value>レジストリキーが存在する：{1}</value></data>
+  <data name="Conditions_PreviewRegistryValue" xml:space="preserve"><value>レジストリ値 {1} {0} {2}</value></data>
+  <data name="Conditions_PreviewCommandReturns" xml:space="preserve"><value>コマンド `{1}` の出力または終了コード {0} {2}</value></data>
+  <data name="Files_EditTitle" xml:space="preserve"><value>ファイルを編集 — {0}</value></data>
+  <data name="Files_TotalSize" xml:space="preserve"><value>確認済みサイズ：{0:N2} MB、{1:N0} ファイル（{2:N0} 件はサイズを取得できません）。</value></data>
+  <data name="Files_SharedCount" xml:space="preserve"><value>共有ファイルの参照カウント</value></data>
+  <data name="Files_SizeChecking" xml:space="preserve"><value>ファイルサイズを確認中…</value></data>
+  <data name="Files_DropScanning" xml:space="preserve"><value>ドロップされたファイルを読み取り中… 下書きは変更されていません。</value></data>
+  <data name="Files_DropCancelled" xml:space="preserve"><value>スキャンを中止しました。下書きは保持されています。</value></data>
+  <data name="Files_DropStale" xml:space="preserve"><value>スキャン中に下書きが変更されました。現在の下書きを使うにはファイルを再度ドロップしてください。</value></data>
+  <data name="Files_DropFailed" xml:space="preserve"><value>ドロップされたファイルを読み取れませんでした。下書きは保持されています。</value></data>
+  <data name="Files_DropSummary" xml:space="preserve"><value>追加：{0:N0}、重複：{1:N0}、配置先の競合：{2:N0}、利用できないパス：{3:N0}。</value></data>
+  <data name="Files_DropIssues" xml:space="preserve"><value>スキャンの詳細：</value></data>
+  <data name="Files_CancelScan" xml:space="preserve"><value>スキャンを中止</value></data>
+  <data name="Files_ApplyFailed" xml:space="preserve"><value>ファイル一覧を適用できませんでした。下書きは引き続き利用できます。再試行する前に現在のプロジェクトを確認してください。</value></data>
 </root>

@@ -6,6 +6,10 @@
 
 ## Implementation log
 
+### CLI catalog and MCP server — 2026-11-18
+
+F30–F39 (see `../enhancements/P14_CLI_AND_MCP_PLAN.md`): one CLI verb catalog, `/CATALOG`, an invocation builder with machine-change/secret/dry-run rules, and the `Beep.Installer.Mcp` stdio server (10 tools, 67 of 70 commands reachable). 108 focused checks passed (3 MCP prompts added; /S and /REPAIR declare no dry-run). F10's statement that further CLI work belongs to the owning feature stands: the catalog describes verbs, it does not own their behaviour. Open: real machine-changing and qualification runs through MCP, packaging of the server.
+
 ### Current closure list — 2026-09-06
 
 - **ClickOnce identity:** the application Publisher now forwards persisted AppId to the existing stager. Application/deployment identity names, manifest filenames, dependency codebase, trust-check discovery and landing-page target use one canonical AppId-based name. A display rename preserves those paths, and invalid ID fails before staging. The separate SDK runtime uses AppId/version directories and recorded shortcut ownership, preserves unrelated files and rejects escaping paths (nine runtime tests passed). Native ClickOnce schema/signing/install/update qualification remains open; no production caller currently invokes the separate SDK runtime.

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Beep.Installer.Mcp</AssemblyName>
+    <RootNamespace>Beep.Installer.Mcp</RootNamespace>
+    <Description>MCP (stdio) server hosted by Beep.Installer.exe (/MCP); exposes every Beep.Installer command to AI clients.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Same SDK version as the sibling Beep.SimpleDraw.Mcp server. -->
+    <PackageReference Include="ModelContextProtocol" Version="1.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The catalog and the argument builder are shared with the CLI; this server never re-implements a verb. -->
+    <ProjectReference Include="..\Beep.Installer.Core\Beep.Installer.Core.csproj" />
+  </ItemGroup>
+
+</Project>

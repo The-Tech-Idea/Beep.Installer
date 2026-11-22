@@ -76,7 +76,7 @@ public class BuildResultForm : Form
         fileRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         var fileLabel = new Label
         {
-            Text = L("BuildResult_SetupEXE", "Setup EXE:"),
+            Text = L("BuildResult_Artifact", "Output artifact:"),
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -228,7 +228,7 @@ public class BuildResultForm : Form
         };
         var runBtn = new Button
         {
-            Text = L("BuildResult_RunInstaller", "Run Installer"),
+            Text = result.ArtifactKind == "clickonce" ? L("BuildResult_OpenManifest", "Open manifest") : L("BuildResult_RunInstaller", "Run Installer"),
             Width = 130,
             Height = 36,
             Enabled = result.Success && File.Exists(result.OutputFile),

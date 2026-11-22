@@ -23,6 +23,7 @@ public sealed class RuntimeSupportBundleOptions
     public string Message { get; init; } = "";
     public string LogPath { get; init; } = "";
     public SetupContext? Context { get; init; }
+    public RuntimeOperationOutcome? Outcome { get; init; }
     public InstallerPolicyEvaluation? PolicyEvaluation { get; init; }
     public string? OutputPath { get; init; }
     public string? CorrelationId { get; init; }
@@ -81,6 +82,16 @@ public sealed class RuntimeSupportBundleGenerator
             ["action"] = options.Action,
             ["success"] = options.Success,
             ["exitCode"] = options.ExitCode,
+            ["operationOutcome"] = options.Outcome is null ? null : new SortedDictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["succeeded"] = options.Outcome.Succeeded,
+                ["restartRequired"] = options.Outcome.RestartRequired,
+                ["rollbackAttempted"] = options.Outcome.RollbackAttempted,
+                ["rollbackActionsRequested"] = options.Outcome.RollbackActionsRequested,
+                ["rollbackActionsCompleted"] = options.Outcome.RollbackActionsCompleted,
+                ["backupRecovery"] = options.Outcome.BackupRecovery.ToString(),
+                ["fullRecoveryVerified"] = false
+            },
             ["message"] = RuntimeRedactor.Redact(options.Message),
             ["privacy"] = new SortedDictionary<string, object?>(StringComparer.Ordinal)
             {
@@ -318,7 +329,7 @@ public sealed class RuntimeSupportBundleGenerator
         }
     }
 
-    private static object? RedactJsonDocument(string json)
+    internal static object? RedactJsonDocument(string json)
     {
         using var document = JsonDocument.Parse(json);
         return RedactJsonElement(document.RootElement);
@@ -328,12 +339,7 @@ public sealed class RuntimeSupportBundleGenerator
     {
         return element.ValueKind switch
         {
-            JsonValueKind.Object => element.EnumerateObject().ToDictionary(
-                property => property.Name,
-                property => SensitiveName(property.Name)
-                    ? "***REDACTED***"
-                    : RedactJsonElement(property.Value),
-                StringComparer.Ordinal),
+            JsonValueKind.Object => RedactObject(element),
             JsonValueKind.Array => element.EnumerateArray().Select(RedactJsonElement).ToList(),
             JsonValueKind.String => RuntimeRedactor.Redact(element.GetString() ?? ""),
             JsonValueKind.Number when element.TryGetInt64(out var longValue) => longValue,
@@ -342,6 +348,23 @@ public sealed class RuntimeSupportBundleGenerator
             JsonValueKind.False => false,
             _ => null
         };
+    }
+
+    private static object RedactObject(JsonElement element)
+    {
+        var declared = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var property in element.EnumerateObject())
+            if (property.Name.Equals("sensitiveInputs", StringComparison.OrdinalIgnoreCase) && property.Value.ValueKind == JsonValueKind.Array)
+                foreach (var name in property.Value.EnumerateArray())
+                    if (name.ValueKind == JsonValueKind.String && name.GetString() is { } key) declared.Add(key);
+        return element.EnumerateObject().ToDictionary(property => property.Name, property =>
+        {
+            if (SensitiveName(property.Name)) return (object?)"***REDACTED***";
+            if (property.Name.Equals("inputs", StringComparison.OrdinalIgnoreCase) && property.Value.ValueKind == JsonValueKind.Object)
+                return property.Value.EnumerateObject().ToDictionary(input => input.Name,
+                    input => declared.Contains(input.Name) || SensitiveName(input.Name) ? (object?)"***REDACTED***" : RedactJsonElement(input.Value), StringComparer.Ordinal);
+            return RedactJsonElement(property.Value);
+        }, StringComparer.Ordinal);
     }
 
     private static bool SensitiveName(string name)
@@ -365,7 +388,7 @@ public sealed class RuntimeSupportBundleGenerator
 public static class RuntimeRedactor
 {
     private static readonly Regex SecretAssignment = new(
-        "(?i)([\\w.-]*(?:password|secret|token|apikey|api_key|accesskey|access_key|connectionstring|connection_string)[\\w.-]*)\\s*[:=]\\s*([^\\s,;]+)",
+        """(?i)([\w.-]*(?:password|secret|token|apikey|api_key|accesskey|access_key|connectionstring|connection_string)[\w.-]*)\s*[:=]\s*("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;]+)""",
         RegexOptions.Compiled);
 
     public static string Redact(string? value)

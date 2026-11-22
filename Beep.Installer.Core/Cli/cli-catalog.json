@@ -1,0 +1,3210 @@
+{
+ "schema": 1,
+ "executable": "Beep.Installer.exe",
+ "exitCodes": {
+  "0": "Success.",
+  "1": "The operation ran and failed (or a gate reported a blocking finding).",
+  "2": "The command line, script or response file was rejected before anything ran.",
+  "3010": "Success, reboot required (reported as 0 with /NORESTART)."
+ },
+ "verbs": [
+  {
+   "id": "help",
+   "token": "/?",
+   "aliases": [
+    "/H",
+    "/HELP"
+   ],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "read-only",
+   "summary": "Show the command-line help text.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "mcp": {
+    "exposed": false,
+    "reason": "Superseded by installer_list_commands / installer_describe_command, which return the same facts as data."
+   }
+  },
+  {
+   "id": "version",
+   "token": "/VER",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "read-only",
+   "summary": "Print the product version.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "catalog",
+   "token": "/CATALOG",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "read-only",
+   "summary": "Print the machine-readable command catalog (every verb, option, effect and MCP exposure).",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/MARKDOWN",
+     "kind": "flag"
+    },
+    {
+     "name": "/HTML",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "mcp",
+   "token": "/MCP",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "read-only",
+   "summary": "Run this installer as an MCP server over stdio, for Claude, Codex and other AI clients. It stays up until the client closes it and prints only the protocol on stdout.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "mcp": {
+    "exposed": false,
+    "reason": "This is the MCP server itself; a client is already talking to it."
+   }
+  },
+  {
+   "id": "list-templates",
+   "token": "/LISTTEMPLATES",
+   "aliases": [],
+   "kind": "flag",
+   "category": "builder",
+   "effect": "read-only",
+   "summary": "List built-in project-template IDs for reusable package export.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "silent-install",
+   "token": "/S",
+   "aliases": [
+    "/SILENT",
+    "/VERYSILENT"
+   ],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "machine-changing",
+   "summary": "Silent install from a project script (Inno-compatible grammar). Requires /SCRIPT= or an embedded script. /DRYRUN is accepted but is not a safe preview: it still creates the install directory and writes registry values, so MCP treats this as a real change.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/SCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/D=",
+     "kind": "value"
+    },
+    {
+     "name": "/COMPONENTS=",
+     "kind": "value"
+    },
+    {
+     "name": "/RESPONSE=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/FORCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/NORESTART",
+     "kind": "flag"
+    },
+    {
+     "name": "/RESTARTEXITCODE=",
+     "kind": "value"
+    },
+    {
+     "name": "/OFFLINELAYOUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/TELEMETRYOUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/NOSCRIPTCMDS",
+     "kind": "flag"
+    },
+    {
+     "name": "/ALLOWSCRIPTCMDS",
+     "kind": "flag",
+     "mcpBlockedReason": "Overrides the machine's script-command policy. A person must pass it at the prompt; it is not offered to a client."
+    },
+    {
+     "name": "/JOURNAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/LOG=",
+     "kind": "value"
+    },
+    {
+     "name": "/SUPPRESSMSGBOXES",
+     "kind": "flag"
+    },
+    {
+     "name": "/PROPERTY:",
+     "kind": "property"
+    },
+    {
+     "name": "/SUPPORTBUNDLE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SUPPORTBUNDLEPREVIEW",
+     "kind": "flag"
+    },
+    {
+     "name": "/SUPPORTBUNDLERETENTIONDAYS=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "uninstall",
+   "token": "/UNINSTALL",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "machine-changing",
+   "summary": "Silent uninstall of an installed product (needs /SCRIPT=). The shell does not honour /DRYRUN here, so there is no preview.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/SCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/D=",
+     "kind": "value"
+    },
+    {
+     "name": "/JOURNAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/NORESTART",
+     "kind": "flag"
+    },
+    {
+     "name": "/SUPPORTBUNDLE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SUPPORTBUNDLEPREVIEW",
+     "kind": "flag"
+    },
+    {
+     "name": "/SUPPORTBUNDLERETENTIONDAYS=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "repair",
+   "token": "/REPAIR",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "machine-changing",
+   "summary": "Restore missing or modified files of an installed product (needs /SCRIPT=). /DRYRUN is accepted but is not a safe preview: it still creates the install directory and writes registry values, so MCP treats this as a real change.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/SCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/D=",
+     "kind": "value"
+    },
+    {
+     "name": "/JOURNAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/OFFLINELAYOUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/NORESTART",
+     "kind": "flag"
+    },
+    {
+     "name": "/PROPERTY:",
+     "kind": "property"
+    },
+    {
+     "name": "/SUPPORTBUNDLE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SUPPORTBUNDLEPREVIEW",
+     "kind": "flag"
+    },
+    {
+     "name": "/SUPPORTBUNDLERETENTIONDAYS=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "selftest",
+   "token": "/SELFTEST",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "machine-changing",
+   "summary": "Install, verify and uninstall a sample product under %TEMP%; exit 0 on success.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "check-update",
+   "token": "/CHECKUPDATE",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "network",
+   "summary": "Report whether an app/module update is available.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/FEED=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "update",
+   "token": "/UPDATE",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "machine-changing",
+   "summary": "Apply an available app update (side-by-side).",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/FEED=",
+     "kind": "value"
+    },
+    {
+     "name": "/D=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "update-ui",
+   "token": "/UPDATEUI",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "interactive",
+   "summary": "Open the update center window for a trusted project.",
+   "headless": false,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/SCRIPT=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": false,
+    "reason": "Opens a window; there is nothing for a client to read."
+   }
+  },
+  {
+   "id": "lang-manager",
+   "token": "/LANGMGR",
+   "aliases": [],
+   "kind": "flag",
+   "category": "runtime",
+   "effect": "interactive",
+   "summary": "Open the standalone translation editor.",
+   "headless": false,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "mcp": {
+    "exposed": false,
+    "reason": "Opens a window; there is nothing for a client to read."
+   }
+  },
+  {
+   "id": "recovery",
+   "token": "/RECOVERY=",
+   "aliases": [],
+   "kind": "value",
+   "category": "runtime",
+   "effect": "machine-changing",
+   "summary": "Inspect, roll back (/ROLLBACK) or abandon (/ABANDON) typed-resource recovery state.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/D=",
+     "kind": "value"
+    },
+    {
+     "name": "/JOURNAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/ROLLBACK",
+     "kind": "flag"
+    },
+    {
+     "name": "/ABANDON",
+     "kind": "flag"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "build",
+   "token": "/BUILD=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "writes-files",
+   "summary": "Build the installer (Track A exe; MSIX with /FORMAT=msix; add /PUBLISHFEED= to stage an update feed).",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/FORMAT=",
+     "kind": "value"
+    },
+    {
+     "name": "/STRICT",
+     "kind": "flag"
+    },
+    {
+     "name": "/REQUIRESIGNED",
+     "kind": "flag"
+    },
+    {
+     "name": "/NOSIGN",
+     "kind": "flag"
+    },
+    {
+     "name": "/SBOM",
+     "kind": "flag"
+    },
+    {
+     "name": "/PROVENANCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/SIGNCERT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNPASSWORD=",
+     "kind": "value",
+     "secret": true
+    },
+    {
+     "name": "/TIMESTAMP=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNSTORE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNSTORELOCATION=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNTHUMBPRINT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNREMOTEENDPOINT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNREMOTEKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNREMOTECREDENTIAL=",
+     "kind": "value",
+     "secret": true
+    },
+    {
+     "name": "/TIMESTAMPOUTAGE=",
+     "kind": "value"
+    },
+    {
+     "name": "/TIMESTAMPRETRIES=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEURL=",
+     "kind": "value"
+    },
+    {
+     "name": "/APPINSTALLERHOURS=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNINGSUBJECT=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONS=",
+     "kind": "value"
+    },
+    {
+     "name": "/POLICY=",
+     "kind": "value"
+    },
+    {
+     "name": "/MACHINEPOLICY=",
+     "kind": "value"
+    },
+    {
+     "name": "/APPINSTALLERNOPROMPT",
+     "kind": "flag"
+    },
+    {
+     "name": "/APPINSTALLERFORCEUPDATEFROMANYVERSION",
+     "kind": "flag"
+    },
+    {
+     "name": "/BUILDTYPE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SOURCEREVISION=",
+     "kind": "value"
+    },
+    {
+     "name": "/EVIDENCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/SIGNSUBJECT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNREMOTEPROVIDER=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "publish-feed",
+   "token": "/PUBLISHFEED=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "writes-files",
+   "summary": "Build the project named by /BUILD= and stage it into a static update feed directory.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/BUILD=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/FEEDURL=",
+     "kind": "value"
+    },
+    {
+     "name": "/CHANNEL=",
+     "kind": "value"
+    },
+    {
+     "name": "/MINVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/REPUBLISH",
+     "kind": "flag"
+    },
+    {
+     "name": "/FEED=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "feed-dir",
+    "description": "Feed directory to publish into",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "validate",
+   "token": "/VALIDATE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "read-only",
+   "summary": "Validate a script without building (lint, schema, policy, extension validators).",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/STRICT",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONS=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "canonicalize",
+   "token": "/CANONICALIZE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "writes-files",
+   "summary": "Canonicalize a script; with /WRITE rewrites it in place.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/WRITE",
+     "kind": "flag"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "plan",
+   "token": "/PLAN=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "read-only",
+   "summary": "Compile and print the install plan.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/STRICT",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONS=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "format-readiness",
+   "token": "/FORMATREADINESS=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "read-only",
+   "summary": "Report EXE/MSI/MSIX/WinGet/management-kit release readiness; exits non-zero when a format is blocked.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "preview",
+   "token": "/PREVIEW=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "read-only",
+   "summary": "Print a project summary.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "publish",
+   "token": "/PUBLISH=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "writes-files",
+   "summary": "Publish as ClickOnce (Track B).",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEURL=",
+     "kind": "value"
+    },
+    {
+     "name": "/NOSIGN",
+     "kind": "flag"
+    },
+    {
+     "name": "/LOG=",
+     "kind": "value"
+    },
+    {
+     "name": "/EVIDENCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/BUILDTYPE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SOURCEREVISION=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "export-template-package",
+   "token": "/EXPORTTEMPLATEPACKAGE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "writes-files",
+   "summary": "Export a signed reusable project-template package.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/TEMPLATESIGNKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/TEMPLATEPRODUCT=",
+     "kind": "value"
+    },
+    {
+     "name": "/TEMPLATEVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/TEMPLATEPUBLISHER=",
+     "kind": "value"
+    },
+    {
+     "name": "/TEMPLATESOURCEDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/TEMPLATEISSUER=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "template-id",
+    "description": "Built-in template id (see /LISTTEMPLATES)",
+    "isPath": false
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "verify-template-package",
+   "token": "/VERIFYTEMPLATEPACKAGE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "builder",
+   "effect": "read-only",
+   "summary": "Verify a signed project-template package.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/TEMPLATETRUSTKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "package-dir",
+    "description": "Template package directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-sdk",
+   "token": "/QUALIFYSDK=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Pack and prove the headless SDK through an external PackageReference consumer.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/SDKPROJECT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SDKPACKAGEVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "publish-sdk",
+   "token": "/PUBLISHSDK=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "publishes",
+   "summary": "Publish the SDK package with secret-safe evidence.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": true,
+   "options": [
+    {
+     "name": "/SDKFEED=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/SDKAPIKEY=",
+     "kind": "value",
+     "secret": true
+    },
+    {
+     "name": "/DRYRUN",
+     "kind": "flag"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "package.nupkg",
+    "description": "SDK package to publish",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-plan",
+   "token": "/QUALIFYPLAN=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Gate compiled-plan determinism, provider coverage, dependency integrity and redacted JSON.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "properties",
+   "token": "/PROPERTIES=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "read-only",
+   "summary": "Print the unattended response-file and /PROPERTY names for a project.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-cli",
+   "token": "/QUALIFYCLI=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Gate enterprise CLI aliases, response files, property catalog and fail-closed argument behavior.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-config",
+   "token": "/QUALIFYCONFIG=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Gate JSON/XML/INI config transforms, rollback, conflict diagnostics and secret boundaries.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "extensions",
+   "token": "/EXTENSIONS=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "read-only",
+   "summary": "Validate explicit extension directories.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "dir[;dir]",
+    "description": "Extension directories, ';' separated",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "extension-export",
+   "token": "/EXTENSIONEXPORT=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Invoke a discovered extension package exporter.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/EXTENSIONS=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/FORMAT=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "extension-template",
+   "token": "/EXTENSIONTEMPLATE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Export a provider/validator/exporter SDK template.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/EXTENSIONKIND=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONID=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONPUBLISHER=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONENGINEVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONRESOURCETYPE=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONVALIDATORTYPE=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONEXPORTERFORMAT=",
+     "kind": "value"
+    },
+    {
+     "name": "/EXTENSIONPROJECT=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "dir",
+    "description": "Directory to write the template into",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "extension-conformance",
+   "token": "/EXTENSIONCONFORMANCE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "read-only",
+   "summary": "Emit a provider SDK conformance report.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "dir[;dir]",
+    "description": "Extension directories, ';' separated",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-extension-sdk",
+   "token": "/QUALIFYEXTENSIONSDK=",
+   "aliases": [],
+   "kind": "value",
+   "category": "sdk",
+   "effect": "writes-files",
+   "summary": "Prove extension SDK compatibility across engine versions.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/SDKENGINEVERSIONS=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "dir[;dir]",
+    "description": "Extension directories, ';' separated",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "export-catalog",
+   "token": "/EXPORTCATALOG=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "writes-files",
+   "summary": "Export a signed prerequisite catalog approval bundle.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/CATALOGSIGNKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/CATALOGKEYID=",
+     "kind": "value"
+    },
+    {
+     "name": "/CATALOGAPPROVEDBY=",
+     "kind": "value"
+    },
+    {
+     "name": "/CATALOGAPPROVALREASON=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "catalog-id",
+    "description": "e.g. builtin:microsoft-runtimes",
+    "isPath": false
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-catalog",
+   "token": "/QUALIFYCATALOG=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "network",
+   "summary": "Prove catalog resolution, package projection and air-gapped offline layout verification.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/QUALIFYCATALOGLAYOUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTSIGNKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTTRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/DOWNLOAD",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "update-channel-feed",
+   "token": "/UPDATECHANNELFEED=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "writes-files",
+   "summary": "Export signed update channel feed metadata.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/UPDATECHANNELFEEDSIGNKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATECHANNELFEEDISSUER=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELDELTABASEURL=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTA=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPID=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPNAME=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPUBLISHER=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "apply-update-channel",
+   "token": "/APPLYUPDATECHANNEL=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Apply a trusted channel delta; omit /DELTA for signed remote acquisition.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": true,
+   "options": [
+    {
+     "name": "/DELTA=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTACURRENT=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTASTAGE=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATECHANNELINSTALLEDVERSION=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATECHANNELFEEDTRUSTKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTATRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECACHEMAXBYTES=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECACHERETENTIONDAYS=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELCURRENT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELTARGET=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELCOHORT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPID=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPNAME=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPUBLISHER=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECACHE=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATESTATE=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAUTHORIGIN=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEBEARERREF=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPROXY=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPROXYUSER=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPROXYPASSWORDREF=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    },
+    {
+     "name": "/DRYRUN",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "feed.json",
+    "description": "Feed file or HTTP(S) URL ending in /beep-update-channels.json",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "check-update-channel",
+   "token": "/CHECKUPDATECHANNEL=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "network",
+   "summary": "Check device update eligibility without installing.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/UPDATECHANNELFEEDTRUSTKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATECHANNELINSTALLEDVERSION=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATECHANNELCURRENT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELTARGET=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELCOHORT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPID=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPNAME=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPUBLISHER=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECACHE=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATESTATE=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAUTHORIGIN=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEBEARERREF=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPROXY=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPROXYUSER=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPROXYPASSWORDREF=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "feed.json",
+    "description": "Feed file or HTTP(S) URL",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "verify-update-channel-feed",
+   "token": "/VERIFYUPDATECHANNELFEED=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "read-only",
+   "summary": "Verify signed update channel feed metadata.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/UPDATECHANNELFEEDTRUSTKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATEAPPID=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPNAME=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPUBLISHER=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "beep-update-channels.json",
+    "description": "Feed metadata file",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-update-channel-feed",
+   "token": "/QUALIFYUPDATECHANNELFEED=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Generate update-channel qualification evidence (add /UPDATECHANNELLIFECYCLE for the install/update/downgrade/uninstall lifecycle). With /UPDATECHANNELLIFECYCLE it really installs, updates, downgrades and uninstalls; /DRYRUN previews.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": true,
+   "options": [
+    {
+     "name": "/UPDATECHANNELFEEDTRUSTKEY=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/UPDATECHANNELCURRENT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELTARGET=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELINSTALLEDVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELCOHORT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELLIFECYCLE",
+     "kind": "flag"
+    },
+    {
+     "name": "/UPDATECHANNELSCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELUPDATEDSCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELDOWNGRADESCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELINSTALLDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATECHANNELINSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/DRYRUN",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "beep-update-channels.json",
+    "description": "Feed metadata file",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "delta",
+   "token": "/DELTA=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "writes-files",
+   "summary": "Build a signed content-addressed delta package.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/DELTABASE=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTATARGET=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTABASEVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTATARGETVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTASIGNKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/SCRIPT=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPID=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEAPPNAME=",
+     "kind": "value"
+    },
+    {
+     "name": "/UPDATEPUBLISHER=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "outdir",
+    "description": "Delta package output directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "verify-delta",
+   "token": "/VERIFYDELTA=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "read-only",
+   "summary": "Verify a delta package manifest and signature.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/DELTATRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIRESIGNED",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "dir",
+    "description": "Delta package directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-delta",
+   "token": "/QUALIFYDELTA=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Generate valid/corrupt/interrupted delta lifecycle evidence. Applies deltas against the install directory you name.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/DELTACURRENT=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTACURRENTVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTASTAGE=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTAJOURNAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTATRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIRESIGNED",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "dir",
+    "description": "Delta package directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "apply-delta",
+   "token": "/APPLYDELTA=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Verify, stage, atomically apply and journal a delta.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/DELTACURRENT=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTASTAGE=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/DELTAJOURNAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTACURRENTVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/DELTATRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIRESIGNED",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "dir",
+    "description": "Delta package directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "recover-delta",
+   "token": "/RECOVERDELTA=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Inspect and recover an interrupted delta commit using verified tree state.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": true,
+   "options": [
+    {
+     "name": "/DRYRUN",
+     "kind": "flag"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "journal.json",
+    "description": "Delta journal",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "rollback-delta",
+   "token": "/ROLLBACKDELTA=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Roll back the last committed delta using its journal.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [],
+   "value": {
+    "name": "journal.json",
+    "description": "Delta journal",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "layout",
+   "token": "/LAYOUT=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "network",
+   "summary": "Build an offline package layout (with /DOWNLOAD fetches prerequisites with cache/proxy/auth/resume).",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/DOWNLOAD",
+     "kind": "flag"
+    },
+    {
+     "name": "/LAYOUTSIGNKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTCACHE=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTCACHERETENTIONDAYS=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTPROXY=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTPROXYUSER=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTPROXYPASSWORD=",
+     "secret": true,
+     "mcpBlockedReason": "Accepts only a raw secret value, which would sit on a process command line; supply it through policy or the environment instead.",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTBEARERTOKEN=",
+     "kind": "value",
+     "secret": true
+    },
+    {
+     "name": "/LAYOUTHEADERNAME=",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTHEADERVALUE=",
+     "secret": true,
+     "mcpBlockedReason": "Accepts only a raw secret value, which would sit on a process command line; supply it through policy or the environment instead.",
+     "kind": "value"
+    },
+    {
+     "name": "/LAYOUTNORESUME",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "verify-layout",
+   "token": "/VERIFYLAYOUT=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "read-only",
+   "summary": "Verify offline layout inventory and blobs.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/LAYOUTTRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/ALLOWUNSIGNEDLAYOUT",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "dir",
+    "description": "Offline layout directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-layout",
+   "token": "/QUALIFYLAYOUT=",
+   "aliases": [],
+   "kind": "value",
+   "category": "updates",
+   "effect": "machine-changing",
+   "summary": "Prove valid/missing/tampered offline layout, suite inventory and install/repair/uninstall evidence.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": true,
+   "options": [
+    {
+     "name": "/SCRIPT=",
+     "kind": "value",
+     "required": true
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/D=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIREDPACKAGETYPES=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIREMIXEDPACKAGES",
+     "kind": "flag"
+    },
+    {
+     "name": "/DRYRUN",
+     "kind": "flag"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "dir",
+    "description": "Offline layout directory",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-a11y",
+   "token": "/QUALIFYA11Y=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate localization, RTL, DPI, keyboard, screen-reader and locale-invariant CLI evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/A11YEVIDENCE=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIREA11YEVIDENCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "source-root",
+    "description": "Source root",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-vm",
+   "token": "/QUALIFYVM=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "read-only",
+   "summary": "Gate release readiness from VM matrix evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/QUALIFYVMTARGETS=",
+     "kind": "value"
+    },
+    {
+     "name": "/QUALIFYVMSCENARIOS=",
+     "kind": "value"
+    },
+    {
+     "name": "/MAXEVIDENCEAGEDAYS=",
+     "kind": "value"
+    },
+    {
+     "name": "/MAXFLAKYFAILURES=",
+     "kind": "value"
+    },
+    {
+     "name": "/MAXDURATIONSECONDS=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIRENEGATIVESECURITYEVIDENCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "evidence-root",
+    "description": "Evidence root",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-release",
+   "token": "/QUALIFYRELEASE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "read-only",
+   "summary": "Aggregate existing qualification reports into one release portfolio gate.",
+   "headless": true,
+   "supportsJson": true,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/REQUIREDQUALIFICATIONS=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/JSON",
+     "kind": "flag"
+    }
+   ],
+   "value": {
+    "name": "evidence-root",
+    "description": "Evidence root",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-signing",
+   "token": "/QUALIFYSIGNING",
+   "aliases": [],
+   "kind": "flag",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate signing and secret-provider qualification evidence without real certificates or HSM credentials.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-upgrade",
+   "token": "/QUALIFYUPGRADE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "machine-changing",
+   "summary": "Generate upgrade/downgrade/failed-restore qualification evidence. Registers and unregisters products under HKCU while it runs.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-recovery",
+   "token": "/QUALIFYRECOVERY=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate resource journal resume/recovery qualification evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-services",
+   "token": "/QUALIFYSERVICES=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate Windows service provider qualification evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-iis",
+   "token": "/QUALIFYIIS=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate IIS/web deployment provider qualification evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-system",
+   "token": "/QUALIFYSYSTEM=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate firewall, scheduled-task, association, certificate, COM and driver provider qualification evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-diagnostics",
+   "token": "/QUALIFYDIAGNOSTICS=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Generate support bundle, structured diagnostics and telemetry qualification evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "deployment-kit",
+   "token": "/DEPLOYMENTKIT=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "writes-files",
+   "summary": "Export an Intune/ConfigMgr deployment kit.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/D=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-deployment-kit",
+   "token": "/QUALIFYDEPLOYMENTKIT=",
+   "aliases": [],
+   "kind": "value",
+   "category": "qualification",
+   "effect": "read-only",
+   "summary": "Gate Intune/ConfigMgr kit completeness and managed-device evidence.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/REQUIREMANAGEDEVIDENCE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MAXEVIDENCEAGEDAYS=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "kit-root",
+    "description": "Deployment kit root",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "msi",
+   "token": "/MSI=",
+   "aliases": [],
+   "kind": "value",
+   "category": "formats",
+   "effect": "machine-changing",
+   "summary": "Export MSI WiX source and capability report; /MSIBUILD builds, /MSIVALIDATE runs ICE, /MSILIFECYCLE and /MSIMATRIX run msiexec evidence, /MST and /MSP generate transforms and patches.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIBUILD",
+     "kind": "flag"
+    },
+    {
+     "name": "/WIX=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNCERT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNPASSWORD=",
+     "kind": "value",
+     "secret": true
+    },
+    {
+     "name": "/MSICUSTOMACTIONS=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIVALIDATE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSIVALIDATEICE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIVALIDATECUB=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIVALIDATEPACKAGE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIVALIDATEPDB=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIVALIDATESUPPRESSICE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSILIFECYCLE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSIEXEC=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSILIFECYCLELOGDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSILIFECYCLEPACKAGE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSILIFECYCLEPROPERTIES=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIMATRIX",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSIMATRIXTARGETS=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIMATRIXRUNNER=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIMATRIXSCENARIOS=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIMATRIXLOGDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIMATRIXPROPERTIES=",
+     "kind": "value"
+    },
+    {
+     "name": "/MST=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSITARGET=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSIUPDATED=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTPROFILE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTPROPERTY=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTLIFECYCLE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSTLIFECYCLELOGDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTLIFECYCLEPACKAGE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTLIFECYCLEPROPERTIES=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTPRESERVE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSP=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPTARGET=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPUPDATED=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPNOSUPERSEDE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSPLIFECYCLE",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSPPRODUCT=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPLOGDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPPROPERTIES=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPBASELINE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPCLASSIFICATION=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPFAMILY=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPVERSION=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSPALLOWREMOVAL",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSPNOREMOVAL",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSPALLOWEMPTYDELTA",
+     "kind": "flag"
+    },
+    {
+     "name": "/MSTTYPE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTSUPPRESSERRORS=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTVALIDATION=",
+     "kind": "value"
+    },
+    {
+     "name": "/MSTLIFECYCLETRANSFORM=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "msi-matrix-runner",
+   "token": "qualify",
+   "aliases": [],
+   "kind": "flag",
+   "category": "formats",
+   "effect": "machine-changing",
+   "summary": "First-party MSI matrix runner: `qualify --environment <id> --channel local|hyperv|azure --log-dir <dir> --msi <package.msi> [...]`. Positional first argument with long-option grammar, not a /VERB= token.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "--environment=",
+     "kind": "value"
+    },
+    {
+     "name": "--channel=",
+     "kind": "value"
+    },
+    {
+     "name": "--log-dir=",
+     "kind": "value"
+    },
+    {
+     "name": "--msi=",
+     "kind": "value"
+    },
+    {
+     "name": "--updated-msi=",
+     "kind": "value"
+    },
+    {
+     "name": "--mst=",
+     "kind": "value"
+    },
+    {
+     "name": "--msp=",
+     "kind": "value"
+    },
+    {
+     "name": "--msp-product=",
+     "kind": "value"
+    },
+    {
+     "name": "--scenario-pack=",
+     "kind": "value"
+    },
+    {
+     "name": "--scenario=",
+     "kind": "value"
+    }
+   ],
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "winget",
+   "token": "/WINGET=",
+   "aliases": [],
+   "kind": "value",
+   "category": "formats",
+   "effect": "writes-files",
+   "summary": "Export WinGet manifests (single, multi-architecture or MSIX with signature evidence).",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERURL=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERX64=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERURLX64=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERX86=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERURLX86=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERARM64=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERURLARM64=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERNEUTRAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLERURLNEUTRAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/SHA256=",
+     "kind": "value"
+    },
+    {
+     "name": "/SHA256X64=",
+     "kind": "value"
+    },
+    {
+     "name": "/SHA256X86=",
+     "kind": "value"
+    },
+    {
+     "name": "/SHA256ARM64=",
+     "kind": "value"
+    },
+    {
+     "name": "/SHA256NEUTRAL=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNATURESHA256=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNINGEVIDENCE=",
+     "kind": "value"
+    },
+    {
+     "name": "/SBOMPATH=",
+     "kind": "value"
+    },
+    {
+     "name": "/PROVENANCEPATH=",
+     "kind": "value"
+    },
+    {
+     "name": "/PACKAGEID=",
+     "kind": "value"
+    },
+    {
+     "name": "/PACKAGELOCALE=",
+     "kind": "value"
+    },
+    {
+     "name": "/MONIKER=",
+     "kind": "value"
+    },
+    {
+     "name": "/DESCRIPTION=",
+     "kind": "value"
+    },
+    {
+     "name": "/LICENSE=",
+     "kind": "value"
+    },
+    {
+     "name": "/FORMAT=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNATURESHA256X64=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNATURESHA256X86=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNATURESHA256ARM64=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNATURESHA256NEUTRAL=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "evidence",
+   "token": "/EVIDENCE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "security",
+   "effect": "writes-files",
+   "summary": "Export SPDX SBOM and provenance (DSSE-signed with /ATTESTKEY=).",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/ATTESTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/ATTESTKEYID=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "verify-evidence",
+   "token": "/VERIFYEVIDENCE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "security",
+   "effect": "read-only",
+   "summary": "Verify SBOM/provenance hashes and DSSE attestations.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/EVIDENCEDIR=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/ATTESTTRUSTKEY=",
+     "kind": "value"
+    },
+    {
+     "name": "/REQUIREATTESTATIONS",
+     "kind": "flag"
+    },
+    {
+     "name": "/SBOMPATH=",
+     "kind": "value"
+    },
+    {
+     "name": "/PROVENANCEPATH=",
+     "kind": "value"
+    },
+    {
+     "name": "/SIGNINGEVIDENCE=",
+     "kind": "value"
+    },
+    {
+     "name": "/EVIDENCEREPORT=",
+     "kind": "value"
+    },
+    {
+     "name": "/SOURCEROOT=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-evidence",
+   "token": "/QUALIFYEVIDENCE=",
+   "aliases": [],
+   "kind": "value",
+   "category": "security",
+   "effect": "writes-files",
+   "summary": "Gate SBOM/provenance generation, verification, DSSE and tamper detection.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/SOURCEROOT=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "security-scan",
+   "token": "/SECURITYSCAN=",
+   "aliases": [],
+   "kind": "value",
+   "category": "security",
+   "effect": "read-only",
+   "summary": "Scan release inputs against organization policy.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/POLICY=",
+     "kind": "value"
+    },
+    {
+     "name": "/MACHINEPOLICY=",
+     "kind": "value"
+    },
+    {
+     "name": "/PROJECTPOLICY=",
+     "kind": "value"
+    },
+    {
+     "name": "/PROFILEPOLICY=",
+     "kind": "value"
+    },
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/SECURITYREPORT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  },
+  {
+   "id": "qualify-security",
+   "token": "/QUALIFYSECURITY=",
+   "aliases": [],
+   "kind": "value",
+   "category": "security",
+   "effect": "writes-files",
+   "summary": "Gate supply-chain scanner, signature and release-evidence behavior.",
+   "headless": true,
+   "supportsJson": false,
+   "supportsDryRun": false,
+   "options": [
+    {
+     "name": "/INSTALLER=",
+     "kind": "value"
+    },
+    {
+     "name": "/SOURCEROOT=",
+     "kind": "value"
+    },
+    {
+     "name": "/OUT=",
+     "kind": "value"
+    }
+   ],
+   "value": {
+    "name": "script.bsetup",
+    "description": "Installer project (.bsetup) to operate on",
+    "isPath": true
+   },
+   "mcp": {
+    "exposed": true
+   }
+  }
+ ]
+}
