@@ -299,6 +299,16 @@ public sealed class FileCopyResourceProvider : IResourceProvider
 
     public ResourceProviderResult Verify(CompiledInstallOperation operation, ResourceProviderContext context)
     {
+        // A dry run copies nothing (Apply), so there is no destination file to check. Without this the executor
+        // verified a file that was never written and failed every dry-run install that carries a required file
+        // (BI6001 "Verify failed for file:..."). Every other provider answers a dry-run verify the same way.
+        if (context.DryRun)
+            return new ResourceProviderResult
+            {
+                Code = ResourceProviderResultCode.Skipped,
+                Message = "Dry run: file copy verification would compare the destination with its source."
+            };
+
         var detection = Detect(operation, context);
         if (!detection.Exists && !Required(operation))
         {
