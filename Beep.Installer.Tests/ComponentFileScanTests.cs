@@ -83,8 +83,10 @@ public sealed class ComponentFileScanTests
                 foreach (var name in new[] { "ComponentFilesOk", "ComponentFilesCancel" })
                 {
                     var button = dialog.Controls.Find(name, true).Single();
-                    var bounds = new System.Drawing.Rectangle(dialog.PointToClient(button.PointToScreen(System.Drawing.Point.Empty)), button.Size);
-                    dialog.ClientRectangle.Contains(bounds).Should().BeTrue();
+                    // The whole rectangle is converted, as every other window test here does: on a mirrored (Arabic) form a
+                    // single converted corner is the button's far edge, which put a button that is inside the window outside it.
+                    var bounds = dialog.RectangleToClient(button.RectangleToScreen(button.ClientRectangle));
+                    dialog.ClientRectangle.Contains(bounds).Should().BeTrue(culture + " " + name);
                 }
             }
         });

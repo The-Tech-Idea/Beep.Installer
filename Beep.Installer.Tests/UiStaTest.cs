@@ -22,6 +22,14 @@ internal static class UiStaTest
         Exception? failure = null;
         var thread = new Thread(() =>
         {
+            // The dialogs finish background reads with "await", which returns to the UI thread through the
+            // thread's Windows Forms synchronization context. An application keeps that context for as long as
+            // its message loop runs. These tests pump with Application.DoEvents instead, and Windows Forms
+            // removes an automatically installed context each time such a pump ends: the next "await" then
+            // finished on a pool thread, created controls there, and the test waited forever on a window whose
+            // thread never answers. The context is installed here once, by hand, and kept for the whole test.
+            System.Windows.Forms.WindowsFormsSynchronizationContext.AutoInstall = false;
+            SynchronizationContext.SetSynchronizationContext(new System.Windows.Forms.WindowsFormsSynchronizationContext());
             try { action(); }
             catch (Exception ex) { failure = ex; }
         }) { IsBackground = true };
