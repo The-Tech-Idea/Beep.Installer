@@ -205,6 +205,12 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>Recent</value>
   </data>
+  <data name="Builder_NoProjectLoaded" xml:space="preserve">
+    <value>No project loaded</value>
+  </data>
+  <data name="Builder_RecentProjects" xml:space="preserve">
+    <value>Recent projects</value>
+  </data>
   <data name="Update_Title" xml:space="preserve"><value>Update center</value></data>
   <data name="Update_Identity" xml:space="preserve"><value>Trusted project identity</value></data>
   <data name="Update_Feed" xml:space="preserve"><value>Signed feed path or URL</value></data>

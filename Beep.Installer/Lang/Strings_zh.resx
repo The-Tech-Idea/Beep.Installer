@@ -195,6 +195,12 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>最近使用</value>
   </data>
+  <data name="Builder_NoProjectLoaded" xml:space="preserve">
+    <value>未加载项目</value>
+  </data>
+  <data name="Builder_RecentProjects" xml:space="preserve">
+    <value>最近的项目</value>
+  </data>
   <data name="Update_Title" xml:space="preserve"><value>更新中心</value></data>
   <data name="Update_Identity" xml:space="preserve"><value>受信任的项目标识</value></data>
   <data name="Update_Feed" xml:space="preserve"><value>已签名更新源的路径或 URL</value></data>

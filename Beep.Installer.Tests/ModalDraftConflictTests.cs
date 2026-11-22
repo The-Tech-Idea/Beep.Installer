@@ -257,7 +257,7 @@ public sealed class ModalDraftConflictTests
         if (kind == "actions") editor.EditCustomActionDiagnostic(null, editor);
         else if (kind == "files") Descendants(editor.ActiveSection!).OfType<Button>()
             .Single(c => c.Text == LanguageManager.GetString("Builder_EditFiles")).PerformClick();
-        else Descendants(editor).OfType<ToolStrip>().SelectMany(strip => strip.Items.OfType<ToolStripButton>())
+        else Descendants(editor).OfType<ToolStrip>().SelectMany(strip => strip.Items.OfType<ToolStripButton>().Concat(strip.Items.OfType<ToolStripDropDownButton>().SelectMany(more => more.DropDownItems.OfType<ToolStripButton>())))
             .Single(c => c.Text == LanguageManager.GetString("Toolbar_Conditions")).PerformClick();
         if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
     }

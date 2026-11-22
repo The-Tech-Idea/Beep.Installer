@@ -195,6 +195,12 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>最近使った項目</value>
   </data>
+  <data name="Builder_NoProjectLoaded" xml:space="preserve">
+    <value>プロジェクトが読み込まれていません</value>
+  </data>
+  <data name="Builder_RecentProjects" xml:space="preserve">
+    <value>最近使ったプロジェクト</value>
+  </data>
   <data name="Update_Title" xml:space="preserve"><value>更新センター</value></data>
   <data name="Update_Identity" xml:space="preserve"><value>信頼されたプロジェクトの識別情報</value></data>
   <data name="Update_Feed" xml:space="preserve"><value>署名済みフィードのパスまたは URL</value></data>

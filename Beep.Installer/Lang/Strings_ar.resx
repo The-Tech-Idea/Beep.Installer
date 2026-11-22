@@ -195,6 +195,12 @@
   <data name="Builder_Recent" xml:space="preserve">
     <value>الأخيرة</value>
   </data>
+  <data name="Builder_NoProjectLoaded" xml:space="preserve">
+    <value>لم يتم تحميل أي مشروع</value>
+  </data>
+  <data name="Builder_RecentProjects" xml:space="preserve">
+    <value>المشاريع الأخيرة</value>
+  </data>
   <data name="Update_Title" xml:space="preserve"><value>مركز التحديثات</value></data>
   <data name="Update_Identity" xml:space="preserve"><value>هوية المشروع الموثوقة</value></data>
   <data name="Update_Feed" xml:space="preserve"><value>مسار موجز التحديث الموقّع أو رابطه</value></data>
