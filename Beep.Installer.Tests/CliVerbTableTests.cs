@@ -98,6 +98,23 @@ public class CliVerbTableTests
     }
 
     [Fact]
+    public void MaintenanceVerbs_MatchBeforeSilentInstall()
+    {
+        // ARP's QuietUninstallString is "<setup>.exe" /UNINSTALL /S. Dispatch takes the first
+        // matching verb in table order, so /S sitting ahead of /UNINSTALL silently reinstalled
+        // the product when the user asked to remove it.
+        int VerbIndex(params string[] tokens)
+            => Program.Verbs.ToList().FindIndex(v =>
+                v.Match == CliVerbMatch.Flag
+                && v.Tokens.Any(t => tokens.Contains(t, StringComparer.OrdinalIgnoreCase)));
+
+        var silentInstall = VerbIndex("/S", "/SILENT", "/VERYSILENT");
+
+        VerbIndex("/UNINSTALL").Should().BeLessThan(silentInstall, "/UNINSTALL has to win over /S");
+        VerbIndex("/REPAIR").Should().BeLessThan(silentInstall, "/REPAIR has to win over /S");
+    }
+
+    [Fact]
     public void OnlyTheWindowedTools_AreNonHeadless()
     {
         Program.Verbs.Where(v => !v.Headless)

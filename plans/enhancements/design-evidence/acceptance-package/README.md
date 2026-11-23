@@ -7,6 +7,19 @@ local executable builds, temporary probes, Sandbox exports and machine-specific 
 are retained locally and ignored by Git. References below identify that local evidence; a fresh clone
 does not contain it. Publishing or release acceptance still requires the applicable archived evidence.
 
+## Commit/push integration — 2026-11-23
+
+At the owner's request, the work was committed as `77d6925` and remote `905402c` was merged
+without rewriting history. The one atomic-writer conflict retained the directly published,
+permission/time-preserving implementation tested above; the remote upgrade/uninstall/self-copy,
+shortcut and maintenance-dispatch changes were preserved. Post-merge focused runtime, SDK,
+journal, upgrade/delta, CLI routing, shortcut and MCP selection: **149 passed, zero failed/skipped,
+17 seconds**, `push-merge-focused-tests.log` (retained locally). The earlier Sandbox executable and
+native source digests describe the pre-merge qualification; they do not qualify every new remote
+behavior in the integrated tree. The enhancement goal is paused; no full suite, cloud build or
+publication was started for this integration. The commit messages use `[skip ci]` for the standing
+Actions restriction. Larger P13 acceptance remains open.
+
 ## Prepared file mutation correction — 2026-11-23, latest evidence
 
 **The ordinary file-copy applied-before-checkpoint gap is corrected in its existing owners.**

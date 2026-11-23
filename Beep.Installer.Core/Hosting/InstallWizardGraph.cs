@@ -22,6 +22,7 @@ public static class StepIds
     public const string CustomBeforeInstall = "installer.custom.beforeinstall";
     public const string PayloadDownload = "installer.payload.download";
     public const string PayloadPrepare = "installer.payload.prepare";
+    public const string InstallerSelfCopy = "installer.selfcopy";
     public const string FileCopy = "installer.files.copy";
     public const string JunctionCreate = "installer.junction.create";
     public const string Shortcuts = "installer.shortcuts.create";
@@ -62,7 +63,8 @@ public static class InstallWizardGraph
             .AddStep(new CustomActionStep(CustomActionTiming.BeforeInstall, StepIds.DirectoryCreate))
             .AddStep(new Steps.PayloadDownloadStep(StepIds.CustomBeforeInstall))
             .AddStep(new Steps.PayloadPrepareStep(StepIds.PayloadDownload))
-            .AddStep(new Steps.ResourceProviderStep(StepIds.PayloadPrepare))
+            .AddStep(new Steps.InstallerSelfCopyStep(StepIds.PayloadPrepare))
+            .AddStep(new Steps.ResourceProviderStep(StepIds.InstallerSelfCopy))
             .AddStep(new SharedFileCountStep(StepIds.ResourceProviders))
             .AddStep(new GacInstallStep(StepIds.ResourceProviders))
             // Side-by-side layout: point <base>\current at the version just written, so shortcuts
@@ -95,7 +97,8 @@ public static class InstallWizardGraph
         return new CoordinatedInstallerWizard(builder
             .AddStep(new Steps.PayloadDownloadStep())
             .AddStep(new Steps.PayloadPrepareStep(StepIds.PayloadDownload))
-            .AddStep(new Steps.ResourceProviderStep(StepIds.PayloadPrepare))
+            .AddStep(new Steps.InstallerSelfCopyStep(StepIds.PayloadPrepare))
+            .AddStep(new Steps.ResourceProviderStep(StepIds.InstallerSelfCopy))
             .Build());
     }
 
