@@ -134,6 +134,8 @@ public class InstallerController : INotifyPropertyChanged
         else
         {
             _project = InstallerProjectFactory.CreateNew("MyApplication", "1.0.0", "Publisher", "");
+            // This is the empty shell placeholder, not an authored New transaction.
+            _project.MarkClean();
         }
         _project.PropertyChanged += OnProjectPropertyChanged;
         _history.Reset(_project);

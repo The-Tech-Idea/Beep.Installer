@@ -16,7 +16,7 @@ internal static class ComponentFileScan
         {
             token.ThrowIfCancellationRequested();
             try { bytes = checked(bytes + new FileInfo(Resolve(path, sourceDirectory)).Length); }
-            catch (Exception ex) when (ExpectedFileError(ex) || ex is OverflowException) { unavailable++; }
+            catch (Exception ex) when (ExpectedFileError(ex) || ex is OverflowException) { Diag.Warn("ComponentFileScan.Size", "File metadata unavailable", ex); unavailable++; }
         }
         token.ThrowIfCancellationRequested();
         return new(bytes, unavailable);
@@ -31,7 +31,7 @@ internal static class ComponentFileScan
         {
             token.ThrowIfCancellationRequested();
             var source = file.SourcePath;
-            try { source = Resolve(source, sourceDirectory); } catch (Exception ex) when (ExpectedFileError(ex)) { }
+            try { source = Resolve(source, sourceDirectory); } catch (Exception ex) when (ExpectedFileError(ex)) { Diag.Warn("ComponentFileScan.Drop", "Existing source path could not be resolved", ex); }
             destinations.TryAdd(NormalizeDestination(file.DestinationPath), source);
         }
         var duplicates = 0; var conflicts = 0; var unavailable = 0;
@@ -54,7 +54,13 @@ internal static class ComponentFileScan
                 }
                 else Add(path, Destination(path, sourceDirectory, null));
             }
-            catch (Exception ex) when (ExpectedFileError(ex)) { unavailable++; issues.Add(raw + ": " + ex.Message); }
+            catch (Exception ex) when (ExpectedFileError(ex))
+            {
+                var reference = Guid.NewGuid().ToString("N");
+                using var scope = Diag.BeginScope("component-files.drop-path", reference);
+                Diag.Warn("ComponentFileScan.Drop", "Dropped path unavailable", ex);
+                unavailable++; issues.Add(raw + ": " + reference);
+            }
         }
         token.ThrowIfCancellationRequested();
         return new(files.ToArray(), duplicates, conflicts, unavailable, issues.ToArray());

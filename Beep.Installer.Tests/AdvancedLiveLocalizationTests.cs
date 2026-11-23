@@ -220,7 +220,7 @@ public sealed class AdvancedLiveLocalizationTests
             using var editor = new PackageBuilderForm(new InstallerController()); editor.Show(); editor.OpenSection("identity");
             var before = InstallerScriptSerializer.Write(editor.Project); var panel = editor.ActiveSection;
             var toolbar = Field<ToolStrip>(editor, "_toolbar"); var search = Find<TextBox>(editor, "AuthoringSectionSearch");
-            var recent = Field<ToolStripDropDownButton>(editor, "_recentsBtn");
+            var recent = Field<ToolStripMenuItem>(editor, "_recentsBtn");
             var hints = new Dictionary<string, string> { ["Toolbar_New"] = "Toolbar_NewHint", ["Toolbar_Open"] = "Toolbar_OpenHint", ["Common_Save"] = "Toolbar_SaveHint",
                 ["Builder_SaveAsTitle"] = "Toolbar_SaveAsHint", ["Packaging_Button"] = "Packaging_ButtonHint", ["Signing_Button"] = "Signing_ButtonHint", ["Toolbar_Guided"] = "Toolbar_GuidedHint",
                 ["Quick_Button"] = "Quick_ButtonHint", ["Toolbar_Preview"] = "Toolbar_PreviewHint", ["Builder_BuildTitle"] = "Toolbar_BuildHint", ["Builder_PublishTitle"] = "Toolbar_PublishHint",

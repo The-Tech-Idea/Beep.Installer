@@ -15,7 +15,9 @@ internal readonly record struct LiveUiCaption(string? Key, string Fallback)
         void Refresh()
         {
             if (item.IsDisposed) return;
-            item.Text = item.AccessibleName = caption.Value;
+            item.Text = caption.Value;
+            // WinForms uses & for keyboard mnemonics; assistive names should speak the words.
+            item.AccessibleName = caption.Value.Replace("&&", "\0").Replace("&", "").Replace("\0", "&");
             if (tip is { } hint) item.ToolTipText = hint.Value;
         }
         Refresh();

@@ -458,15 +458,17 @@ internal static partial class Program
 
     // ── Uninstall ───────────────────────────────────────────────────────
 
-    private static int RunUninstall(InstallProject project, string[] args)
+    private static int RunUninstall(InstallProject project, string[] args, bool recoveryRollback = false)
     {
+        var action = recoveryRollback ? "rollback" : "uninstall";
+        var actionTitle = recoveryRollback ? "Rollback" : "Uninstall";
         var jsonMode = Has(args, "/JSON");
         var originalOut = Console.Out;
         using var jsonSink = jsonMode ? new StringWriter() : null;
         if (jsonMode) Console.SetOut(jsonSink!);
-        var runCorrelationId = NewRunCorrelationId("uninstall", project);
-        using var diagScope = Engine.Diag.BeginScope("uninstall", runCorrelationId);
-        Engine.Diag.Info("Runtime", $"Starting uninstall for {project.AppName} {project.AppVersion}.", "BI2421");
+        var runCorrelationId = NewRunCorrelationId(action, project);
+        using var diagScope = Engine.Diag.BeginScope(action, runCorrelationId);
+        Engine.Diag.Info("Runtime", $"Starting {action} for {project.AppName} {project.AppVersion}.", "BI2421");
 
         var config = project;
         var perUser = Engine.InstallScopeResolver.IsPerUser(config);
@@ -479,13 +481,13 @@ internal static partial class Program
         }
         catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
         {
-            return WriteMaintenancePreflightFailure("uninstall", project, args, installPath, ex.Message, originalOut, runCorrelationId);
+            return WriteMaintenancePreflightFailure(action, project, args, installPath, ex.Message, originalOut, runCorrelationId);
         }
-        using var operationLock = TryAcquireRuntimeOperation("uninstall", project, args, installPath, originalOut, runCorrelationId);
+        using var operationLock = TryAcquireRuntimeOperation(action, project, args, installPath, originalOut, runCorrelationId);
         if (operationLock == null) return 2;
         try
         {
-            Console.WriteLine($"Uninstalling {config.AppName} from {installPath}…");
+            Console.WriteLine($"{actionTitle}: {config.AppName} at {installPath}…");
             context = Engine.InstallContextBuilder.ForUninstall(
                 project,
                 installPath,
@@ -495,8 +497,9 @@ internal static partial class Program
         }
         catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
         {
-            return WriteMaintenancePreflightFailure("uninstall", project, args, installPath, ex.Message, originalOut, runCorrelationId);
+            return WriteMaintenancePreflightFailure(action, project, args, installPath, ex.Message, originalOut, runCorrelationId);
         }
+        if (recoveryRollback) context.Properties[InstallContextKeys.ResourceExecutionMode] = "rollback";
         ApplyBuiltInRuntimeProperties(context, uninstallRuntimeProperties);
 
         var wizard = Hosting.InstallWizardGraph.BuildUninstall();
@@ -508,29 +511,29 @@ internal static partial class Program
         if (policyEvaluation.HasErrors)
         {
             const int blockedExit = 2;
-            const string blockedMessage = "Uninstall blocked by enterprise policy.";
+            var blockedMessage = $"{actionTitle} blocked by enterprise policy.";
             Engine.Diag.Warn("Policy", blockedMessage, eventId: "BI2424");
-            var blockedBundlePath = TryWriteSupportBundle("uninstall", project, installPath, false, blockedExit, blockedMessage, "", context, policyEvaluation, args, runCorrelationId);
-            EmitRuntimeTelemetry("uninstall", project, installPath, false, blockedExit, blockedMessage, "", context, policyEvaluation, args, runCorrelationId);
+            var blockedBundlePath = TryWriteSupportBundle(action, project, installPath, false, blockedExit, blockedMessage, "", context, policyEvaluation, args, runCorrelationId);
+            EmitRuntimeTelemetry(action, project, installPath, false, blockedExit, blockedMessage, "", context, policyEvaluation, args, runCorrelationId);
             if (jsonMode)
             {
                 Console.SetOut(originalOut);
-                WriteRunResultJson("uninstall", project, installPath, false, blockedExit, blockedMessage, "", context, blockedBundlePath, runCorrelationId);
+                WriteRunResultJson(action, project, installPath, false, blockedExit, blockedMessage, "", context, blockedBundlePath, runCorrelationId);
             }
             return blockedExit;
         }
 
         var result = wizard.Run(context);
         var ok = result.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Ok;
-        Console.WriteLine(ok ? "Uninstall completed." : $"Uninstall failed: {result.Message}");
+        Console.WriteLine(ok ? $"{actionTitle} completed." : $"{actionTitle} failed: {result.Message}");
         var exit = ok ? 0 : 1;
-        Engine.Diag.Info("Runtime", ok ? "Uninstall completed." : $"Uninstall failed: {result.Message}", ok ? "BI2422" : "BI2425");
-        var supportBundlePath = TryWriteSupportBundle("uninstall", project, installPath, ok, exit, result.Message, "", context, policyEvaluation, args, runCorrelationId);
-        EmitRuntimeTelemetry("uninstall", project, installPath, ok, exit, result.Message, "", context, policyEvaluation, args, runCorrelationId);
+        Engine.Diag.Info("Runtime", ok ? $"{actionTitle} completed." : $"{actionTitle} failed: {result.Message}", ok ? "BI2422" : "BI2425");
+        var supportBundlePath = TryWriteSupportBundle(action, project, installPath, ok, exit, result.Message, "", context, policyEvaluation, args, runCorrelationId);
+        EmitRuntimeTelemetry(action, project, installPath, ok, exit, result.Message, "", context, policyEvaluation, args, runCorrelationId);
         if (jsonMode)
         {
             Console.SetOut(originalOut);
-            WriteRunResultJson("uninstall", project, installPath, ok, exit, result.Message, "", context, supportBundlePath, runCorrelationId);
+            WriteRunResultJson(action, project, installPath, ok, exit, result.Message, "", context, supportBundlePath, runCorrelationId);
         }
         return exit;
     }
@@ -2850,8 +2853,8 @@ internal static partial class Program
 
         if (Has(args, "/ROLLBACK"))
         {
-            Console.WriteLine($"Rolling back typed resources for {project.AppName} from {journalPath}…");
-            return RunUninstall(project, args);
+            if (!Has(args, "/JSON")) Console.WriteLine($"Rolling back typed resources for {project.AppName} from {journalPath}…");
+            return RunUninstall(project, args, recoveryRollback: true);
         }
 
         if (Has(args, "/ABANDON"))

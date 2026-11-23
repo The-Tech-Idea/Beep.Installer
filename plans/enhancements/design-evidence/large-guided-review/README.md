@@ -1,0 +1,21 @@
+# Large Guided Review — 2026-11-23
+
+P13 UX06 responsiveness qualification and correction in the existing GuidedReviewPage renderer. No screen redesign or new validation/snapshot implementation was introduced. The same summary rows, diagnostics, edit links and state rules remain; the renderer now suspends its own and its table's layout while building controls, then resumes once before restoring focus.
+
+## Real requirement exercised
+
+The native fixture builds 100 components with 3,000 distinct destination entries referencing one owned text payload. It uses the real default ProjectAuthoringWorkspace/schema/plan/package validation path, not a substituted validation result. It checks a full detached candidate, candidate-only schema normalization, unchanged canonical JSON, bounded summary controls, native message-loop activity, and an unnotified edit in the last file blocking Build. Check Again performs a fresh full capture and validation. It never runs an installer or payload.
+
+The test matches Program's theme initialization and an already-created shell before timing Review. `fixtureSetupMs` includes theme/host/project fixture preparation and is **not an app-startup benchmark**. The synchronous Review-construction/refresh guard is one second; the largest native message-loop-gap guard is two seconds. These are engineering fixture targets, not a product-wide SLA or a standards claim.
+
+## Evidence
+
+- `qualification.log`: original isolated fixture failed at 7,252ms construction, one failed, 10s. This mixed first-use app/theme setup with Review layout and is not a pure capture cost.
+- `profile-run.log` / `capture-profile.txt`: temporary profiling measured serialization 15ms, hash 0ms, candidate clone 45ms, summary clone 11ms; constructor 4,471ms and repeated capture/render 1,688ms. The snapshot work was small relative to control construction. Temporary profiling was removed; the snapshot owner's source bytes are unchanged.
+- `batched-layout.log` / `batched-cold-metrics.json`: batching reduced repeated capture/render to 217ms, but the isolated cold fixture still included first-use setup (3,437ms construction); one case failed, 4s.
+- `startup-matched.log`: after matching actual startup preparation, the batched renderer passed, one case, 6s; construction 145ms, Check Again 230ms, largest message-loop gap 390ms.
+- `unbatched-startup-matched.log` / corresponding metrics: the original renderer under the same startup preparation measured 1,710ms construction, 1,559ms refresh, 1,887ms gap. It passed the initial two-second construction/refresh limit, showing that limit did not guard the intended improvement.
+- `unbatched-one-second-guard.log` / metrics: the explicit one-second interactive target rejects the original renderer (1,490ms construction / 1,450ms refresh), one failed, 9s. The batched renderer was then restored with a fresh write timestamp before the final source build.
+- `restoration.log`: renderer restoration matches the saved batched bytes; the snapshot owner matches its pre-profile source and contains no profiling code.
+
+**Final normal-source selected regression (`final-regression.log`): 69 passed, zero failed/skipped, 36s.** Covers Guided Review asynchronous capture/validation, obsolete/disposed/current failures, project replacement and nested edits, translated status/focused links, Guided presentation and exact blocking-field routing. `metrics.json` records the final local sample: 25ms construction, 184ms refresh, 196ms largest native message-loop gap, 11 heartbeat ticks, 3,000 entries across 100 components, no blocking diagnostics. The single-case startup-matched and combined-process samples differ because process caches and host load differ; neither is a universal latency promise. `source-hashes.log` records affected source. `model-binding.log` confirms app/test Models match sibling source net10.0 Debug output. Existing dependency/test warnings remain. This local project uses a small real text payload with many authored destinations; it does not qualify every resource type, huge secret-bearing values, remote filesystems, actual OS DPI/Narrator or all runtime/release journeys. No full suite, cloud build, commit, push or publication.

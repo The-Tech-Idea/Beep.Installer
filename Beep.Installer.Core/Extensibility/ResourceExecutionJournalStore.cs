@@ -14,7 +14,7 @@ namespace Beep.Installer.Extensibility;
 public sealed class ResourceExecutionJournalStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
-    public const string CurrentSchemaVersion = "1.0";
+    public const string CurrentSchemaVersion = "2.0";
 
     public ResourceExecutionJournalStore(string journalPath)
     {

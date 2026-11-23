@@ -48,107 +48,118 @@ internal sealed class GuidedReviewPage : UserControl
     private void Render(InstallProject project)
     {
         var focus = FindForm() is { } owner ? UiFocusBookmark.Capture(owner) : null;
-        foreach (Control old in Controls.Cast<Control>().ToArray()) { Controls.Remove(old); old.Dispose(); }
-        var layout = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(16) };
-        layout.ColumnStyles.Add(new(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new(SizeType.AutoSize));
-        void Row(string summary, string path)
+        SuspendLayout();
+        TableLayoutPanel? layout = null;
+        try
         {
-            var row = layout.RowCount++;
-            layout.RowStyles.Add(new(SizeType.AutoSize));
-            layout.Controls.Add(new Label { Text = summary, AutoSize = true, MaximumSize = new Size(580, 0), Margin = new Padding(0, 8, 12, 8) }, 0, row);
-            var link = new Button { Name = "ReviewEdit_" + path, Text = L("Btn_Edit", "Edit"), AutoSize = true, AccessibleName = L("Btn_Edit", "Edit") + ": " + summary, Tag = path, Enabled = _state is not (CheckState.Stale or CheckState.Failed) };
-            link.Click += (_, _) => { if (IsCurrent()) _edit(path); else MarkStale(); };
-            layout.Controls.Add(link, 1, row);
-        }
-        Row($"{project.AppName} • {project.AppVersion} • {project.AppPublisher}", "Setup.AppName");
-        Row(L("Guided_Files", "Files and components") + $": {project.Components.Count} / {project.Components.Sum(c => c.Files.Count)}", "Components");
-        Row(L("Guided_Install", "Install behavior") + $": {project.DefaultScope} • {project.DefaultDirName}", "Setup.DefaultScope");
-        Row(L("Guided_SystemChanges", "System changes") + $": {project.Prerequisites.Count} {L("Section_Prerequisites", "prerequisites")}, {project.Shortcuts.Count} {L("Section_Shortcuts", "shortcuts")}, {project.RegistryEntries.Count} {L("Section_Registry", "registry entries")}, {project.Resources.Count + project.WindowsServices.Count + project.ScheduledTasks.Count + project.FirewallRules.Count + project.IisSites.Count + project.IisAppPools.Count + project.ConfigTransforms.Count + project.Certificates.Count + project.ComRegistrations.Count + project.DriverPackages.Count + project.EnvironmentVariables.Count + project.FileAssociations.Count + project.WebDeployPackages.Count + project.Packages.Count} {L("Guided_Resources", "resources")}", "Prerequisites");
-        void Group(IList collection, string path, string key, string caption)
-        {
-            if (collection.Count == 0) return;
-            var category = L(key, caption);
-            Row(category + ": " + collection.Count, path);
-            for (var index = 0; index < Math.Min(collection.Count, 5); index++)
+            foreach (Control old in Controls.Cast<Control>().ToArray()) { Controls.Remove(old); old.Dispose(); }
+            layout = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(16) };
+            layout.SuspendLayout();
+            layout.ColumnStyles.Add(new(SizeType.Percent, 100));
+            layout.ColumnStyles.Add(new(SizeType.AutoSize));
+            void Row(string summary, string path)
             {
-                var item = collection[index];
-                if (item is null) continue;
-                var properties = TypeDescriptor.GetProperties(item);
-                // Review names the operation; credentials, arguments and variable values stay in
-                // the editor. Bound the preview so a large payload does not create thousands of rows.
-                var name = new[] { "Name", "DisplayName", "Id", "KeyPath", "Path", "Extension", "DestinationPath" }
-                    .Select(property => properties[property]?.GetValue(item) as string)
-                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-                Row("  " + (name ?? category + " " + (index + 1)), path + "[" + index + "]");
+                var row = layout.RowCount++;
+                layout.RowStyles.Add(new(SizeType.AutoSize));
+                layout.Controls.Add(new Label { Text = summary, AutoSize = true, MaximumSize = new Size(580, 0), Margin = new Padding(0, 8, 12, 8) }, 0, row);
+                var link = new Button { Name = "ReviewEdit_" + path, Text = L("Btn_Edit", "Edit"), AutoSize = true, AccessibleName = L("Btn_Edit", "Edit") + ": " + summary, Tag = path, Enabled = _state is not (CheckState.Stale or CheckState.Failed) };
+                link.Click += (_, _) => { if (IsCurrent()) _edit(path); else MarkStale(); };
+                layout.Controls.Add(link, 1, row);
             }
-            if (collection.Count > 5)
-                Row(string.Format(L("Review_MoreItems", "{0} additional items. Edit to view the full list."), collection.Count - 5), path);
+            Row($"{project.AppName} • {project.AppVersion} • {project.AppPublisher}", "Setup.AppName");
+            Row(L("Guided_Files", "Files and components") + $": {project.Components.Count} / {project.Components.Sum(c => c.Files.Count)}", "Components");
+            Row(L("Guided_Install", "Install behavior") + $": {project.DefaultScope} • {project.DefaultDirName}", "Setup.DefaultScope");
+            Row(L("Guided_SystemChanges", "System changes") + $": {project.Prerequisites.Count} {L("Section_Prerequisites", "prerequisites")}, {project.Shortcuts.Count} {L("Section_Shortcuts", "shortcuts")}, {project.RegistryEntries.Count} {L("Section_Registry", "registry entries")}, {project.Resources.Count + project.WindowsServices.Count + project.ScheduledTasks.Count + project.FirewallRules.Count + project.IisSites.Count + project.IisAppPools.Count + project.ConfigTransforms.Count + project.Certificates.Count + project.ComRegistrations.Count + project.DriverPackages.Count + project.EnvironmentVariables.Count + project.FileAssociations.Count + project.WebDeployPackages.Count + project.Packages.Count} {L("Guided_Resources", "resources")}", "Prerequisites");
+            void Group(IList collection, string path, string key, string caption)
+            {
+                if (collection.Count == 0) return;
+                var category = L(key, caption);
+                Row(category + ": " + collection.Count, path);
+                for (var index = 0; index < Math.Min(collection.Count, 5); index++)
+                {
+                    var item = collection[index];
+                    if (item is null) continue;
+                    var properties = TypeDescriptor.GetProperties(item);
+                    // Review names the operation; credentials, arguments and variable values stay in
+                    // the editor. Bound the preview so a large payload does not create thousands of rows.
+                    var name = new[] { "Name", "DisplayName", "Id", "KeyPath", "Path", "Extension", "DestinationPath" }
+                        .Select(property => properties[property]?.GetValue(item) as string)
+                        .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+                    Row("  " + (name ?? category + " " + (index + 1)), path + "[" + index + "]");
+                }
+                if (collection.Count > 5)
+                    Row(string.Format(L("Review_MoreItems", "{0} additional items. Edit to view the full list."), collection.Count - 5), path);
+            }
+            for (var index = 0; index < Math.Min(project.Components.Count, 5); index++)
+                Group(project.Components[index].Files, $"Components[{index}].Files", "Guided_Files", "Files and components");
+            Group(project.Prerequisites, "Prerequisites", "Section_Prerequisites", "Prerequisites");
+            Group(project.Shortcuts, "Shortcuts", "Section_Shortcuts", "Shortcuts");
+            Group(project.RegistryEntries, "RegistryEntries", "Section_Registry", "Registry entries");
+            Group(project.WindowsServices, "WindowsServices", "Section_WindowsServices", "Windows Services");
+            Group(project.ScheduledTasks, "ScheduledTasks", "Section_ScheduledTasks", "Scheduled Tasks");
+            Group(project.FirewallRules, "FirewallRules", "Section_FirewallRules", "Firewall Rules");
+            Group(project.Certificates, "Certificates", "Section_Certificates", "Certificates");
+            Group(project.ComRegistrations, "ComRegistrations", "Section_ComRegistrations", "COM registrations");
+            Group(project.DriverPackages, "DriverPackages", "Section_DriverPackages", "Driver packages");
+            Group(project.ConfigTransforms, "ConfigTransforms", "Section_ConfigTransforms", "Configuration transforms");
+            Group(project.IisAppPools, "IisAppPools", "Section_IisAppPools", "IIS Application Pools");
+            Group(project.IisSites, "IisSites", "Section_IisSites", "IIS Sites");
+            Group(project.WebDeployPackages, "WebDeployPackages", "Section_WebDeploy", "Web Deploy packages");
+            Group(project.EnvironmentVariables, "EnvironmentVariables", "Section_EnvironmentVariables", "Environment Variables");
+            Group(project.FileAssociations, "FileAssociations", "Section_FileAssociations", "File Associations");
+            Group(project.Packages, "Packages", "Section_Packages", "Package Nodes");
+            Group(project.PrerequisiteCatalogs, "PrerequisiteCatalogs", "Section_PrerequisiteCatalogs", "Prerequisite Catalogs");
+            Group(project.Resources, "Resources", "Section_Resources", "Typed Resources");
+            Group(project.CustomActions, "CustomActions", "Toolbar_Actions", "Custom actions");
+            Row(project.OutputFormat + " • " + BuildPipeline.ResolveOutputDirectory(project), "Setup.OutputFormat");
+            Row(L("Guided_Signing", "Signing") + ": " + (project.HasCodeSigningCertificate ? L("Guided_Configured", "Configured") : L("Guided_Unsigned", "Unsigned development build")), "Setup.CodeSignCertificatePath");
+            _diagnosticRows = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
+            _diagnosticRows.ColumnStyles.Add(new(SizeType.Percent, 100));
+            _diagnosticRows.ColumnStyles.Add(new(SizeType.AutoSize));
+            var diagnosticsRow = layout.RowCount++; layout.RowStyles.Add(new(SizeType.AutoSize));
+            layout.Controls.Add(_diagnosticRows, 0, diagnosticsRow); layout.SetColumnSpan(_diagnosticRows, 2);
+            PopulateDiagnostics();
+            var statusKey = _state switch { CheckState.Pending => "Review_Checking", CheckState.Failed => "Review_CheckFailed", CheckState.Stale => "Review_CheckChanged", _ => "Review_CheckComplete" };
+            var status = new Label { Name = "GuidedReviewStatus", Text = L(statusKey, "Review check"), AutoSize = true, MaximumSize = new(580, 0), Margin = new(0, 8, 12, 8) };
+            _status = status;
+            status.AccessibleName = status.Text;
+            var statusRow = layout.RowCount++; layout.RowStyles.Add(new(SizeType.AutoSize));
+            layout.Controls.Add(status, 0, statusRow); layout.SetColumnSpan(status, 2);
+            var start = new Button { Name = "GuidedBuild", Text = L("Builder_BuildTitle", "Build"), AutoSize = true,
+                Enabled = _state == CheckState.Ready, BackColor = InstallerTheme.Accent, ForeColor = InstallerTheme.AccentText };
+            _start = start;
+            AuthoringThemeBinding.SetSurface(start, AuthoringSurface.Accent);
+            start.Click += (_, _) => { if (_state == CheckState.Ready && IsCurrent()) _build(); else MarkStale(); };
+            var last = layout.RowCount++;
+            layout.Controls.Add(start, 0, last);
+            if (_recipe is not null)
+            {
+                var recipes = new Button { Name = "GuidedResourceRecipes", Text = L("Recipe_Title", "Resource recipes"), AutoSize = true };
+                recipes.Click += (_, _) => _recipe();
+                layout.Controls.Add(recipes, 1, last);
+            }
+            Controls.Add(layout);
+            var retry = new Button { Name = "GuidedReviewCheckAgain", Text = L("Review_CheckAgain", "Check again"), AutoSize = true };
+            retry.Click += async (_, _) => await RefreshAsync();
+            layout.Controls.Add(retry, 0, layout.RowCount++);
+            if (_release is not null)
+            {
+                var overview = new Button { Name = "GuidedReleaseOverview", Text = L("Release_Title", "Release overview"), AutoSize = true };
+                overview.Click += (_, _) => _release();
+                layout.Controls.Add(overview, 0, layout.RowCount++);
+            }
+            if (_compare is not null)
+            {
+                var comparison = new Button { Name = "GuidedProjectComparison", Text = L("Comparison_Title", "Compare projects"), AutoSize = true };
+                comparison.Click += (_, _) => _compare(); layout.Controls.Add(comparison, 0, layout.RowCount++);
+            }
+            Engine.Accessibility.ApplyAutoNames(this);
         }
-        for (var index = 0; index < Math.Min(project.Components.Count, 5); index++)
-            Group(project.Components[index].Files, $"Components[{index}].Files", "Guided_Files", "Files and components");
-        Group(project.Prerequisites, "Prerequisites", "Section_Prerequisites", "Prerequisites");
-        Group(project.Shortcuts, "Shortcuts", "Section_Shortcuts", "Shortcuts");
-        Group(project.RegistryEntries, "RegistryEntries", "Section_Registry", "Registry entries");
-        Group(project.WindowsServices, "WindowsServices", "Section_WindowsServices", "Windows Services");
-        Group(project.ScheduledTasks, "ScheduledTasks", "Section_ScheduledTasks", "Scheduled Tasks");
-        Group(project.FirewallRules, "FirewallRules", "Section_FirewallRules", "Firewall Rules");
-        Group(project.Certificates, "Certificates", "Section_Certificates", "Certificates");
-        Group(project.ComRegistrations, "ComRegistrations", "Section_ComRegistrations", "COM registrations");
-        Group(project.DriverPackages, "DriverPackages", "Section_DriverPackages", "Driver packages");
-        Group(project.ConfigTransforms, "ConfigTransforms", "Section_ConfigTransforms", "Configuration transforms");
-        Group(project.IisAppPools, "IisAppPools", "Section_IisAppPools", "IIS Application Pools");
-        Group(project.IisSites, "IisSites", "Section_IisSites", "IIS Sites");
-        Group(project.WebDeployPackages, "WebDeployPackages", "Section_WebDeploy", "Web Deploy packages");
-        Group(project.EnvironmentVariables, "EnvironmentVariables", "Section_EnvironmentVariables", "Environment Variables");
-        Group(project.FileAssociations, "FileAssociations", "Section_FileAssociations", "File Associations");
-        Group(project.Packages, "Packages", "Section_Packages", "Package Nodes");
-        Group(project.PrerequisiteCatalogs, "PrerequisiteCatalogs", "Section_PrerequisiteCatalogs", "Prerequisite Catalogs");
-        Group(project.Resources, "Resources", "Section_Resources", "Typed Resources");
-        Group(project.CustomActions, "CustomActions", "Toolbar_Actions", "Custom actions");
-        Row(project.OutputFormat + " • " + BuildPipeline.ResolveOutputDirectory(project), "Setup.OutputFormat");
-        Row(L("Guided_Signing", "Signing") + ": " + (project.HasCodeSigningCertificate ? L("Guided_Configured", "Configured") : L("Guided_Unsigned", "Unsigned development build")), "Setup.CodeSignCertificatePath");
-        _diagnosticRows = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
-        _diagnosticRows.ColumnStyles.Add(new(SizeType.Percent, 100));
-        _diagnosticRows.ColumnStyles.Add(new(SizeType.AutoSize));
-        var diagnosticsRow = layout.RowCount++; layout.RowStyles.Add(new(SizeType.AutoSize));
-        layout.Controls.Add(_diagnosticRows, 0, diagnosticsRow); layout.SetColumnSpan(_diagnosticRows, 2);
-        PopulateDiagnostics();
-        var statusKey = _state switch { CheckState.Pending => "Review_Checking", CheckState.Failed => "Review_CheckFailed", CheckState.Stale => "Review_CheckChanged", _ => "Review_CheckComplete" };
-        var status = new Label { Name = "GuidedReviewStatus", Text = L(statusKey, "Review check"), AutoSize = true, MaximumSize = new(580, 0), Margin = new(0, 8, 12, 8) };
-        _status = status;
-        status.AccessibleName = status.Text;
-        var statusRow = layout.RowCount++; layout.RowStyles.Add(new(SizeType.AutoSize));
-        layout.Controls.Add(status, 0, statusRow); layout.SetColumnSpan(status, 2);
-        var start = new Button { Name = "GuidedBuild", Text = L("Builder_BuildTitle", "Build"), AutoSize = true,
-            Enabled = _state == CheckState.Ready, BackColor = InstallerTheme.Accent, ForeColor = InstallerTheme.AccentText };
-        _start = start;
-        AuthoringThemeBinding.SetSurface(start, AuthoringSurface.Accent);
-        start.Click += (_, _) => { if (_state == CheckState.Ready && IsCurrent()) _build(); else MarkStale(); };
-        var last = layout.RowCount++;
-        layout.Controls.Add(start, 0, last);
-        if (_recipe is not null)
+        finally
         {
-            var recipes = new Button { Name = "GuidedResourceRecipes", Text = L("Recipe_Title", "Resource recipes"), AutoSize = true };
-            recipes.Click += (_, _) => _recipe();
-            layout.Controls.Add(recipes, 1, last);
+            layout?.ResumeLayout(performLayout: false);
+            ResumeLayout(performLayout: true);
         }
-        Controls.Add(layout);
-        var retry = new Button { Name = "GuidedReviewCheckAgain", Text = L("Review_CheckAgain", "Check again"), AutoSize = true };
-        retry.Click += async (_, _) => await RefreshAsync();
-        layout.Controls.Add(retry, 0, layout.RowCount++);
-        if (_release is not null)
-        {
-            var overview = new Button { Name = "GuidedReleaseOverview", Text = L("Release_Title", "Release overview"), AutoSize = true };
-            overview.Click += (_, _) => _release();
-            layout.Controls.Add(overview, 0, layout.RowCount++);
-        }
-        if (_compare is not null)
-        {
-            var comparison = new Button { Name = "GuidedProjectComparison", Text = L("Comparison_Title", "Compare projects"), AutoSize = true };
-            comparison.Click += (_, _) => _compare(); layout.Controls.Add(comparison, 0, layout.RowCount++);
-        }
-        Engine.Accessibility.ApplyAutoNames(this);
         if (focus is not null && !string.IsNullOrEmpty(focus.ControlName) && Controls.Find(focus.ControlName, true) is { Length: 1 } matches)
             focus.RestoreReplacement(matches[0]);
     }

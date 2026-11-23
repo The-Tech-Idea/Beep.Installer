@@ -88,8 +88,8 @@ public sealed class ProjectComparisonPresentationTests
                 timer.Tick += (_, _) => { var dialog = Application.OpenForms.OfType<ProjectComparisonDialog>().SingleOrDefault(); if (dialog is null) return; seen = true; timer.Stop(); dialog.Close(); };
                 timer.Start(); open(); seen.Should().BeTrue();
             }
-            var toolbar = Descendants(advanced).OfType<ToolStrip>().Single(strip => strip is not StatusStrip);
-            var comparison = toolbar.Items.OfType<ToolStripButton>().Concat(toolbar.Items.OfType<ToolStripDropDownButton>().SelectMany(more => more.DropDownItems.OfType<ToolStripButton>())).Single(button => button.Text == LanguageManager.GetString("Comparison_Title"));
+            var comparison = advanced.MainMenuStrip!.Items.OfType<ToolStripMenuItem>()
+                .SelectMany(menu => menu.DropDownItems.OfType<ToolStripMenuItem>()).Single(item => item.Name == "Comparison_Title");
             Opens(() => comparison.PerformClick()); LanguageManager.SetLanguage("ar"); comparison.AccessibleName.Should().Be(LanguageManager.GetString("Comparison_Title"));
             using var review = new GuidedReviewPage(controller.Project, _ => { }, () => { }, compare: () => advanced.ShowProjectComparison());
             using var host = new Form(); host.Controls.Add(review); host.Show();

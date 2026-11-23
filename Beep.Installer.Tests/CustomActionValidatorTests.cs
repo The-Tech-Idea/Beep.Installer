@@ -59,4 +59,15 @@ public class CustomActionValidatorTests
         var actions = new List<CustomAction> { A("a.exe"), new CustomAction { Path = "", Required = true } };
         InstallProject.ValidateCustomActions(actions).Should().Contain(i => i.IsError);
     }
+
+    [Fact]
+    public void DiagnosticsIdentifyMissingRowsAndInvalidFieldsWithoutEvaluatingCommands()
+    {
+        var actions = new List<CustomAction> { A(), null!, new() { Path = "owned-inert.exe", TimeoutMs = -17, Timing = (CustomActionTiming)99 } };
+        var issues = InstallProject.ValidateCustomActions(actions);
+        issues.Should().Contain(issue => issue.Index == 1 && issue.IsError && issue.Key == "#2");
+        issues.Should().Contain(issue => issue.Index == 2 && issue.IsError && issue.PropertyName == nameof(CustomAction.TimeoutMs));
+        issues.Should().Contain(issue => issue.Index == 2 && issue.IsError && issue.PropertyName == nameof(CustomAction.Timing));
+        actions[2].TimeoutMs.Should().Be(-17); actions[2].Timing.Should().Be((CustomActionTiming)99);
+    }
 }

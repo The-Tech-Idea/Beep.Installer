@@ -1,0 +1,8 @@
+{
+  "count": 3000,
+  "bytes": 3000,
+  "dispatchMs": 48,
+  "totalMs": 6244,
+  "heartbeatTicks": 72,
+  "maximumMessageLoopGapMs": 310
+}

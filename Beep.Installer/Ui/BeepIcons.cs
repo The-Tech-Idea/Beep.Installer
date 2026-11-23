@@ -6,15 +6,19 @@ namespace Beep.Installer.Ui;
 
 /// <summary>
 /// The one owner of toolbar and sidebar icons. Every icon comes from the Beep control library's own embedded
-/// icon set (the set BeepButton and BeepSideBar draw), found by file name, and is recoloured to the current
+/// icon set and the installer's embedded SVG assets, found by file name, and is recoloured to the current
 /// theme's text colour so it follows theme changes.
 /// </summary>
 internal static class BeepIcons
 {
-    private static readonly Assembly BeepAssembly = typeof(TheTechIdea.Beep.Winform.Controls.BeepButton).Assembly;
+    private static readonly Lazy<Dictionary<string, Assembly>> ResourceOwners = new(() =>
+        new[] { typeof(BeepIcons).Assembly, typeof(TheTechIdea.Beep.Winform.Controls.BeepButton).Assembly }
+            .SelectMany(assembly => assembly.GetManifestResourceNames()
+                .Where(name => name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+                .Select(name => new KeyValuePair<string, Assembly>(name, assembly)))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal));
     private static readonly Lazy<ILookup<string, string>> Index = new(() =>
-        BeepAssembly.GetManifestResourceNames()
-            .Where(n => n.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+        ResourceOwners.Value.Keys
             .ToLookup(FileKey, StringComparer.OrdinalIgnoreCase));
     private static readonly Dictionary<(string, int, int), Bitmap> Cache = new();
 
@@ -43,7 +47,8 @@ internal static class BeepIcons
         lock (Cache)
         {
             if (Cache.TryGetValue(key, out var cached)) return cached;
-            using var stream = BeepAssembly.GetManifestResourceStream(resource);
+            if (!ResourceOwners.Value.TryGetValue(resource, out var owner)) return null;
+            using var stream = owner.GetManifestResourceStream(resource);
             if (stream is null) return null;
             using var reader = new StreamReader(stream);
             var hex = $"#{color.R:X2}{color.G:X2}{color.B:X2}";

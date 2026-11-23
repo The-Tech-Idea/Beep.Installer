@@ -25,7 +25,7 @@
                 <section class="section">
                     <h2>Set it up</h2>
                     <p>The MCP server is part of the installer: <code>Beep.Installer.exe /MCP</code> runs it over stdio, and an AI assistant starts it with that command. Running the installer normally never starts it.</p>
-                    <p>In the app, click <strong>AI / MCP</strong> in the toolbar. The dialog shows the command and can add the installer to Claude Desktop, Codex and Claude Code; each registration backs up the client's file first and leaves its other servers alone. In this repository the project-scope <code>.mcp.json</code> does the same for Claude Code:</p>
+                    <p>In the advanced Package Builder, choose <strong>Project → AI / MCP</strong>. In the guided window, choose <strong>Tools → AI / MCP server…</strong>. The dialog shows the command and can add the installer to Claude Desktop, Codex and Claude Code; each registration backs up the client's file first and leaves its other servers alone. In this repository the project-scope <code>.mcp.json</code> does the same for Claude Code:</p>
 <pre><code class="language-json">{ "mcpServers": { "beep-installer": {
     "command": "Beep.Installer/bin/Debug/net10.0-windows/Beep.Installer.exe",
     "args": ["/MCP"] } } }</code></pre>

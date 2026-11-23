@@ -12,7 +12,8 @@ public enum ResourceExecutionAction
     Rollback,
     Skip,
     Resume,
-    Supersede
+    Supersede,
+    PrepareApply
 }
 
 public sealed class ResourceExecutionJournalEntry
@@ -26,6 +27,7 @@ public sealed class ResourceExecutionJournalEntry
     public string Message { get; init; } = "";
     public SortedDictionary<string, string> Evidence { get; init; } = new(StringComparer.Ordinal);
     public CompiledInstallOperation? Operation { get; init; }
+    public SortedDictionary<string, string> RecoveryState { get; init; } = new(StringComparer.Ordinal);
 }
 
 public sealed class ResourceExecutionJournal
@@ -116,7 +118,7 @@ public sealed class ResourcePlanExecutor
 
         foreach (var operation in OrderForExecution(plan.Operations))
         {
-            if (options.ResumeCompletedOperations && IsCompletedInJournal(journal, operation.Id))
+            if (options.ResumeCompletedOperations && ResourceJournalRecoveryService.IsCompleted(journal, operation.Id))
             {
                 AddEntry(journal, options, Entry(
                     operation,
@@ -177,11 +179,33 @@ public sealed class ResourcePlanExecutor
             // not swallowed miles away by whichever catch happens to be in the call stack, which is
             // exactly how a locked file came to be blamed on the journal.
             ResourceProviderResult apply;
+            Exception? checkpointFailure = null;
+            var previousAttempt = context.AttemptId;
+            context.AttemptId = journal.Metadata.AttemptId;
+            var previousCheckpoint = context.MutationCheckpoint;
+            var previousState = context.RecoveryState;
+            context.RecoveryState = options.ResumeCompletedOperations
+                ? ResourceJournalRecoveryService.PreparedState(journal, operation.Id)
+                : new Dictionary<string, string>();
+            context.MutationCheckpoint = (preparedOperation, state) =>
+            {
+                try { AddEntry(journal, options, new ResourceExecutionJournalEntry
+                {
+                    OperationId = preparedOperation.Id,
+                    OperationType = preparedOperation.Type,
+                    ExecutionMode = executionMode,
+                    Action = ResourceExecutionAction.PrepareApply,
+                    Operation = Snapshot(preparedOperation),
+                    RecoveryState = new SortedDictionary<string, string>(state.ToDictionary(pair => pair.Key, pair => pair.Value), StringComparer.Ordinal),
+                    Message = "Durable before-state prepared; mutation may not have started."
+                }); }
+                catch (Exception ex) { checkpointFailure = ex; Diag.Debug("ResourcePlanExecutor", "Before-mutation checkpoint failed.", ex); throw; }
+            };
             try
             {
                 apply = provider.Apply(operation, context);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!ReferenceEquals(ex, checkpointFailure))
             {
                 apply = new ResourceProviderResult
                 {
@@ -193,6 +217,12 @@ public sealed class ResourcePlanExecutor
                             $"Provider '{provider.ResourceType}' violated the Apply contract by throwing {ex.GetType().Name}: {ex.Message}")
                     }
                 };
+            }
+            finally
+            {
+                context.AttemptId = previousAttempt;
+                context.MutationCheckpoint = previousCheckpoint;
+                context.RecoveryState = previousState;
             }
             AddEntry(journal, options, Entry(
                 operation,
@@ -303,37 +333,6 @@ public sealed class ResourcePlanExecutor
     {
         journal.Entries.Add(entry);
         options.Checkpoint?.Invoke(journal);
-    }
-
-    private static bool IsCompletedInJournal(ResourceExecutionJournal journal, string operationId)
-    {
-        var entries = journal.Entries;
-        for (var index = entries.Count - 1; index >= 0; index--)
-        {
-            var entry = entries[index];
-            if (!string.Equals(entry.OperationId, operationId, StringComparison.Ordinal))
-                continue;
-
-            if (entry.Action is ResourceExecutionAction.Rollback or ResourceExecutionAction.Supersede
-                && entry.ResultCode == ResourceProviderResultCode.Succeeded)
-                return false;
-
-            if (entry.Action != ResourceExecutionAction.Verify
-                || entry.ResultCode != ResourceProviderResultCode.Succeeded)
-                continue;
-
-            return entries
-                .Take(index)
-                .Reverse()
-                .TakeWhile(earlier => earlier.OperationId != operationId
-                    || earlier.Action is not (ResourceExecutionAction.Rollback or ResourceExecutionAction.Supersede)
-                    || earlier.ResultCode != ResourceProviderResultCode.Succeeded)
-                .Any(earlier => earlier.OperationId == operationId
-                                && earlier.Action == ResourceExecutionAction.Apply
-                                && earlier.ResultCode == ResourceProviderResultCode.Succeeded);
-        }
-
-        return false;
     }
 
     private static IEnumerable<CompiledInstallOperation> OrderForExecution(IEnumerable<CompiledInstallOperation> operations)

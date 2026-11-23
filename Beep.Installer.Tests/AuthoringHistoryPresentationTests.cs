@@ -150,9 +150,9 @@ public sealed class AuthoringHistoryPresentationTests
         {
             var controller = Controller();
             using var editor = new PackageBuilderForm(controller); editor.Show(); editor.OpenSection("script");
-            var toolbar = Controls(editor).OfType<ToolStrip>().Single(strip => strip is not StatusStrip);
-            var undo = toolbar.Items.OfType<ToolStripButton>().Single(button => button.Text == "Undo");
-            var redo = toolbar.Items.OfType<ToolStripButton>().Single(button => button.Text == "Redo");
+            var edit = editor.MainMenuStrip!.Items.OfType<ToolStripMenuItem>().Single(item => item.Name == "Menu_Edit");
+            var undo = edit.DropDownItems.OfType<ToolStripMenuItem>().Single(item => item.Name == "History_Undo");
+            var redo = edit.DropDownItems.OfType<ToolStripMenuItem>().Single(item => item.Name == "History_Redo");
             undo.Enabled.Should().BeFalse(); redo.Enabled.Should().BeFalse();
             controller.Project.AppVersion = "2.0.0"; controller.CommitAuthoringChanges(); undo.Enabled.Should().BeTrue();
             editor.RestoreAuthoringHistory(false); redo.Enabled.Should().BeTrue();

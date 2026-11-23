@@ -71,7 +71,7 @@ internal static class ResourceProviderRuntimeSupport
                       && perUserValue is bool perUser && perUser,
             DryRun = context.Options?.DryRun == true,
             ReplayRollback = replayRollback,
-            AttemptId = context.TryGetProperty<string>(InstallContextKeys.ResourceExecutionAttemptId)
+            AttemptId = installedMetadata?.AttemptId ?? context.TryGetProperty<string>(InstallContextKeys.ResourceExecutionAttemptId)
                         ?? Guid.NewGuid().ToString("N"),
             ExecutionMode = context.TryGetProperty<string>(InstallContextKeys.ResourceExecutionMode) ?? "install",
             SecretProvider = context.TryGetProperty<ISecretProvider>(InstallContextKeys.ResourceSecretProvider)

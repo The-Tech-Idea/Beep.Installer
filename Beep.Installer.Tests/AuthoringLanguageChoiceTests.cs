@@ -72,8 +72,8 @@ public sealed class AuthoringLanguageChoiceTests
                 };
                 timer.Start();
                 if (guided) owner.Controls.Find("GuidedLanguages", true).OfType<Button>().Single().PerformClick();
-                else Descendants(owner).OfType<ToolStrip>()
-                    .SelectMany(strip => strip.Items.OfType<ToolStripButton>().Concat(strip.Items.OfType<ToolStripDropDownButton>().SelectMany(more => more.DropDownItems.OfType<ToolStripButton>())))
+                else owner.MainMenuStrip!.Items.OfType<ToolStripMenuItem>()
+                    .SelectMany(menu => menu.DropDownItems.OfType<ToolStripMenuItem>())
                     .Single(button => button.Name == "Toolbar_Languages").PerformClick();
                 if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
                 seen.Should().BeTrue(); IsWindowEnabled(owner.Handle).Should().BeTrue();

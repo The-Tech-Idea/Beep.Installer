@@ -61,85 +61,114 @@ public sealed class FileCopyResourceProvider : IResourceProvider
     public ResourceProviderResult Apply(CompiledInstallOperation operation, ResourceProviderContext context)
     {
         var validation = Validate(operation, context);
-        if (validation.Code == ResourceProviderResultCode.Failed)
-            return validation;
-
+        if (validation.Code == ResourceProviderResultCode.Failed) return validation;
         var source = ResolveSource(operation, context);
         var destination = ResolveDestination(operation, context);
+        if (!File.Exists(source)) return new ResourceProviderResult { Code = ResourceProviderResultCode.Skipped, Message = $"Optional source file is missing: {source}" };
+        if (context.DryRun) return new ResourceProviderResult { Code = ResourceProviderResultCode.Skipped, Message = $"Dry run: would copy '{source}' to '{destination}'." };
 
-        if (!File.Exists(source))
-            return new ResourceProviderResult
-            {
-                Code = ResourceProviderResultCode.Skipped,
-                Message = $"Optional source file is missing: {source}"
-            };
-
-        if (context.DryRun)
-            return new ResourceProviderResult
-            {
-                Code = ResourceProviderResultCode.Skipped,
-                Message = $"Dry run: would copy '{source}' to '{destination}'."
-            };
-
-        if (File.Exists(destination))
+        FileRollbackState? prepared;
+        try { prepared = ReadPreparedState(operation, context); }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
+        { Diag.Debug("FileCopyResourceProvider", "Prepared file recovery state was rejected.", ex); return Error("BI3017", operation.Id, ex.Message); }
+        if (prepared is null && File.Exists(destination))
         {
             if (!BoolInput(operation, "overwrite", defaultValue: true))
-                return new ResourceProviderResult
-                {
-                    Code = ResourceProviderResultCode.Skipped,
-                    Message = $"Destination exists and overwrite is disabled: {destination}"
-                };
-
-            if (BoolInput(operation, "skipIfNewer", defaultValue: false)
-                && File.GetLastWriteTimeUtc(destination) > File.GetLastWriteTimeUtc(source))
-                return new ResourceProviderResult
-                {
-                    Code = ResourceProviderResultCode.Skipped,
-                    Message = $"Destination is newer than source: {destination}"
-                };
+                return new ResourceProviderResult { Code = ResourceProviderResultCode.Skipped, Message = $"Destination exists and overwrite is disabled: {destination}" };
+            if (BoolInput(operation, "skipIfNewer", defaultValue: false) && File.GetLastWriteTimeUtc(destination) > File.GetLastWriteTimeUtc(source))
+                return new ResourceProviderResult { Code = ResourceProviderResultCode.Skipped, Message = $"Destination is newer than source: {destination}" };
         }
-
-        var existedBefore = File.Exists(destination);
-        var backupPath = "";
-
+        var existedBefore = prepared?.ExistedBefore ?? File.Exists(destination);
+        var backupPath = prepared?.BackupPath ?? "";
+        var beforeAccess = prepared?.BeforeAccess ?? "";
         try
         {
-            // Backing up the file we are about to replace reads the destination, so it fails for
-            // exactly the same reason the copy would: the file is in use. This used to sit outside
-            // the try, so a locked destination threw straight out of Apply -- past the provider
-            // contract, past the plan executor, and out to a catch that blamed the journal.
-            if (existedBefore)
+            if (prepared is null && existedBefore && OperatingSystem.IsWindows())
+                beforeAccess = new FileInfo(destination).GetAccessControl()
+                    .GetSecurityDescriptorSddlForm(System.Security.AccessControl.AccessControlSections.Access);
+            if (prepared is null && existedBefore)
             {
-                backupPath = Path.Combine(
-                    Path.GetTempPath(),
-                    "BeepInstaller",
-                    "resource-backups",
-                    Guid.NewGuid().ToString("N"),
-                    Path.GetFileName(destination));
-                Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
-                File.Copy(destination, backupPath, overwrite: true);
+                backupPath = RecoveryBackupPath(operation, context);
+                AtomicFileWriter.CopyFile(destination, backupPath);
             }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(source, destination, overwrite: true);
-            _rollback[operation.Id] = new FileRollbackState(destination, existedBefore, backupPath);
-
-            return new ResourceProviderResult
+            else if (prepared?.ExistedBefore == true)
             {
-                Message = existedBefore
-                    ? $"Updated file: {destination}"
-                    : $"Copied file: {destination}"
-            };
+                if (!File.Exists(backupPath))
+                {
+                    if (!File.Exists(destination) || FileHash(destination) != prepared.BeforeSha256)
+                        return Error("BI3011", operation.Id, "The original recovery backup is missing.");
+                    AtomicFileWriter.CopyFile(destination, backupPath);
+                }
+                if (FileHash(backupPath) != prepared.BeforeSha256)
+                    return Error("BI3019", operation.Id, "File recovery backup hash does not match its checkpoint.");
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { Diag.Debug("FileCopyResourceProvider", "Preparing file backup failed.", ex); return HandleLockedDestination(operation, source, destination, existedBefore, backupPath, ex); }
+
+        FileRollbackState state;
+        try { state = prepared ?? new FileRollbackState(destination, existedBefore, backupPath,
+            existedBefore ? FileHash(backupPath) : "", beforeAccess); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { Diag.Debug("FileCopyResourceProvider", "Prepared backup could not be read.", ex); return Error("BI3018", operation.Id, ex.Message); }
+        // The executor durably records this snapshot before any destination bytes change. A failed
+        // checkpoint propagates to the execution boundary and must never enter the copy phase.
+        context.CheckpointBeforeMutation(operation, new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            return HandleLockedDestination(operation, source, destination, existedBefore, backupPath, ex);
+            ["destination"] = state.Destination,
+            ["existedBefore"] = state.ExistedBefore.ToString(),
+            ["backupPath"] = state.BackupPath,
+            ["beforeSha256"] = state.BeforeSha256,
+            ["beforeAccess"] = state.BeforeAccess
+        });
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(source, destination, overwrite: true);
+            _rollback[operation.Id] = state;
+            return new ResourceProviderResult { Message = existedBefore ? $"Updated file: {destination}" : $"Copied file: {destination}" };
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { Diag.Debug("FileCopyResourceProvider", "Applying file copy failed.", ex); return HandleLockedDestination(operation, source, destination, existedBefore, backupPath, ex); }
         catch (Exception ex)
-        {
-            RestoreAfterFailedCopy(destination, existedBefore, backupPath);
-            return Error("BI3010", operation.Id, $"Failed to copy file '{source}' to '{destination}': {ex.Message}");
-        }
+        { Diag.Debug("FileCopyResourceProvider", "Applying file copy failed.", ex); RestoreAfterFailedCopy(destination, existedBefore, backupPath); return Error("BI3010", operation.Id, $"Failed to copy file '{source}' to '{destination}': {ex.Message}"); }
+    }
+
+    private static string RecoveryBackupPath(CompiledInstallOperation operation, ResourceProviderContext context)
+    {
+        if (string.IsNullOrWhiteSpace(context.AttemptId))
+            throw new IOException("File recovery requires an attempt identity.");
+        var attempt = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(context.AttemptId)))[..32];
+        var id = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(operation.Id)));
+        return Path.Combine(Path.GetFullPath(context.InstallRoot), ".beep-installer", "resource-backups", attempt, id + ".bin");
+    }
+
+    private static string FileHash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+    }
+
+    private static FileRollbackState? ReadPreparedState(CompiledInstallOperation operation, ResourceProviderContext context)
+    {
+        if (context.RecoveryState.Count == 0) return null;
+        var values = context.RecoveryState;
+        if (!values.TryGetValue("destination", out var destination)
+            || !values.TryGetValue("existedBefore", out var existedText) || !bool.TryParse(existedText, out var existed)
+            || !values.TryGetValue("backupPath", out var backup)
+            || !values.TryGetValue("beforeSha256", out var hash)
+            || !values.TryGetValue("beforeAccess", out var beforeAccess)
+            || !string.Equals(Path.GetFullPath(destination), ResolveDestination(operation, context), StringComparison.OrdinalIgnoreCase)
+            || !IsUnderRoot(destination, context.InstallRoot)
+            || (existed && (!string.Equals(Path.GetFullPath(backup), RecoveryBackupPath(operation, context), StringComparison.OrdinalIgnoreCase) || hash.Length != 64))
+            || (!existed && (backup.Length != 0 || hash.Length != 0 || beforeAccess.Length != 0)))
+            throw new IOException("Prepared file recovery state does not match this operation and installation.");
+        AtomicFileWriter.ValidatePath(destination);
+        if (existed) AtomicFileWriter.ValidatePath(backup);
+        if (OperatingSystem.IsWindows() && existed && beforeAccess.Length == 0)
+            throw new IOException("Prepared Windows file recovery state is missing its access rules.");
+        return new FileRollbackState(destination, existed, backup, hash, beforeAccess);
     }
 
     /// <summary>
@@ -260,7 +289,23 @@ public sealed class FileCopyResourceProvider : IResourceProvider
         if (!_rollback.TryGetValue(operation.Id, out var state))
         {
             if (context.ReplayRollback)
-                return DeleteReplayDestination(operation, context);
+            {
+                FileRollbackState? prepared;
+                try { prepared = ReadPreparedState(operation, context); }
+                catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
+                { Diag.Debug("FileCopyResourceProvider", "Replay state was rejected.", ex); return Error("BI3017", operation.Id, ex.Message); }
+                if (context.RestoreBeforeState)
+                    return prepared is not null ? RestorePrepared(operation, prepared)
+                        : Error("BI3021", operation.Id, "File recovery requires a durable before-state; it is unavailable for this operation.");
+                var removed = DeleteReplayDestination(operation, context);
+                if (removed.Code != ResourceProviderResultCode.Failed && prepared?.ExistedBefore == true)
+                {
+                    try { File.Delete(prepared.BackupPath); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { Diag.Debug("FileCopyResourceProvider", "Owned recovery backup cleanup failed.", ex); return Error("BI3018", operation.Id, ex.Message); }
+                }
+                return removed;
+            }
 
             return new ResourceProviderResult
             {
@@ -269,32 +314,7 @@ public sealed class FileCopyResourceProvider : IResourceProvider
             };
         }
 
-        try
-        {
-            if (state.ExistedBefore)
-            {
-                if (!File.Exists(state.BackupPath))
-                    return Error("BI3011", operation.Id, $"File rollback backup is missing: {state.BackupPath}");
-
-                Directory.CreateDirectory(Path.GetDirectoryName(state.Destination)!);
-                File.Copy(state.BackupPath, state.Destination, overwrite: true);
-            }
-            else if (File.Exists(state.Destination))
-            {
-                File.Delete(state.Destination);
-            }
-
-            return new ResourceProviderResult
-            {
-                Message = state.ExistedBefore
-                    ? $"Restored previous file: {state.Destination}"
-                    : $"Deleted created file: {state.Destination}"
-            };
-        }
-        catch (Exception ex)
-        {
-            return Error("BI3012", operation.Id, $"Failed to roll back file '{state.Destination}': {ex.Message}");
-        }
+        return RestorePrepared(operation, state);
     }
 
     public ResourceProviderResult Verify(CompiledInstallOperation operation, ResourceProviderContext context)
@@ -439,5 +459,33 @@ public sealed class FileCopyResourceProvider : IResourceProvider
             }
         };
 
-    private sealed record FileRollbackState(string Destination, bool ExistedBefore, string BackupPath);
+    private static ResourceProviderResult RestorePrepared(CompiledInstallOperation operation, FileRollbackState state)
+    {
+        try
+        {
+            if (!state.ExistedBefore)
+            {
+                if (File.Exists(state.Destination)) File.Delete(state.Destination);
+            }
+            else if (File.Exists(state.BackupPath))
+            {
+                if (FileHash(state.BackupPath) != state.BeforeSha256) return Error("BI3019", operation.Id, "File recovery backup hash does not match its checkpoint.");
+                AtomicFileWriter.CopyFile(state.BackupPath, state.Destination);
+            }
+            else if (!File.Exists(state.Destination) || FileHash(state.Destination) != state.BeforeSha256)
+                return Error("BI3011", operation.Id, "The prepared file backup is missing and the original file is not restored.");
+            if (state.ExistedBefore && OperatingSystem.IsWindows())
+            {
+                var access = new System.Security.AccessControl.FileSecurity();
+                access.SetSecurityDescriptorSddlForm(state.BeforeAccess, System.Security.AccessControl.AccessControlSections.Access);
+                new FileInfo(state.Destination).SetAccessControl(access);
+            }
+            if (state.ExistedBefore) File.Delete(state.BackupPath);
+            return new ResourceProviderResult { Message = "Restored prepared file before-state." };
+        }
+        catch (Exception ex)
+        { Diag.Debug("FileCopyResourceProvider", "Prepared file restoration failed.", ex); return Error("BI3012", operation.Id, ex.Message); }
+    }
+
+    private sealed record FileRollbackState(string Destination, bool ExistedBefore, string BackupPath, string BeforeSha256 = "", string BeforeAccess = "");
 }

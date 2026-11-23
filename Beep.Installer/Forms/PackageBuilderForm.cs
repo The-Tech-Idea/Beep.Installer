@@ -36,10 +36,11 @@ public class PackageBuilderForm : Form
     private InstallProject _project;
 
     private ToolStrip _toolbar = null!;
-    private ToolStripButton _undoButton = null!, _redoButton = null!;
-    private ToolStripButton? _releaseButton;
-    private ToolStripButton? _comparisonButton;
-    private ToolStripDropDownButton _recentsBtn = null!;
+    private MenuStrip _menuBar = null!;
+    private ToolStripMenuItem _undoButton = null!, _redoButton = null!;
+    private ToolStripMenuItem? _releaseButton;
+    private ToolStripMenuItem? _comparisonButton;
+    private ToolStripMenuItem _recentsBtn = null!;
     private StatusStrip _status = null!;
     private ToolStripStatusLabel _statusLabel = null!;
     private ToolStripStatusLabel _dirtyLabel = null!;
@@ -237,6 +238,7 @@ public class PackageBuilderForm : Form
         if (disposing)
         {
             _themeBinding.Dispose();
+            TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.ThemeChanged -= OnToolbarThemeChanged;
             Lang.LanguageManager.LanguageChanged -= OnHistoryLanguageChanged;
             _controller.PropertyChanged -= OnControllerPropertyChanged;
             _controller.ProjectReloaded -= OnControllerProjectReloaded;
@@ -468,7 +470,7 @@ public class PackageBuilderForm : Form
         Font = UiFont;
         BackColor = ShellBackColor;
 
-        _recentsBtn = new ToolStripDropDownButton(L("Builder_Recent", "Recent")) { ToolTipText = L("Builder_RecentlyOpenedInstallerScripts", "Recently opened installer scripts") };
+        _recentsBtn = new ToolStripMenuItem(L("Builder_Recent", "Recent")) { ToolTipText = L("Builder_RecentlyOpenedInstallerScripts", "Recently opened installer scripts") };
         _recentsBtn.Name = "Builder_Recent";
         C("Builder_Recent", "Recent").Bind(_recentsBtn, C("Builder_RecentlyOpenedInstallerScripts", "Recently opened installer scripts"));
         _toolbar = new ToolStrip
@@ -479,20 +481,17 @@ public class PackageBuilderForm : Form
             Padding = new Padding(8, 6, 8, 6),
             RenderMode = ToolStripRenderMode.System,
         };
+        _toolbar.Name = "BuilderToolbar";
+        _toolbar.ShowItemToolTips = true;
         _toolbar.Items.AddRange(new ToolStripItem[]
         {
-            NewButton(), OpenButton(), SaveButton(), SaveAsButton(),
-            _undoButton = MakeButton(C("History_Undo", "Undo"), "Ctrl+Z", (_, _) => RestoreAuthoringHistory(false)),
-            _redoButton = MakeButton(C("History_Redo", "Redo"), "Ctrl+Y", (_, _) => RestoreAuthoringHistory(true)),
-            new ToolStripSeparator(), RecentButton(), new ToolStripSeparator(),
-            // Grouped by intent: how to start, then the build-and-release path, then the occasional tools
-            // folded into one menu so the bar fits and nothing falls into the overflow arrow.
-            GuideButton(), QuickStartButton(), new ToolStripSeparator(),
-            PreviewButton(), BuildButton(), PackagingButton(), SigningButton(), PublishButton(), new ToolStripSeparator(),
-            McpButton(), MoreToolsMenu()
+            MakeButton(C("Builder_ValidationTitle", "Validation center"), C("Builder_ValidationTitle", "Validation center"), (_, _) => ValidateProject()),
+            BuildButton(), PreviewButton(), new ToolStripSeparator(),
+            PackagingButton(), SigningButton(), PublishButton()
         });
+        BuildMenuBar();
         ApplyToolbarIcons();
-        TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.ThemeChanged += (_, _) => { if (!IsDisposed && IsHandleCreated) BeginInvoke(ApplyToolbarIcons); };
+        TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.ThemeChanged += OnToolbarThemeChanged;
 
         _nav = new LeftNavPanel { Dock = DockStyle.Fill, BackColor = InstallerTheme.Sidebar };
         PopulateLeftNav();
@@ -566,6 +565,7 @@ public class PackageBuilderForm : Form
 
         Controls.Add(split);
         Controls.Add(_toolbar);
+        Controls.Add(_menuBar);
         Controls.Add(_status);
 
         BuildWelcomePanel();
@@ -2404,59 +2404,85 @@ public class PackageBuilderForm : Form
     //  Toolbar
     // ═══════════════════════════════════════════
 
-    /// <summary>The less frequent authoring tools, in one menu. The buttons keep their live captions and handlers.</summary>
-    private ToolStripDropDownButton MoreToolsMenu()
+    private void BuildMenuBar()
     {
-        var more = new ToolStripDropDownButton(L("Toolbar_More", "More"))
+        _menuBar = new MenuStrip { Name = "BuilderMenuBar", Dock = DockStyle.Top, Font = Font,
+            ShowItemToolTips = true, Padding = new Padding(8, 4, 8, 4) };
+        var file = MakeMenuItem(C("Menu_File", "File"));
+        file.DropDownItems.AddRange(new ToolStripItem[]
         {
-            Name = "Toolbar_More",
-            ToolTipText = L("Toolbar_MoreHint", "Updates, templates, actions, conditions, recipes, release overview and project comparison"),
-            Font = UiFont,
-        };
-        foreach (var tool in new ToolStripItem[] { RecoveryButton(), UpdatesButton(), TemplateButton(), ActionsButton(), ConditionsButton(), RecipeButton(), ReleaseButton(), ComparisonButton(), new ToolStripSeparator(), LangButton(), HelpButton(), AboutButton() })
+            MakeMenuItem(C("Toolbar_New", "New"), C("Toolbar_NewHint", "New installer script"), (_, _) => NewProject(), Keys.Control | Keys.N),
+            MakeMenuItem(C("Toolbar_Open", "Open"), C("Toolbar_OpenHint", "Open installer script"), (_, _) => OpenProject(), Keys.Control | Keys.O),
+            _recentsBtn, new ToolStripSeparator(),
+            MakeMenuItem(C("Common_Save", "Save"), C("Toolbar_SaveHint", "Save installer script"), (_, _) => SaveProject(), Keys.Control | Keys.S),
+            MakeMenuItem(C("Builder_SaveAsTitle", "Save As"), C("Toolbar_SaveAsHint", "Save installer script as"), (_, _) => SaveProjectAs(), Keys.Control | Keys.Shift | Keys.S),
+            new ToolStripSeparator(), RecoveryButton(), new ToolStripSeparator(),
+            MakeMenuItem(C("Menu_Exit", "Exit"), C("Menu_Exit", "Exit"), (_, _) => Close(), Keys.Alt | Keys.F4)
+        });
+        RefreshRecents();
+        var edit = MakeMenuItem(C("Menu_Edit", "Edit"));
+        _undoButton = MakeMenuItem(C("History_Undo", "Undo"), C("History_Undo", "Undo"), (_, _) => UndoAuthoring(), Keys.Control | Keys.Z);
+        _redoButton = MakeMenuItem(C("History_Redo", "Redo"), C("History_Redo", "Redo"), (_, _) => RestoreAuthoringHistory(true), Keys.Control | Keys.Y);
+        edit.DropDownItems.AddRange(new ToolStripItem[] { _undoButton, _redoButton });
+        var view = MakeMenuItem(C("Menu_View", "View"));
+        view.DropDownItems.AddRange(new ToolStripItem[] { GuideButton(), QuickStartButton(), new ToolStripSeparator(), LangButton() });
+        var project = MakeMenuItem(C("Menu_Project", "Project"));
+        project.DropDownItems.AddRange(new ToolStripItem[]
         {
-            if (tool is ToolStripButton) tool.AutoSize = true;
-            more.DropDownItems.Add(tool);
-        }
-        C("Toolbar_More", "More").Bind(more, C("Toolbar_MoreHint", "Updates, templates, actions, conditions, recipes, release overview and project comparison"));
-        return more;
+            TemplateButton(), ActionsButton(), ConditionsButton(), RecipeButton(), new ToolStripSeparator(),
+            ReleaseButton(), ComparisonButton(), new ToolStripSeparator(), UpdatesButton(), McpButton()
+        });
+        var help = MakeMenuItem(C("Menu_Help", "Help"));
+        help.DropDownItems.AddRange(new ToolStripItem[] { HelpButton(), AboutButton() });
+        _menuBar.Items.AddRange(new ToolStripItem[] { file, edit, view, project, help });
+        MainMenuStrip = _menuBar;
+    }
+
+    private static ToolStripMenuItem MakeMenuItem(LiveUiCaption text, LiveUiCaption? tip = null,
+        EventHandler? handler = null, Keys shortcut = Keys.None)
+    {
+        var item = new ToolStripMenuItem { Name = text.Key ?? "", ShortcutKeys = shortcut };
+        text.Bind(item, tip);
+        if (handler is not null) item.Click += handler;
+        return item;
     }
 
     private static readonly (string Key, string[] Icon)[] ToolbarIconMap =
     {
-        ("Toolbar_New", new[] { "plus", "file-plus" }), ("Toolbar_Open", new[] { "fi-tr-folder-open", "folder-open" }),
-        ("Common_Save", new[] { "fi-tr-floppy-disk-pen", "floppy-disk-fill" }), ("Builder_SaveAsTitle", new[] { "fi-tr-copy", "copy" }),
-        ("History_Undo", new[] { "fi-tr-undo-alt", "fi-tr-undo" }), ("History_Redo", new[] { "fi-tr-redo-alt" }),
-        ("Builder_Recent", new[] { "fi-tr-time-past", "clock" }), ("Toolbar_Guided", new[] { "fi-tr-sparkles", "sparkles" }),
-        ("Quick_Button", new[] { "fi-tr-bolt", "bolt" }), ("Toolbar_Preview", new[] { "eye" }),
-        ("Builder_BuildTitle", new[] { "fi-tr-hammer", "fi-tr-tools", "settings" }), ("Packaging_Button", new[] { "box-multiple", "stack-2" }),
-        ("Signing_Button", new[] { "fi-tr-certificate", "shield-check" }), ("Builder_PublishTitle", new[] { "fi-tr-rocket", "fi-tr-cloud-upload" }),
-        ("Update_Title", new[] { "refresh" }), ("Toolbar_Mcp", new[] { "fi-tr-robot", "sparkles" }),
-        ("Toolbar_More", new[] { "dots", "menu-2", "menu" }),
+        ("Builder_ValidationTitle", new[] { "toolbar-validate" }),
+        ("Builder_BuildTitle", new[] { "toolbar-build" }),
+        ("Toolbar_Preview", new[] { "toolbar-preview" }),
+        ("Packaging_Button", new[] { "toolbar-package" }),
+        ("Signing_Button", new[] { "toolbar-signing" }),
+        ("Builder_PublishTitle", new[] { "toolbar-publish" })
     };
 
-    /// <summary>Gives each top-level toolbar item its Beep icon above its caption (the Fluent command-bar layout).</summary>
+    private void OnToolbarThemeChanged(object? sender, EventArgs e)
+    {
+        if (IsDisposed || Disposing || !IsHandleCreated) return;
+        if (InvokeRequired) { BeginInvoke(ApplyToolbarIcons); return; }
+        ApplyToolbarIcons();
+    }
+
+    /// <summary>Compact theme-aware SVG actions; translated tooltips and names remain available.</summary>
     private void ApplyToolbarIcons()
     {
         if (_toolbar is null) return;
-        _toolbar.ImageScalingSize = new Size(22, 22);
+        _toolbar.ImageScalingSize = new Size(24, 24);
         foreach (var (key, icon) in ToolbarIconMap)
         {
             var item = _toolbar.Items.Cast<ToolStripItem>().FirstOrDefault(i => i.Name == key);
-            var image = item is null ? null : BeepIcons.Render(22, icon);
-            if (item is null || image is null) continue;
-            item.Image = image;
+            if (item is null) continue;
+            var resource = BeepIcons.Find(icon);
+            var color = InstallerTheme.AccessibleForeground(InstallerTheme.Text, InstallerTheme.Panel);
+            item.Image = BeepIcons.Render(resource, 24, color) ?? throw new InvalidOperationException($"Missing toolbar SVG: {key}");
             item.ImageScaling = ToolStripItemImageScaling.None;
-            item.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
-            item.TextImageRelation = TextImageRelation.ImageAboveText;
+            item.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            item.AutoSize = false; item.Size = new Size(48, 48);
+            item.TextImageRelation = TextImageRelation.Overlay;
         }
     }
 
-    private ToolStripButton NewButton() => MakeButton(C("Toolbar_New", "New"), C("Toolbar_NewHint", "New installer script"), (_, _) => NewProject());
-    private ToolStripButton OpenButton() => MakeButton(C("Toolbar_Open", "Open"), C("Toolbar_OpenHint", "Open installer script"), (_, _) => OpenProject());
-    private ToolStripButton SaveButton() => MakeButton(C("Common_Save", "Save"), C("Toolbar_SaveHint", "Save installer script"), (_, _) => SaveProject());
-    private ToolStripButton SaveAsButton() => MakeButton(C("Builder_SaveAsTitle", "Save As"), C("Toolbar_SaveAsHint", "Save installer script as"), (_, _) => SaveProjectAs());
-    private ToolStripDropDownButton RecentButton() { RefreshRecents(); return _recentsBtn; }
     private ToolStripButton PackagingButton() => MakeButton(
         C("Packaging_Button", "Format"),
         C("Packaging_ButtonHint", "Choose the output format and see what it cannot carry"),
@@ -2492,7 +2518,7 @@ public class PackageBuilderForm : Form
     /// closing this form keeps the main application alive. A modal guided shell returns to this
     /// same editor through either "Open full editor" or the window close action.
     /// </summary>
-    private ToolStripButton GuideButton() => MakeButton(
+    private ToolStripMenuItem GuideButton() => MakeMenuItem(
         C("Toolbar_Guided", "Guided"),
         C("Toolbar_GuidedHint", "Switch to the guided step-by-step view"),
         (_, _) => ShowGuided());
@@ -2517,7 +2543,7 @@ public class PackageBuilderForm : Form
         }
     }
 
-    private ToolStripButton QuickStartButton() => MakeButton(
+    private ToolStripMenuItem QuickStartButton() => MakeMenuItem(
         C("Quick_Button", "Quick Start"),
         C("Quick_ButtonHint", "Guided setup of the fields a build requires"),
         (_, _) =>
@@ -2539,16 +2565,16 @@ public class PackageBuilderForm : Form
         return b;
     }
     private ToolStripButton PublishButton() => MakeButton(C("Builder_PublishTitle", "Publish"), C("Toolbar_PublishHint", "Publish as ClickOnce"), (_, _) => PublishProject());
-    private ToolStripButton UpdatesButton() => MakeButton(C("Update_Title", "Update center"), C("Update_Instructions", "Enter the installed version and trusted public keys. Close the application being updated before applying."), (_, _) =>
+    private ToolStripMenuItem UpdatesButton() => MakeMenuItem(C("Update_Title", "Update center"), C("Update_Instructions", "Enter the installed version and trusted public keys. Close the application being updated before applying."), (_, _) =>
     {
         using var form = global::Beep.Installer.Program.CreateUpdateCenter(_project, _runtimeArgs);
         form.ShowDialog(ActionOwner);
     });
-    private ToolStripButton TemplateButton() => MakeButton(C("Toolbar_Templates", "Templates"), C("Toolbar_TemplatesHint", "Preview and apply a built-in template update"), (_, _) => UpdateFromTemplate());
-    private ToolStripButton ActionsButton() => MakeButton(C("Toolbar_Actions", "Actions"), C("Toolbar_ActionsHint", "Edit custom actions"), (_, _) => EditCustomActions());
-    private ToolStripButton RecipeButton() => MakeButton(C("Recipe_Title", "Resource recipes"), C("Recipe_Preview", "Preview changes"), (_, _) => ShowResourceRecipe());
-    private ToolStripButton ReleaseButton() => _releaseButton = MakeButton(C("Release_Title", "Release overview"), C("Release_Notice", "Generated assets do not prove deployment succeeded."), (_, _) => ShowReleaseOverview());
-    private ToolStripButton ComparisonButton() => _comparisonButton = MakeButton(C("Comparison_Title", "Compare projects"), C("Comparison_Select", "Choose a baseline project"), (_, _) => ShowProjectComparison());
+    private ToolStripMenuItem TemplateButton() => MakeMenuItem(C("Toolbar_Templates", "Templates"), C("Toolbar_TemplatesHint", "Preview and apply a built-in template update"), (_, _) => UpdateFromTemplate());
+    private ToolStripMenuItem ActionsButton() => MakeMenuItem(C("Toolbar_Actions", "Actions"), C("Toolbar_ActionsHint", "Edit custom actions"), (_, _) => EditCustomActions());
+    private ToolStripMenuItem RecipeButton() => MakeMenuItem(C("Recipe_Title", "Resource recipes"), C("Recipe_Preview", "Preview changes"), (_, _) => ShowResourceRecipe());
+    private ToolStripMenuItem ReleaseButton() => _releaseButton = MakeMenuItem(C("Release_Title", "Release overview"), C("Release_Notice", "Generated assets do not prove deployment succeeded."), (_, _) => ShowReleaseOverview());
+    private ToolStripMenuItem ComparisonButton() => _comparisonButton = MakeMenuItem(C("Comparison_Title", "Compare projects"), C("Comparison_Select", "Choose a baseline project"), (_, _) => ShowProjectComparison());
 
     internal void ShowProjectComparison(Form? owner = null)
     {
@@ -2584,16 +2610,16 @@ public class PackageBuilderForm : Form
         using var dialog = new ResourceRecipeDialog(() => _controller.Project, _controller.ApplyResourceRecipe, kind, DefaultMainExecutableReference());
         return dialog.ShowDialog(owner ?? ActionOwner) == DialogResult.OK;
     }
-    private ToolStripButton ConditionsButton() => MakeButton(C("Toolbar_Conditions", "Conditions"), C("Toolbar_ConditionsHint", "Edit component conditions"), (_, _) => EditComponentConditions());
-    private ToolStripButton LangButton() => MakeButton(C("Toolbar_Languages", "Languages"), C("AuthoringLanguage_Title", "UI language"), (_, _) => { using var f = new AuthoringLanguageDialog(); f.ShowDialog(ActionOwner); });
-    private ToolStripButton AboutButton() => MakeButton(C("Toolbar_About", "About"), C("Builder_AboutTitle", "About Beep Installer"), (_, _) => ShowAbout());
-    private ToolStripButton McpButton() => MakeButton(C("Toolbar_Mcp", "AI / MCP"), C("Toolbar_McpHint", "Use this installer from Claude, Codex and other AI assistants (MCP server)"), (_, _) =>
+    private ToolStripMenuItem ConditionsButton() => MakeMenuItem(C("Toolbar_Conditions", "Conditions"), C("Toolbar_ConditionsHint", "Edit component conditions"), (_, _) => EditComponentConditions());
+    private ToolStripMenuItem LangButton() => MakeMenuItem(C("Toolbar_Languages", "Languages"), C("AuthoringLanguage_Title", "UI language"), (_, _) => { using var f = new AuthoringLanguageDialog(); f.ShowDialog(ActionOwner); });
+    private ToolStripMenuItem AboutButton() => MakeMenuItem(C("Toolbar_About", "About"), C("Builder_AboutTitle", "About Beep Installer"), (_, _) => ShowAbout());
+    private ToolStripMenuItem McpButton() => MakeMenuItem(C("Toolbar_Mcp", "AI / MCP"), C("Toolbar_McpHint", "Use this installer from Claude, Codex and other AI assistants (MCP server)"), (_, _) =>
     {
         var exe = Environment.ProcessPath ?? throw new InvalidOperationException("The installer cannot locate its own executable.");
         using var dialog = new McpServerDialog(exe);
         dialog.ShowDialog(ActionOwner);
     });
-    private new ToolStripButton HelpButton() => MakeButton(C("Toolbar_Help", "Help"), C("Toolbar_HelpHint", "Show help"), (_, _) => ShowHelp());
+    private new ToolStripMenuItem HelpButton() => MakeMenuItem(C("Toolbar_Help", "Help"), C("Toolbar_HelpHint", "Show help"), (_, _) => ShowHelp());
     private static ToolStripButton MakeButton(LiveUiCaption text, LiveUiCaption tip, EventHandler handler)
     {
         var b = new ToolStripButton(text.Value)
@@ -2700,7 +2726,7 @@ public class PackageBuilderForm : Form
         RefreshRecents();
     }
 
-    private ToolStripButton RecoveryButton() => MakeButton(C("Recovery_Title", "Recover unsaved project"), C("Recovery_Help", "Choose an unsaved draft"), (_, _) => RecoverProject());
+    private ToolStripMenuItem RecoveryButton() => MakeMenuItem(C("Recovery_Title", "Recover unsaved project"), C("Recovery_Help", "Choose an unsaved draft"), (_, _) => RecoverProject());
 
     internal bool HasPendingScriptChanges => _scriptEditorDirty;
 
@@ -3050,9 +3076,14 @@ public class PackageBuilderForm : Form
         _scriptDebounce?.Stop();
         base.OnFormClosing(e);
     }
+    private void UndoAuthoring()
+    {
+        if (!AuthoringHistoryKeyboard.UndoFocusedText(this)) RestoreAuthoringHistory(false);
+    }
+
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Control && e.KeyCode == Keys.Z) { if (!AuthoringHistoryKeyboard.UndoFocusedText(this)) RestoreAuthoringHistory(false); e.SuppressKeyPress = true; return; }
+        if (e.Control && e.KeyCode == Keys.Z) { UndoAuthoring(); e.SuppressKeyPress = true; return; }
         if (e.Control && e.KeyCode == Keys.Y) { RestoreAuthoringHistory(true); e.SuppressKeyPress = true; return; }
         if (e.Control && e.Shift && e.KeyCode == Keys.S) { SaveProjectAs(); e.Handled = true; return; }
         if (e.Control && e.Shift && e.KeyCode == Keys.Tab) { _nav.SelectAdjacentSection(-1); e.Handled = true; return; }
@@ -3515,9 +3546,10 @@ public class PackageBuilderForm : Form
     {
         var noProject = _welcomePanel is { Visible: true };
         if (_toolbar is not null)
-            foreach (var item in _toolbar.Items.OfType<ToolStripButton>())
-                if (item.Name is "Builder_BuildTitle" or "Toolbar_Preview" or "Builder_PublishTitle" or "Signing_Button")
-                    item.Enabled = !noProject;
+            foreach (var item in _toolbar.Items.OfType<ToolStripButton>()) item.Enabled = !noProject;
+        if (_menuBar is not null && _menuBar.Items[0] is ToolStripMenuItem file)
+            foreach (var item in file.DropDownItems.OfType<ToolStripMenuItem>())
+                if (item.Name is "Common_Save" or "Builder_SaveAsTitle") item.Enabled = !noProject;
         // The section links and their search edit a project; with none open they would lead to editors with nothing to edit,
         // so the whole left panel stays hidden until a project is created or opened.
         if (_nav?.Parent?.Parent?.Parent is SplitContainer navSplit) navSplit.Panel1Collapsed = noProject;

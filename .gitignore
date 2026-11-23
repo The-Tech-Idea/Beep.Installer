@@ -369,3 +369,11 @@ Beep.Installer/samples/build/
 Beep.Installer/output/
 # Self-contained runnable build (scripts/Publish-Installer.ps1)
 dist/
+
+# Local acceptance executables, probes and machine-specific evidence stay on the test host.
+# Keep reviewable summaries and tested-source/runtime digests in the repository.
+plans/enhancements/design-evidence/acceptance-package/*
+!plans/enhancements/design-evidence/acceptance-package/README.md
+!plans/enhancements/design-evidence/acceptance-package/OPERATOR-CHECKS.md
+!plans/enhancements/design-evidence/acceptance-package/prepared-native-verification.json
+!plans/enhancements/design-evidence/acceptance-package/prepared-tested-source.json

@@ -31,8 +31,8 @@ public sealed class ResourceJournalAbandonResult
 /// Central recovery logic for typed resource journals.
 ///
 /// The runtime, CLI and tests call this class instead of duplicating journal replay rules.
-/// A typed resource is considered pending rollback when it has a successful apply snapshot
-/// and no later successful rollback entry for the same operation id.
+/// A resource is pending rollback when it has a prepared before-state or successful apply
+/// snapshot and no later successful rollback or superseding entry for that operation.
 /// </summary>
 public static class ResourceJournalRecoveryService
 {
@@ -83,7 +83,66 @@ public static class ResourceJournalRecoveryService
     }
 
     public static IEnumerable<CompiledInstallOperation> OperationsToReplay(ResourceExecutionJournal journal)
-        => ActiveOperations(journal).Where(operation => operation.RollbackSupported);
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var entry in journal.Entries.AsEnumerable().Reverse())
+        {
+            if (entry.ResultCode != ResourceProviderResultCode.Succeeded) continue;
+            if (entry.Action is ResourceExecutionAction.Rollback or ResourceExecutionAction.Supersede)
+            { seen.Add(entry.OperationId); continue; }
+            if (entry.Action is not (ResourceExecutionAction.Apply or ResourceExecutionAction.PrepareApply)
+                || entry.Operation is null || !seen.Add(entry.OperationId)) continue;
+            if (entry.Operation.RollbackSupported) yield return entry.Operation;
+        }
+    }
+
+    public static IReadOnlyDictionary<string, string> PreparedState(ResourceExecutionJournal journal, string operationId)
+    {
+        foreach (var entry in journal.Entries.AsEnumerable().Reverse().Where(entry => entry.OperationId == operationId))
+        {
+            if (entry.Action is ResourceExecutionAction.Rollback or ResourceExecutionAction.Supersede
+                && entry.ResultCode == ResourceProviderResultCode.Succeeded) break;
+            if (entry.Action == ResourceExecutionAction.PrepareApply && entry.ResultCode == ResourceProviderResultCode.Succeeded)
+                return entry.RecoveryState;
+        }
+        return new Dictionary<string, string>();
+    }
+
+    public static bool IsCompleted(ResourceExecutionJournal journal, string operationId)
+    {
+        var entries = journal.Entries;
+        for (var index = entries.Count - 1; index >= 0; index--)
+        {
+            var entry = entries[index];
+            if (!string.Equals(entry.OperationId, operationId, StringComparison.Ordinal))
+                continue;
+
+            if (entry.Action is ResourceExecutionAction.Rollback or ResourceExecutionAction.Supersede
+                && entry.ResultCode == ResourceProviderResultCode.Succeeded)
+                return false;
+
+            if (entry.Action == ResourceExecutionAction.PrepareApply
+                && entry.ResultCode == ResourceProviderResultCode.Succeeded) return false;
+
+            if (entry.Action != ResourceExecutionAction.Verify
+                || entry.ResultCode != ResourceProviderResultCode.Succeeded)
+                continue;
+
+            return entries
+                .Take(index)
+                .Reverse()
+                .TakeWhile(earlier => earlier.OperationId != operationId
+                    || earlier.Action is not (ResourceExecutionAction.Rollback or ResourceExecutionAction.Supersede)
+                    || earlier.ResultCode != ResourceProviderResultCode.Succeeded)
+                .Any(earlier => earlier.OperationId == operationId
+                                && earlier.Action == ResourceExecutionAction.Apply
+                                && earlier.ResultCode == ResourceProviderResultCode.Succeeded);
+        }
+
+        return false;
+    }
+
+
 
     public static IEnumerable<CompiledInstallOperation> ActiveOperations(ResourceExecutionJournal journal)
     {

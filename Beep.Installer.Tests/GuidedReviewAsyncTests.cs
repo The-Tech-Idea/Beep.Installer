@@ -45,6 +45,64 @@ public sealed class GuidedReviewAsyncTests
     }
 
     [Fact]
+    public void LargeProjectUsesFullDetachedValidationAndKeepsCaptureAndCompletionResponsive()
+    {
+        Sta(() =>
+        {
+            const int count = 3000;
+            var bootstrap = System.Diagnostics.Stopwatch.StartNew();
+            var theme = TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.CurrentThemeName;
+            TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.InitializeThemes();
+            TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.SetCurrentTheme("ModernTheme");
+            var root = Path.Combine(Path.GetTempPath(), "BeepLargeReview_" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+            var payload = Path.Combine(root, "owned.txt"); File.WriteAllText(payload, "x");
+            try
+            {
+                var project = Project(); project.Components.Clear(); project.SourceDirectory = root;
+                for (var group = 0; group < 100; group++)
+                {
+                    var component = new InstallComponent { Id = "core" + group, Name = "Owned component " + group };
+                    for (var i = 0; i < count / 100; i++) component.Files.Add(new FileCopyOperation { SourcePath = payload, DestinationPath = "assets" + group + "/owned" + i + ".txt", Description = "Authored value" });
+                    project.Components.Add(component);
+                }
+                project.SchemaVersion = ""; var before = Model(project); var built = 0;
+                using var host = new Form { Size = new System.Drawing.Size(1000, 700), BackColor = Beep.Installer.Ui.InstallerTheme.Shell };
+                // Program initializes themes and the authoring shell before users enter Review.
+                var fixtureSetupMs = bootstrap.ElapsedMilliseconds;
+                var watch = System.Diagnostics.Stopwatch.StartNew(); var lastTick = 0L; var longestGap = 0L; var ticks = 0;
+                using var heartbeat = new System.Windows.Forms.Timer { Interval = 10 };
+                heartbeat.Tick += (_, _) => { var now = watch.ElapsedMilliseconds; longestGap = Math.Max(longestGap, now - lastTick); lastTick = now; ticks++; };
+                heartbeat.Start();
+                using var page = new GuidedReviewPage(project, _ => { }, () => built++);
+                var captureMs = watch.ElapsedMilliseconds;
+                var evaluate = page.Evaluate; InstallProject? candidate = null;
+                page.Evaluate = (captured, token) => { candidate = captured; return evaluate(captured, token); };
+                host.Controls.Add(page); host.Show(); var shownMs = watch.ElapsedMilliseconds;
+                Build(page).Enabled.Should().BeFalse(); UiStaTest.Pump(page.PendingCheck!);
+                longestGap = Math.Max(longestGap, watch.ElapsedMilliseconds - lastTick); var firstCheckMs = watch.ElapsedMilliseconds;
+                var retryStart = watch.ElapsedMilliseconds; var retry = page.RefreshAsync(); var retryCaptureMs = watch.ElapsedMilliseconds - retryStart;
+                UiStaTest.Pump(retry); longestGap = Math.Max(longestGap, watch.ElapsedMilliseconds - lastTick);
+                heartbeat.Stop();
+                candidate.Should().NotBeNull(); candidate.Should().NotBeSameAs(project);
+                candidate!.Components.Sum(component => component.Files.Count).Should().Be(count);
+                candidate.SchemaVersion.Should().Be(ProjectSchemaService.CurrentVersion);
+                Model(project).Should().Be(before); project.SchemaVersion.Should().BeEmpty();
+                Descendants(page).Count().Should().BeLessThan(500, "valid large payloads must use bounded summary rows");
+                page.Diagnostics.Should().NotContain(issue => issue.Severity == ProjectSchemaDiagnosticSeverity.Error);
+                Build(page).Enabled.Should().BeTrue(); ticks.Should().BeGreaterThan(0);
+                var output = Environment.GetEnvironmentVariable("BEEP_LARGE_REVIEW_EVIDENCE");
+                if (!string.IsNullOrWhiteSpace(output)) File.WriteAllText(output, JsonSerializer.Serialize(new { count, components = project.Components.Count, fixtureSetupMs, captureMs, shownMs, firstCheckMs, retryCaptureMs, totalMs = watch.ElapsedMilliseconds, heartbeatTicks = ticks, maximumMessageLoopGapMs = longestGap, diagnosticCount = page.Diagnostics.Count }, new JsonSerializerOptions { WriteIndented = true }));
+                captureMs.Should().BeLessThan(1000, "entering Review must fit the one-second fixture budget"); retryCaptureMs.Should().BeLessThan(1000, "Check again must fit the same interactive budget"); longestGap.Should().BeLessThan(2000);
+                project.Components.Last().Files.Last().Description = "Later unnotified edit";
+                Build(page).PerformClick(); built.Should().Be(0); Build(page).Enabled.Should().BeFalse();
+                Status(page).Should().Be(LanguageManager.GetString("Review_CheckChanged"));
+
+            }
+            finally { File.Delete(payload); Directory.Delete(root); TheTechIdea.Beep.Winform.Controls.ThemeManagement.BeepThemesManager.CurrentThemeName = theme; }
+        });
+    }
+
+    [Fact]
     public void HeldWorkerLeavesUiResponsiveUsesDetachedFullModelAndPublishesExactDiagnosticLink()
     {
         Sta(() =>

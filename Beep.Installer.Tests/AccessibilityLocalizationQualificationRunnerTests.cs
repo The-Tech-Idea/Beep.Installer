@@ -146,6 +146,52 @@ public sealed class AccessibilityLocalizationQualificationRunnerTests : IDisposa
         diagnostics.Should().Contain(d => d.Code == "BI2763" && d.Path.EndsWith("arabic-150", StringComparison.Ordinal));
     }
 
+    private static string CurrentRtlHelper()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            var path = Path.Combine(directory.FullName, "Beep.Installer", "Engine", "RtlHelper.cs");
+            if (File.Exists(path)) return File.ReadAllText(path);
+        }
+        throw new InvalidOperationException("Current first-party RTL helper source was not found.");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CurrentBidirectionalOwnerPassesWiringAndBrokenChromeStillFails(bool breakChrome)
+    {
+        var sourceRoot = CreateQualifiedSourceRoot();
+        var source = CurrentRtlHelper(); source.Should().NotBeNullOrWhiteSpace();
+        if (breakChrome)
+        {
+            source.Should().Contain("RightToLeftLayout = rightToLeft");
+            source = source.Replace("RightToLeftLayout = rightToLeft", "RightToLeftLayout = false", StringComparison.Ordinal);
+        }
+        File.WriteAllText(Path.Combine(sourceRoot, "Beep.Installer", "Engine", "RtlHelper.cs"), source);
+        var report = new AccessibilityLocalizationQualificationRunner().Run(new() { SourceRoot = sourceRoot, OutputDirectory = Path.Combine(_root, "current-rtl"), RequireManualEvidence = true });
+        var rtl = report.Scenarios.Single(s => s.Id == "arabic-rtl-readiness");
+        rtl.Success.Should().Be(!breakChrome);
+        if (breakChrome) rtl.Diagnostics.Should().Contain(d => d.Code == "BI2711");
+        report.Success.Should().BeFalse("missing real manual evidence must remain blocking even when wiring passes");
+        report.Scenarios.Single(s => s.Id == "manual-walkthrough-evidence").Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ActualNativeOwnerMirrorsAndRestoresItsFormAndChildren()
+    {
+        UiStaTest.Run(() =>
+        {
+            using var form = new System.Windows.Forms.Form();
+            using var field = new System.Windows.Forms.TextBox(); form.Controls.Add(field); form.Show();
+            Beep.Installer.Engine.RtlHelper.IsRtl("ar").Should().BeTrue();
+            Beep.Installer.Engine.RtlHelper.ApplyRtl(form); System.Windows.Forms.Application.DoEvents();
+            form.RightToLeftLayout.Should().BeTrue(); field.RightToLeft.Should().Be(System.Windows.Forms.RightToLeft.Yes);
+            Beep.Installer.Engine.RtlHelper.ApplyDirection(form, false); System.Windows.Forms.Application.DoEvents();
+            form.RightToLeftLayout.Should().BeFalse(); field.RightToLeft.Should().Be(System.Windows.Forms.RightToLeft.No);
+        });
+    }
+
     private string CreateQualifiedSourceRoot()
     {
         var sourceRoot = Path.Combine(_root, "src");
@@ -166,7 +212,13 @@ public sealed class AccessibilityLocalizationQualificationRunnerTests : IDisposa
             public static class RtlHelper
             {
                 public static bool IsRtl(string c) => c == "ar";
-                public static void ApplyRtl(Form form) { form.RightToLeftLayout = true; }
+                public static void ApplyRtl(Form form) => ApplyDirection(form, rightToLeft: true);
+                public static void ApplyDirection(Form form, bool rightToLeft)
+                {
+                    var direction = rightToLeft ? RightToLeft.Yes : RightToLeft.No;
+                    form.RightToLeft = direction;
+                    form.RightToLeftLayout = rightToLeft;
+                }
             }
             """);
         File.WriteAllText(Path.Combine(engine, "Accessibility.cs"), """

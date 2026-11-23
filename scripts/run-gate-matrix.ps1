@@ -12,8 +12,11 @@
       3.M.1  golden .bsetup round-trip · /BUILD -> /S -> /UNINSTALL · cancel
       5.M.1  CLI verb parity · /S · /UNINSTALL · /SELFTEST
 
-    Per-machine cases need elevation and are reported as SKIPPED (not passed) when unelevated, so an
-    unprivileged run cannot silently look like a clean sweep.
+    The default and supplied acceptance fixtures are per-user. Machine-scope cases are SKIPPED;
+    elevation or changing the destination alone does not qualify a machine-scope installation.
+    PrebuiltSetup/PayloadDirectory with SandboxOnly reuses a built fixture in Windows Sandbox
+    without requiring a source checkout or SDK in the guest. Runtime process exit codes and logs
+    are awaited and recorded. Blocked-file refusal does not prove interrupted-install recovery.
 
 .NOTES
     powershell -ExecutionPolicy Bypass -File scripts\run-gate-matrix.ps1
@@ -21,17 +24,30 @@
 [CmdletBinding()]
 param(
     [string] $InstallerExe = "Beep.Installer\bin\Debug\net10.0-windows\Beep.Installer.exe",
-    [string] $EvidencePath = "artifacts\gate-matrix\gate-matrix.json"
+    [string] $EvidencePath = "artifacts\gate-matrix\gate-matrix.json",
+    [string] $PrebuiltSetup,
+    [string] $PayloadDirectory,
+    [switch] $SandboxOnly,
+    [switch] $InterruptedRecovery,
+    [ValidateRange(0,300)][int] $RecoveryOriginalFileCount = 0
 )
 
 $ErrorActionPreference = 'Stop'
+if ($SandboxOnly -and ($env:USERNAME -ne 'WDAGUtilityAccount' -or $env:COMPUTERNAME -eq 'MYGAMEPC')) {
+    throw 'Sandbox-only qualification refused outside the Windows Sandbox guest.'
+}
+if ($InterruptedRecovery -and (-not $SandboxOnly -or $PrebuiltSetup)) { throw 'Interrupted recovery requires SandboxOnly and the standalone InstallerExe.' }
+if ($PrebuiltSetup -and (-not $PayloadDirectory -or -not $SandboxOnly)) {
+    throw 'Prebuilt qualification requires an expected payload directory and SandboxOnly.'
+}
 
 $elevated = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
             ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-$exe = (Resolve-Path $InstallerExe).Path
+$exe = if ($PrebuiltSetup) { (Resolve-Path -LiteralPath $PrebuiltSetup).Path } else { (Resolve-Path -LiteralPath $InstallerExe).Path }
 $root = Join-Path $env:TEMP ("beepgate_" + [guid]::NewGuid().ToString("N"))
 $results = New-Object System.Collections.Generic.List[object]
+$operations = New-Object System.Collections.Generic.List[object]
 
 function Record([string] $Gate, [string] $Case, [string] $Status, [string] $Detail) {
     $results.Add([pscustomobject]@{ gate = $Gate; case = $Case; status = $Status; detail = $Detail })
@@ -41,21 +57,191 @@ function Record([string] $Gate, [string] $Case, [string] $Status, [string] $Deta
 }
 
 function Invoke-Exe([string] $Path, [string[]] $Arguments) {
-    # Windows PowerShell turns a native process's stderr into an ErrorRecord, and with
-    # ErrorActionPreference = Stop that aborts the whole matrix the first time the installer
-    # legitimately reports a refusal on stderr. A refusal is a result here, not a script error.
-    $previous = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
+    $id = [guid]::NewGuid().ToString('N')
+    $stdout = Join-Path $root "$id.stdout.log"
+    $stderr = Join-Path $root "$id.stderr.log"
+    $process = Start-Process -FilePath $Path -ArgumentList ($Arguments | ForEach-Object { '"' + $_ + '"' }) -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $operations.Add([pscustomobject]@{ executable=$Path; arguments=$Arguments; exitCode=$process.ExitCode; completedUtc=[datetime]::UtcNow.ToString('o'); stdout=(Split-Path $stdout -Leaf); stderr=(Split-Path $stderr -Leaf) })
+    $outText = Get-Content -LiteralPath $stdout -Raw
+    $errorText = Get-Content -LiteralPath $stderr -Raw
+    return [pscustomobject]@{ ExitCode = $process.ExitCode; Stdout = $outText; Stderr = $errorText; Output = ($outText + $errorText) }
+
+}
+
+function Read-JournalSnapshot([string] $Path) {
+    # Atomic journal replacement must remain possible while the qualification observer reads it.
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, ([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete))
     try {
-        $out = & $Path @Arguments 2>&1 | Out-String
-        return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+        $reader = New-Object IO.StreamReader($stream)
+        try { $snapshot = $reader.ReadToEnd() } finally { $reader.Dispose() }
+    } finally { $stream.Dispose() }
+    return ($snapshot | ConvertFrom-Json)
+}
+
+function Write-Evidence {
+    $pass = @($results | Where-Object status -eq 'PASS').Count
+    $fail = @($results | Where-Object status -eq 'FAIL').Count
+    $skip = @($results | Where-Object status -eq 'SKIP').Count
+
+    Write-Host "`n=== $pass passed · $fail failed · $skip skipped ===`n"
+
+    $evidenceDir = Split-Path -Parent $EvidencePath
+    if ($evidenceDir -and -not (Test-Path $evidenceDir)) { New-Item -ItemType Directory -Force -Path $evidenceDir | Out-Null }
+    $logDirectory = Join-Path $evidenceDir 'runtime-logs'
+    New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
+    Get-ChildItem -LiteralPath $root -Filter '*.log' -File | Copy-Item -Destination $logDirectory
+    [pscustomobject]@{
+        runAtUtc  = (Get-Date).ToUniversalTime().ToString('o')
+        elevated  = $elevated
+        installer = $exe
+        host = $env:COMPUTERNAME
+        sandboxOnly = [bool]$SandboxOnly
+        prebuiltSetup = $PrebuiltSetup
+        interruptedRecovery = [bool]$InterruptedRecovery
+        recoveryOriginalFileCount = $RecoveryOriginalFileCount
+        artifactSha256 = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
+        expectedPayload = $expectedFiles
+        artifacts = $root
+        passed    = $pass
+        failed    = $fail
+        skipped   = $skip
+        cases     = $results
+        operations = $operations
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
+    Write-Host "Evidence: $EvidencePath"
+    Write-Host "Artifacts: $root"
+
+    if ($fail -gt 0) { exit 1 }
+}
+
+if ($InterruptedRecovery) {
+    New-Item -ItemType Directory -Force -Path $root | Out-Null
+    $expectedFiles = @()
+    try {
+        $source = Join-Path $root 'payload'
+        New-Item -ItemType Directory -Path $source | Out-Null
+        $fixtureId = [guid]::NewGuid().ToString('D')
+        $project = Join-Path $root 'interrupted.bsetup'
+        $lines = New-Object System.Collections.Generic.List[string]
+        @('[Setup]', 'AppName=Owned P13 interruption fixture', "AppId=$fixtureId", 'AppVersion=1.0.0', 'AppPublisher=Owned acceptance fixture', "SourceDir=$root", 'DefaultScope=user', 'PrivilegesRequired=lowest', 'CreateUninstallEntry=no', '', '[Components]', 'Name: "core"; Required: "yes"; Selected: "yes"', '', '[Files]') | ForEach-Object { $lines.Add($_) }
+        for ($i=0; $i -lt 300; $i++) {
+            $name = 'item-{0:D4}.txt' -f $i
+            $path = Join-Path $source $name
+            [IO.File]::WriteAllText($path, (("Owned inert recovery fixture $i`r`n") * 100))
+            $lines.Add(('Source: "{0}"; DestDir: "{{app}}"; DestName: "{1}"; Component: "core"' -f $path,$name))
+        }
+        $lines | Set-Content -LiteralPath $project -Encoding utf8
+        $expectedFiles = @(Get-ChildItem -LiteralPath $source -File | ForEach-Object { [pscustomobject]@{Relative=$_.Name;Hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash} })
+        $validation = Invoke-Exe $exe @("/VALIDATE=$project")
+        if($validation.ExitCode -ne 0) { throw 'Recovery fixture validation failed.' }
+
+        foreach ($scenario in @('rollback','resume')) {
+            try {
+            $install = Join-Path $root ('install-'+$scenario)
+            New-Item -ItemType Directory -Path $install -Force | Out-Null
+            [IO.File]::WriteAllText((Join-Path $install 'user-note.txt'), 'unrelated owned acceptance note')
+            $originalFiles = @()
+            for ($originalIndex=0; $originalIndex -lt $RecoveryOriginalFileCount; $originalIndex++) {
+                $originalName = 'item-{0:D4}.txt' -f $originalIndex
+                $originalPath = Join-Path $install $originalName
+                [IO.File]::WriteAllText($originalPath, ('Original owned bytes '+$originalName))
+                [IO.File]::SetLastWriteTimeUtc($originalPath, [datetime]::Parse('2001-02-03T04:05:06Z').ToUniversalTime())
+                $originalFiles += [pscustomobject]@{Relative=$originalName;Hash=(Get-FileHash -LiteralPath $originalPath -Algorithm SHA256).Hash;WriteTimeUtc=[IO.File]::GetLastWriteTimeUtc($originalPath).ToString('o')}
+            }
+            $originalFiles | ConvertTo-Json | Set-Content (Join-Path $root ($scenario+'-original-files.json')) -Encoding utf8
+            $journal = Join-Path $root ($scenario+'.resource-journal.json')
+            $stdout = Join-Path $root ($scenario+'-interrupted.stdout.log')
+            $stderr = Join-Path $root ($scenario+'-interrupted.stderr.log')
+            $arguments = @('/S',"/SCRIPT=$project", "/D=$install", "/JOURNAL=$journal",'/NORESTART')
+            $process = Start-Process -FilePath $exe -ArgumentList ($arguments | ForEach-Object { '"'+$_+'"' }) -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            $deadline = [datetime]::UtcNow.AddSeconds(90)
+            $applied = @(); $transientReads = 0; $lastReadError = ''
+            try {
+                while ([datetime]::UtcNow -lt $deadline) {
+                    $process.Refresh()
+                    if ($process.HasExited) { throw "Installer exited before a partial checkpoint could be interrupted (exit $($process.ExitCode))." }
+                    # Observe directory entries only. Opening an active checkpoint can interfere
+                    # with Windows publication; read its durable content only after termination.
+                    $copiedDuringRun = @(Get-ChildItem -LiteralPath $install -Filter 'item-*.txt' -File -ErrorAction SilentlyContinue | Where-Object Length -gt 100).Count
+                    if ($copiedDuringRun -ge 3 -and $copiedDuringRun -lt $expectedFiles.Count) { break }
+                    Start-Sleep -Milliseconds 25
+                }
+                $process.Refresh()
+                if($process.HasExited -or $copiedDuringRun -lt 3 -or $copiedDuringRun -ge $expectedFiles.Count) { throw 'A live partial-apply checkpoint was not observed.' }
+                Stop-Process -Id $process.Id -ErrorAction Stop
+                $process.WaitForExit()
+            } finally {
+                $process.Refresh()
+                if(-not $process.HasExited) { Stop-Process -Id $process.Id -ErrorAction Stop; $process.WaitForExit() }
+            }
+            $operations.Add([pscustomobject]@{executable=$exe;arguments=$arguments;exitCode=$process.ExitCode;termination='Owned process killed after durable partial file Apply checkpoint';completedUtc=[datetime]::UtcNow.ToString('o');stdout=(Split-Path $stdout -Leaf);stderr=(Split-Path $stderr -Leaf)})
+            $checkpoint = Read-JournalSnapshot $journal
+            $applied = @($checkpoint.entries | Where-Object { $_.action -eq 'Apply' -and $_.resultCode -eq 'Succeeded' -and $_.operationType -eq 'file.copy' })
+            if($applied.Count -lt 2) { throw 'Terminated process did not leave two durable file Apply checkpoints.' }
+            $copied = @(Get-ChildItem -LiteralPath $install -Filter 'item-*.txt' -File | Where-Object Length -gt 100).Count
+            $prepared = @($checkpoint.entries | Where-Object { $_.action -eq 'PrepareApply' -and $_.operationType -eq 'file.copy' -and $_.resultCode -eq 'Succeeded' })
+            if ($prepared.Count -lt $copied) { throw "Changed files lack durable before-state: $copied changed, $($prepared.Count) prepared." }
+            if ($copied -lt 2 -or $copied -ge 300) { throw "Interrupted payload is not partial: $copied files." }
+            Copy-Item -LiteralPath $journal -Destination (Join-Path $root ($scenario+'-before.resource-journal.json'))
+            @{scenario=$scenario;processId=$process.Id;copiedFiles=$copied;checkpointFileApplies=$applied.Count;checkpointPreparedFiles=$prepared.Count;originalFiles=$RecoveryOriginalFileCount;transientReads=$transientReads;lastReadError=$lastReadError;observedUtc=[datetime]::UtcNow.ToString('o')} | ConvertTo-Json | Set-Content (Join-Path $root ($scenario+'-interruption.json')) -Encoding utf8
+            $inspection = Invoke-Exe $exe @("/RECOVERY=$project","/D=$install","/JOURNAL=$journal")
+            if($inspection.ExitCode -ne 0) { throw 'Separate process could not inspect the interrupted journal.' }
+            Record 'P13' ($scenario+': persisted partial checkpoint inspected in a new process') 'PASS' "$copied/300 payload files copied before termination."
+            if($scenario -eq 'rollback') {
+                $outcome = Invoke-Exe $exe @("/RECOVERY=$project",'/ROLLBACK','/JSON',"/D=$install","/JOURNAL=$journal")
+                $rollbackResult = $outcome.Stdout | ConvertFrom-Json
+                if ($rollbackResult.action -ne 'rollback' -or -not $rollbackResult.success) { throw 'Recovery rollback JSON did not report the requested action and success.' }
+                $remaining = @(Get-ChildItem -LiteralPath $install -Filter 'item-*.txt' -File -ErrorAction SilentlyContinue).Count
+                if($outcome.ExitCode -ne 0 -or $remaining -ne $RecoveryOriginalFileCount) { throw "Interrupted rollback failed: exit $($outcome.ExitCode), remaining $remaining, expected $RecoveryOriginalFileCount." }
+                foreach($originalFile in $originalFiles) {
+                    $restoredPath = Join-Path $install $originalFile.Relative
+                    if((Get-FileHash -LiteralPath $restoredPath -Algorithm SHA256).Hash -ne $originalFile.Hash) { throw "Original file was not restored: $($originalFile.Relative)" }
+                    if([IO.File]::GetLastWriteTimeUtc($restoredPath).ToString('o') -ne $originalFile.WriteTimeUtc) { throw "Original modification time was not restored: $($originalFile.Relative)" }
+                }
+                Record 'P13' 'rollback of interrupted operation restores before-state' 'PASS' "$remaining original fixture files, original hashes verified."
+            } else {
+                $outcome = Invoke-Exe $exe $arguments
+                $resumed = Get-Content -LiteralPath $journal -Raw | ConvertFrom-Json
+                $resumeEntries = @($resumed.entries | Where-Object action -eq 'Resume').Count
+                foreach($file in $expectedFiles) {
+                    $actual = Join-Path $install $file.Relative
+                    if(-not (Test-Path -LiteralPath $actual -PathType Leaf) -or (Get-FileHash -LiteralPath $actual -Algorithm SHA256).Hash -ne $file.Hash) { throw "Resumed payload mismatch: $($file.Relative)" }
+                }
+                if($outcome.ExitCode -ne 0 -or $resumeEntries -lt 2) { throw "Resume failed: exit $($outcome.ExitCode), resume entries $resumeEntries." }
+                Record 'P13' 'new process resumes checkpoint and verifies 300 payload hashes' 'PASS' "$resumeEntries journal Resume entries."
+                Copy-Item -LiteralPath $journal -Destination (Join-Path $root 'resume-completed.resource-journal.json')
+                $cleanup = Invoke-Exe $exe @('/UNINSTALL',"/SCRIPT=$project","/D=$install","/JOURNAL=$journal")
+                if($cleanup.ExitCode -ne 0 -or @(Get-ChildItem -LiteralPath $install -Filter 'item-*.txt' -File -ErrorAction SilentlyContinue).Count -ne 0) { throw 'Post-resume fixture uninstall failed.' }
+                Record 'P13' 'resumed installation uninstalls owned payload' 'PASS' ''
+            }
+            if((Get-Content -LiteralPath (Join-Path $install 'user-note.txt') -Raw) -ne 'unrelated owned acceptance note') { throw 'Unrelated acceptance note changed.' }
+            if (Test-Path -LiteralPath $journal) {
+                Copy-Item -LiteralPath $journal -Destination (Join-Path $root ($scenario+'-after.resource-journal.json'))
+            }
+            @{scenario=$scenario;journalPresentAfterUninstall=(Test-Path -LiteralPath $journal);observedUtc=[datetime]::UtcNow.ToString('o')} | ConvertTo-Json | Set-Content (Join-Path $root ($scenario+'-cleanup.json')) -Encoding utf8
+            } catch {
+                $_ | Format-List * -Force | Out-File (Join-Path $root ($scenario+'-error.log'))
+                Record 'P13' ($scenario+': interrupted recovery qualification') 'FAIL' $_.Exception.Message
+            }
+        }
+    } catch {
+        $_ | Format-List * -Force | Out-File (Join-Path $root 'recovery-error.log')
+        Record 'P13' 'interrupted recovery qualification' 'FAIL' $_.Exception.Message
+    } finally {
+        $capture = Join-Path (Split-Path -Parent $EvidencePath) 'checkpoint-evidence'
+        New-Item -ItemType Directory -Force -Path $capture | Out-Null
+        Get-ChildItem -LiteralPath $root -File | Where-Object { $_.Extension -in '.json','.bsetup' } | Copy-Item -Destination $capture
+        Write-Evidence
     }
-    finally { $ErrorActionPreference = $previous }
+    exit 0
 }
 
 # ── a small but real project ────────────────────────────────────────────────
 $source = Join-Path $root "src"
 New-Item -ItemType Directory -Force -Path $source | Out-Null
+if ($PrebuiltSetup) {
+    Copy-Item -Path (Join-Path (Resolve-Path -LiteralPath $PayloadDirectory).Path '*') -Destination $source -Recurse
+} else {
 Set-Content -LiteralPath (Join-Path $source "App.exe")  -Value "application payload" -Encoding utf8
 Set-Content -LiteralPath (Join-Path $source "data.txt") -Value "data payload"        -Encoding utf8
 
@@ -82,10 +268,27 @@ Source: "src\data.txt"; DestDir: "{app}"; DestName: "data.txt"; Component: "core
 Name: "core"; Required: "yes"; Selected: "yes"
 "@ | Set-Content -LiteralPath $script -Encoding utf8
 
+}
+$expectedFiles = @(Get-ChildItem -LiteralPath $source -Recurse -File | ForEach-Object {
+    [pscustomobject]@{ Relative = $_.FullName.Substring($source.Length + 1); Hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+})
+if ($expectedFiles.Count -eq 0) { throw 'Expected payload must contain at least one file.' }
+function Test-Payload([string] $Directory) {
+    foreach ($file in $expectedFiles) {
+        $path = Join-Path $Directory $file.Relative
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $file.Hash) { return $false }
+    }
+    return $true
+}
+
 Push-Location $root
 try {
     Write-Host "`n=== Gate matrix (elevated: $elevated) ===`n"
 
+    if ($PrebuiltSetup) {
+        $setup = $exe
+        Record '3.M.1' 'authoring build and canonicalization' 'SKIP' 'Prebuilt mode: SDK/source build is separately recorded on the authoring host.'
+    } else {
     # ── 3.M.1 · golden .bsetup round-trip ───────────────────────────────────
     $validate = Invoke-Exe $exe @("/VALIDATE=GateApp.bsetup")
     if ($validate.ExitCode -eq 0) { Record '3.M.1' 'validate' 'PASS' '' }
@@ -127,35 +330,31 @@ try {
     Record '3.M.1' 'build' 'PASS' ''
     $setup = (Get-ChildItem (Join-Path $root "dist") -Filter *.exe | Select-Object -First 1).FullName
 
+    }
+
     # ── 2.M.1 · per-user install -> verify -> uninstall ──────────────────────
     $userDir = Join-Path $root "install-user"
     $i = Invoke-Exe $setup @("/S", "/D=$userDir", "/NORESTART")
-    $installed = (Test-Path (Join-Path $userDir "App.exe")) -and (Test-Path (Join-Path $userDir "data.txt"))
+    $installed = Test-Payload $userDir
     if ($i.ExitCode -eq 0 -and $installed) { Record '2.M.1' 'per-user install' 'PASS' $userDir }
     else { Record '2.M.1' 'per-user install' 'FAIL' "exit $($i.ExitCode); files present: $installed" }
 
+    if ($installed) {
+        Set-Content -LiteralPath (Join-Path $userDir $expectedFiles[0].Relative) -Value 'owned fixture intentionally changed for repair' -Encoding utf8
+        $repair = Invoke-Exe $setup @('/REPAIR', "/D=$userDir", '/NORESTART')
+        if ($repair.ExitCode -eq 0 -and (Test-Payload $userDir)) { Record 'P13' 'repair restores payload hashes' 'PASS' '' }
+        else { Record 'P13' 'repair restores payload hashes' 'FAIL' "exit $($repair.ExitCode)" }
+    } else { Record 'P13' 'repair restores payload hashes' 'SKIP' 'Install did not establish the expected payload.' }
+
     $u = Invoke-Exe $setup @("/UNINSTALL", "/D=$userDir")
-    $gone = -not (Test-Path (Join-Path $userDir "App.exe"))
-    if ($u.ExitCode -eq 0 -and $gone) { Record '3.M.1' 'BUILD -> S -> UNINSTALL' 'PASS' '' }
-    else { Record '3.M.1' 'BUILD -> S -> UNINSTALL' 'FAIL' "exit $($u.ExitCode); removed: $gone" }
+    $gone = @($expectedFiles | Where-Object { Test-Path -LiteralPath (Join-Path $userDir $_.Relative) }).Count -eq 0
+    if ($u.ExitCode -eq 0 -and $gone) { Record '3.M.1' 'per-user uninstall removes payload' 'PASS' '' }
+    else { Record '3.M.1' 'per-user uninstall removes payload' 'FAIL' "exit $($u.ExitCode); removed: $gone" }
 
-    # ── 2.M.1 · per-machine install ─────────────────────────────────────────
-    if ($elevated) {
-        $machineDir = Join-Path $env:ProgramFiles "GateAppMatrix"
-        $mi = Invoke-Exe $setup @("/S", "/D=$machineDir", "/NORESTART")
-        $mok = Test-Path (Join-Path $machineDir "App.exe")
-        if ($mi.ExitCode -eq 0 -and $mok) { Record '2.M.1' 'per-machine install' 'PASS' $machineDir }
-        else { Record '2.M.1' 'per-machine install' 'FAIL' "exit $($mi.ExitCode); files present: $mok" }
-
-        $mu = Invoke-Exe $setup @("/UNINSTALL", "/D=$machineDir")
-        if ($mu.ExitCode -eq 0) { Record '2.M.1' 'per-machine uninstall' 'PASS' '' }
-        else { Record '2.M.1' 'per-machine uninstall' 'FAIL' "exit $($mu.ExitCode)" }
-        try { if (Test-Path $machineDir) { Remove-Item $machineDir -Recurse -Force -ErrorAction Stop } } catch {}
-    }
-    else {
-        Record '2.M.1' 'per-machine install'   'SKIP' 'needs elevation'
-        Record '2.M.1' 'per-machine uninstall' 'SKIP' 'needs elevation'
-    }
+    # This fixture declares DefaultScope=user; elevation and a Program Files destination do
+    # not turn it into a per-machine package. A separately built machine-scope fixture is required.
+    Record '2.M.1' 'per-machine install' 'SKIP' 'Requires a separately built per-machine fixture and elevation'
+    Record '2.M.1' 'per-machine uninstall' 'SKIP' 'Requires a separately built per-machine fixture and elevation'
 
     # ── 2.M.1 · corrupt-payload abort ───────────────────────────────────────
     # Flip bytes in the middle of the appended payload. The installer must refuse rather than
@@ -206,16 +405,18 @@ try {
     # Make the destination unwritable so the copy fails partway; nothing may be left behind.
     $blockedDir = Join-Path $root "install-blocked"
     New-Item -ItemType Directory -Force -Path $blockedDir | Out-Null
-    $blocker = Join-Path $blockedDir "App.exe"
+    $blocker = Join-Path $blockedDir $expectedFiles[0].Relative
     New-Item -ItemType Directory -Force -Path $blocker | Out-Null   # a directory where a file must go
     $ri = Invoke-Exe $setup @("/S", "/D=$blockedDir", "/NORESTART")
-    if ($ri.ExitCode -ne 0) {
-        Record '2.M.1' 'rollback on injected failure' 'PASS' "refused with exit $($ri.ExitCode)"
+    $copiedAfterFailure = @($expectedFiles | Where-Object { Test-Path -LiteralPath (Join-Path $blockedDir $_.Relative) -PathType Leaf }).Count
+    if ($ri.ExitCode -ne 0 -and $copiedAfterFailure -eq 0) {
+        Record '2.M.1' 'blocked destination refusal (no payload files remain)' 'PASS' "refused with exit $($ri.ExitCode)"
     }
     else {
-        Record '2.M.1' 'rollback on injected failure' 'FAIL' 'installed over a blocked destination'
+        Record '2.M.1' 'blocked destination refusal (no payload files remain)' 'FAIL' 'installed over a blocked destination'
     }
 
+    if (-not $PrebuiltSetup) {
     # ── 5.M.1 · CLI parity + selftest ───────────────────────────────────────
     $st = Invoke-Exe $exe @("/SELFTEST")
     if ($st.ExitCode -in 0, 3010) { Record '5.M.1' '/SELFTEST' 'PASS' "exit $($st.ExitCode)" }
@@ -230,29 +431,11 @@ try {
     $bogus = Invoke-Exe $exe @("/VALIDATE=does-not-exist.bsetup")
     if ($bogus.ExitCode -ne 0) { Record '5.M.1' 'missing script is a non-zero exit' 'PASS' "exit $($bogus.ExitCode)" }
     else { Record '5.M.1' 'missing script is a non-zero exit' 'FAIL' 'reported success' }
+    } else { Record '5.M.1' 'authoring CLI checks' 'SKIP' 'Prebuilt runtime fixture only.' }
+
 }
 finally {
     Pop-Location
 
-    $pass = ($results | Where-Object status -eq 'PASS').Count
-    $fail = ($results | Where-Object status -eq 'FAIL').Count
-    $skip = ($results | Where-Object status -eq 'SKIP').Count
-
-    Write-Host "`n=== $pass passed · $fail failed · $skip skipped ===`n"
-
-    $evidenceDir = Split-Path -Parent $EvidencePath
-    if ($evidenceDir -and -not (Test-Path $evidenceDir)) { New-Item -ItemType Directory -Force -Path $evidenceDir | Out-Null }
-    [pscustomobject]@{
-        runAtUtc  = (Get-Date).ToUniversalTime().ToString('o')
-        elevated  = $elevated
-        installer = $exe
-        passed    = $pass
-        failed    = $fail
-        skipped   = $skip
-        cases     = $results
-    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
-    Write-Host "Evidence: $EvidencePath"
-    Write-Host "Artifacts: $root"
-
-    if ($fail -gt 0) { exit 1 }
+    Write-Evidence
 }

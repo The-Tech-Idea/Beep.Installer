@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
+using Microsoft.Extensions.DependencyInjection;
 using Beep.Installer.Cli;
 using Beep.Installer.Engine;
 using Beep.Installer.Engine.Updates;
@@ -196,12 +197,8 @@ internal static partial class Program
             return 0;
         }
 
-        // Resolved from the composition root when there is one; constructed directly only when the
-        // shell is driven in-process by a test, which never goes through Main.
-        if (Services?.GetService(typeof(PackageBuilderForm)) is PackageBuilderForm form)
-            Application.Run(form);
-        else
-            RunColdStart(args);
+        // Composition provides the controller; startup still chooses the correct authoring shell.
+        Application.Run(CreateColdStartForm(Services ?? throw new InvalidOperationException("The installer services have not been initialized.")));
         return 0;
     }
 
@@ -214,24 +211,23 @@ internal static partial class Program
     /// popup windows, and "Open full editor" swaps to the same <see cref="PackageBuilderForm"/> Advanced
     /// mode the returning-user path already uses, sharing the same <see cref="InstallerController"/>.
     /// </summary>
-    private static void RunColdStart(string[] args)
+    internal static Form CreateColdStartForm(IServiceProvider provider)
     {
+        var controller = provider.GetRequiredService<InstallerController>();
         var mostRecent = RecentProjects.Load().FirstOrDefault();
         if (mostRecent is { Path.Length: > 0 } && System.IO.File.Exists(mostRecent.Path))
         {
-            var controller = new InstallerController();
             var (ok, _, _) = RecoveryProjectOpening.Open(controller, mostRecent.Path);
-            if (ok) { Application.Run(new PackageBuilderForm(controller, args)); return; }
-            controller.StopAutoSave();
+            if (ok) return provider.GetRequiredService<PackageBuilderForm>();
         }
 
-        var wizard = new BuilderWizardForm(new InstallerController());
+        var wizard = new BuilderWizardForm(controller);
         wizard.AdvancedRequested += (_, _) =>
         {
             wizard.Hide();
             wizard.AdvancedForm.Show();
             wizard.AdvancedForm.FormClosed += (_, _) => wizard.Close();
         };
-        Application.Run(wizard);
+        return wizard;
     }
 }

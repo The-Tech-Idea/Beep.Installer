@@ -244,7 +244,7 @@
     <value>Argumentos:</value>
   </data>
   <data name="Actions_CustomActionsA11" xml:space="preserve">
-    <value>Ações personalizadas (A1.1)</value>
+    <value>Ações personalizadas</value>
   </data>
   <data name="Actions_FailOnError" xml:space="preserve">
     <value>Falhar em caso de erro</value>
@@ -2002,4 +2002,56 @@ SHA-256 do projeto: {2}</value></data>
   <data name="Files_DropIssues" xml:space="preserve"><value>Detalhes da análise:</value></data>
   <data name="Files_CancelScan" xml:space="preserve"><value>Cancelar análise</value></data>
   <data name="Files_ApplyFailed" xml:space="preserve"><value>Não foi possível aplicar a lista de ficheiros. O rascunho continua disponível; reveja o projeto atual antes de tentar novamente.</value></data>
+  <data name="Menu_File" xml:space="preserve"><value>&amp;Arquivo</value></data>
+  <data name="Menu_Edit" xml:space="preserve"><value>&amp;Editar</value></data>
+  <data name="Menu_View" xml:space="preserve"><value>&amp;Exibir</value></data>
+  <data name="Menu_Project" xml:space="preserve"><value>&amp;Projeto</value></data>
+  <data name="Menu_Help" xml:space="preserve"><value>A&amp;juda</value></data>
+  <data name="Menu_Exit" xml:space="preserve"><value>&amp;Sair</value></data>
+  <data name="Actions_Guidance" xml:space="preserve"><value>Configure comandos de instalação e desinstalação.</value></data>
+  <data name="Actions_AddAction" xml:space="preserve"><value>Adicionar ação</value></data>
+  <data name="Actions_RemoveAction" xml:space="preserve"><value>Remover a ação selecionada</value></data>
+  <data name="Actions_NewAction" xml:space="preserve"><value>Nova ação</value></data>
+  <data name="Actions_Selected" xml:space="preserve"><value>Ação selecionada</value></data>
+  <data name="Actions_DraftHelp" xml:space="preserve"><value>As alterações são aplicadas com OK. Nenhum comando é executado aqui.</value></data>
+  <data name="Actions_SaveWarnings" xml:space="preserve"><value>Há avisos. Salvar mesmo assim?</value></data>
+  <data name="Actions_Count" xml:space="preserve"><value>{0:N0} ações —</value></data>
+  <data name="Actions_Clean" xml:space="preserve"><value>Sem problemas de validação</value></data>
+  <data name="Actions_CannotSave" xml:space="preserve"><value>Não foi possível salvar. Corrija a ação destacada:</value></data>
+  <data name="Actions_UnknownTiming" xml:space="preserve"><value>Momento desconhecido ({0})</value></data>
+  <data name="Actions_BeforeInstall" xml:space="preserve"><value>Antes da instalação</value></data>
+  <data name="Actions_AfterInstall" xml:space="preserve"><value>Após a instalação</value></data>
+  <data name="Actions_BeforeUninstall" xml:space="preserve"><value>Antes da desinstalação</value></data>
+  <data name="Actions_AfterUninstall" xml:space="preserve"><value>Após a desinstalação</value></data>
+  <data name="Actions_Command" xml:space="preserve"><value>Comando</value></data>
+  <data name="LangMgr_LanguagesMenu" xml:space="preserve"><value>&amp;Idioma</value></data>
+  <data name="LangMgr_KeysMenu" xml:space="preserve"><value>&amp;Chaves</value></data>
+  <data name="LangMgr_SaveAllPlain" xml:space="preserve"><value>Salvar tudo</value></data>
+  <data name="LangMgr_ImportPlain" xml:space="preserve"><value>Importar CSV…</value></data>
+  <data name="LangMgr_ExportPlain" xml:space="preserve"><value>Exportar CSV…</value></data>
+  <data name="LangMgr_AddLanguage" xml:space="preserve"><value>Adicionar idioma…</value></data>
+  <data name="LangMgr_RemoveLanguage" xml:space="preserve"><value>Remover idioma…</value></data>
+  <data name="LangMgr_DuplicateLanguage" xml:space="preserve"><value>Duplicar idioma…</value></data>
+  <data name="LangMgr_AddKey" xml:space="preserve"><value>Adicionar chave…</value></data>
+  <data name="LangMgr_RemoveKey" xml:space="preserve"><value>Remover chave…</value></data>
+  <data name="LangMgr_Title" xml:space="preserve"><value>Gerenciador de idiomas</value></data>
+  <data name="LangMgr_Guidance" xml:space="preserve"><value>Edite traduções sem alterar o idioma do aplicativo.</value></data>
+  <data name="LangMgr_PreviewTitle" xml:space="preserve"><value>Traduções da chave selecionada</value></data>
+  <data name="LangMgr_KeyHeader" xml:space="preserve"><value>Chave</value></data>
+  <data name="LangMgr_ValueHeader" xml:space="preserve"><value>Valor ({0})</value></data>
+  <data name="LangMgr_LoadedStatus" xml:space="preserve"><value>{0:N0} idiomas carregados. Pronto.</value></data>
+  <data name="LangMgr_LanguageStatus" xml:space="preserve"><value>Idioma: {0} — {1:N0} textos</value></data>
+  <data name="LangMgr_ModifiedStatus" xml:space="preserve"><value>Modificado: {0}</value></data>
+  <data name="LangMgr_CodePrompt" xml:space="preserve"><value>Digite o código do idioma (ex.: it, ko, ru):</value></data>
+  <data name="LangMgr_DuplicatePrompt" xml:space="preserve"><value>Duplicar {0} como (novo código):</value></data>
+  <data name="LangMgr_InvalidCode" xml:space="preserve"><value>Use um código com letras latinas, dígitos e hífens.</value></data>
+  <data name="LangMgr_AddedLanguageStatus" xml:space="preserve"><value>Idioma {0} adicionado com {1:N0} chaves. Traduza e salve tudo.</value></data>
+  <data name="LangMgr_DuplicatedStatus" xml:space="preserve"><value>Duplicado {0} → {1} ({2:N0} chaves).</value></data>
+  <data name="LangMgr_RemovedLanguageStatus" xml:space="preserve"><value>Idioma removido: {0}</value></data>
+  <data name="LangMgr_KeyPrompt" xml:space="preserve"><value>Digite a nova chave de texto:</value></data>
+  <data name="LangMgr_AddedKeyStatus" xml:space="preserve"><value>Chave adicionada: {0}</value></data>
+  <data name="LangMgr_RemovedKeyStatus" xml:space="preserve"><value>Chave removida: {0}</value></data>
+  <data name="LangMgr_ExportedStatus" xml:space="preserve"><value>Exportado para {0}</value></data>
+  <data name="LangMgr_ImportedStatus" xml:space="preserve"><value>Importado de {0}</value></data>
+  <data name="LangMgr_InvalidCsv" xml:space="preserve"><value>O CSV deve ter uma coluna Key e códigos de idioma únicos.</value></data>
 </root>

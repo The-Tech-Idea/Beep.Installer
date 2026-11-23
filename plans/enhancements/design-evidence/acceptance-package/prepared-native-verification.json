@@ -1,0 +1,43 @@
+{
+  "runtimeSha256": "E21F358C98DA407F212D32A6871C89732A6DEF7D2DF958F97307451A003F1878",
+  "profiles": [
+    {
+      "profile": "fresh",
+      "passed": 5,
+      "failed": 0,
+      "interruption": {
+        "rollback": {
+          "changedFiles": 4,
+          "completedApplies": 4,
+          "preparedFiles": 4
+        },
+        "resume": {
+          "changedFiles": 3,
+          "completedApplies": 3,
+          "preparedFiles": 3
+        }
+      },
+      "resumeEntries": 4
+    },
+    {
+      "profile": "replacement",
+      "passed": 5,
+      "failed": 0,
+      "interruption": {
+        "rollback": {
+          "changedFiles": 4,
+          "completedApplies": 4,
+          "preparedFiles": 4
+        },
+        "resume": {
+          "changedFiles": 3,
+          "completedApplies": 3,
+          "preparedFiles": 4
+        }
+      },
+      "resumeEntries": 4
+    }
+  ],
+  "sourceHashesStillMatch": true,
+  "manualEvidenceStillMissing": true
+}

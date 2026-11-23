@@ -55,8 +55,8 @@ public sealed class ReleaseOverviewPresentationTests
                 };
                 timer.Start(); open(); seen.Should().BeTrue();
             }
-            var toolbar = Descendants(advanced).OfType<ToolStrip>().Single(strip => strip is not StatusStrip);
-            var action = toolbar.Items.OfType<ToolStripButton>().Concat(toolbar.Items.OfType<ToolStripDropDownButton>().SelectMany(more => more.DropDownItems.OfType<ToolStripButton>())).Single(button => button.Text == LanguageManager.GetString("Release_Title"));
+            var action = advanced.MainMenuStrip!.Items.OfType<ToolStripMenuItem>()
+                .SelectMany(menu => menu.DropDownItems.OfType<ToolStripMenuItem>()).Single(item => item.Name == "Release_Title");
             Opens(() => action.PerformClick());
             LanguageManager.SetLanguage("ar"); action.AccessibleName.Should().Be(LanguageManager.GetString("Release_Title"));
             var released = false;

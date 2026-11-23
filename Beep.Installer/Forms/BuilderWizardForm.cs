@@ -64,6 +64,9 @@ public sealed class BuilderWizardForm : Form
     // fight this form's non-modal Back/Next).
     private ComboBox _templateBox = null!;
     private ProjectTemplate? _creationTemplate;
+    private (string Name, string Version, string Publisher, string Source, string TemplateId, object? Blueprint)? _initialCreationDraft;
+    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+    internal Func<IWin32Window, string, string, DialogResult>? ConfirmClose { get; set; }
     private TextBox _nameBox = null!;
     private TextBox _versionBox = null!;
     private TextBox _publisherBox = null!;
@@ -92,7 +95,7 @@ public sealed class BuilderWizardForm : Form
         _advanced = existingAdvanced;
         _advanced.BuildResultRecorded += OnBuildResultRecorded;
         _advanced.BuildStarted += OnBuildResultRecorded;
-        _projectCreated = !startNew && (controller.HasFilePath || controller.SaveState.IsRecovered || HasRealProject(controller.Project));
+        _projectCreated = !startNew && (controller.HasFilePath || controller.IsDirty || controller.SaveState.IsRecovered || HasRealProject(controller.Project));
 
         InitializeUi();
         _themeBinding = new AuthoringThemeBinding(this);
@@ -611,12 +614,21 @@ public sealed class BuilderWizardForm : Form
         _saveStateTip.SetToolTip(_saveStateLabel, _saveStateLabel.AccessibleDescription);
     }
 
+    private (string Name, string Version, string Publisher, string Source, string TemplateId, object? Blueprint) CaptureCreationDraft()
+    {
+        var template = _templateBox.SelectedItem as ProjectTemplate;
+        return (_nameBox.Text.Trim(), _versionBox.Text.Trim(), _publisherBox.Text.Trim(), _sourceBox.Text.Trim(), template?.Id ?? "", template?.Blueprint);
+    }
+
     private bool HasProjectDraftChanges()
-        => _stepIndex <= 0 && _nameBox is not null &&
-           (_nameBox.Text.Trim() != _controller.Project.AppName ||
+    {
+        if (_stepIndex > 0 || _nameBox is null) return false;
+        if (!_projectCreated) return _initialCreationDraft is { } initial && CaptureCreationDraft() != initial;
+        return _nameBox.Text.Trim() != _controller.Project.AppName ||
             _versionBox.Text.Trim() != _controller.Project.AppVersion ||
             _publisherBox.Text.Trim() != _controller.Project.AppPublisher ||
-            _sourceBox.Text.Trim() != _controller.Project.SourceDirectory);
+            _sourceBox.Text.Trim() != _controller.Project.SourceDirectory;
+    }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
@@ -643,7 +655,8 @@ public sealed class BuilderWizardForm : Form
         }
         else if (_ownsAdvanced && !_advancedHandoff && (_controller.IsDirty || HasProjectDraftChanges()))
         {
-            var answer = MessageBox.Show(this, L("SaveState_SaveFirst", "You have unsaved changes. Save first?"),
+            var message = L("SaveState_SaveFirst", "You have unsaved changes. Save first?");
+            var answer = ConfirmClose?.Invoke(this, message, Text) ?? MessageBox.Show(this, message,
                 Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
             if (answer == DialogResult.Cancel || (answer == DialogResult.Yes && !SaveDraft())) e.Cancel = true;
         }
@@ -663,7 +676,7 @@ public sealed class BuilderWizardForm : Form
         foreach (var t in ProjectTemplates.Builtins) _templateBox.Items.Add(t);
         if (_creationTemplate?.Blueprint is not null) _templateBox.Items.Add(_creationTemplate);
         _templateBox.SelectedItem = _templateBox.Items.Cast<ProjectTemplate>().FirstOrDefault(template => template.Id == _creationTemplate?.Id) ?? _templateBox.Items[0];
-        _templateBox.SelectedIndexChanged += (_, _) => _creationTemplate = _templateBox.SelectedItem as ProjectTemplate;
+        _templateBox.SelectedIndexChanged += (_, _) => { _creationTemplate = _templateBox.SelectedItem as ProjectTemplate; UpdateSaveState(); };
         _templateBox.Enabled = !_projectCreated;
         var templateRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, AutoSize = true };
         templateRow.ColumnStyles.Add(new(SizeType.Percent, 100)); templateRow.ColumnStyles.Add(new(SizeType.AutoSize));
@@ -719,6 +732,7 @@ public sealed class BuilderWizardForm : Form
         layout.SetColumnSpan(hint, 3);
         layout.Controls.Add(hint, 0, r);
 
+        if (!_projectCreated && _initialCreationDraft is null) _initialCreationDraft = CaptureCreationDraft();
         for (var row = 0; row <= r; row++) layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var wrap = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         wrap.Controls.Add(layout);

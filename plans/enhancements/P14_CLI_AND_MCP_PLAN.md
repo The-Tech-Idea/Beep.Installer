@@ -101,13 +101,13 @@ Guards were seen failing before the fixes: the catalog/vocabulary guard failed o
 Requirement restated by Fahad: the MCP server must be part of the app, runnable from the command line or from the app menu.
 
 - **Command line:** `Beep.Installer.exe /MCP` (catalog verb `mcp`, 71 verbs, 67 offered over MCP; `help`, `update-ui`, `lang-manager` and `mcp` itself are withheld).
-- **App menu:** the builder toolbar's **AI / MCP** button opens `McpServerDialog`, which shows the command and registers the installer with Claude Desktop, Codex and Claude Code through `McpClientRegistrar`.
+- **App menu:** **Project → AI / MCP** in the advanced builder, or **Tools → AI / MCP server…** in Guided, opens `McpServerDialog`, which shows the command and registers the installer with Claude Desktop, Codex and Claude Code through `McpClientRegistrar`.
 - **Code:** `Beep.Installer.Mcp` is a library hosted by the shell (`InstallerMcpHost`); the separate server exe, `--exe` and `BEEP_INSTALLER_EXE` are no longer how it is started. `.mcp.json`, the three local clients, `Help/mcp-server.html`, F34 and F39 were updated.
 - **Evidence:** the stdio tests start `Beep.Installer.exe /MCP`; `claude mcp list` shows the published `dist` exe Connected and a headless Claude Code call returned `Beep Installer v1.0.0`. `McpClientRegistrarTests` cover the Claude Desktop JSON and Codex TOML writes on temp files. The dialog was built and shown by the existing dialog/builder render tests only; it was not clicked through by a person.
 
 ## Menu placement and icon (2026-11-18)
 
-- The default window for a returning user is the advanced Package Builder, whose toolbar overflows; the **AI / MCP** button now sits right after Guided / Quick Start (before the overflow), not at the end. The guided wizard (fresh start) also has a **Tools → AI / MCP server…** menu (Ctrl+Shift+M) and a header button. Guard: `McpEntryPointTests`.
+- Current placement (2026-11-23): the advanced Package Builder offers **Project → AI / MCP**, keeping its compact toolbar for validation/build/preview/package/signing/publish. This supersedes the earlier crowded-toolbar placement. The guided wizard still has **Tools → AI / MCP server…** (Ctrl+Shift+M) and its header button. Guard: `McpEntryPointTests`; normal-source menu-route regression passed 92 checks (`design-evidence/menu-bar/menu-route-regression.log`).
 - `Beep.Installer.exe` carries an icon (`Beep.Installer/Resources/beep-installer.ico`, an abstract package box with a download arrow; no people). `dist/Beep.Installer` was republished with it and with the `/MCP` server.
 
 - 2026-11-18: MCP gained `installer_get_project_fields` / `installer_set_project_fields` (`ProjectFieldEditor`, tests in ProjectFieldEditorTests). Collections (files, components, shortcuts, registry) remain builder-only.

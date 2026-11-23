@@ -229,7 +229,11 @@ public sealed class AccessibilityLocalizationQualificationRunner
         var arabic = Path.Combine(sourceRoot, "Beep.Installer", "Lang", "Strings_ar.resx");
 
         Require(File.Exists(arabic), diagnostics, "BI2710", "Lang.Strings_ar", "Arabic resources are required for RTL qualification.");
-        Require(rtlHelper.Contains("\"ar\"", StringComparison.Ordinal) && rtlHelper.Contains("RightToLeftLayout = true", StringComparison.Ordinal),
+        // This is a bounded first-party wiring check, not runtime or assistive-technology acceptance.
+        Require(rtlHelper.Contains("\"ar\"", StringComparison.Ordinal) &&
+                rtlHelper.Contains("ApplyDirection(form, rightToLeft: true)", StringComparison.Ordinal) &&
+                rtlHelper.Contains("RightToLeftLayout = rightToLeft", StringComparison.Ordinal) &&
+                rtlHelper.Contains("rightToLeft ? RightToLeft.Yes : RightToLeft.No", StringComparison.Ordinal),
             diagnostics, "BI2711", "RtlHelper", "RTL helper must classify Arabic and mirror form chrome.");
         Require(modernForm.Contains("RtlHelper.IsRtl", StringComparison.Ordinal) && modernForm.Contains("RtlHelper.ApplyRtl", StringComparison.Ordinal),
             diagnostics, "BI2712", "BeepModernInstallerForm", "Main installer wizard must apply RTL based on the active culture.");

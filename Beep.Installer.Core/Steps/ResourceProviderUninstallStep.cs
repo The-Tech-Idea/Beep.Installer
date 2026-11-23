@@ -110,6 +110,9 @@ public sealed class ResourceProviderUninstallStep : ISetupStep
                 continue;
             }
 
+            providerContext.RecoveryState = ResourceJournalRecoveryService.PreparedState(journal, operation.Id);
+            providerContext.RestoreBeforeState = providerContext.ExecutionMode == "rollback"
+                || (providerContext.RecoveryState.Count > 0 && !ResourceJournalRecoveryService.IsCompleted(journal, operation.Id));
             var result = provider.Rollback(operation, providerContext);
             journal.Entries.Add(Entry(operation, result.Code, result.Message));
             if (result.Code == ResourceProviderResultCode.Failed)

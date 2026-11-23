@@ -14,6 +14,133 @@ namespace Beep.Installer.Tests;
 [Collection("Language")]
 public sealed class ComponentFileScanTests
 {
+    [Fact]
+    public void LargeOwnedDirectoryStagesEveryFileAndKeepsTheNativeMessageLoopResponsive()
+    {
+        Sta(() =>
+        {
+            const int count = 3000;
+            var root = Path.Combine(Path.GetTempPath(), "BeepLargeDrop_" + Guid.NewGuid().ToString("N"));
+            var paths = new List<string>(); var directories = new List<string>();
+            Directory.CreateDirectory(root);
+            try
+            {
+                for (var group = 0; group < 10; group++)
+                {
+                    var directory = Path.Combine(root, "assets" + group); Directory.CreateDirectory(directory); directories.Add(directory);
+                    for (var i = 0; i < count / 10; i++)
+                    { var path = Path.Combine(directory, "owned" + i + ".txt"); File.WriteAllText(path, "x"); paths.Add(path); }
+                }
+                var component = new InstallComponent { Name = "Owned large file set" };
+                using var dialog = new ComponentFilesDialog(component, root); dialog.Show(); UiStaTest.Pump(dialog.PendingSize);
+                var watch = System.Diagnostics.Stopwatch.StartNew(); var ticks = 0; var lastTick = 0L; var longestGap = 0L;
+                using var heartbeat = new System.Windows.Forms.Timer { Interval = 10 };
+                heartbeat.Tick += (_, _) => { var now = watch.ElapsedMilliseconds; longestGap = Math.Max(longestGap, now - lastTick); lastTick = now; ticks++; };
+                heartbeat.Start();
+                var grid = dialog.Controls.Find("ComponentFileGrid", true).OfType<DataGridView>().Single();
+                var drop = new DragEventArgs(new DataObject(DataFormats.FileDrop, new[] { root }), 0, 0, 0, DragDropEffects.Copy, DragDropEffects.None);
+                Raise(grid, "OnDragDrop", drop); var dispatch = watch.ElapsedMilliseconds;
+                UiStaTest.Pump(dialog.PendingDrop); UiStaTest.Pump(dialog.PendingSize);
+                longestGap = Math.Max(longestGap, watch.ElapsedMilliseconds - lastTick);
+                heartbeat.Stop();
+                dialog.ResultFiles.Should().HaveCount(count); grid.Rows.Count.Should().Be(count);
+                dialog.ResultFiles.Select(file => file.SourcePath).Should().BeEquivalentTo(paths);
+                dialog.ResultFiles.Select(file => file.DestinationPath).Should().OnlyContain(path => !Path.IsPathRooted(path) && !path.StartsWith(".."));
+                dialog.ReadySizeBytes.Should().Be(count); component.Files.Should().BeEmpty();
+                ticks.Should().BeGreaterThan(0, "the actual native message loop must run during the real filesystem scan");
+                dispatch.Should().BeLessThan(2000, "dropping paths must schedule rather than perform the filesystem scan");
+                longestGap.Should().BeLessThan(2000, "staging the real list must not freeze the owned dialog for two seconds");
+                var applied = 0; dialog.ApplyDraft = () => { applied++; dialog.ResultFiles.Should().HaveCount(count); dialog.ReadySizeBytes.Should().Be(count); return true; };
+                dialog.Controls.Find("ComponentFilesOk", true).OfType<Button>().Single().PerformClick(); UiStaTest.Pump(dialog.PendingApply);
+                applied.Should().Be(1); dialog.DialogResult.Should().Be(DialogResult.OK);
+                var output = Environment.GetEnvironmentVariable("BEEP_LARGE_FILES_EVIDENCE");
+                if (!string.IsNullOrWhiteSpace(output)) File.WriteAllText(output, JsonSerializer.Serialize(new { count, bytes = count, dispatchMs = dispatch, totalMs = watch.ElapsedMilliseconds, heartbeatTicks = ticks, maximumMessageLoopGapMs = longestGap }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            finally
+            {
+                foreach (var path in paths) File.Delete(path);
+                foreach (var directory in directories) Directory.Delete(directory);
+                Directory.Delete(root);
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LateFailureAfterDisposalIsReportedWithoutChangingTheDraft(bool sizeRead)
+    {
+        Sta(() =>
+        {
+            using var started = new ManualResetEventSlim(); using var release = new ManualResetEventSlim();
+            var marker = "Owned obsolete failure " + Guid.NewGuid().ToString("N");
+            var component = new InstallComponent(); component.Files.Add(new FileCopyOperation { SourcePath = "owned.txt" });
+            using var dialog = new ComponentFilesDialog(component, null);
+            if (sizeRead) dialog.ReadSizes = (_, _, _) => { started.Set(); release.Wait(); throw new IOException(marker); };
+            dialog.Show();
+            if (!sizeRead)
+            {
+                UiStaTest.Pump(dialog.PendingSize);
+                dialog.ReadDrop = (_, _, _, _) => { started.Set(); release.Wait(); throw new IOException(marker); };
+                dialog.BeginDrop(new[] { "owned" });
+            }
+            var pending = sizeRead ? dialog.PendingSize : dialog.PendingDrop;
+            try
+            {
+                UiStaTest.Pump(Task.Run(() => started.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue()));
+                var before = JsonSerializer.Serialize(dialog.ResultFiles); dialog.Dispose();
+                release.Set(); UiStaTest.Pump(pending);
+                JsonSerializer.Serialize(dialog.ResultFiles).Should().Be(before);
+                component.Files.Should().ContainSingle(); component.Files[0].SourcePath.Should().Be("owned.txt");
+                Diag.Recent.Should().Contain(entry => entry.Context == "ComponentFilesDialog" && entry.Error.Contains(marker) && entry.Message.Contains("Obsolete"));
+            }
+            finally { release.Set(); UiStaTest.Pump(pending); }
+        });
+    }
+
+    [Theory]
+    [InlineData("size")]
+    [InlineData("drop")]
+    [InlineData("apply")]
+    public void UnexpectedFailureIsPersistedWithAReferenceInsteadOfExposingExceptionText(string operation)
+    {
+        Sta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "BeepFileFailure_" + Guid.NewGuid().ToString("N"));
+            var marker = "Owned private failure " + Guid.NewGuid().ToString("N");
+            try
+            {
+                using var logs = Diag.UseLogDirectory(directory);
+                var component = new InstallComponent(); component.Files.Add(new FileCopyOperation { SourcePath = "owned-inert.txt" });
+                using var dialog = new ComponentFilesDialog(component, null);
+                if (operation == "size") dialog.ReadSizes = (_, _, _) => throw new IOException(marker);
+                dialog.Show(); UiStaTest.Pump(dialog.PendingSize);
+                if (operation == "drop")
+                { dialog.ReadDrop = (_, _, _, _) => throw new IOException(marker); dialog.BeginDrop(new[] { "owned" }); UiStaTest.Pump(dialog.PendingDrop); }
+                if (operation == "apply")
+                { dialog.ApplyDraft = () => throw new IOException(marker); dialog.Controls.Find("ComponentFilesOk", true).OfType<Button>().Single().PerformClick(); UiStaTest.Pump(dialog.PendingApply); }
+                var record = Diag.Recent.LastOrDefault(entry => entry.Error.Contains(marker));
+                record.Should().NotBeNull("the caught failure must reach the existing diagnostics owner");
+                record!.Operation.Should().Be("component-files." + operation); record.CorrelationId.Should().NotBeNullOrWhiteSpace();
+                File.ReadAllText(Diag.JsonLogPath).Should().Contain(marker).And.Contain(record.CorrelationId);
+                var name = operation == "size" ? "FileSizeSummary" : "ComponentFileDropStatus";
+                var status = dialog.Controls.Find(name, true).OfType<Label>().Single();
+                foreach (var culture in LanguageManager.SupportedCultures)
+                {
+                    LanguageManager.SetLanguage(culture); Application.DoEvents();
+                    status.Text.Should().Contain(record.CorrelationId).And.NotContain(marker);
+                    status.AccessibleName.Should().Be(status.Text);
+                }
+                dialog.Visible.Should().BeTrue(); dialog.DialogResult.Should().Be(DialogResult.None);
+                component.Files.Should().ContainSingle(); component.Files[0].SourcePath.Should().Be("owned-inert.txt");
+            }
+            finally
+            {
+                if (Directory.Exists(directory)) { foreach (var file in Directory.EnumerateFiles(directory)) File.Delete(file); Directory.Delete(directory); }
+            }
+        });
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -55,7 +182,7 @@ public sealed class ComponentFileScanTests
             foreach (var culture in LanguageManager.SupportedCultures)
             {
                 LanguageManager.SetLanguage(culture); Application.DoEvents();
-                status.Text.Should().Contain(LanguageManager.GetString("Files_ApplyFailed")).And.Contain("Owned apply failure");
+                status.Text.Should().Contain(LanguageManager.GetString("Files_ApplyFailed")).And.NotContain("Owned apply failure");
                 status.AccessibleName.Should().Be(status.Text);
             }
             dialog.Controls.Find("ComponentFilesOk", true).OfType<Button>().Single().Enabled.Should().BeTrue();

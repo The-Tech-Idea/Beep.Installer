@@ -31,7 +31,7 @@ public sealed class McpEntryPointTests
     }
 
     [Fact]
-    public void AdvancedBuilder_HasAnMcpToolbarButton()
+    public void AdvancedBuilder_HasAnMcpProjectMenuItem()
     {
         UiStaTest.Run(() =>
         {
@@ -39,16 +39,10 @@ public sealed class McpEntryPointTests
             using var form = new PackageBuilderForm(controller);
             form.Show();
 
-            static IEnumerable<Control> All(Control c) => new[] { c }.Concat(c.Controls.Cast<Control>().SelectMany(All));
-            var toolbar = All(form).OfType<ToolStrip>().First(t => t.Items.OfType<ToolStripButton>().Any(b => b.Name == "Toolbar_Open" || b.Text == "Open"));
-            var names = toolbar.Items.OfType<ToolStripButton>().Select(b => b.Name).ToList();
-            names.Should().Contain("Toolbar_Mcp");
-            // The occasional tools live in the More menu, so the MCP button is a top-level button beside Preview/Build
-            // rather than behind the overflow chevron.
-            names.Should().NotContain("Update_Title");
-            names.IndexOf("Toolbar_Mcp").Should().BeGreaterThan(names.IndexOf("Builder_BuildTitle"));
-            var more = toolbar.Items.OfType<ToolStripDropDownButton>().Single(b => b.Name == "Toolbar_More");
-            more.DropDownItems.OfType<ToolStripButton>().Select(b => b.Name).Should().Contain("Update_Title");
+            form.MainMenuStrip.Should().NotBeNull();
+            var project = form.MainMenuStrip!.Items.OfType<ToolStripMenuItem>().Single(menu => menu.Name == "Menu_Project");
+            project.DropDownItems.OfType<ToolStripMenuItem>().Select(item => item.Name)
+                .Should().Contain("Toolbar_Mcp").And.Contain("Update_Title");
             controller.StopAutoSave();
         });
     }

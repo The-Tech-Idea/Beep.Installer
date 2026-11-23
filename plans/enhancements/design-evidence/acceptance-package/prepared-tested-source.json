@@ -1,0 +1,63 @@
+{
+  "capturedUtc": "2026-11-23T15:46:02.052928+00:00",
+  "scope": "126 focused checks passed; both Sandbox profiles passed 5/0/0; only ordinary file-copy scope, broader P13 acceptance remains open",
+  "files": [
+    {
+      "path": "Beep.Installer.Core/Extensibility/ResourceProviderContracts.cs",
+      "sha256": "0b0945f2cc6e183f51f4bd47d9957a6a59033797bf096654f0d74bc8df6b1e63"
+    },
+    {
+      "path": "Beep.Installer.Core/Extensibility/ResourcePlanExecutor.cs",
+      "sha256": "ab8f72c79ea555c25388dcd60dea385b020beb79eeec679d7895f68c5eaae780"
+    },
+    {
+      "path": "Beep.Installer.Core/Extensibility/ResourceJournalRecoveryService.cs",
+      "sha256": "c982795148c78487ffeff0f6a12739a137aece29ce9f93a13019cd8ea55fc637"
+    },
+    {
+      "path": "Beep.Installer.Core/Extensibility/ResourceExecutionJournalStore.cs",
+      "sha256": "7ae4df8687e7a4a6d892cfe86d21a9cf611ef17ddb1d4073355bbe20560a057f"
+    },
+    {
+      "path": "Beep.Installer.Core/Extensibility/Providers/FileCopyResourceProvider.cs",
+      "sha256": "2c5830067f96c78c26fc5d3ce1e7a80c257d7727e61bc23d8b4a90d53aea7009"
+    },
+    {
+      "path": "Beep.Installer.Core/Steps/ResourceProviderRuntimeSupport.cs",
+      "sha256": "3c3b104de9d9df8e830256926015a6796fdfafc45f4e2773925244d5fc86297c"
+    },
+    {
+      "path": "Beep.Installer.Core/Steps/ResourceProviderUninstallStep.cs",
+      "sha256": "ba51966e00fad72c6ef53d6cc1d56db0bbfe7958d614a727a6c202929457ee38"
+    },
+    {
+      "path": "Beep.Installer.Core/Runtime/AtomicFileWriter.cs",
+      "sha256": "49aadd02715ccd0aa594482f59579b2daec1289fcb245c6a2da476f8ebbe90ee"
+    },
+    {
+      "path": "Beep.Installer.Core/Runtime/InstallContextKeys.cs",
+      "sha256": "f2dcc38e1ed70945c38b05c56309d7812263f6d5a62d394f4a944b1e7cbea7b2"
+    },
+    {
+      "path": "Beep.Installer/Program.cs",
+      "sha256": "ffa135ea93424c85c5647f9139e7a668612d6ffea1e3449e3dce0db9155b7691"
+    },
+    {
+      "path": "Beep.Installer.Tests/PreparedFileRecoveryTests.cs",
+      "sha256": "0f9b9a6d082c0598deb8422cf10efd0f8878d3073fa8bc45cd5a3aa6fc9fbb48"
+    },
+    {
+      "path": "Beep.Installer.Tests/ResourceProviderRuntimeTests.cs",
+      "sha256": "3f946c208d2602fea8cb793fa649ad775575754e5f837eccfeb9cc6cc7f2aebd"
+    },
+    {
+      "path": "scripts/run-gate-matrix.ps1",
+      "sha256": "7a8ee3a658045495ee80a3bfb67064ddcfb3b90abf88671f0e948b66cce25b3c"
+    }
+  ],
+  "nativeCompletedUtc": "2026-11-23T15:49:25.0979752Z",
+  "runtime": {
+    "path": "plans\\enhancements\\design-evidence\\acceptance-package\\authoring-host-prepared-final\\Beep.Installer.exe",
+    "sha256": "e21f358c98da407f212d32a6871c89732a6def7d2df958f97307451a003f1878"
+  }
+}

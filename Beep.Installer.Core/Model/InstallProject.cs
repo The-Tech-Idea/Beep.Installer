@@ -997,14 +997,21 @@ namespace Beep.Installer.Models
             {
                 var a = actions[i];
                 var key = "#" + (i + 1);
+                if (a is null)
+                {
+                    issues.Add(new CustomActionIssue { Index = i, Key = key, Message = "Action is missing.", IsError = true });
+                    continue;
+                }
                 if (!string.IsNullOrWhiteSpace(a.Path)) key = a.Path + "@" + a.Timing;
 
                 if (string.IsNullOrWhiteSpace(a.Path))
-                    issues.Add(new CustomActionIssue { Key = key, Message = a.Required ? "Path is required for required actions." : "Path is empty.", IsError = a.Required });
+                    issues.Add(new CustomActionIssue { Index = i, PropertyName = nameof(CustomAction.Path), Key = key, Message = a.Required ? "Path is required for required actions." : "Path is empty.", IsError = a.Required });
                 else if (!seen.Add(key))
-                    issues.Add(new CustomActionIssue { Key = key, Message = "Duplicate action targeting '" + a.Path + "' at " + a.Timing + ".", IsError = false });
+                    issues.Add(new CustomActionIssue { Index = i, PropertyName = nameof(CustomAction.Path), Key = key, Message = "Duplicate action targeting '" + a.Path + "' at " + a.Timing + ".", IsError = false });
                 if (a.TimeoutMs < 0)
-                    issues.Add(new CustomActionIssue { Key = key, Message = "TimeoutMs must be >= 0.", IsError = true });
+                    issues.Add(new CustomActionIssue { Index = i, PropertyName = nameof(CustomAction.TimeoutMs), Key = key, Message = "TimeoutMs must be >= 0.", IsError = true });
+                if (!Enum.IsDefined(a.Timing))
+                    issues.Add(new CustomActionIssue { Index = i, PropertyName = nameof(CustomAction.Timing), Key = key, Message = "Timing is not supported.", IsError = true });
             }
             return issues;
         }
@@ -1027,6 +1034,8 @@ namespace Beep.Installer.Models
 
     public class CustomActionIssue
     {
+        public int Index { get; set; }
+        public string PropertyName { get; set; } = "";
         public string Key { get; set; } = "";
         public string Message { get; set; } = "";
         public bool IsError { get; set; }

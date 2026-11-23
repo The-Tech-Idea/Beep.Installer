@@ -1,0 +1,12 @@
+{
+  "count": 3000,
+  "components": 100,
+  "captureMs": 3437,
+  "shownMs": 3573,
+  "firstCheckMs": 3841,
+  "retryCaptureMs": 217,
+  "totalMs": 4329,
+  "heartbeatTicks": 14,
+  "maximumMessageLoopGapMs": 3613,
+  "diagnosticCount": 0
+}

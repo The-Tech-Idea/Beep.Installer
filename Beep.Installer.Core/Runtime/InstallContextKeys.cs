@@ -44,7 +44,7 @@ public static class InstallContextKeys
     /// <summary>Optional externally supplied provider execution attempt id.</summary>
     public const string ResourceExecutionAttemptId = "ResourceExecutionAttemptId";
 
-    /// <summary>install, repair or update. Written into provider journal metadata and entries.</summary>
+    /// <summary>install, repair, update, uninstall or rollback. Written into provider journal metadata and entries.</summary>
     public const string ResourceExecutionMode = "ResourceExecutionMode";
 
     /// <summary>Optional runtime secret provider used by resource providers at execution boundaries.</summary>

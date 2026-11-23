@@ -28,7 +28,18 @@ public sealed class ResourceProviderContext
     public bool PerUser { get; init; }
     public bool DryRun { get; init; }
     public bool ReplayRollback { get; init; }
-    public string AttemptId { get; init; } = Guid.NewGuid().ToString("N");
+    /// <summary>Restore prepared before-state for recovery; ordinary uninstall removes owned resources.</summary>
+    public bool RestoreBeforeState { get; internal set; }
+    public IReadOnlyDictionary<string, string> RecoveryState { get; internal set; } =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+    internal Action<CompiledInstallOperation, IReadOnlyDictionary<string, string>>? MutationCheckpoint { get; set; }
+
+    /// <summary>Providers checkpoint durable before-state before mutation. State must contain safe
+    /// references to persisted rollback material, not plaintext secrets. Direct provider execution
+    /// without an executor-bound checkpoint has no persistent journal.</summary>
+    public void CheckpointBeforeMutation(CompiledInstallOperation operation, IReadOnlyDictionary<string, string> beforeState)
+        => MutationCheckpoint?.Invoke(operation, beforeState);
+    public string AttemptId { get; set; } = Guid.NewGuid().ToString("N");
     public string ExecutionMode { get; init; } = "install";
     public ISecretProvider SecretProvider { get; init; } = new CompositeSecretProvider();
     public InstallerPolicy? Policy { get; init; }
@@ -82,7 +93,8 @@ public interface IResourceProvider
     ResourceProviderResult Validate(CompiledInstallOperation operation, ResourceProviderContext context);
     ResourcePlanResult Plan(CompiledInstallOperation operation, ResourceDetectionResult detection, ResourceProviderContext context);
     /// <summary>
-    /// Performs the operation.
+    /// Performs the operation. Providers supporting interrupted recovery must call
+    /// ResourceProviderContext.CheckpointBeforeMutation with durable before-state before modifying a resource.
     ///
     /// **Report failure by returning a <see cref="ResourceProviderResultCode.Failed"/> result, not
     /// by throwing.** <see cref="ResourcePlanExecutor"/> decides rollback from the returned value; a

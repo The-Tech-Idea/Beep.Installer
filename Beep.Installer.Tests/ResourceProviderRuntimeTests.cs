@@ -319,7 +319,7 @@ public class ResourceProviderRuntimeTests
         metadata.PlanHash.Should().Be(expectedPlan.PlanHash);
         metadata.InstallScope.Should().Be(expectedPlan.InstallScope);
         metadata.AttemptId.Should().Be(attemptId);
-        metadata.SchemaVersion.Should().Be("1.0");
+        metadata.SchemaVersion.Should().Be("2.0");
     }
 
     [Fact]
